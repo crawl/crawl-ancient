@@ -491,8 +491,8 @@ switch (menv [i].m_ench [p])
         case 6: // invisibility
         if (random2 (40) == 0 | (menv [i].m_class >= MLAVA0 && menv [i].m_sec == 0) | (menv [i].m_class == 125 && random2(3) == 0))
         {
-  if (menv [i].m_class == 46 | menv [i].m_class == 141 | menv [i].m_class == 240) continue;
-  if (menv [i].m_class >= MLAVA0 && menv [i].m_sec == 1) continue; //grd [menv [i].m_x] [menv [i].m_y] == 61) continue;
+                if (menv [i].m_class == 46 | menv [i].m_class == 141 | menv [i].m_class == 240) continue;
+                if (menv [i].m_class >= MLAVA0 && menv [i].m_sec == 1) continue;
                 menv [i].m_ench [p] = 0;
                 if (menv [i].m_ench [0] == 0 && menv [i].m_ench [1] == 0 && menv [i].m_ench [2] == 0)
                 menv [i].m_ench_1 = 0;
@@ -766,8 +766,15 @@ if ((menv [i].m_beh == 6 | menv [i].m_beh == 7) && (menv [i].m_hit == MHITNOT | 
 if (menv [i].m_beh == 6 | menv [i].m_beh == 7)
 {
         beem[0].trac_targ = menv [i].m_hit;
-        beem[0].trac_targ_x = menv [menv [i].m_hit].m_x;
-        beem[0].trac_targ_y = menv [menv [i].m_hit].m_y;
+        if (menv [i].m_hit == MHITNOT)
+        {
+         beem[0].trac_targ_x = menv [i].m_x;
+         beem[0].trac_targ_y = menv [i].m_y;
+        } else
+        {
+         beem[0].trac_targ_x = menv [menv [i].m_hit].m_x;
+         beem[0].trac_targ_y = menv [menv [i].m_hit].m_y;
+        }
 } else
 {
  beem[0].trac_targ = MHITYOU;
@@ -777,11 +784,6 @@ if (menv [i].m_beh == 6 | menv [i].m_beh == 7)
 
 if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0 && menv [i].m_class != 234) goto end_switch; //continue;
 
-// Hmmm... monsters will only fight with missiles/you[0].spells if they can see you!
-//    big problem!
-
-// Could solve: make mons_near(i) == 1 only necess if attacking you;
-// if not attacking you, rely on tracer. This will be VERY slow...
 
 switch(menv [i].m_class)
 {
@@ -861,7 +863,7 @@ if (random2(3) == 0) // o plant
 break;
 
 case 245: // Pit Fiend
-if (random2(2) != 0) break;
+if (random2(3) == 0) break;
 case 31:
 if (random2(4) == 0) // fiend!
 {
@@ -874,10 +876,9 @@ if (random2(4) == 0) // fiend!
                 case 1:
                 case 2:
                 case 3:
-  if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0) break;
   tracer_f(i, beem);
-  if (menv [i].m_beh == 7 && beem[0].tracer == 1) break;
-                if (beem[0].tracer != 0 | (beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)) // doesn't need to worry about you[0].haste
+  if (menv [i].m_beh == 7 && (beem[0].tracer == 1 | beem[0].tracer == 2)) break;
+                if (beem[0].tracer != 0) /* | (beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)) */
                 {
    if (menv [i].m_ench [2] != 6)
    {
@@ -959,7 +960,8 @@ case 29:
 case 73: // hellhound
 case 75:
 case 148: // lindworm
-case 306:// Patrick
+case 165: // firedrake
+case 306:// Xtahua
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
 if ((menv [i].m_class != 73 && random2(13) < 3) | random2(10) == 0)
 {
@@ -967,7 +969,12 @@ if (menv [i].m_beh == 6 | menv [i].m_beh == 7)
 {
  beem[0].trac_targ = menv [i].m_hit;
  tracer_f(i, beem);
- if (beem[0].trac_hit_mons == 0) break;
+
+ if (beem[0].tracer == 0) break;
+ if (menv [i].m_beh == 7 && (beem[0].tracer == 1 | beem[0].tracer == 2)) break;
+ if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) break;
+
+// if (beem[0].trac_hit_mons == 0) break;
 }
 dragon(i, beem);
 mmov_x = 0;
@@ -1121,20 +1128,26 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0)
       case 100:
       case 0:
       if (mons_near(i) == 0) goto out_of_zap;
+      default:
+      if ((menv [i].m_beh == 6 | menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto out_of_zap;
       tracer_f(i, beem);
-      if (beem[0].tracer == 0 && beem[0].tracer_mons != 3) goto out_of_zap;
-      if (beem[0].tracer_mons == 1) goto out_of_zap;
-      if (beem[0].tracer_mons == 2 && (mitm.itype [menv [i].m_inv [5]] == 7 | mitm.itype [menv [i].m_inv [5]] == 8 | mitm.itype [menv [i].m_inv [5]] == 14 | mitm.itype [menv [i].m_inv [5]] == 17)) goto out_of_zap;
+      if (beem[0].tracer == 0) goto out_of_zap;
+      if (menv [i].m_beh == 7 && (beem[0].tracer == 1 | beem[0].tracer == 2)) goto out_of_zap;
+      if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto out_of_zap;
 
+/*      if (beem[0].tracer == 0 && beem[0].tracer_mons != 3) goto out_of_zap;
+      if (beem[0].tracer_mons == 1) goto out_of_zap;*/
+//      if (beem[0].tracer_mons == 2 && (mitm.itype [menv [i].m_inv [5]] == 7 | mitm.itype [menv [i].m_inv [5]] == 8 | mitm.itype [menv [i].m_inv [5]] == 14 | mitm.itype [menv [i].m_inv [5]] == 17)) goto out_of_zap;
+//      if (beem[0].tracer_mons == 1 && (mitm.itype [menv [i].m_inv [5]] == 7 | mitm.itype [menv [i].m_inv [5]] == 8 | mitm.itype [menv [i].m_inv [5]] == 14 | mitm.itype [menv [i].m_inv [5]] == 17)) goto out_of_zap;
       break;
 
-      case 3: goto out_of_zap;
+/*      case 3: goto out_of_zap;
 
       case 6:
       case 7:
       tracer_f(i, beem);
       if (beem[0].tracer_mons == 0) goto out_of_zap; // crude, and also ineffective
-      break;
+      break;*/
 
      }
      break;
@@ -1196,10 +1209,13 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0)
         beem[0].ench_power = 20; // I think
         beem[0].beam_source = i;
 
-        if (mzap == 3 | mzap == 5 | mzap == 10 | mzap == 13)
+        if (mzap == 5 | mzap == 13 | mzap == 11 | mzap == 15)
         {
                 beem[0].move_x = 0;
                 beem[0].move_y = 0;
+        } else
+        {
+         if (beem[0].move_x == 0 && beem[0].move_y == 0) goto out_of_zap;
         }
 
         if (mons_near(i) != 0)
@@ -1252,6 +1268,7 @@ if (menv [i].m_class == 80)
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) goto end_switch;
 
 if (random2(200) > 50 + menv[i].m_HD) goto end_switch;
+if ((menv [i].m_beh == 6 | menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto end_switch;
 
 msecc = menv [i].m_sec;
 if (menv [i].m_class == 80) msecc = 30; // burning devil
@@ -1284,24 +1301,37 @@ if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0) goto end_switch;
 
 tracer_f(i, beem);
 
+if (beem[0].tracer == 0) goto end_switch;
+if (menv [i].m_beh == 7 && (beem[0].tracer == 1 | beem[0].tracer == 2)) goto end_switch;
+if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto end_switch;
+
+
 if (func_pass_2 [4] == 18) func_pass_2 [4] = 100;
 
-if (menv [i].m_beh == 7 && beem[0].trac_hit_tamed == 1) goto end_switch;
+//if (menv [i].m_beh == 7 && beem[0].trac_hit_tamed == 1) goto end_switch;
 
-if (menv [i].m_beh != 3)
+if (menv [i].m_beh != 3) /* == 3 is fear, I think */
 {
- if (beem[0].tracer_mons == 0 && beem[0].tracer == 1 | ((beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)))
+// if (beem[0].tracer_mons == 0 && beem[0].tracer == 1 | ((beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)))
+// if (beem[0].tracer == 1 && beem[0].tracer == 1 | ((beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)))
+ if ((menv [i].m_beh != 7 && (beem[0].tracer == 1 | beem[0].tracer == 2 | beem[0].tracer_mons == 1)) | (menv [i].m_beh == 7 && beem[0].tracer == 3))
  {
         spell_cast = func_pass_2 [random2(5)];
+        if (spell_cast == 100) spell_cast = func_pass_2 [random2(5)];
+        if (spell_cast == 100) spell_cast = func_pass_2 [random2(5)];
   goto casted;
  }
- if (beem[0].tracer_mons == 1 && beem[0].trac_targ == MHITYOU | random2(10) == 0)
- {
-  if (random2(2) == 0 | (menv [i].m_ench_1 == 1)) goto end_switch;
+// if (beem[0].tracer_mons == 1 && beem[0].trac_targ == MHITYOU | random2(10) == 0)
+// if (beem[0].tracer == 1 && beem[0].trac_targ == MHITYOU | random2(10) == 0)
+// {
+//  if (random2(2) == 0 | (menv [i].m_ench_1 == 1)) goto end_switch;
+//  if (random2(2) == 0 | (menv [i].m_ench [0] != 0 && menv [i].m_ench [1] != 0 && menv [i].m_ench [2] != 0)) goto end_switch;
+  if (random2(2) == 0) goto end_switch;
   spell_cast = func_pass_2 [2];
   goto casted;
- }
- if ((beem[0].tracer == 1 && (beem[0].tracer_mons != 1)) | (beem[0].trac_targ != MHITYOU))
+/* If no clear shot at anything, casts self-ench */
+// }
+/* if ((beem[0].tracer == 1 && (beem[0].tracer_mons != 1)) | (beem[0].trac_targ != MHITYOU))
  {
         switch(random2(4))
         {
@@ -1312,10 +1342,10 @@ if (menv [i].m_beh != 3)
     case 2: spell_cast = func_pass_2 [3]; break;
     case 3: spell_cast = func_pass_2 [4]; break;
         }
- }
+ }*/
 } // end if
  else
-        {
+ {
   if (random2(3) == 0) goto end_switch;
         spell_cast = func_pass_2 [5];
  }
@@ -1340,7 +1370,7 @@ if (spell_cast == 27 && you[0].your_level < 50)
                 mpr(info);
                         }
 } else
-if (menv [i].m_class == 101 | menv [i].m_class == 122 | menv [i].m_class == 132 | menv [i].m_class == 146) /* steam, mottled, storm and golden dragons */
+if (menv [i].m_class == 101 | menv [i].m_class == 122 | menv [i].m_class == 132 | menv [i].m_class == 146 | menv [i].m_class == 165) /* steam, mottled, storm and golden dragons, etc */
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1410,7 +1440,7 @@ if (spell_cast == 16)
 }
 
 
- beem[0].damage = 5 * menv [i].m_HD; // really???
+ beem[0].damage = 10 * menv [i].m_HD; // really???
  beem[0].beam_source = i;
                 mons_cast(i, beem, spell_cast);
 
@@ -1423,6 +1453,7 @@ if (spell_cast == 16)
 
 end_switch : if (gmon_use [menv [i].m_class] > 0 && menv [i].m_inv [1] != 501 && menv [i].m_class != 30 && (you[0].invis == 0 | mons_see_invis(menv [i].m_class) != 0)) // 2-h ogre
 {
+if ((menv [i].m_beh == 6 | menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto end_throw;
 
 hand_used = menv [i].m_inv [1];
 if (random2(10) < 8)
@@ -1432,6 +1463,10 @@ if (random2(10) < 8)
   if (beem[0].trac_targ == MHITYOU && beem[0].tracer_mons == 1) goto end_throw;
   if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0) goto end_throw;
   tracer_f(i, beem);
+  if (beem[0].tracer == 0) goto end_throw;
+  if (menv [i].m_beh == 7 && (beem[0].tracer == 1 | beem[0].tracer == 2)) goto end_throw;
+  if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto end_throw;
+
   if (menv [i].m_beh == 7 && beem[0].tracer == 1 && beem[0].tracer_mons != 1) goto end_throw;
 
                 if (beem[0].tracer != 0 | (beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)) // doesn't need to worry about you[0].haste
@@ -1525,7 +1560,8 @@ if (mons_near(i) == 1 && (you[0].invis == 0 | mons_see_invis(menv [i].m_class) !
         menv [i].m_targ_1_y = you[0].y_pos;
 }
 
-if (menv [i].m_hp <= (menv [i].m_hp_max / 4 - 1) && mons_intel(menv [i].m_class) > 1) menv [i].m_beh = 3;
+/* Tame monsters can't become afraid, because fear overwrites tameness */
+if (menv [i].m_hp <= (menv [i].m_hp_max / 4 - 1) && mons_intel(menv [i].m_class) > 1 && menv [i].m_beh != 7) menv [i].m_beh = 3;
 
 
 
@@ -1805,7 +1841,7 @@ for (count_x = 0; count_x < 3; count_x ++)
 /* some monsters opening doors: change the gmon_use == 1 to gmon_use > 0 maybe? */
         if (grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 3 | grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 5)
    {
-      if (menv [i].m_class == 25 | menv [i].m_class == 51 | menv [i].m_class == 107 | menv [i].m_class == 108)
+      if (menv [i].m_class == 25 | menv [i].m_class == 51 | menv [i].m_class == 107 | menv [i].m_class == 108 | menv [i].m_class == 367)
       {
         if (gmon_use [menv [i].m_sec] > 0)
         {
@@ -1843,7 +1879,7 @@ if (good_move [mmov_x + 1] [mmov_y + 1] == 0)
         /* some monsters opening doors */
         if (gmon_use [menv [i].m_class] > 0 && (grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 3 | grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 5))
         {
-   if (menv [i].m_class == 25 | menv [i].m_class == 51 | menv [i].m_class == 107 | menv [i].m_class == 108)
+   if (menv [i].m_class == 25 | menv [i].m_class == 51 | menv [i].m_class == 107 | menv [i].m_class == 108 | menv [i].m_class == 367)
    {
      if (gmon_use [menv [i].m_sec] > 0)
      {

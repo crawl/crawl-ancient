@@ -66,6 +66,10 @@
 
 struct ghost_struct ghost;
 
+extern unsigned char your_sign; /* these two are defined in view.cc */
+extern unsigned char your_colour;
+
+
 void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, char old_level, char want_followers, char just_made_new_lev, char where_were_you2)
 {
 int j = 0;
@@ -288,7 +292,7 @@ for (imn = 0; imn < 20; imn ++)
 
 builder(you[0].your_level, you[0].level_type);
 
-//if (random2(3) == 0 && you[0].your_level > 1)
+if (random2(3) == 0 && you[0].your_level > 1)
 {
 
 strcpy(corr_level, "");
@@ -1874,17 +1878,17 @@ rm [6] = you[0].shock_shield + 40;
 rm [7] = you[0].rotting + 40;
 /*rm [8] = you[0].magic_battery + 40;*/
 rm [9] = you[0].deaths_door + 40;
-/*rm [10] = you[0].spec_fire + 40;
-rm [11] = you[0].spec_cold + 40;
-rm [12] = you[0].spec_poison + 40;*/
+rm [10] = your_sign + 40;
+rm [11] = your_colour + 40;
+/*rm [12] = you[0].spec_poison + 40;*/
 rm [13] = you[0].pet_target + 40;
 /*rm [14] = you[0].prot_life + 40;
 temp_int = you[0].res_magic + 10000;*/
-itoa(temp_int, thing_quant, 10);
+/*itoa(temp_int, thing_quant, 10);
 for (p = 0; p < 5; p ++)
 {
                 rm [p + 15] = thing_quant [p];
-}
+}*/
 rm [20] = you[0].spell_levels + 80;
 rm [21] = you[0].max_level + 40;
 rm [22] = you[0].where_are_you + 40;
@@ -1993,16 +1997,14 @@ temp_int = (int) (you[0].incr_regen * 100) + 10000;
 
 rm [32] = you[0].incr_regen + 40;
 
-        temp_long = you[0].xp + 100000;
+        temp_long = you[0].xp + 1000000;
         itoa(temp_long, thing_quant, 10);
-        for (p = 0; p < 6; p ++)
+        for (p = 0; p < 7; p ++)
         {
                 rm [41 + p] = thing_quant [p];
         }
 
 
-
-rm [47] = you[0].xl + 40;
 
 temp_int = you[0].gp + 10000;
         itoa(temp_int, thing_quant, 10);
@@ -2012,6 +2014,7 @@ temp_int = you[0].gp + 10000;
         }
 
 rm [53] = you[0].clas + 40;
+rm [54] = you[0].xl + 40;
 
 /*temp_int = (int) (you[0].f_abil) + 10000;
         itoa(temp_int, thing_quant, 10);
@@ -2154,17 +2157,17 @@ for (i = 0; i < 5; i ++)
    write(handle, rm, 50);
 }
 
-char identy [4] [30];
+char identy [4] [50];
 save_id(identy);
 
 
 for (i = 0; i < 4; i ++)
 {
-   for (j = 0; j < 30; j ++)
+   for (j = 0; j < 50; j ++)
    {
       rm [j] = identy [i] [j] + 40;
    }
-   write(handle, rm, 30);
+   write(handle, rm, 50);
 }
 
 
@@ -2215,11 +2218,11 @@ for (i = 0; i < 4; i ++)
    }
    write(handle, rm, 10);
 
-   for (j = 0; j < 20; j ++)
+   for (j = 0; j < 30; j ++)
    {
       rm [j] = you[0].branch_stairs [j] + 30;
    }
-   write(handle, rm, 20);
+   write(handle, rm, 30);
 
    for (j = 0; j < 50; j ++)
    {
@@ -2332,9 +2335,9 @@ you[0].shock_shield = rm [6] - 40;
 you[0].rotting = rm [7] - 40;
 /*you[0].magic_battery = rm [8] - 40;*/
 you[0].deaths_door = rm [9] - 40;
-/*you[0].spec_fire = rm [10] - 40;
-you[0].spec_cold = rm [11] - 40;
-you[0].spec_poison = rm [12] - 40;*/
+your_sign = rm [10] - 40;
+your_colour = rm [11] - 40;
+/*you[0].spec_poison = rm [12] - 40;*/
 you[0].pet_target = rm [13] - 40;
 /*you[0].prot_life = rm [14] - 40;
         for (p = 0; p < 5; p ++)
@@ -2426,18 +2429,18 @@ you[0].incr_regen = ((int) ((rm [40] - 48) + (rm [39] - 48) * 10 + (rm [38] - 48
 you[0].incr_regen = rm [32] - 40;
 
 
-for (p = 0; p < 6; p ++)
+for (p = 0; p < 7; p ++)
 {
         thing_quant [p] = rm [41 + p];
 }
 temp_long = atol(thing_quant);
-you[0].xp = temp_long - 100000;
+you[0].xp = temp_long - 1000000;
 
-you[0].xl = rm [47] - 40;
 
         you[0].gp = (rm [52] - 48) + (rm [51] - 48) * 10 + (rm [50] - 48) * 100 + (rm [49] - 48) * 1000;
 
 you[0].clas = rm [53] - 40;
+you[0].xl = rm [54] - 40;
 
 
 /*      you[0].f_abil = (int) ((rm [58] - 48) + (rm [57] - 48) * 10 + (rm [56] - 48) * 100 + (rm [55] - 48) * 1000);
@@ -2538,9 +2541,9 @@ read(handle, rm, 50);
 
 for (i = 0; i < 4; i ++)
 {
-read(handle, rm, 30);
+read(handle, rm, 50);
 
-   for (j = 0; j < 30; j ++)
+   for (j = 0; j < 50; j ++)
    {
  switch(i)
  {
@@ -2602,8 +2605,8 @@ for (j = 0; j < 50; j ++)
       you[0].attribute [j] = rm [j] - 40;
    }
 
-   read(handle, rm, 20);
-   for (j = 0; j < 20; j ++)
+   read(handle, rm, 30);
+   for (j = 0; j < 30; j ++)
    {
       you[0].branch_stairs [j] = rm [j] - 30;
    }

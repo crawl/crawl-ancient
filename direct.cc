@@ -352,6 +352,7 @@ if (env[0].cgrid [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] != CNG)
   case 7: strcpy(info, "There is a cloud of purple smoke here."); break;
   case 8: strcpy(info, "There is a cloud of steam here."); break;
   case 9: strcpy(info, "There is an evil black miasma here."); break;
+  case 10: strcpy(info, "There is a cloud of black smoke here."); break;
  }
 mpr(info);
 } // end of look_clouds:
@@ -368,100 +369,108 @@ if (igrd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9] != 501)
 
 switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
 {
-  case 2: strcpy(info, "A stone wall."); break;
+  case 2: mpr("A stone wall."); break;
   case 1:
   case 5: // secret door
   if (you[0].level_type == 3)
   {
-   strcpy(info, "A wall of the weird stuff which makes up Pandemonium.");
-  } else strcpy(info, "A rock wall.");
+   mpr("A wall of the weird stuff which makes up Pandemonium.");
+  } else mpr("A rock wall.");
   break;
-  case 3: strcpy(info, "A closed door.");
+  case 3: mpr("A closed door.");
   break;
-  case 4: strcpy(info, "A metal wall.");
+  case 4: mpr("A metal wall.");
   break;
-  case 6: strcpy(info, "A wall of green crystal.");
+  case 6: mpr("A wall of green crystal.");
   break;
-  case 7: strcpy(info, "An orcish idol.");
+  case 7: mpr("An orcish idol.");
   break;
-  case 8: strcpy(info, "A wall of solid wax.");
+  case 8: mpr("A wall of solid wax.");
   break;
-  case 61: strcpy(info, "Some lava.");
+  case 61: mpr("Some lava.");
   break;
-  case 62: strcpy(info, "Some water.");
+  case 62: mpr("Some water.");
   break;
   case 78: // undiscovered trap
-  case 67: strcpy(info, "Floor.");
+  case 67: mpr("Floor.");
   break;
-  case 70: strcpy(info, "An open door.");
+  case 70: mpr("An open door.");
   break;
 
   case 85:
-  strcpy(info, "A ladder leading down.");
+  mpr("A ladder leading down.");
   break;
   case 82:
   case 83:
   case 84:
-  strcpy(info, "A staircase leading down.");
+  mpr("A staircase leading down.");
   break;
   case 89:
-  strcpy(info, "A ladder leading upwards.");
+  mpr("A ladder leading upwards.");
   break;
   case 86:
   case 87:
   case 88:
-  strcpy(info, "A staircase leading up.");
+  mpr("A staircase leading up.");
   break;
-  case 69: strcpy(info, "A gateway to hell.");
+  case 69: mpr("A gateway to hell.");
   break;
-  case 71: strcpy(info, "A staircase to a branch level.");
+  case 71: mpr("A staircase to a branch level.");
   break;
-  case 75: strcpy(info, "A trap.");
+  case 75: mpr("A trap.");
   break;
-  case 76: strcpy(info, "A magical trap.");
+  case 76: mpr("A magical trap.");
   break;
-  case 77: strcpy(info, "A trap.");
+  case 77: mpr("A trap.");
   break;
-  case 80: strcpy(info, "A shop.");
+  case 80: mpr("A shop.");
   break;
-  case 81: strcpy(info, "A labyrinth entrance.");
+  case 81: mpr("A labyrinth entrance.");
   break;
-  case 92: strcpy(info, "A gateway to the Iron City of Dis.");
+  case 92: mpr("A gateway to the Iron City of Dis.");
   break;
-  case 93: strcpy(info, "A gateway to Gehenna.");
+  case 93: mpr("A gateway to Gehenna.");
   break;
-  case 94: strcpy(info, "A gateway to the freezing wastes of Cocytus.");
+  case 94: mpr("A gateway to the freezing wastes of Cocytus.");
   break;
-  case 95: strcpy(info, "A gateway to the decaying netherworld of Tartarus.");
+  case 95: mpr("A gateway to the decaying netherworld of Tartarus.");
   break;
-  case 96: strcpy(info, "A gateway to the infinite Abyss.");
+  case 96: mpr("A gateway to the infinite Abyss.");
   break;
-  case 97: strcpy(info, "A gateway leading out of the Abyss.");
+  case 97: mpr("A gateway leading out of the Abyss.");
   break;
-  case 98: strcpy(info, "An empty arch of ancient stone.");
+  case 98: mpr("An empty arch of ancient stone.");
   break;
-  case 99: strcpy(info, "A gate leading to the halls of Pandemonium.");
+  case 99: mpr("A gate leading to the halls of Pandemonium.");
   break;
-  case 100: strcpy(info, "A gate leading out of Pandemonium.");
+  case 100: mpr("A gate leading out of Pandemonium.");
   break;
-  case 101: strcpy(info, "A gate leading to another region of Pandemonium.");
+  case 101: mpr("A gate leading to another region of Pandemonium.");
   break;
 
-  case 110: strcpy(info, "A staircase to the Orcish Mines.");
+  case 110: mpr("A staircase to the Orcish Mines.");
   break;
-  case 111: strcpy(info, "A staircase to the Hive.");
+  case 111: mpr("A staircase to the Hive.");
   break;
-  case 112: strcpy(info, "A staircase to the Lair.");
+  case 112: mpr("A staircase to the Lair.");
   break;
-  case 113: strcpy(info, "A staircase to the Slime Pits.");
+  case 113: mpr("A staircase to the Slime Pits.");
   break;
-  case 114: strcpy(info, "A staircase to the Vaults.");
+  case 114: mpr("A staircase to the Vaults.");
   break;
-  case 115: strcpy(info, "A staircase to the Crypt.");
+  case 115: mpr("A staircase to the Crypt.");
   break;
-  case 116: strcpy(info, "A staircase to the Hall of Blades.");
+  case 116: mpr("A staircase to the Hall of Blades.");
   break;
-  case 117: strcpy(info, "A staircase to the Hall of Zot.");
+  case 117: mpr("A staircase to the Hall of Zot.");
+  break;
+  case 118: mpr("A staircase to the Ecumenical Temple.");
+  break;
+  case 119: mpr("A staircase to the Snake Pit.");
+  break;
+  case 120: mpr("A staircase to the Elven Halls.");
+  break;
+  case 121: mpr("A staircase to the Tomb.");
   break;
 
   case 130:
@@ -469,23 +478,62 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
   case 132:
   case 134:
   case 137:
-  strcpy(info, "A staircase back to the Dungeon.");
+  case 138:
+  mpr("A staircase back to the Dungeon.");
   break;
-
   case 133:
-  strcpy(info, "A staircase back to the Lair.");
+  mpr("A staircase back to the Lair.");
   break;
-
   case 135:
-  strcpy(info, "A staircase back to the Vaults.");
+  mpr("A staircase back to the Vaults.");
+  break;
+  case 136:
+  mpr("A staircase back to the Crpyt.");
+  break;
+  case 139:
+  mpr("A staircase back to the Lair.");
+  break;
+  case 140:
+  mpr("A staircase back to the Mines.");
+  break;
+  case 141:
+  mpr("A staircase back to the Crypt.");
   break;
 
-  case 136:
-  strcpy(info, "A staircase back to the Crpyt.");
+  case 180:
+  mpr("A glowing white marble altar of Zin.");
+  break;
+  case 181:
+  mpr("A glowing golden altar of the Shining One.");
+  break;
+  case 182:
+  mpr("An ancient bone altar of Kikubaaqudgha.");
+  break;
+//  case 183:
+  case 184:
+  mpr("A shimmering altar of Xom.");
+  break;
+// case 185
+  case 186:
+  mpr("An iron altar of Okawaru.");
+  break;
+  case 187:
+  mpr("A burning altar of Makhleb.");
+  break;
+  case 188:
+  mpr("A deep blue altar of Sif Muna.");
+  break;
+  case 189:
+  mpr("A bloodstained altar of Trog.");
+  break;
+  case 190:
+  mpr("A sparkling altar of Nemelex Xobeh.");
+  break;
+  case 191:
+  mpr("A silver altar of Elyvilon.");
   break;
 
 }
-mpr(info);
 
 glogokh:        // test relay_message();
 

@@ -74,6 +74,7 @@ int n, o;
 char clouty = 0;
 
 char crumble = 0;
+char bounce = 0;
 
 int hurted = 0;
 
@@ -219,11 +220,17 @@ if (beam[0].colour == 6 && beam[0].beam_name [0] == '0')
                         return;
                 }
 
+                n++; // reduces beam's range by 1
+                bounce += 2;
+                if (random2(bounce) >= 1)
+                {
+                 beam[0].aim_down = 0;
+                 return;
+                }
                 strcpy(info, "The ");
                 strcat(info, beam[0].beam_name);
                 strcat(info, " bounces.");
                 mpr(info);
-                n++; // reduces beam's range by 1
                 if (beam[0].move_x == 0 ^ beam[0].move_y == 0) //   ^ XOR
                 {
                         beam_sign_x *= -1;
@@ -262,6 +269,8 @@ if (beam[0].colour == 6 && beam[0].beam_name [0] == '0')
                         delay(15);
                 }
         }
+
+if (bounce > 0) bounce --;
 
 if (env[0].cgrid [beam[0].bx] [beam[0].by] != CNG) // hit a cloud
 {
@@ -505,7 +514,7 @@ if (beam[0].beam_name [0] == '0') goto enchanting;
                         beam[0].aim_down = 0;
                         return;
                 }
-                if (beam[0].flavour != 5) n += random2(4) + 1; /* If it isn't lightning, reduce range by a lot */
+                if (beam[0].flavour != 5) n += random2(5) + 3; /* If it isn't lightning, reduce range by a lot */
 
         }
 
@@ -562,7 +571,7 @@ if (beam[0].beam_name [0] == '0') goto enchanting;
 
                 if (beam[0].colour ==  7) //: // teleportation
                 {
-                        if (check_mons_magres(o, beam[0].ench_power) == 0) goto it_resists;
+                        if (check_mons_magres(o, beam[0].ench_power) == 0 && (beam[0].move_x != 0 | beam[0].move_y)) goto it_resists;
                         if (mons_near(o) == 1 && menv [o].m_ench [2] != 6)
                         {
                                 strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
@@ -638,14 +647,42 @@ if (beam[0].colour == 14)
       }
 
 
-if (beam[0].colour == 13)
+if (beam[0].colour == 13) /* pain/agony */
 {
  if (mons_holiness(menv [o].m_class) > 0) goto it_resists;
  strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
  strcat(info, " convulses in agony!");
  mpr(info);
- menv[o].m_hp -= random2(beam[0].hit);
- strcpy(beam[0].beam_name, "pain");
+ if (strstr(beam[0].beam_name, "agony") != NULL)
+ {
+  menv[o].m_hp = menv[o].m_hp / 2;
+  if (menv [o].m_hp <= 1) menv [o].m_hp = 1;
+  strcpy(beam[0].beam_name, "agony");
+ } else
+ {
+  menv[o].m_hp -= random2(beam[0].hit);
+  strcpy(beam[0].beam_name, "pain");
+ }
+ char killer = 0;
+                switch(beam[0].thing_thrown)
+                {
+                        case 1: killer = 3; break; // your beam
+                        case 3: killer = 3; break; //  "    "
+                        case 2: killer = 4; break; // dragon breath &c
+                }
+ if (menv [o].m_hp <= 0) monster_die(o, killer, beam[0].beam_source);
+ else print_wounds(o);
+ beam[0].aim_down = 0;
+ return;
+}
+
+if (beam[0].colour == 15) /* disrupt/disintegrate */
+{
+ strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
+ strcat(info, " is blasted.");
+ mpr(info);
+ menv[o].m_hp -= random2(beam[0].hit + 1);
+ strcpy(beam[0].beam_name, "spell");
  char killer = 0;
                 switch(beam[0].thing_thrown)
                 {
@@ -660,6 +697,17 @@ if (beam[0].colour == 13)
 }
 
 int func_pass [10];
+
+ if (beam[0].colour == 12 && mons_holiness(menv [o].m_class) == 1)
+ {
+  menv [o].m_beh = 7;
+  return;
+ }
+ if (beam[0].colour == 12)
+ {
+  goto unaffected;
+ }
+
  mons_ench_f2(o, mons_near(o), func_pass, beam);
 
                 beam[0].wand_id = func_pass [1];
@@ -707,6 +755,16 @@ beam[0].aim_down = 0;
 
 
 
+/* tracer = 0 = run out of range or hits a wall
+   tracer = 1 = hits you in range
+   tracer = 2 = hits friendly monster
+   tracer = 3 = hits hostile monster
+
+   tracer_mons = 1 = hits monster specified in trac_targ
+
+   tracer_hit_mons now holds value of mons_see_invis of attacking monster.
+   If it's 0, won't register invis monsters or you
+*/
 
 /*
 throw_2 is the item, either in your invent or in env[0] for a monster
@@ -829,17 +887,30 @@ if (grd [beam[0].bx + beam[0].move_x] [beam[0].by + beam[0].move_y] > 10)
   }
 
   if (strcmp(beam[0].beam_name, "orb of energy") == 0)
-                {
+  {
         place_cloud(7, beam[0].bx, beam[0].by, random2(5) + 1);
-                }
+  }
 
   if (strcmp(beam[0].beam_name, "ball of steam") == 0)
-                {
+  {
         place_cloud(8, beam[0].bx, beam[0].by, random2(5) + 1);
-                }
+  }
+
+  if (strcmp(beam[0].beam_name, "sticky flame") == 0)
+  {
+        place_cloud(10, beam[0].bx, beam[0].by, random2(4) + 1);
+  }
+
+  if (strcmp(beam[0].beam_name, "poison gas") == 0)
+  {
+   if (beam[0].thing_thrown != 2) place_cloud(4, beam[0].bx, beam[0].by, random2(4) + 2);
+    else place_cloud(104, beam[0].bx, beam[0].by, random2(4) + 2);
+  }
+
 
 /*if (beam[0].bx > you[0].x_pos - 9 && beam[0].bx < you[0].x_pos + 9 && beam[0].by > you[0].y_pos - 9 && beam[0].by < you[0].y_pos + 9 && show [beam[0].bx - you[0].x_pos + 9] [beam[0].by - you[0].y_pos + 9] != 0)*/
-if (beam[0].bx > you[0].x_pos - 9 && beam[0].bx < you[0].x_pos + 9 && beam[0].by > you[0].y_pos - 9 && beam[0].by < you[0].y_pos + 9)
+if (beam[0].colour != 200) /* tracer doesn't update the screen */
+ if (beam[0].bx > you[0].x_pos - 9 && beam[0].bx < you[0].x_pos + 9 && beam[0].by > you[0].y_pos - 9 && beam[0].by < you[0].y_pos + 9)
         {
 #ifdef DOS
                 viewwindow(1);
@@ -853,6 +924,15 @@ if (beam[0].bx > you[0].x_pos - 9 && beam[0].bx < you[0].x_pos + 9 && beam[0].by
 if (beam[0].bx == you[0].x_pos && beam[0].by == you[0].y_pos)
 {
  /* I find it more logical that there can be virtually unavoidable missiles than missiles that can almost always be avoided. */
+
+if (beam[0].colour == 200) /* tracer */
+{
+ if (beam[0].trac_hit_mons == 1 | you[0].invis == 0)
+ {
+  beam[0].tracer = 1;
+  return;
+ }
+}
 
 if (you[0].equip [5] != -1)
    if (beam[0].move_x != 0 | beam[0].move_y != 0) exercise(17, random() % 2);
@@ -888,9 +968,8 @@ if ((you[0].equip [6] == -1 | you[0].inv_type [you[0].equip [6]] < 2 | (you[0].i
         strcpy(info, "The ");
         strcat(info, beam[0].beam_name);
         strcat(info, " hits you");
-        if (beam[0].thing_thrown == 3 | beam[0].thing_thrown == 4)
+/*      if (beam[0].thing_thrown == 3 | beam[0].thing_thrown == 4)
         {
-/*      if (beam[0].bx > you[0].x_pos - 7 && beam[0].bx < you[0].x_pos + 7 && beam[0].by > you[0].y_pos - 7 && beam[0].by < you[0].y_pos + 7 && show [beam[0].bx - you[0].x_pos + 7] [beam[0].by - you[0].y_pos + 7] != 0)*/
         if (beam[0].bx > you[0].x_pos - 7 && beam[0].bx < you[0].x_pos + 7 && beam[0].by > you[0].y_pos - 7 && beam[0].by < you[0].y_pos + 7)
         {
                 viewwindow(1);
@@ -898,7 +977,7 @@ if ((you[0].equip [6] == -1 | you[0].inv_type [you[0].equip [6]] < 2 | (you[0].i
                 gotoxy(beam[0].bx - you[0].x_pos + 18, beam[0].by - you[0].y_pos + 9);
                 putch(35);
         }
-        }
+        }*/
 
 hurted = 0;
         if (beam[0].damage > 100)
@@ -970,7 +1049,19 @@ count_x = 0;
 
   /* this won't display a "you miss it" if you throw an beam[0].aim_down thing at a lava worm, only if you hit. */
   int o = mgrd [beam[0].bx] [beam[0].by];
-  if (beam[0].hit >= random2(menv[o].m_ev) && ((menv [o].m_class < MLAVA0 | menv [o].m_sec == 0) | (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1))) // | random2(6) == 0)
+
+if (beam[0].colour == 200 && (menv [o].m_class < MLAVA0 | menv [o].m_sec == 0)) /* tracer */
+{
+ if (beam[0].trac_hit_mons == 1 | menv [o].m_ench [2] != 6)
+ {
+  if (o == beam[0].trac_targ) beam[0].tracer_mons = 1;
+  if (menv [0].m_beh == 7) beam[0].tracer = 2; else beam[0].tracer = 3;
+  return;
+ }
+}
+
+
+  if (beam[0].hit >= random2(menv[o].m_ev) && ((menv [o].m_class < MLAVA0 | menv [o].m_sec == 0) | (beam[0].bx == beam[0].target_x && beam[0].by == beam[0].target_y && beam[0].aim_down == 1)))
                 {
   hurted = 0;
 
@@ -1006,9 +1097,8 @@ count_x = 0;
                 if (menv [o].m_beh == 0) menv [o].m_beh = 1;
 
 
-                if (beam[0].thing_thrown == 3 | beam[0].thing_thrown == 4)
+/*              if (beam[0].thing_thrown == 3 | beam[0].thing_thrown == 4)
                 {
-/*              if (beam[0].bx > you[0].x_pos - 7 && beam[0].bx < you[0].x_pos + 7 && beam[0].by > you[0].y_pos - 7 && beam[0].by < you[0].y_pos + 7 && show [beam[0].bx - you[0].x_pos + 7] [beam[0].by - you[0].y_pos + 7] != 0)*/
                 if (beam[0].bx > you[0].x_pos - 7 && beam[0].bx < you[0].x_pos + 7 && beam[0].by > you[0].y_pos - 7 && beam[0].by < you[0].y_pos + 7)
                 {
                         viewwindow(1);
@@ -1016,7 +1106,7 @@ count_x = 0;
                         gotoxy(beam[0].bx - you[0].x_pos + 18, beam[0].by - you[0].y_pos + 9);
                         putch(35);
                 }
-                }
+                }*/
                 if (menv [o].m_hp <= 0)
                 {
                         switch(beam[0].thing_thrown)
@@ -1927,14 +2017,23 @@ void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char c
 
 
 
+/* tracer = 0 = run out of range or hits a wall
+   tracer = 1 = hits you in range
+   tracer = 2 = hits friendly monster
+   tracer = 3 = hits hostile monster
 
+   tracer_mons = 1 = hits monster specified in trac_targ
+
+   tracer_hit_mons now holds value of mons_see_invis of attacking monster.
+   If it's 0, won't register invis monsters or you
+*/
 void tracer_f(int i, struct bolt beem [1])
 {
 
-                beem[0].trac_hit_mons = 0;
+                beem[0].trac_hit_mons = mons_see_invis(menv [i].m_class);
                 beem[0].tracer = 0;
                 beem[0].tracer_mons = 0;
-//              brek = 0;
+                beem[0].trac_targ = menv [i].m_hit;
                 beem[0].colour = 200;
                 beem[0].beam_name [0] = 48;
                 beem[0].type = 0;
@@ -1945,6 +2044,6 @@ void tracer_f(int i, struct bolt beem [1])
                 beem[0].source_y = menv [i].m_y;
                 beem[0].aim_down = 0;
                 beem[0].beam_source = i;
-                beam(beem);
+                missile(beem, 0);
 
 }

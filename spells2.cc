@@ -11,6 +11,7 @@
 #include "beam.h"
 #include "direct.h"
 #include "monplace.h"
+#include "player.h"
 #include "stuff.h"
 #include "view.h"
 #include "misc.h"
@@ -87,7 +88,7 @@ for (i = you[0].x_pos - map_radius; i < you[0].x_pos + map_radius; i ++)
   if (i < 5 | j < 5 | i > 75 | j > 65) continue;
   if (mgrd [i] [j] != MNG)
   {
-  env[0].map [i] [j] = mons_char(menv [mgrd [i] [j]].m_class);
+   env[0].map [i - 1] [j - 1] = mons_char(menv [mgrd [i] [j]].m_class);
   }
  }
 }
@@ -521,11 +522,13 @@ void restore_dex(void)
  you[0].dex_ch = 1;
 }
 
-void turn_undead(int pow) // what should I use for pow?
+void turn_undead(int pow)
 {
 
 int tu = 0, p;
 char brek;
+
+mpr("You attempt to repel the undead.");
 
 for (tu = 0; tu < MNST; tu ++)
 {
@@ -533,13 +536,14 @@ for (tu = 0; tu < MNST; tu ++)
 
  if (mons_holiness(menv [tu].m_class) > 0)
  {
-  menv [tu].m_hp -= random2(5) + random2(pow) / 20;
+/*  menv [tu].m_hp -= random2(5) + random2(pow) / 20;
   if (menv [tu].m_hp <= 0)
   {
    monster_die(tu, 1, 0);
    continue;
-  }
+  }*/
 
+ if (random2(pow) + you[0].xl < menv [tu].m_HD * 9) break;
 
 
                         if (menv [tu].m_ench_1 == 1)
@@ -559,6 +563,9 @@ for (tu = 0; tu < MNST; tu ++)
                                 {
                                         menv [tu].m_ench [p] = 4;
                                         menv [tu].m_ench_1 = 1;
+                                        strcpy(info, monam (menv [tu].m_sec, menv [tu].m_class, menv [tu].m_ench [2], 0));
+                                        strcat(info, " is repelled.");
+                                        mpr(info);
                                         break;
                                 }
    }
@@ -585,7 +592,13 @@ for (tu = 0; tu < MNST; tu ++)
 
  if (mons_holiness(menv [tu].m_class) > 0)
  {
-  menv [tu].m_hp -= random2(15) + random2(15) + random2(pow) / 10;
+  menv [tu].m_hp -= random2(15) + random2(15) + random2(pow) / 3;
+  if (menv [tu].m_ench [2] == 6 && player_see_invis() == 0)
+  {
+   strcpy(info, monam (menv [tu].m_sec, menv [tu].m_class, menv [tu].m_ench [2], 0));
+   strcat(info, " convulses!");
+   mpr(info);
+  }
   if (menv [tu].m_hp <= 0)
   {
    monster_die(tu, 1, 0);
@@ -954,7 +967,7 @@ if (restricted_type != 0 && type_summoned != restricted_type)
  mpr(info);
  return 0;
 }
-if (random2(100) <= unfriendly | (type_summoned == 124 && random2(10) >= you[0].skills [33]) | (type_summoned == MWATER4 && random2(10) >= you[0].skills [34]) | (type_summoned == 125 && random2(10) >= you[0].skills [35]) | (type_summoned == 123 && random2(10) >= you[0].skills [36]))
+if (random2(100) <= unfriendly | (type_summoned == 124 && random2(10) >= you[0].skills [5]) | (type_summoned == MWATER4 && random2(5) >= you[0].skills [34]) | (type_summoned == 125 && random2(5) >= you[0].skills [35]) | (type_summoned == 123 && random2(5) >= you[0].skills [36]))
 {
  strcpy(info, "The elemental doesn't seem to appreciate being summoned.");
  mpr(info);
@@ -1031,7 +1044,12 @@ switch(ibc)
  break;
 
  case 26:
- strcpy(info, "You open a gate to the realm of the Gods!");
+ strcpy(info, "You open a gate to the realm of Zin!");
+ mpr(info);
+ break;
+
+ case 366:
+ strcpy(info, "You are momentarily dazzled by a brilliant golden light.");
  mpr(info);
  break;
 

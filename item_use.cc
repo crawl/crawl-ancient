@@ -48,6 +48,7 @@
 #include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
+#include "transform.h"
 #include "view.h"
 
 void throw_it(struct bolt beam [1], int throw_2);
@@ -74,6 +75,15 @@ if (you[0].berserker != 0)
  strcpy(info, "You are too berserk!");
  mpr(info);
  return;
+}
+
+if (you[0].attribute [5] != 0)
+{
+ if (can_equip(0) == 0)
+ {
+  mpr("You can't wield anything in your present form.");
+  return;
+ }
 }
 
 if ((you[0].equip [0] != -1) && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_plus [you[0].equip [0]] > 80)
@@ -507,6 +517,7 @@ void wear_armour(void)
 unsigned char nthing;
 char armr = you[0].equip [6];
 /*char ev_change = 0;*/
+char wh_equip = 0;
 
 if (you[0].inv_no == 0)
         {
@@ -622,7 +633,7 @@ if (armour_wear_2 == you[0].equip [0])
         return;
 }
 
-if (you[0].inv_class [armour_wear_2] == 2 && (you[0].inv_type [armour_wear_2] < 8 | you[0].inv_type [armour_wear_2] > 14) && you[0].equip [1] != -1)
+if ((you[0].inv_type [armour_wear_2] < 8 | you[0].inv_type [armour_wear_2] > 14) && you[0].equip [1] != -1)
 {
         strcpy(info, "You can't wear that over your cloak.");
         mpr(info);
@@ -630,7 +641,7 @@ if (you[0].inv_class [armour_wear_2] == 2 && (you[0].inv_type [armour_wear_2] < 
 }
 
 
-if (you[0].inv_class [armour_wear_2] == 2 && (you[0].inv_type [armour_wear_2] < 8 | you[0].inv_type [armour_wear_2] > 14) && you[0].equip [6] != -1)
+if ((you[0].inv_type [armour_wear_2] < 8 | you[0].inv_type [armour_wear_2] > 14) && you[0].equip [6] != -1)
 {
         strcpy(info, "You are already wearing some body armour.");
         mpr(info);
@@ -638,7 +649,7 @@ if (you[0].inv_class [armour_wear_2] == 2 && (you[0].inv_type [armour_wear_2] < 
 }
 
 
-if (you[0].inv_class [armour_wear_2] == 2 && (you[0].inv_type [armour_wear_2] == 8 | you[0].inv_type [armour_wear_2] == 14 | you[0].inv_type [armour_wear_2] == 13) && you[0].equip [5] != -1)
+if ((you[0].inv_type [armour_wear_2] == 8 | you[0].inv_type [armour_wear_2] == 14 | you[0].inv_type [armour_wear_2] == 13) && you[0].equip [5] != -1)
 {
         strcpy(info, "You are already holding a shield.");
         mpr(info);
@@ -652,36 +663,59 @@ if (you[0].equip [0] != -1 && (you[0].inv_type [armour_wear_2] == 8 | you[0].inv
    return;
 }
 
-if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 10 && you[0].equip [2] != -1)
+if (you[0].inv_type [armour_wear_2] == 10 && you[0].equip [2] != -1)
 {
         strcpy(info, "You are already wearing a helmet.");
         mpr(info);
         return;
 }
 
-if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 9 && you[0].equip [1] != -1)
+if (you[0].inv_type [armour_wear_2] == 9 && you[0].equip [1] != -1)
 {
         strcpy(info, "You are already wearing a cloak.");
         mpr(info);
         return;
 }
 
-if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 11 && you[0].equip [3] != -1)
+if (you[0].inv_type [armour_wear_2] == 11 && you[0].equip [3] != -1)
 {
         strcpy(info, "You are already wearing some gloves.");
         mpr(info);
         return;
 }
 
-if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 12 && you[0].species == 13) // Naga
+/*if (you[0].inv_type [armour_wear_2] == 12 && you[0].species == 13 && you[0].attribute [5] == 0) / * Naga * /
 {
-        strcpy(info, "You don't have feet!"); // Naga
+        strcpy(info, "You don't have feet!"); / * Naga * /
         mpr(info);
         return;
-}
+}*/
 
 
-if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 12 && you[0].equip [4] != -1)
+
+//if (you[0].attribute [5] != 0)
+//{
+ wh_equip = 6;
+ switch(you[0].inv_type [armour_wear_2])
+ {
+  case 13:
+  case 14:
+  case 8: wh_equip = 5; break;
+  case 9: wh_equip = 1; break;
+  case 10: wh_equip = 2; break;
+  case 11: wh_equip = 3; break;
+  case 12: wh_equip = 4; break;
+ }
+
+ if (can_equip(wh_equip) == 0)
+ {
+  mpr("You can't wear that in your present form.");
+  return;
+ }
+//}
+
+
+if (you[0].inv_type [armour_wear_2] == 12 && you[0].equip [4] != -1)
 {
         strcpy(info, "You are already wearing some boots.");
         mpr(info);
@@ -690,21 +724,18 @@ if (you[0].inv_class [armour_wear_2] == 2 && you[0].inv_type [armour_wear_2] == 
 
 if (you[0].inv_type [armour_wear_2] == 17 && (you[0].skills [13] < 10 | you[0].species == 11 | you[0].species == 9 | you[0].species == 14 | (you[0].species >= 2 && you[0].species <= 6))) // no halflings or elves
 {
- if (you[0].species == 13 | you[0].species == 11 | you[0].species == 14 | you[0].species == 9 | (you[0].species >= 2 && you[0].species <= 6))
+/* if (you[0].species == 13 | you[0].species == 11 | you[0].species == 14 | you[0].species == 9 | (you[0].species >= 2 && you[0].species <= 6))
  {
   strcpy(info, "I'm afraid you have the wrong body type. Try something lighter.");
   mpr(info);
- } else
+  return;
+ } else*/
  {
-  strcpy(info, "That armour is too cumbersome for you to wear.");
-  mpr(info);
-  strcpy(info, "Maybe you should try again when your armour skill is up to level 10.");
-  mpr(info);
+  mpr("This armour is very cumbersome.");
  }
- return;
 }
 
-if (you[0].species == 15 | you[0].species == 16 | you[0].species == 17)
+if (you[0].species >= 15 && you[0].species <= 29)
 {
  if (you[0].inv_type [armour_wear_2] >= 1 && you[0].inv_type [armour_wear_2] <= 7 | you[0].inv_type [armour_wear_2] >= 10 && you[0].inv_type [armour_wear_2] <= 13 | you[0].inv_type [armour_wear_2] == 17)
  {
@@ -716,62 +747,43 @@ if (you[0].species == 15 | you[0].species == 16 | you[0].species == 17)
 
 if (you[0].inv_type [armour_wear_2] == 7 && (you[0].skills [13] < 5 | you[0].species == 9 | you[0].species == 14 | (you[0].species >= 2 && you[0].species <= 6) | you[0].species == 11))
 {
- strcpy(info, "That armour is too cumbersome for you to wear.");
- mpr(info);
- if (you[0].species == 13 | you[0].species == 9 | you[0].species == 14 | (you[0].species >= 2 && you[0].species <= 6) | you[0].species == 11)
+/* if (you[0].species == 13 | you[0].species == 9 | you[0].species == 14 | (you[0].species >= 2 && you[0].species <= 6) | you[0].species == 11)
  {
-  strcpy(info, "I'm afraid you have the wrong body type. Try something lighter.");
- } else strcpy(info, "Maybe you should try again when your armour skill is up to level 5.");
-
-  mpr(info);
-
- return;
+  mpr("I'm afraid you have the wrong body type. Try something lighter.");
+  return;
+ } else*/ mpr("This armour is uncomfortably cumbersome.");
 }
 
 if (you[0].inv_type [armour_wear_2] == 6 | you[0].inv_type [armour_wear_2] == 5 && (you[0].skills [13] < 3 | you[0].species == 14 | you[0].species == 9))
 {
- strcpy(info, "That armour is too cumbersome for you to wear.");
- mpr(info);
- if (you[0].species == 14 | you[0].species == 9)
+/* if (you[0].species == 14 | you[0].species == 9)
  {
-  strcpy(info, "I'm afraid you have the wrong body type. Try something lighter.");
- } else strcpy(info, "Maybe you should try again when your armour skill is up to level 3.");
- mpr(info);
- return;
+  mpr("I'm afraid you have the wrong body type. Try something lighter.");
+  return;
+ } else*/ mpr("You find this armour uncomfortably cumbersome.");
 }
 
 //if (you[0].inv_type [armour_wear_2] == 17 && you[0].skills [13] < 7)
 // crystal plate:
 if (you[0].inv_type [armour_wear_2] == 17 && (you[0].skills [13] < 8 | you[0].species == 14 | you[0].species == 9 | (you[0].species >= 2 && you[0].species <= 6)))
 {
- strcpy(info, "That armour is too cumbersome for you to wear.");
- mpr(info);
- if (you[0].species == 14 | you[0].species == 9 | (you[0].species >= 2 && you[0].species <= 6))
+/* if (you[0].species == 14 | you[0].species == 9 | (you[0].species >= 2 && you[0].species <= 6))
  {
-  strcpy(info, "I'm afraid you have the wrong body type. Try something lighter.");
- } else strcpy(info, "Maybe you should try again when your armour skill is up to level 8.");
- mpr(info);
- return;
+  mpr("I'm afraid you have the wrong body type. Try something lighter.");
+  return;
+ } else */ mpr("This armour is quite cumbersome.");
 }
 
 // storm dragon scale mail/hide
 if ((you[0].inv_type [armour_wear_2] == 26 | you[0].inv_type [armour_wear_2] == 27) && (you[0].skills [13] < 5))
 {
- strcpy(info, "That armour is too cumbersome for you to wear.");
- mpr(info);
- strcpy(info, "Maybe you should try again when your armour skill is up to level 5.");
- mpr(info);
- return;
+ mpr("This armour is quite cumbersome.");
 }
 
 // golden dragon scale mail/hide
 if ((you[0].inv_type [armour_wear_2] == 28 | you[0].inv_type [armour_wear_2] == 29) && (you[0].skills [13] < 7))
 {
- strcpy(info, "That armour is too cumbersome for you to wear.");
- mpr(info);
- strcpy(info, "Maybe you should try again when your armour skill is up to level 7.");
- mpr(info);
- return;
+ mpr("This armour is quite cumbersome.");
 }
 
 
@@ -983,16 +995,11 @@ switch(you[0].inv_dam [armour_wear_2] % 30)
   break;
 
   case 6:
- if (you[0].invis > 0) you[0].invis = 0;
-           else if (you[0].invis == 0)
-           {
-                strcpy(info, "You fade into invisibility.");
-                mpr(info);
-/*              you[0].inv_ident [ring_wear_2] = 3;*/
-           }
-        you[0].invis --;
-        you[0].hunger_inc += 7;
- break;
+  if (you[0].invis == 0)
+  {
+   mpr("You become transparent for a moment.");
+  }
+  break;
 
  case 7:
  strcpy(info, "You feel stronger.");
@@ -1026,7 +1033,8 @@ switch(you[0].inv_dam [armour_wear_2] % 30)
  break;
 
         case 11: // levitation
-        if (you[0].lev > 0) you[0].lev = 0;
+        mpr("You feel light on your feet.");
+/*      if (you[0].lev > 0) you[0].lev = 0;
            else if (you[0].lev == 0)
            {
                 strcpy(info, "You feel very buoyant!");
@@ -1035,7 +1043,7 @@ switch(you[0].inv_dam [armour_wear_2] % 30)
                 mpr(info);
            }
         you[0].lev --;
-        burden_change();
+        burden_change();*/
         break;
 
  case 12:
@@ -1879,16 +1887,15 @@ switch(you[0].inv_type [ring_wear_2])
         break;
 
         case 8: // invisibility
-        if (you[0].invis > 0) you[0].invis = 0;
-           else if (you[0].invis == 0)
+//      if (you[0].invis > 0) you[0].invis = 0;
+           if (you[0].invis == 0)
            {
-                strcpy(info, "You flicker for a moment, then turn invisible!");
-                mpr(info);
-   set_id(you[0].inv_class [ring_wear_2], you[0].inv_type [ring_wear_2], 1);
-  you[0].inv_ident [ring_wear_2] = 3;
+                mpr("You become transparent for a moment.");
            }
-        you[0].invis --;
-        you[0].hunger_inc += 4;
+                set_id(you[0].inv_class [ring_wear_2], you[0].inv_type [ring_wear_2], 1);
+                you[0].inv_ident [ring_wear_2] = 3;
+//      you[0].invis --;
+//      you[0].hunger_inc += 4;
         break;
 
         case 9: // you[0].hunger
@@ -1962,7 +1969,7 @@ switch(you[0].inv_type [ring_wear_2])
  break;
 
         case 18: // levitation
-        if (you[0].lev > 0) you[0].lev = 0;
+/*      if (you[0].lev > 0) you[0].lev = 0;
            else if (you[0].lev == 0)
            {
                 strcpy(info, "You feel very buoyant!");
@@ -1974,7 +1981,8 @@ switch(you[0].inv_type [ring_wear_2])
            }
         you[0].lev --;
         you[0].hunger_inc += 1;
-        burden_change();
+        burden_change();*/
+        mpr("You feel buoyant.");
         break;
 
  case 19: // player_prot_life()
@@ -2158,9 +2166,10 @@ switch(you[0].inv_type [ring_wear_2])
         break;
 
         case 8: // invisibility
-        you[0].invis ++;
-        if (you[0].invis == 0) you[0].invis = 1;
-        you[0].hunger_inc -= 4;
+//      you[0].invis ++;
+//      if (you[0].invis == 0) you[0].invis = 1;
+//      you[0].hunger_inc -= 4;
+        if (you[0].invis != 0) you[0].invis = 1;
         break;
 
         case 9: // you[0].hunger
@@ -2213,9 +2222,10 @@ switch(you[0].inv_type [ring_wear_2])
  break;
 
         case 18: // levitation
-        you[0].lev ++;
+/*      you[0].lev ++;
         if (you[0].lev == 0) you[0].lev = 1;
-        you[0].hunger_inc -= 1;
+        you[0].hunger_inc -= 1;*/
+        if (you[0].lev != 0) you[0].lev = 1;
         break;
 
  case 19: // player_prot_life()
@@ -3063,7 +3073,7 @@ do
 
         if (you[0].inv_type [you[0].equip [6]] == 15 | you[0].inv_type [you[0].equip [6]] == 20 | you[0].inv_type [you[0].equip [6]] == 22 | you[0].inv_type [you[0].equip [6]] == 24 | you[0].inv_type [you[0].equip [6]] == 26 | you[0].inv_type [you[0].equip [6]] == 28) // dragon hide
         {
-                affected = 0;
+                affected = 6;
                 item_name(you[0].inv_plus2 [you[0].equip [affected]], you[0].inv_class [you[0].equip [affected]], you[0].inv_type [you[0].equip [affected]], you[0].inv_dam [you[0].equip [affected]], you[0].inv_plus [you[0].equip [affected]], you[0].inv_quant [you[0].equip [affected]], you[0].inv_ident [you[0].equip [affected]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " glows purple and changes!");
@@ -3121,7 +3131,7 @@ do
 
         if (you[0].inv_type [you[0].equip [6]] == 16) // troll hide
         {
-                affected = 0;
+                affected = 6;
                 item_name(you[0].inv_plus2 [you[0].equip [affected]], you[0].inv_class [you[0].equip [affected]], you[0].inv_type [you[0].equip [affected]], you[0].inv_dam [you[0].equip [affected]], you[0].inv_plus [you[0].equip [affected]], you[0].inv_quant [you[0].equip [affected]], you[0].inv_ident [you[0].equip [affected]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " glows purple and changes!");
@@ -3286,7 +3296,7 @@ set_id(you[0].inv_class [sc_read_2], you[0].inv_type [sc_read_2], 1);
 break;
 
 case 18:
-acquirement();
+acquirement(250);
 set_id(you[0].inv_class [sc_read_2], you[0].inv_type [sc_read_2], 1);
 break;
 

@@ -52,11 +52,11 @@ char invent(int item_class_inv, char show_price)
 
    char yps = 0;
 
-   char temp_id [4] [30];
+   char temp_id [4] [50];
 
    for (i = 0; i < 4; i ++)
    {
-    for (j = 0; j < 30; j ++)
+    for (j = 0; j < 50; j ++)
     {
         temp_id [i] [j] = 1;
     }
@@ -452,7 +452,6 @@ switch(i)
  case 142: strcpy(comm, "D - butcher (dissect) a corpse"); break;
  case 145: strcpy(comm, "I - Invoke power of wielded item"); break;
  case 150: strcpy(comm, "M - Memorise a spell"); break;
- case 155: strcpy(comm, "O - Try to go berserk"); break;
  case 160: strcpy(comm, "P/R - Put on/Remove a ring"); break;
  case 165: strcpy(comm, "Q - commit suicide (quit)"); break;
 // case 170: strcpy(comm, "R - Remove a ring"); break;
@@ -476,7 +475,7 @@ switch(i)
  case 340: strcpy(comm, "+ & - on map screen - fast scroll"); break;
  case 350: strcpy(comm, "! - shout (attracts allies)"); break;
  case 360: strcpy(comm, "Ctrl & dir - door; untrap; attack"); break;
-// case 365: strcpy(comm, "^ - disarm a trap"); break;
+ case 365: strcpy(comm, "^ - describe your religion"); break;
  case 367: strcpy(comm, "@ - character status"); break;
  case 370: strcpy(comm, "# - dump character to file <name>.txt"); break;
  case 380: strcpy(comm, "= - adjust inventory/spell letters"); break;

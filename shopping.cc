@@ -58,10 +58,10 @@ void purchase(int item_got);
 
 //void purchase(struct player you [1]);
 
-unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id [4] [30]);
+unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id [4] [50]);
 
 
-char in_a_shop(char shoppy, char id [4] [30]);
+char in_a_shop(char shoppy, char id [4] [50]);
 
 void shop_print(char *shoppy, char sh_line);
 
@@ -74,17 +74,17 @@ void clear_line(void);
 
 char shop_getch(void);
 
-void shop_init_id(int i, int shop_id [4] [30]);
-void shop_uninit_id(int i, int shop_id [4] [30]);
+void shop_init_id(int i, int shop_id [4] [50]);
+void shop_uninit_id(int i, int shop_id [4] [50]);
 
-void shop_set_id(int i, int shop_id [4] [30], unsigned char iclass, unsigned char itype);
+void shop_set_id(int i, int shop_id [4] [50], unsigned char iclass, unsigned char itype);
 
 char book_rarity(char which_book);
 
-char in_a_shop(char shoppy, char id [4] [30])
+char in_a_shop(char shoppy, char id [4] [50])
 {
    unsigned int greedy = env[0].sh_greed [shoppy];
-   int shop_id [4] [30];
+   int shop_id [4] [50];
    int shop_items [20];
 
    char st_pass [60];
@@ -302,7 +302,7 @@ itty = igrd [0] [5 + shoppy];
 }
 
 
-void shop_init_id(int i, int shop_id [4] [30])
+void shop_init_id(int i, int shop_id [4] [50])
 {
 int j = 0;
     if (env[0].sh_type [i] != 2 && env[0].sh_type [i] != 3 && env[0].sh_type [i] != 4)
@@ -321,7 +321,7 @@ int j = 0;
 
 }
 
-void shop_uninit_id(int i, int shop_id [4] [30])
+void shop_uninit_id(int i, int shop_id [4] [50])
 {
 int j = 0;
 
@@ -336,7 +336,7 @@ int j = 0;
        }
 }
 
-void shop_set_id(int i, int shop_id [4] [30], unsigned char iclass, unsigned char itype)
+void shop_set_id(int i, int shop_id [4] [50], unsigned char iclass, unsigned char itype)
 {
 
   if (env[0].sh_type [i] != 2 && env[0].sh_type [i] != 3 && env[0].sh_type [i] != 4)
@@ -429,7 +429,7 @@ void purchase(int item_got)
 
 
 
-unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id [4] [30])
+unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigned char item_da, unsigned char it_plus, unsigned char it_plus2, unsigned int item_quant, char ident_lev, char id [4] [50])
 {
 
 int valued = 0;
@@ -445,19 +445,19 @@ switch(item_clas)
   {
    switch(item_da - 180)
    {
-        case 1: valued += 3200; break; //strcat(glog , "Singing Sword"); break;
-        case 2: valued += 3000; break; //strcat(glog , "Wrath of Trog"); break;
-        case 3: valued += 2500; break; //strcat(glog , "Scythe of Curses"); break;
-        case 4: valued += 1500; break; //strcat(glog , "Mace of Variability"); break;
-        case 5: valued += 2500; break; //strcat(glog , "Glaive of Prune"); break;
-        case 6: valued += 3500; break; //strcat(glog , "Sceptre of Torment"); break;
-        case 7: valued += 2050; break; //strcat(glog , "Sword of Zonguldrok"); break;
+        case 1: valued += 1200; break; //strcat(glog , "Singing Sword"); break;
+        case 2: valued += 1000; break; //strcat(glog , "Wrath of Trog"); break;
+        case 3: valued += 800; break; //strcat(glog , "Scythe of Curses"); break;
+        case 4: valued += 700; break; //strcat(glog , "Mace of Variability"); break;
+        case 5: valued += 1000; break; //strcat(glog , "Glaive of Prune"); break;
+        case 6: valued += 1200; break; //strcat(glog , "Sceptre of Torment"); break;
+        case 7: valued += 1250; break; //strcat(glog , "Sword of Zonguldrok"); break;
         case 8: valued += 2000; break; //strcat(glog , "Sword of Okawaru"); break;
-        case 9: valued += 3500; break;  break; //strcat(glog , ""); break;
-        case 10: valued += 3500; break;  break; //strcat(glog , ""); break;
+        case 9: valued += 1200; break;  break; //strcat(glog , ""); break;
+        case 10: valued += 1500; break;  break; //strcat(glog , ""); break;
 
 
-        default: valued += 2500;
+        default: valued += 1000;
    }
   break;
   } // end if ident_lev
@@ -976,17 +976,18 @@ if (item_da / 30 == 6) // orc
  case 20: valued += 40; break; //strcat(glog , "ring of protection from magic"); break;
  case 21: valued += 62; break; //strcat(glog , "ring of fire"); break;
  case 22: valued += 62; break; //strcat(glog , "ring of ice"); break;
- case 23: valued += 42; break; //strcat(glog , "ring of teleport control"); break;
+ case 23: valued += 42; break; // ring of teleport control
 
- case 35: valued += 20; break; //amulet of rage"); break;
- case 36: valued += 30; break; //amulet of maintain speed"); break; // not foolproof
- case 37: valued += 30; break; //amulet of clarity"); break; // not foolproof
- case 38: valued += 30; break; //amulet of warding"); break;
- case 39: valued += 30; break; //amulet of resist corrosion"); break;
- case 40: valued += 15; break; //amulet of the gourmand"); break;
- case 41: valued += 25; break; //amulet of conservation"); break;
- case 42: valued += 25; break; //amulet of controlled flight"); break;
- case 43: valued -= 50; break; //amulet of inaccuracy"); break;
+ case 35: valued += 20; break; //amulet of rage
+ case 36: valued += 30; break; //amulet of maintain speed - not foolproof
+ case 37: valued += 30; break; //amulet of clarity - not foolproof
+ case 38: valued += 30; break; //amulet of warding
+ case 39: valued += 30; break; //amulet of resist corrosion
+ case 40: valued += 15; break; //amulet of the gourmand
+ case 41: valued += 25; break; //amulet of conservation
+ case 42: valued += 25; break; //amulet of controlled flight
+ case 43: valued -= 50; break; //amulet of inaccuracy
+ case 44: valued += 30; break; //amulet of resist mutation
 
  // got to do delusion!
  }
@@ -1156,10 +1157,10 @@ char book_rarity(char which_book)
   return 1;
 
   case 17:
-  return 9;
+  return 2;
 
   case 18:
-  return 3;
+  return 8;
 
   case 19:
   return 3;
@@ -1168,7 +1169,7 @@ char book_rarity(char which_book)
   return 6;
 
   case 22:
-  return 4;
+  return 100;
 
   case 23:
   return 3;
@@ -1256,7 +1257,7 @@ for (i = 0; i < 6; i ++)
     break;
 }
 
-char identy [4] [30];
+char identy [4] [50];
 save_id(identy);
 
 in_a_shop(i, identy);

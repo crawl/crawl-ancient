@@ -10,12 +10,16 @@
 #include "externs.h"
 
 #include "itemname.h"
+#include "misc.h"
 #include "mstruct.h"
+#include "output.h"
 #include "player.h"
 #include "priest.h"
+#include "religion.h"
 #include "skills2.h"
 #include "spells0.h"
 #include "stuff.h"
+#include "view.h"
 
 /*
 you[0].duration []:
@@ -36,7 +40,9 @@ you[0].duration []:
 14 - control teleport
 15 - poison weapon
 16 - resist poison
-17 - species ability
+17 - breathe something
+18 - transformation (duration)
+19 - death channel
 */
 
 /* attributes
@@ -45,6 +51,7 @@ you[0].duration []:
 2 - spec_earth
 3 - control teleport
 4 - walk slowly (eg naga)
+5 - transformation (form)
 */
 
 /* armour list
@@ -85,6 +92,7 @@ int player_teleport(void)
 int player_regen(void)
 {
  int rr = you[0].hp_max / 3;
+ if (rr > 20) rr = 20 + ((rr - 20) / 2);
  /* rings */
  if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 0) rr += 40;
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 0) rr += 40;
@@ -116,6 +124,7 @@ int player_res_magic(void)
   case 13: // Naga
   rm += you[0].xl * 2;
   break;
+  case 24: // purple drac
   case 14: // Gnome
   case 5: // deep elf
   rm += you[0].xl * 3;
@@ -131,6 +140,11 @@ int player_res_magic(void)
  rm += you[0].skills [27] * 2;
 /* Mutations */
  rm += you[0].mutation [23] * 30;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 6: rm += 50; break; /* Lich */
+ }
  return rm;
 }
 /*        case 18: strcat(glog , "dragon scale mail"); break;
@@ -224,6 +238,14 @@ int player_res_fire(void)
  if (you[0].species == 12) rf --;
 /* Mutations */
  rf += you[0].mutation [12];
+/* Red drac */
+ if (you[0].species == 18 && you[0].xl >= 18) rf ++;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 4: rf -= 1; break; /* Ice beast */
+  case 5: rf += 2; break; /* Dragon */
+ }
  return rf;
 }
 
@@ -246,15 +268,24 @@ int player_res_cold(void)
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 18) rc --;
 /* Mummies are cold resistant */
  if (you[0].species == 12) rc ++;
+/* White drac */
+ if (you[0].species == 19 && you[0].xl >= 18) rc ++;
 /* Mutations */
  rc += you[0].mutation [13];
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 4: rc += 3; break; /* Ice beast */
+  case 5: rc --; break; /* Dragon */
+  case 6: rc ++; break; /* Lich */
+ }
  return rc;
 }
 
 int player_res_poison(void)
 {
  int rp = 0;
-/* rings of poison resistance/ice */
+/* rings of poison resistance */
  if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 3) rp ++;
  if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 3) rp ++;
 /* Staves */
@@ -265,12 +296,19 @@ int player_res_poison(void)
  if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 4) rp ++;
 /* DSMails */
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rp ++;
-/* Mummies are poison resistant */
- if (you[0].species == 12) rp ++;
+/* Mummies and Nagas are poison resistant */
+ if (you[0].species == 12 | you[0].species == 13) rp ++;
 /* spell of resist poison */
  if (you[0].duration [16] > 0) rp ++;
 /* Mutations */
  rp += you[0].mutation [9];
+/* Green drac */
+ if (you[0].species == 20 && you[0].xl >= 7) rp ++;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 6: rp ++; break; /* Lich */
+ }
  return rp;
 }
 
@@ -284,13 +322,19 @@ int player_spec_death(void)
  if (you[0].species == 12 && you[0].xl > 26) sd ++;
 /* armour of the Archmagi (checks body armour only) */
  if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) sd ++;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 6: sd ++; break; /* Lich */
+ }
  return sd;
 }
 
 int player_spec_holy(void)
 {
- if (you[0].clas == 2 | you[0].clas == 6) return 1;
  return 0;
+/* if (you[0].clas == 2 | you[0].clas == 6) return 1;
+ return 0;*/
 }
 
 int player_spec_fire(void)
@@ -393,6 +437,11 @@ int player_prot_life(void)
  if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) pl ++;
 /* Mummies are undead */
  if (you[0].species == 12) pl ++;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 6: pl ++; break; /* Lich */
+ }
  return pl;
 }
 
@@ -404,11 +453,18 @@ int player_fast_run(void)
  if (you[0].duration [9] != 0) fr ++;
 /* Mutations */
  if (you[0].mutation [24] > 0) fr ++;
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 0: break;
+  case 1: fr ++; break; /* spider */
+ }
  return fr;
 }
 
 int player_speed(void)
 {
+ if (you[0].duration [18] == 3) return 15;
  return 10;
 }
 
@@ -438,7 +494,6 @@ int player_AC(void)
   if ((you[0].species == 13 | you[0].mutation [26] > 0) && i == 6) /* Nagas/the deformed don't fit into body armour very well */
   {
    AC -= property(2, you[0].inv_type [you[0].equip [i]], 0) / 2;
-   AC += you[0].xl / 3;
   }
  }
 
@@ -458,6 +513,10 @@ int player_AC(void)
   AC += 5;
  if (you[0].equip [5] != -1 && you[0].inv_dam [you[0].equip [5]] % 30 == 13)
   AC += 3;
+ if (you[0].species == 13) AC += you[0].xl / 3; /* naga */
+ if (you[0].species == 22 && you[0].xl > 7) AC += (you[0].xl - 7) / 2; /* grey drac */
+ if (you[0].species == 22 && you[0].xl >= 4) AC ++; /* grey drac */
+ if (you[0].species >= 18 && you[0].species <= 29 && you[0].species != 22) AC += you[0].xl / 4; /* all dracs, exc grey */
  if (you[0].species == 15) AC ++; /* ogre */
  if (you[0].species == 16) AC += 3; /* troll */
 
@@ -470,6 +529,17 @@ int player_AC(void)
  AC += you[0].mutation [5] * 3;
  AC += you[0].mutation [6];
  if (you[0].mutation [7] > 0) AC += you[0].mutation [7] + 1;
+
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 0: break;
+  case 1: AC += 2; break; /* spider */
+  case 3: AC += 20; break; /* statue */
+  case 4: AC += 2; break; /* Ice beast */
+  case 5: AC += 7; break; /* Dragon */
+  case 6: AC += 3; break; /* Lich */
+ }
 
  return AC;
 }
@@ -519,6 +589,15 @@ mpr(info);
 
  /* repulsion field */
  if (you[0].mutation [8] > 0) ev += you[0].mutation [8] * 2 - 1;
+
+/* transformations */
+ switch(you[0].attribute [5])
+ {
+  case 0: break;
+  case 1: ev += 3; break; /* spider */
+  case 3: ev -= 5; break; /* statue */
+  case 5: ev -= 3; break; /* Dragon */
+ }
 
  return ev;
 }
@@ -759,8 +838,8 @@ void gain_exp(unsigned int exp_gained)
   if (you[0].inv_dam [you[0].equip [6]] % 30 == 17) return; // robe of archmagi
  }
 
- if (you[0].xp + exp_gained > 999999)
-    you[0].xp = 999999; else
+ if (you[0].xp + exp_gained > 8999999)
+    you[0].xp = 8999999; else
  you[0].xp += exp_gained;
  if (you[0].exp_available + exp_gained > 20000)
     you[0].exp_available = 20000; else
@@ -773,11 +852,6 @@ void gain_exp(unsigned int exp_gained)
 
 void level_change(void) // Look at this !!!!
 {
-int prtry = 0;
-int prtry2 = 0;
-int prtry3 = 0;
-int func_pass [10];
-
 
 #ifdef CLASSES
 /*
@@ -1009,7 +1083,7 @@ while (you[0].xp > exp_needed(you[0].xl + 2, you[0].species) && you[0].xl < 27) 
         strcat(info, "!");
         mpr(info);
         more();
-/* scrloc = 0;*/
+/* scrloc = 0;
 switch(you[0].clas)
 {
 case 0: // fighter
@@ -1104,7 +1178,7 @@ break;
 
 // etcetera
 
-}
+}*/
 
 
 #ifdef CLASSES
@@ -1139,13 +1213,15 @@ for (ski = 0; ski < 50; ski ++)
 int brek;
 
  brek = random2(4) + 3;
+ if (you[0].xl > 12) brek = random2(3) + 2;
+ if (you[0].xl > 21) brek = random2(2) + 2;
  you[0].hp += brek;
  you[0].base_hp2 += brek;
 
  you[0].ep += 1;
  you[0].base_ep2 ++;
 
- you[0].spell_levels ++;
+ if (you[0].spell_levels < 99) you[0].spell_levels ++;
 
  if (you[0].xl > you[0].max_level && you[0].xl % 3 == 0)
  {
@@ -1164,7 +1240,6 @@ if (you[0].xl % 3 != 0)
 }
 if (you[0].xl % 3 == 0)
 {
- you[0].ep_max ++;
  you[0].base_ep2 ++;
 }
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
@@ -1177,35 +1252,36 @@ if (you[0].xl % 3 != 0)
 }
 if (you[0].xl % 2 == 0)
 {
- you[0].ep_max ++;
  you[0].base_ep2 ++;
 }
 //you[0].res_magic ++;
 if (you[0].xl % 3 == 0) increase_stats(1 + random() % 2);
 break;
 case 4: // grey elf
-you[0].hp_max --;
-you[0].base_hp2 --;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
 if (you[0].xl % 3 != 0)
 {
- you[0].ep_max ++;
  you[0].base_ep2 ++;
-
 }
 //you[0].res_magic ++;
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
 break;
 case 5: // deep elf
-you[0].hp_max --;
-you[0].base_hp2 --;
+if (you[0].xl <= 16)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
 if (you[0].xl % 3 == 0)
 {
  you[0].hp_max --;
  you[0].base_hp2 --;
 }
-you[0].ep_max ++;
 you[0].base_ep2 ++;
-//you[0].res_magic += 3;
 if (you[0].xl % 4 == 0) increase_stats(2);
 break;
 case 6: // sludge elf
@@ -1216,14 +1292,16 @@ if (you[0].xl % 3 != 0)
 }
 if (you[0].xl % 3 == 0)
 {
- you[0].ep_max ++;
  you[0].base_ep2 ++;
 }
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
 break;
 case 7: // hill dwarf
-you[0].hp_max ++;
-you[0].base_hp2 ++;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 if (you[0].xl % 3 != 0)
 {
  you[0].hp_max ++;
@@ -1231,15 +1309,16 @@ if (you[0].xl % 3 != 0)
 }
 if (you[0].xl % 2 == 0)
 {
- you[0].ep_max --;
  you[0].base_ep2 --;
 }
-//you[0].res_magic ++;
 if (you[0].xl % 4 == 0) increase_stats(0);
 break;
 case 8: // mountain dwarf
-you[0].hp_max ++;
-you[0].base_hp2 ++;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 if (you[0].xl % 2 == 0)
 {
  you[0].hp_max ++;
@@ -1247,26 +1326,29 @@ if (you[0].xl % 2 == 0)
 }
 if (you[0].xl % 3 == 0)
 {
- you[0].ep_max --;
  you[0].base_ep2 --;
 }
-//you[0].res_magic ++;
 if (you[0].xl % 4 == 0) increase_stats(0);
 break;
 case 9: // halfling
 if (you[0].xl % 5 == 0) increase_stats(1); // note: falls through to kobold
 case 11: // kobold
-you[0].hp_max --;
-you[0].base_hp2 --;
-if (you[0].xl % 2 == 0)
+if (you[0].xl <= 16)
 {
  you[0].hp_max --;
  you[0].base_hp2 --;
 }
+if (you[0].xl % 2 == 0)
+{
+ you[0].base_hp2 --;
+}
 break;
 case 10: // hill orc
-you[0].hp_max ++;
-you[0].base_hp2 ++;
+if (you[0].xl <= 16)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 if (you[0].xl % 2 == 0)
 {
  you[0].base_hp2 ++;
@@ -1274,7 +1356,6 @@ if (you[0].xl % 2 == 0)
 }
 if (you[0].xl % 3 == 0)
 {
- you[0].ep_max --;
  you[0].base_ep2 --;
 }
 if (you[0].xl % 5 == 0) increase_stats(0);
@@ -1289,8 +1370,11 @@ if (you[0].xl == 13 | you[0].xl == 23)
 }
 break;
 case 13: // Naga
-you[0].hp_max ++;
-you[0].base_hp2 ++;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 you[0].base_hp2 ++;
 you[0].hp_max ++;
 //you[0].res_magic += 2;
@@ -1304,8 +1388,11 @@ if (you[0].xl % 3 == 0)
 }
 break;
 case 14: // Gnome
-you[0].hp_max --;
-you[0].base_hp2 --;
+if (you[0].xl <= 12)
+{
+ you[0].hp_max --;
+ you[0].base_hp2 --;
+}
 if (you[0].xl % 3 == 0)
 {
  you[0].hp_max --;
@@ -1316,8 +1403,13 @@ if (you[0].xl % 4 == 0) increase_stats(1 + random2(2));
 break;
 case 15: // ogre
 case 16: // troll
-you[0].hp_max += 2;
-you[0].base_hp2 += 2;
+you[0].hp_max ++;
+you[0].base_hp2 ++;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 if (you[0].xl % 2 == 0)
 {
  you[0].base_hp2 ++;
@@ -1325,18 +1417,134 @@ if (you[0].xl % 2 == 0)
 }
 if (you[0].xl % 3 != 0)
 {
- you[0].ep_max --;
  you[0].base_ep2 --;
 }
 if (you[0].xl % 3 == 0) increase_stats(0);
 break;
 case 17: // ogre-mage
-you[0].hp_max += 2;
-you[0].base_hp2 += 2;
+you[0].hp_max ++;
+you[0].base_hp2 ++;
+if (you[0].xl <= 13)
+{
+ you[0].hp_max ++;
+ you[0].base_hp2 ++;
+}
 if (you[0].xl % 5 == 0) increase_stats(random2(2) * 2);
+break;
+case 18:
+case 19:
+case 20:
+case 21:
+/* Grey is later */
+case 23:
+case 24:
+case 25:
+case 26:
+case 27:
+case 28:
+case 29: // Draconian
+if (you[0].xl == 7)
+{
+ switch(you[0].species)
+ {
+  case 18: mpr("Your scales start taking on a fiery red colour."); break;
+  case 19: mpr("Your scales start taking on an icy white colour."); break;
+  case 20: mpr("Your scales start taking on a green colour.");
+  mpr("You feel resistant to poison."); break;
+  case 21: mpr("Your scales start taking on a golden yellow colour."); break;
+
+  case 23: mpr("Your scales start turning black."); break;
+  case 24: mpr("Your scales start taking on a rich purple colour."); break;
+  case 25: mpr(""); break;
+  case 26: mpr(""); break;
+  case 27: mpr(""); break;
+  case 28: mpr(""); break;
+  case 29: mpr(""); break;
+ }
+ more();
+ char title [40];
+ strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
+ draw_border(BROWN, you[0].your_name, title, you[0].species);
+ you[0].hp_ch = 1;
+ you[0].ep_ch = 1;
+ you[0].strength_ch = 1;
+ you[0].intel_ch = 1;
+ you[0].dex_ch = 1;
+ you[0].AC_ch = 1;
+ you[0].evasion_ch = 1;
+ you[0].gp_ch = 1;
+ you[0].xp_ch = 1;
+ you[0].hung_ch = 1;
+ you[0].burden_ch = 1;
+ print_stats();
+ new_level();
+}
+if (you[0].xl == 18)
+{
+ switch(you[0].species)
+ {
+  case 18: mpr("You feel resistant to fire."); break;
+  case 19: mpr("You feel resistant to cold."); break;
+  case 23: mpr("You feel resistant to electrical energy.");
+  you[0].attribute [0] ++; break;
+ }
+}
+
+if (you[0].xl % 3 == 0)
+{
+ you[0].hp_max += 1;
+ you[0].base_hp2 += 1;
+}
+if (you[0].xl % 4 == 0) /* need to add to player_AC */
+{
+ mpr("Your scales feel tougher.");
+ you[0].AC_ch = 1;
+}
+//if (you[0].xl % 5 == 0) increase_stats(random2(3));
+break;
+
+case 22: /* grey drac */
+if (you[0].xl == 7)
+{
+ mpr("Your scales start turning grey.");
+ more();
+ char title [40];
+ strcpy(title, skill_title(best_skill(0, 50, 99), you[0].skills [best_skill(0, 50, 99)], you[0].clas, you[0].xl));
+ draw_border(BROWN, you[0].your_name, title, you[0].species);
+ you[0].hp_ch = 1;
+ you[0].ep_ch = 1;
+ you[0].strength_ch = 1;
+ you[0].intel_ch = 1;
+ you[0].dex_ch = 1;
+ you[0].AC_ch = 1;
+ you[0].evasion_ch = 1;
+ you[0].gp_ch = 1;
+ you[0].xp_ch = 1;
+ you[0].hung_ch = 1;
+ you[0].burden_ch = 1;
+ print_stats();
+ new_level();
+}
+if (you[0].xl % 3 == 0)
+{
+ you[0].hp_max += 1;
+ you[0].base_hp2 += 1;
+ if (you[0].xl > 7)
+ {
+  you[0].hp_max += 1;
+  you[0].base_hp2 += 1;
+ }
+}
+if (you[0].xl == 4 | (you[0].xl > 7 && you[0].xl % 2 == 0)) /* need to add to player_AC */
+{
+ mpr("Your scales feel tougher.");
+ you[0].AC_ch = 1;
+}
+if (you[0].xl > 7 && you[0].xl % 4 == 0) increase_stats(random2(2) * 2);
 break;
 }
 }
+
 
 if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
 if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
@@ -1356,6 +1564,9 @@ if (you[0].xl > 10 && you[0].xl % 2 == 0) you[0].rate_regen ++;
 */
 
 you[0].hp_ch = 1; you[0].ep_ch = 1;
+
+if (you[0].religion == 5) Xom_acts(1, you[0].xl, 1);
+
 
 }
 
@@ -1459,27 +1670,17 @@ switch(keyin)
 {
 case 's':
 case 'S':
-you[0].strength ++;
-you[0].max_strength ++;
-burden_change();
-you[0].strength_ch = 1;
-mesclr();
+increase_stats(0);
 return;
 
 case 'i':
 case 'I':
-you[0].intel ++;
-you[0].max_intel ++;
-you[0].intel_ch = 1;
-mesclr();
+increase_stats(2);
 return;
 
 case 'd':
 case 'D':
-you[0].dex ++;
-you[0].max_dex ++;
-you[0].dex_ch = 1;
-mesclr();
+increase_stats(1);
 return;
 
 }
@@ -1499,6 +1700,13 @@ if (you[0].is_undead == 0)
  strcpy(info, "You are alive.");
   else strcpy(info, "You are undead.");
 mpr(info);
+
+switch(you[0].attribute [5])
+{
+ case 1: mpr("You are in spider-form."); break;
+ case 2: mpr("You have blades for hands."); break;
+ case 3: mpr("You are a statue."); break;
+}
 
 if (you[0].duration [0] != 0)
 {
@@ -1561,6 +1769,12 @@ if (you[0].duration [13] != 0)
 if (you[0].duration [14] != 0)
 {
  strcpy(info, "You can control teleportation.");
+ mpr(info);
+}
+
+if (you[0].duration [19] != 0)
+{
+ strcpy(info, "You are channeling the dead.");
  mpr(info);
 }
 
@@ -1668,6 +1882,9 @@ cprintf(print_it2);
 char *species_name(char speci)
 {
 
+if (you[0].species >= 18 && you[0].species <= 29 && you[0].xl < 7)
+ return "Draconian"; /* Causes minor problems with ghosts, but nevermind */
+
 switch(speci)
 {
  case 1: return "Human";
@@ -1687,6 +1904,19 @@ switch(speci)
  case 15: return "Ogre";
  case 16: return "Troll";
  case 17: return "Ogre-Mage";
+ case 18: return "Red Draconian"; /* Fire */
+ case 19: return "White Draconian"; /* Cold */
+ case 20: return "Green Draconian"; /* Poison */
+ case 21: return "Yellow Draconian"; /* Acid */
+ case 22: return "Grey Draconian"; /* Nothing */
+ case 23: return "Black Draconian"; /* Elec */
+ case 24: return "Purple Draconian"; /* Energy */
+ case 25: return "Draconian"; /*  */
+ case 26: return "Draconian"; /*  */
+ case 27: return "Draconian"; /*  */
+ case 28: return "Draconian"; /*  */
+ case 29: return "Draconian"; /*  */
+
 }
 
 return "Yak";
@@ -1696,7 +1926,7 @@ return "Yak";
 char wearing_amulet(char which_am)
 {
 
- if (which_am == 42 && you[0].duration [12] != 0) return 1; // controlled flight - duration [10] : flight spell in operation
+ if (which_am == 42 && (you[0].duration [12] != 0 | (you[0].species >= 18 && you[0].species <= 29) | you[0].attribute [5] == 5)) return 1; // controlled flight - duration [10] : flight spell in operation
  if (which_am == 39 | which_am == 41)
  {
   if (you[0].equip [1] != -1 && you[0].inv_dam [you[0].equip [1]] % 30 == 18)
@@ -1731,6 +1961,19 @@ switch(species)
  case 15: return 14; // ogre
  case 16: return 16; // troll
  case 17: return 15; // ogre mage
+ case 18:
+ case 19:
+ case 20:
+ case 21:
+ case 22:
+ case 23:
+ case 24:
+ case 25:
+ case 26:
+ case 27:
+ case 28:
+ case 29: return 16; // draconian
+
  default: return 0;
 }
 
@@ -1753,7 +1996,7 @@ switch(lev)
         case 9: level = 1700; break;
         case 10: level = 3500; break;
         case 11: level = 8000; break;
-        case 12: level = 15000; break;
+        case 12: level = 20000; break;
 /*        case 1: return 1;
         case 2: return 10;
         case 3: return 20;
@@ -1772,7 +2015,7 @@ switch(lev)
 //      case 16: return 163840;
 //      case 17: return 327760;
  default: //return 14000 * (lev - 11);
- level = 15000 * (lev - 11) + ((lev - 11) * (lev - 11) * (lev - 11)) * 100;
+ level = 20000 * (lev - 11) + ((lev - 11) * (lev - 11) * (lev - 11)) * 130;
  break;
 }
 

@@ -53,28 +53,28 @@ int check_your_resists(int hurted, int flavour)
                 if (player_res_fire() > 100)
                 {
                         mpr("You resist.");
-                        hurted /= 2 + (player_res_fire() - 100) * (player_res_fire() - 100);
-                }
-                if (player_res_fire() < 100)
-                {
+                        hurted /= 2 + ((player_res_fire() - 100) * (player_res_fire() - 100));
+                } else
+                       if (player_res_fire() < 100)
+                       {
                         mpr("It burns terribly!");
                         hurted *= 15;
                         hurted /= 10;
-                }
+                       }
                 break;
 
                 case 3: /* cold */
                 if (player_res_cold() > 100)
                 {
                         mpr("You resist.");
-                        hurted /= 2 + (player_res_cold() - 100) * (player_res_cold() - 100);
-                }
-                if (player_res_cold() < 100)
-                {
+                        hurted /= 2 + ((player_res_cold() - 100) * (player_res_cold() - 100));
+                } else
+                       if (player_res_cold() < 100)
+                       {
                         mpr("You feel a terrible chill!");
                         hurted *= 15;
                         hurted /= 10;
-                }
+                       }
                 break;
 
  case 5: /* electricity */
@@ -101,8 +101,8 @@ int check_your_resists(int hurted, int flavour)
                 hurted = 0;
                 break;
         }
-        strcat(info, ".");
-        mpr(info);
+//        strcat(info, ".");
+//        mpr(info);
 /*        if (you[0].duration [3] != 0 && you[0].religion == 1 && random2(150) < you[0].piety)
         {
          strcpy(info, "Zin protects your life force!");
@@ -110,7 +110,6 @@ int check_your_resists(int hurted, int flavour)
          break;
         }*/
  mpr("You feel drained!");
-        mpr(info);
  drain_exp(); /* lose_level(); */
 /* strcpy(info, "How terrible");*/
         break;
@@ -334,6 +333,36 @@ int gfile;
   return;
  }
 
+if (dam > -9000)
+{
+
+ switch(you[0].religion)
+ {
+ case 5:
+ if (random2(you[0].hp_max) > you[0].hp && dam > random2(you[0].hp) && random2(5) == 0)
+ {
+  mpr("Xom protects you from harm!");
+  return;
+ }
+ break;
+ case 1:
+ case 2:
+ case 3:
+ case 7:
+ case 12:
+ if (dam >= you[0].hp && you[0].duration [3] > 0 && random2(you[0].piety) >= 30)
+ {
+  strcpy(info, god_name(you[0].religion));
+  strcat(info, " protects you from harm!");
+  mpr(info);
+  return;
+ }
+ break;
+
+ }
+
+}
+
 you[0].hp_ch = 1;
 
  if (dam > -9000)
@@ -362,11 +391,11 @@ points += you[0].gp;
 points += (you[0].xp * 7) / 10;
 //if (death_type == 12) points += points / 2;
 //if (death_type == 11) points += points / 10; // these now handled by giving player the value of their inventory
-   char temp_id [4] [30];
+   char temp_id [4] [50];
 
    for (d = 0; d < 4; d ++)
    {
-    for (e = 0; e < 30; e ++)
+    for (e = 0; e < 50; e ++)
     {
         temp_id [d] [e] = 1;
     }
@@ -416,6 +445,12 @@ if (points < 10) strcat(death_string, " ");
          case 15: strcat(death_string, "Og"); break;
          case 16: strcat(death_string, "Tr"); break;
          case 17: strcat(death_string, "OM"); break;
+         case 18:
+         case 19:
+         case 20:
+         case 21:
+         case 22:
+         case 23: strcat(death_string, "Dr"); break;
         }
         death_string [strlen(death_string)] = you[0].clasnam [0];
 
@@ -429,7 +464,7 @@ strcat(death_string, point_print);
 
         case 0: // monster
                 strcat(death_string, ", killed by ");
-                if (menv [death_source].m_class < 250 | menv [death_source].m_class > 310) strcat(death_string, "a");
+                if (menv [death_source].m_class < 250 | menv [death_source].m_class > 310 && menv [death_source].m_class != 400) strcat(death_string, "a");
                 strcat(death_string, monam(menv [death_source].m_sec, menv [death_source].m_class, 0, 99));
  break;
 
@@ -447,9 +482,9 @@ strcat(death_string, point_print);
 /*                strcat(death_string, beam_name); */
  break;
 
- case 4: // death's door running out
+/* case 4: // death's door running out - NOTE: This is no longer fatal
   strcat(death_string, " ran out of time");
- break;
+ break;*/
 
  case 5: // falling into lava
   strcat(death_string, " took a swim in molten lava");
@@ -461,6 +496,7 @@ strcat(death_string, point_print);
 
 // these three are probably only possible if you wear a you[0].ring of >= +3 ability,
 //  get drained to 3, then take it off, or have a very low abil and wear a -ve you[0].ring.
+// or, as of 2.7x, mutations can cause this
  case 7: // lack of intelligence
   strcat(death_string, " died of stupidity");
         break;
@@ -503,8 +539,12 @@ strcat(death_string, point_print);
   strcat(death_string, " burned to death");
  break;
 
- case 18: // cloud
-  strcat(death_string, ", killed by a magical effect ");
+ case 18: /* from function miscast_effect */
+  strcat(death_string, ", killed by wild magic ");
+ break;
+
+ case 19:
+  strcat(death_string, ", killed by Xom ");
  break;
 
  } // end switch
@@ -564,6 +604,10 @@ switch (you[0].where_are_you)
  case 15: strcat(death_string, " of the Crypt"); break;
  case 16: strcat(death_string, " of the Hall"); break;
  case 17: strcat(death_string, " of Zot's Hall"); break;
+ case 18: strcat(death_string, " of the Temple"); break;
+ case 19: strcat(death_string, " of the Snake Pit"); break;
+ case 20: strcat(death_string, " of the Elf Hall"); break;
+ case 21: strcat(death_string, " of the Tomb"); break;
 }
 
 
@@ -572,7 +616,7 @@ switch (you[0].where_are_you)
 
 /* Maybe place a ghost: */
 
-//if (you[0].your_level > 1 && you[0].is_undead == 0)
+if (you[0].your_level > 1 && you[0].is_undead == 0)
 {
 strcpy(corr_level, "");
 
@@ -707,7 +751,7 @@ int fi = 0;
 int fi2 = 0;
 char st_prn [6];
 
-for (fi2 = 0; fi2 < 20; fi2 ++)
+for (fi2 = 0; fi2 < 30; fi2 ++)
 {
  for (fi = 0; fi < 50; fi ++)
  {
@@ -1029,8 +1073,16 @@ char temp_quant [5];
 //you[0].res_magic -= 3;
 
 int brek = random2(3) + 4;
+if (you[0].xl >= 12) brek = random2(3) + 2;
+if (you[0].xl >= 21) brek = random2(2) + 2;
+
 ouch(brek, 0, 14);
 you[0].base_hp2 -= brek;
+
+ brek = random2(4) + 3;
+ if (you[0].xl > 12) brek = random2(3) + 2;
+ if (you[0].xl > 21) brek = random2(2) + 2;
+
 
  you[0].ep -= 1;
  you[0].base_ep2 --;

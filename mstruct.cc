@@ -88,10 +88,15 @@ spell_list[][7] =       {// sec  bolt   ench  selfench  misc   misc2  emergency
 /*deep elf death mage  */ {104,  19,     19,     13,     28,     28,     14},
 /*kobold demonologist  */ {105,  33,     37,     33,     37,    100,    100},
 /*naga                 */ {106,  41,     41,    100,    100,    100,    100},
-/*naga mage            */ {107,  22,     22,      5,     22,     15,     14},
+/*naga mage            */ {107,   7,     22,      5,      7,     15,     14},
 /*curse skull          */ {108,  42,     42,     48,    100,     42,    100},
 /*shining eye          */ {109,  43,     43,    100,    100,    100,    100},
 /*frost giant          */ {110,   9,      9,    100,    100,    100,    100},
+/*Angel                */ {111, 100,    100,     13,    100,     13,     13},
+/*Daeva                */ {112,  30,    100,     30,    100,     30,    100},
+/*Shadow Dragon        */ {113,  19,     19,    100,    100,     19,    100},
+/*Sphinx               */ {114,   6,      3,     30,      4,    100,     13},
+/*Mummy                */ {115,  37,     30,     48,     30,     29,    100},
 };
 
 
@@ -113,7 +118,7 @@ case 13: // healing
 case 14: // teleportation
 case 15: // teleport away
 case 16: // blink
-case 17: // splinters
+case 17: // crystal spear
 case 18: // dig - this needs special coding in crawl99.cc, so don't use it
 case 19: // -ve energy
 case 20: // burst of hellfire
@@ -494,7 +499,7 @@ int x; //char temp[2]={0,0};
 char *monam(int mons_cla, int mons_e, char desc, char see_invis)
 {
 
-// char gmo_n [40];
+ char gmo_n2 [40];
  free(gmo_n);
  gmo_n = (char *)malloc(sizeof(char) * 40);
  if (gmo_n == NULL)
@@ -514,6 +519,21 @@ char *monam(int mons_cla, int mons_e, char desc, char see_invis)
  {
   moname(mons_cla, desc, player_see_invis(), see_invis, gmo_n);
   strcat(gmo_n, " skeleton");
+  return gmo_n;
+ }
+ if (mons_e == 367)
+ {
+  switch(see_invis)
+  {
+   case 0: strcpy(gmo_n, "The "); break;
+   case 1: strcpy(gmo_n, "the "); break;
+   case 2: strcpy(gmo_n, "A "); break;
+   case 3: strcpy(gmo_n, "a "); break;
+   /* case 4: do nothing - 4 is empty */
+  }
+  strcat(gmo_n, "spectral ");
+  moname(mons_cla, desc, player_see_invis(), 4, gmo_n2);
+  strcat(gmo_n, gmo_n2);
   return gmo_n;
  }
  if (mons_e == 400)

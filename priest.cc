@@ -302,7 +302,14 @@ for (i = gx1; i < gx2 + 1; i ++)
  for (j = gy1; j < gy2 + 1; j ++)
  {
   if (grd [i] [j] == 30) grd [i] [j] = replaced [random() % 5];
-  if (random() % 7500 == 0) grd [i] [j] = 97;
+  if (random() % 7500 == 0) grd [i] [j] = 97; /* gate out of abyss */
+  if (random() % 10000 == 0) /* altar */
+  {
+   do
+   {
+     grd [i] [j] = 180 + random() % 12;
+   } while (grd [i] [j] == 183 | grd [i] [j] == 185 | grd [i] [j] == 190);
+  }
  }
 }
 

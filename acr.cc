@@ -27,6 +27,7 @@ Sub-Crawl 1.0
 #include "externs.h"
 
 
+#include "ability.h"
 //#include "beam.h"
 #include "chardump.h"
 #include "command.h"
@@ -35,7 +36,7 @@ Sub-Crawl 1.0
 #include "describe.h"
 #include "direct.h"
 #include "dungeon.h"
-//#include "effects.h"
+#include "effects.h"
 #include "fight.h"
 #include "files.h"
 #include "food.h"
@@ -69,6 +70,7 @@ Sub-Crawl 1.0
 #include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
+#include "transform.h"
 #include "view.h"
 
 /*
@@ -149,6 +151,10 @@ unsigned char mapchar(unsigned char ldfk);
 unsigned char mapchar2(unsigned char ldfk);
 unsigned char mapchar3(unsigned char ldfk);
 unsigned char mapchar4(unsigned char ldfk);
+
+extern unsigned char your_sign; /* these two are defined in view.cc */
+extern unsigned char your_colour;
+
 
 int main(int argc, char *argv[])
 {
@@ -365,7 +371,7 @@ switch(keyin)
                 case '5': you[0].run_x = 0; you[0].run_y = 0; you[0].running = 100; break;
 
                 case '<': up_stairs(); break;
-                case '>': down_stairs(0); break;
+                case '>': down_stairs(0, you[0].your_level); break;
                 case 'o': open_door(100, 100); break;
                 case 'c': close_door(100, 100); break;
                 case 'd': drop(); break;
@@ -390,6 +396,10 @@ switch(keyin)
                 case 'A': display_mutations(); break;
                 case 'V': original_name(); break;
                 case 'p': pray(); break;
+                case '^': if (you[0].religion == 0)
+                        { mpr("You aren't religious.");
+                         break; }
+                        describe_god(you[0].religion); break;
                 case '.':
   search_around();
   move_x = 0;
@@ -409,22 +419,7 @@ stethoscope(250); break;
   you[0].turnover = 1; break;
                 case 'Z': cast_a_spell(); break;
 //              case 'M': which_spell(); break;      //memorise_spell(); break;
-                case 'O': if ((you[0].clas != 8 | you[0].xl <= 7) && wearing_amulet(35) == 0)
-                          {
-                           strcpy(info, "You can't go berserk at will!");
-                           mpr(info);
-                           break;
-                          }
-                          you[0].turnover = 1;
-                          if (you[0].xl + (wearing_amulet(35) * 10) <= random2(20)) goto fail_berserk;
-                          if (go_berserk() == 0)
-                          {
-                           fail_berserk : strcpy(info, "You fail to go berserk.");
-                           mpr(info);
-                           you[0].turnover = 1;
-                           break;
-                          }
-                          break;
+
   case 'X':
   if (you[0].level_type == 1 | you[0].level_type == 2)
   {
@@ -542,7 +537,9 @@ case '[':
 //   acquirement();
 break;
 
-case ']': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
+case ']': //grd [you[0].x_pos] [you[0].y_pos] = 96;
+gain_piety(10);
+break;
 
   case ')': you[0].xp += 500; you[0].exp_available += 500; you[0].xp_ch = 1;
   level_change();
@@ -581,11 +578,9 @@ case ']': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
   case '{':
   magic_mapping(99, 100);
   break;
-  case '^':
-  mutate(100);
-  break;
+//  case '}': Xom_acts(1, 50, 1); break;
+  case '|': acquirement(250); break;
 */
-
 #ifdef DEBUG
   case ')': you[0].xp += 500; you[0].exp_available += 500; you[0].xp_ch = 1;
   level_change();
@@ -596,7 +591,7 @@ case ']': grd [you[0].x_pos] [you[0].y_pos] = 96; break;
 break;
 //  case '^': shop(); //in_a_shop(-1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].armour [0], you[0].armour [5], you[0].armour [2], you[0].armour [1], you[0].armour [3], you[0].armour [4], you[0].ring, it, igrid, you);
 //  break;
-  case '|': acquirement(); break; //animate_dead(5, 7, you[0].pet_target, 1); break;
+  case '|': acquirement(250); break; //animate_dead(5, 7, you[0].pet_target, 1); break;
   case '-': you[0].hp = you[0].hp_max; you[0].hp_ch = 1; break;
   case '~': level_travel(); break;
   case '%': create_spec_object2(); break;
@@ -873,7 +868,22 @@ if (you[0].duration [15] == 1)
 if (you[0].duration [17] > 0) you[0].duration [17] --;
 if (you[0].duration [17] == 1)
 {
- mpr("You can use your special ability again.");
+ mpr("You have got your breath back.");
+ you[0].duration [17] = 0;
+}
+
+if (you[0].duration [18] > 0)
+{
+ you[0].duration [18] --;
+ if (you[0].duration [18] == 10)
+ {
+  mpr("Your transformation is almost over.");
+  you[0].duration [18] -= random2(3);
+ }
+}
+if (you[0].duration [18] == 1)
+{
+ untransform();
  you[0].duration [17] = 0;
 }
 
@@ -921,10 +931,18 @@ if (you[0].duration [14] == 1)
  you[0].attribute [3] --;
 }
 
+if (you[0].duration [16] > 1) you[0].duration [16] --;
 if (you[0].duration [16] == 1)
 {
  mpr("Your poison resistance expires."); // poison resistance wore off
  you[0].duration [16] = 0;
+}
+
+if (you[0].duration [19] > 1) you[0].duration [19] --;
+if (you[0].duration [19] == 1)
+{
+ mpr("Your unholy channel expires."); // Death channel wore off
+ you[0].duration [19] = 0;
 }
 
 
@@ -939,7 +957,11 @@ if (you[0].duration [13] == 1)
  you[0].duration [13] = 0;
 }
 
-if (you[0].invis > 1) you[0].invis --;
+if (you[0].invis > 1)
+{
+ you[0].invis --;
+ if (you[0].hunger >= 40 && you[0].is_undead != 2) you[0].hunger -= 5;
+}
 if (you[0].invis == 1)
 {
         strcpy(info, "You flicker back into view.");
@@ -1008,11 +1030,11 @@ if (you[0].berserker == 1)
         strcpy(info, "You feel exhausted.");
         mpr(info);
         you[0].berserker = 0;
- you[0].paralysis += 4 + random2(4);
- you[0].slow += 8 + random2(8) + random2(15) + 5;
+ you[0].slow += 4 + random2(4) + random2(4);
  you[0].hunger -= 700;
  if (you[0].hunger <= 50) you[0].hunger = 50;
-
+ calc_hp();
+ you[0].hp_ch = 1;
 }
 
 if (you[0].lev > 1)
@@ -1103,7 +1125,7 @@ if (you[0].poison > 0)
 
 if (you[0].deaths_door > 0)
 {
- if (you[0].hp > 0)
+ if (you[0].hp > you[0].skills [29] + (you[0].religion == 3) * 13)
  {
   strcpy(info, "Your life is in your own hands once again.");
   mpr(info);
@@ -1125,11 +1147,12 @@ if (you[0].deaths_door > 0)
 
  if (you[0].deaths_door == 1)
  {
-  strcpy(info, "Your time has expired!");
+  strcpy(info, "Your life is in your own hands again!");
   mpr(info);
 //  relay_message();
   more();
-  ouch(-9999, 0, 4);
+/*  you[0].hp = 1;*/
+  you[0].hp_ch = 1;
  }
 
 }
@@ -1141,7 +1164,7 @@ if (you[0].hunger_inc > 0 && you[0].hunger >= 40 && you[0].is_undead != 2)
  you[0].hunger -= you[0].burden_state;
 }
 
-if (you[0].hp < you[0].hp_max && you[0].disease == 0) you[0].incr_regen += player_regen();
+if (you[0].hp < you[0].hp_max && you[0].disease == 0 && you[0].deaths_door == 0) you[0].incr_regen += player_regen();
 if (you[0].ep < you[0].ep_max) you[0].ep_incr_regen += 7 + you[0].ep_max / 2;
 
 while(you[0].incr_regen >= 100)
@@ -1248,7 +1271,7 @@ if (you[0].paralysis > 0)
 
 
 
-        if (you[0].level_type != 0)
+        if (you[0].level_type != 0) /* No monsters in labyrinths */
         {
          switch(you[0].level_type)
          {
@@ -1258,7 +1281,7 @@ if (you[0].paralysis > 0)
            case 3: if (random2(50) == 0) pandemonium_mons(); //mons_place(250, 0, 50, 50, 0, MHITNOT, 250, 52);
            break; /* Pandemonium */
          }
-        } else if (random2(240) == 0 && you[0].level_type != 1) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
+        } else if (random2(240) == 0 && you[0].level_type != 1 && you[0].where_are_you != 18) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
 
 return;
 
@@ -1276,7 +1299,7 @@ struct dist door_move [1];
 door_move[0].move_x = move_x;
 door_move[0].move_y = move_y;
 
-if (move_x != 100 && env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG)
+if (move_x != 100 && env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != MNG && (menv[env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_class < MLAVA0 | menv [env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_sec == 0))
 {
 /* if (menv [env[0].mgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y]].m_ench [2] == 6 && player_see_invis() == 0)
  {
@@ -1461,6 +1484,9 @@ void initialise(void)
 {
 
 int i = 0;
+
+your_sign = '@';
+your_colour = LIGHTGREY;
 
 /*for (i = 0; i < 10; i ++)
 {

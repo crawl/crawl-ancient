@@ -12,6 +12,7 @@
 
 #include "externs.h"
 #include "player.h"
+#include "religion.h"
 #include "itemname.h"
 #include "message.h"
 #include "mutation.h"
@@ -215,6 +216,43 @@ strcpy(dmp [lin], "You are ");
   }
 lin ++;
 
+if (you[0].religion != 0)
+{
+ strcpy(dmp [lin], "You worship ");
+ strcat(dmp [lin], god_name(you[0].religion));
+ strcat(dmp [lin], ".");
+ lin ++;
+ strcpy(dmp [lin], god_name(you[0].religion));
+
+ if (you[0].piety <= 5)
+ {
+ strcat(dmp [lin], " is displeased.");
+ } else
+ if (you[0].piety <= 20)
+ {
+ strcat(dmp [lin], " is noncommittal.");
+ } else
+ if (you[0].piety <= 40)
+ {
+ strcat(dmp [lin], " is pleased with you.");
+ } else
+ if (you[0].piety <= 70)
+ {
+ strcat(dmp [lin], " is most pleased with you.");
+ } else
+ if (you[0].piety <= 100)
+ {
+ strcat(dmp [lin], " is greatly pleased with you.");
+ } else
+ if (you[0].piety <= 130)
+ {
+ strcat(dmp [lin], " is extremely pleased with you.");
+ } else
+ {
+ strcat(dmp [lin], " is exalted by your worship.");
+ }
+ lin ++;
+}
 
 switch(you[0].burden_state)
 {
@@ -244,7 +282,12 @@ if (you[0].hunger < 11000)
 lin += 2;
 
 
-
+switch(you[0].attribute [5])
+{
+ case 1: strcpy(dmp [lin], "You are in spider-form."); lin += 2; break;
+ case 2: strcpy(dmp [lin], "Your hands are blades."); lin += 2; break;
+ case 3: strcpy(dmp [lin], "You are a stone statue."); lin += 2; break;
+}
 
 
 
@@ -255,11 +298,11 @@ lin += 2;
    unsigned char anything = 0;
    char ft;
    char yps = 0;
-   char temp_id [4] [30];
+   char temp_id [4] [50];
 
    for (i = 0; i < 4; i ++)
    {
-    for (j = 0; j < 30; j ++)
+    for (j = 0; j < 50; j ++)
     {
         temp_id [i] [j] = 1;
     }

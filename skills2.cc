@@ -54,7 +54,7 @@ char *skills[50][5] = {
 // 29:
 {"Necromancy",     "Grave Robber", "Necromancer", "Reanimator", "Death Mage"}, // death
 {"Translocations", "Jumper", "Shifter", "Blinker", "Translocater"}, // translocations
-{"Transmigration", "Alterer", "Transformer", "Transmogrifier", "Transmuter"}, // transmigrations
+{"Transmigration", "Changer", "Transformer", "Transmogrifier", "Transmuter"}, // transmigrations
 {"Divinations",    "Seer", "Overseer", "Diviner", "Oracle"}, // divinations
 
 // 33:
@@ -192,7 +192,7 @@ if (char_lev <= 20) char_lev2 = 2;
 if (char_lev <= 12) char_lev2 = 1;
 if (char_lev <= 7) char_lev2 = 0;
 
-if (char_class == 2) // Priest
+/*if (char_class == 2) // Priest
 {
 switch(char_lev2)
 {
@@ -211,10 +211,10 @@ switch(char_lev2)
  case 2: return "Paladin";
  case 3: return "Scourge of Evil";
 }
-} else {
+} else {*/
         if(best_skill<50) tempstr=skills[best_skill][skill_lev2+1];
 //      if(tempstr!=NULL) strcpy(title,tempstr);
-       }
+//       }
 
 //return title;
 if (tempstr == NULL) return "Invalid Title";
@@ -264,6 +264,21 @@ int hitp = you[0].hp_max;
 
 hitp = you[0].base_hp - 5000 + you[0].base_hp2 - 5000;
 hitp += you[0].xl * you[0].skills [0] / 5;
+
+if (you[0].berserker != 0)
+{
+ hitp *= 15;
+ hitp /= 10;
+}
+
+if (you[0].duration [18] != 0)
+{
+ switch(you[0].attribute [5])
+ {
+  case 3: hitp *= 15; hitp /= 10; break;
+  case 4: hitp *= 12; hitp /= 10; break;
+ }
+}
 
 you[0].hp_max = hitp;
 if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
@@ -359,7 +374,7 @@ switch(lev)
         case 11: return 375;
         case 12: return 440;
         case 13: return 525;
-        default: return 620 + 130 * (lev - 14);
+        default: return 620 + 180 * (lev - 14);
 
 }
 
@@ -855,7 +870,7 @@ switch(skill)
  case 10: return 120; // xbows
  case 11: return 120; // darts
  case 12: return 120; // throwing
- case 13: return 180; // armour
+ case 13: return 150; // armour
  case 14: return 150; // dodge
  case 15: return 40; // stealth
  case 16: return 100; // stab
@@ -1060,7 +1075,63 @@ switch(skill)
 }
 break;
 
-
+default: // Draconian
+switch(skill)
+{
+ case 0: return 90; // fighting
+ case 1: return 100; // short blades
+ case 2: return 100; // long blades
+ case 3: return 100; // great swords
+ case 4: return 100; // axes
+ case 5: return 100; // maces and flails
+ case 6: return 100; // polearms
+ case 7: return 100; // staves
+ case 8: return 120; // slings
+ case 9: return 120; // bows
+ case 10: return 120; // xbows
+ case 11: return 120; // darts
+ case 12: return 120; // throwing
+ case 13: return 200; // armour
+ case 14: return 120; // dodge
+ case 15: return 120; // stealth
+ case 16: return 100; // stab
+ case 17: return 100; // shields
+/* case 18: return 100; // traps
+ case 19: return 100;
+ case 20: return 100;
+ case 21: return 100;
+ case 22: return 100;
+ case 23: return 100;
+ case 24: return 100;*/
+ case 25:
+ if (species == 24) return 75;
+ return 100; // spellcasting
+ case 26: return 100; // conj
+ case 27: return 120; // ench
+ case 28: return 100; // summ
+ case 29: return 100; // necro
+ case 30:
+ if (species == 24) return 75;
+ return 100; // transloc
+ case 31: return 100; // transmut
+ case 32: return 100; // divin
+ case 33:
+ if (species == 18) return 70;
+ if (species == 19) return 150;
+ return 100; // Fire
+ case 34:
+ if (species == 18) return 150;
+ if (species == 19) return 70;
+ return 100; // Ice
+ case 35:
+ if (species == 23) return 70;
+ return 100; // Air
+ case 36: return 100; // Earth
+ case 37:
+ if (species == 20) return 70;
+ return 100; // poison
+}
+break;
 
 /*
 case 2: // elf

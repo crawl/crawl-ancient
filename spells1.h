@@ -13,8 +13,9 @@ void stinkcl(char cl_x, char cl_y, struct bolt beam [1]);
 
 void cast_big_c(int pow, char cty);
 void big_cloud(char clouds, char cl_x, char cl_y, int pow); //, struct bolt beam [1]);
-void cast_lesser_healing(int mabil);
-void cast_greater_healing(int mabil);
+char cast_lesser_healing(void);
+char cast_greater_healing(void);
+char cast_greatest_healing(void);
 void cast_revivification(int mabil);
 void cast_cure_poison(int mabil);
 void purification(void);

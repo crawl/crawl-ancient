@@ -196,8 +196,8 @@ void check_doors(void);
 void morgue(void);
 
 void define_zombie(char not_zombsize,
-unsigned char ztype,
-unsigned char cs);
+int ztype,
+int cs);
 
 
 
@@ -224,6 +224,7 @@ char plan_6(void);
 void join_the_dots(unsigned char dotx1, unsigned char doty1, unsigned char dotx2, unsigned char doty2, char forbid_x1, char forbid_y1, char forbid_x2, char forbid_y2);
 
 void place_curse_skull(void);
+void place_altar(void);
 
 
 int builder(unsigned int lev_numb, char level_type)
@@ -378,6 +379,42 @@ if (you[0].where_are_you == 16 && many_many == you[0].branch_stairs [6] + branch
 if (you[0].where_are_you == 17 && many_many == you[0].branch_stairs [7] + branch_depth(7))
 {
  build_vaults(84);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 18 && many_many == you[0].branch_stairs [8] + branch_depth(8))
+{
+ build_vaults(85);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 19 && many_many == you[0].branch_stairs [9] + branch_depth(9))
+{
+ build_vaults(86);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 20 && many_many == you[0].branch_stairs [10] + branch_depth(10))
+{
+ build_vaults(87);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 21 && many_many == you[0].branch_stairs [11] + 1)
+{
+ build_vaults(88);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 21 && many_many == you[0].branch_stairs [11] + 2)
+{
+ build_vaults(89);
+ goto skip_level;
+}
+
+if (you[0].where_are_you == 21 && many_many == you[0].branch_stairs [11] + 3)
+{
+ build_vaults(90);
  goto skip_level;
 }
 
@@ -671,6 +708,7 @@ if (you[0].where_are_you == 16) bno_mons += random3(10) + random3(20) + random3(
 
 if (bno_mons > 120) bno_mons = 120; // unlikely
 if (level_type == 2) bno_mons = 0;
+if (you[0].where_are_you == 18) bno_mons = 0; /* Temple */
 
 bk = 0;
 
@@ -698,7 +736,7 @@ passed
 // keep kloppo for later (aquatic monsters)
 
 // Unique beasties:
-do_uniques : if (many_many > 0 && !(you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 10 | you[0].where_are_you == 11 | you[0].where_are_you == 12) && random() % 3 == 0)
+do_uniques : if (many_many > 0 && !(you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 10 | you[0].where_are_you == 11 | you[0].where_are_you == 12 | you[0].where_are_you == 18) && random() % 3 == 0)
 {
 
 int which_unique = 0;               //     30 in total
@@ -853,12 +891,12 @@ if (many_many >= 25 && many_many <= 50 && (many_many == 31 | random() % 3 == 0) 
  grd [bi] [bj] = 96; // gate to Abyss
 }
 
-for (count_x = 0; count_x < 20; count_x ++)
+for (count_x = 0; count_x < 30; count_x ++)
 {
 if (you[0].branch_stairs [count_x] == 0) break;
 if (count_x != 7)
 {
- if ((count_x == 3 && you[0].where_are_you == 12 && level_type == 0 && many_many == you[0].branch_stairs [3]) | (count_x == 5 && you[0].where_are_you == 14 && level_type == 0 && many_many == you[0].branch_stairs [5]) | (count_x == 6 && you[0].where_are_you == 15 && level_type == 0 && many_many == you[0].branch_stairs [6]))
+ if ((count_x == 3 && you[0].where_are_you == 12 && level_type == 0 && many_many == you[0].branch_stairs [3]) | (count_x == 5 && you[0].where_are_you == 14 && level_type == 0 && many_many == you[0].branch_stairs [5]) | (count_x == 6 && you[0].where_are_you == 15 && level_type == 0 && many_many == you[0].branch_stairs [6]) | (count_x == 9 && you[0].where_are_you == 12 && level_type == 0 && many_many == you[0].branch_stairs [9]) | (count_x == 10 && you[0].where_are_you == 10 && level_type == 0 && many_many == you[0].branch_stairs [10]) | (count_x == 11 && you[0].where_are_you == 15 && level_type == 0 && many_many == you[0].branch_stairs [11]))
  {
   do
   {
@@ -884,7 +922,7 @@ if (count_x != 7)
   if (you[0].where_are_you != 1 && you[0].where_are_you != 14)
      hide_doors();
 
-place_traps();
+if (you[0].where_are_you != 18) place_traps();
 
 
 int no_it = random3 (12) + random3 (12) + random3(10);// + random3(many_many / 2);// + random3 (10);// + random3(30);
@@ -899,7 +937,7 @@ if (you[0].where_are_you == 14) // vaults
 }
 if (you[0].where_are_you == 10) specif_type = 15; /* lots of gold in the orcish mines */
 
-if (you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 13 | you[0].where_are_you == 16) no_it = 0;
+if (you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 13 | you[0].where_are_you == 16 | you[0].where_are_you == 18) no_it = 0;
 /* No items in hell, the slime pits, the Hall */
  else
   for (plojy = 0; plojy < no_it; plojy++)
@@ -915,7 +953,7 @@ for (shcount = 0; shcount < 5; shcount ++)
  env[0].sh_type [shcount] = 100;
 }
 
-if (!(you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 12) && level_type == 0) place_shops();
+if (!(you[0].where_are_you == 1 | you[0].where_are_you == 2 | you[0].where_are_you == 4 | you[0].where_are_you == 5 | you[0].where_are_you == 12 | you[0].where_are_you == 18) && level_type == 0) place_shops();
 
 
 /* resets spec_room characters:
@@ -994,7 +1032,7 @@ if (many_many == 35 && level_type == 0 && you[0].where_are_you == 0)
 } /* replaces all down stairs with staircases to Zot */
 
 
-for (count_x = 0; count_x < 20; count_x ++)
+for (count_x = 0; count_x < 30; count_x ++)
 {
  if (you[0].branch_stairs [count_x] == 0) break;
  if (many_many == you[0].branch_stairs [count_x] + 1 && level_type == 0 && you[0].where_are_you == 10 + count_x)
@@ -1009,10 +1047,10 @@ for (count_x = 0; count_x < 20; count_x ++)
                    }
         }
   }
- } /* top level of branch levels - replaces up stairs with stairs back to dungeon */
+ } /* top level of branch levels - replaces up stairs with stairs back to dungeon or wherever */
 }
 
-for (count_x = 0; count_x < 20; count_x ++)
+for (count_x = 0; count_x < 30; count_x ++)
 {
  if (many_many == you[0].branch_stairs [count_x] + branch_depth(count_x) && level_type == 0 && you[0].where_are_you == 10 + count_x)
  {
@@ -1032,6 +1070,8 @@ for (count_x = 0; count_x < 20; count_x ++)
 if (you[0].where_are_you == 15 && random3(3) == 0) place_curse_skull();
 if (you[0].where_are_you == 15 && random3(7) == 0) place_curse_skull();
 
+if (you[0].where_are_you >= 10 && you[0].level_type == 0 && random3(5) == 0) place_altar();
+
 if (you[0].where_are_you == 0)
 {
  for (bi = 1; bi < 80; bi ++)
@@ -1043,6 +1083,9 @@ if (you[0].where_are_you == 0)
     case 113: // slime
     case 115: // crypt
     case 116: // hall of blades
+    case 119: // snake pit
+    case 120: // elf hall
+    case 121: // Tomb
     grd [bi] [bj] = 67;
     break; /* this shouldn't be necessary, but is */
    }
@@ -1139,7 +1182,7 @@ if (lev_mons == 51)
  {
   do
   {
-   menv [bk].m_class = random3(280);
+   menv [bk].m_class = random3(400);
   } while (mons_level_abyss(menv [bk].m_class) == 0);
 //  if (mons_level_abyss(menv [bk].m_class) == 0) continue;
  } while(random3(50) + random3(51) > mons_rare_abyss(menv [bk].m_class));
@@ -1147,7 +1190,7 @@ if (lev_mons == 51)
        {
         do
         {
-         menv [bk].m_class = random3(280);
+         menv [bk].m_class = random3(400);
         } while (mons_rarity(menv [bk].m_class) == 0);
 
        } while(!(lev_mons > mons_level(menv [bk].m_class) - 5 && lev_mons < mons_level(menv [bk].m_class) + 5 && random3(50) + random3(51) <= mons_rarity(menv [bk].m_class) - (mons_level(menv [bk].m_class) - lev_mons) * (mons_level(menv [bk].m_class) - lev_mons)));
@@ -1379,10 +1422,10 @@ plussed ++;
 
 if (plus_seventy != 250) menv [bk].m_sec = plus_seventy;
 
-if ((menv [bk].m_class == 25 | menv [bk].m_class == 107 | menv [bk].m_class == 51 | menv [bk].m_class == 108) && plus_seventy != 250)
+if ((menv [bk].m_class == 25 | menv [bk].m_class == 107 | menv [bk].m_class == 51 | menv [bk].m_class == 108 | menv [bk].m_class == 367) && plus_seventy != 250)
 {
           define_zombie(3, plus_seventy, menv [bk].m_class);
-} else if (menv [bk].m_class == 25 | menv [bk].m_class == 51 | menv [bk].m_class == 107 | menv [bk].m_class == 108)
+} else if (menv [bk].m_class == 25 | menv [bk].m_class == 51 | menv [bk].m_class == 107 | menv [bk].m_class == 108 | menv [bk].m_class == 367)
           define_zombie(3, 250, 250);
 
 if (menv [bk].m_class == 46 | menv [bk].m_class == 141 | menv [bk].m_class == 240)
@@ -2343,9 +2386,9 @@ for (bp = 0; bp < 400; bp ++)
  mitm.itype [bp] = 0;
 
 
-        if (((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(5) < 2)) mitm.iclass [bp] = 4; // food
+        if (((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(5) < 2)) mitm.iclass [bp] = 15; // food
 
- if ((mitm.iclass [bp] == 10 | mitm.iclass [bp] == 11) && random3(4) != 0) mitm.iclass [bp] = 6;
+ if ((mitm.iclass [bp] == 10 | mitm.iclass [bp] == 11) && random3(5) != 0) mitm.iclass [bp] = 6;
  if (mitm.iclass [bp] == 11 && random3(2) != 0) mitm.iclass [bp] = 6;
  if ((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(4) == 0) mitm.iclass [bp] = 1; // missile
  if ((mitm.iclass [bp] == 3 | mitm.iclass [bp] == 7) && random3(4) == 0) mitm.iclass [bp] = 5; // potion
@@ -2560,7 +2603,7 @@ if (allow_uniques == 1)
                  break;
                 }
 
-      if ((random3(350) <= 20 + (many_many) | many_many == 351) && mitm.itype [bp] != 0 && mitm.itype [bp] != 19 && mitm.itype [bp] != 20 && mitm.itype [bp] != 21) // nobody would bother enchanting a club
+      if ((random3(400) <= 50 + (many_many) | many_many == 351) && mitm.itype [bp] != 0 && mitm.itype [bp] != 19 && mitm.itype [bp] != 20 && mitm.itype [bp] != 21) // nobody would bother enchanting a club
       {
          if (many_many == 351) many_many = 200;
          mitm.iplus [bp] += random3(3);
@@ -2585,7 +2628,7 @@ if (allow_uniques == 1)
           }
          }
 
-         if (random3(400) <= 30 + many_many | (many_many == 351 && random() % 2 == 0))
+         if (random3(700) <= 100 + many_many | (many_many == 351 && random() % 2 == 0))
          {
          // note: even this doesn't guarantee special enchantment
          switch(mitm.itype [bp])
@@ -3076,6 +3119,7 @@ if (force_spec == 250 && random() % 2 == 0)
 do
 {
  mitm.itype [bp] = random() % 44;
+ if (book_rarity(mitm.itype [bp]) == 100) continue;
  if (mitm.itype [bp] != 35 && mitm.itype [bp] != 41)
  {
   if (random3(10) == 0) mitm.itype [bp] = 42 + random3(2);
@@ -3211,7 +3255,7 @@ if (mitm.itype [bp] >= 10)
 
                 default: // money - class = 15
                 mitm.iclass [bp] = 15;
-                quant = random3(15) + random3(20) + 1 + random3(many_many) + random3(many_many) + random3(many_many);
+                quant = random3(10) + random3(10) + 1 + random3(many_many) + random3(many_many);
                 break;
 
         }
@@ -3738,9 +3782,9 @@ for (bcount_x = x1; bcount_x < x2; bcount_x ++)
 
 
 
-void define_zombie(char not_zombsize,
-unsigned char ztype,
-unsigned char cs) // 1=2, 2=1, 3=1 or 2
+void define_zombie(char not_zombsize, /* 1=2, 2=1, 3=1 or 2 */
+int ztype,
+int cs)
 {
 int mons_sec2 = 0;
 
@@ -3764,6 +3808,7 @@ menv [bk].m_class = menv [bk].m_sec;
 define_monster(bk, menv);
 
 
+
 menv [bk].m_hp = hit_points(menv [bk].m_HD, 6, 5);
 menv [bk].m_hp_max = menv [bk].m_hp;
 menv [bk].m_AC -= 2;
@@ -3781,10 +3826,10 @@ menv [bk].m_class = 25;
 if (mons_zombie_size((int) menv [bk].m_sec) == 2)
 {
  menv [bk].m_class = 51;
- menv [bk].m_speed = 6;
+// menv [bk].m_speed = 6;
 }
 
-if (cs > 100)
+if (cs > 100 && cs != 367)
 {
  menv [bk].m_hp = hit_points(menv [bk].m_HD, 5, 4);
  menv [bk].m_hp_max = menv [bk].m_hp;
@@ -3796,8 +3841,17 @@ if (cs > 100)
  if (mons_zombie_size(menv [bk].m_sec) == 2)
  {
   menv [bk].m_class = 108;
-  menv [bk].m_speed = 6;
+//  menv [bk].m_speed = 6;
  }
+}
+
+if (cs == 367)
+{
+ menv [bk].m_class = 367;
+ menv [bk].m_hp = hit_points(menv [bk].m_HD, 4, 4);
+ menv [bk].m_hp_max = menv [bk].m_hp;
+ menv [bk].m_AC += 4;
+ menv [bk].m_class = 367;
 }
 
 menv [bk].m_sec = mons_sec2;
@@ -3995,6 +4049,7 @@ break;
 case 115: // gnoll
 case 142: // ogre mage
 case 261: // naga warrior
+case 368:
 case 285: // Edmund
 case 305:// Duane
 force_spec = 100;
@@ -4207,8 +4262,26 @@ break;
 
 case 26: // Angel
 mitm.iclass [bp] = 0;
-mitm.itype [bp] = 6;
-mitm.idam [bp] = 93; // glowing, holy wrath
+if (random3(3) == 0)
+{
+ mitm.itype [bp] = 1; /* mace */
+ mitm.idam [bp] = 74; /* glowing, disruption */
+} else
+{
+ mitm.itype [bp] = 6; /* longsword */
+ mitm.idam [bp] = 60; /* glowing */
+}
+mitm.iplus [bp] = 51 + random3(3);
+mitm.iplus2 [bp] = 51 + random3(3);
+mitm.icol [bp] = WHITE;
+iquan = 1;
+force_item = 1;
+break;
+
+case 366: // Daeva
+mitm.iclass [bp] = 0;
+mitm.itype [bp] = 6; /* longsword */
+mitm.idam [bp] = 63; /* glowing, holy wrath */
 mitm.iplus [bp] = 51 + random3(3);
 mitm.iplus2 [bp] = 51 + random3(3);
 mitm.icol [bp] = WHITE;
@@ -4538,6 +4611,7 @@ case 161:// naga
 case 260:// naga mage
 case 261:// naga warrior
 if (random3(3) != 0) return;
+case 368:
 case 53: // kobold demonologist
 case 54:
 case 111:
@@ -5481,10 +5555,10 @@ switch(sbook_type)
 
   case 7: // book of invocations
        func_pass [0] = 0;
-       func_pass [1] = 61; // Swarm
-       func_pass [2] = 62; // Thing
-       func_pass [3] = 72; // summ wraiths
-       func_pass [4] = 210; //
+       func_pass [1] = 146; // recall
+       func_pass [2] = 61; // Swarm
+       func_pass [3] = 62; // Thing
+       func_pass [4] = 72; // summ wraiths
        func_pass [5] = 210; //
        func_pass [6] = 210; //
   break;
@@ -5529,7 +5603,7 @@ switch(sbook_type)
        func_pass [2] = 28; // controlled bl
        func_pass [3] = 139; // control teleport
        func_pass [4] = 1; // tel self
-       func_pass [5] = 210; //
+       func_pass [5] = 147; // portal
        func_pass [6] = 210; //
   break;
 
@@ -5570,7 +5644,7 @@ switch(sbook_type)
        func_pass [2] = 112; // bone shards
        func_pass [3] = 122; // rot corpses
        func_pass [4] = 126; // lethal infusion
-       func_pass [5] = 210; //
+       func_pass [5] = 148; // agony
        func_pass [6] = 210; //
        break;
 
@@ -5585,22 +5659,22 @@ switch(sbook_type)
        func_pass [6] = 210; //
   break;
 
- case 17: // book of holy vengeance
-       func_pass [1] = 46; // repel undead
-       func_pass [2] = 45; // smiting
-       func_pass [3] = 47; // holy word
-       func_pass [4] = 210; //
-       func_pass [5] = 210; //
+ case 17: // book of changes
+       func_pass [1] = 150; // disrupt
+       func_pass [2] = 152; // blade hands
+       func_pass [3] = 149; // spider form
+       func_pass [4] = 14; // dig
+       func_pass [5] = 154; // ice beast form
        func_pass [6] = 210; //
   break;
 
- case 18: // book of bodily restorations
+ case 18: // book of transfigurations
        func_pass [0] = 0;
-       func_pass [1] = 32; // rest st
-       func_pass [2] = 33; // int
-       func_pass [3] = 34; // dex
-       func_pass [4] = 210; //
-       func_pass [5] = 210; //
+       func_pass [1] = 20; // polymorph other
+       func_pass [2] = 153; // statue form
+       func_pass [3] = 144; // alter self
+       func_pass [4] = 155; // dragon form
+       func_pass [5] = 156; // lich form
        func_pass [6] = 210; //
   break;
 
@@ -5664,8 +5738,8 @@ switch(sbook_type)
        func_pass [1] = 69; // control undead
        func_pass [2] = 42; // death's door
        func_pass [3] = 72; // summon wraiths
-       func_pass [4] = 210; //
-       func_pass [5] = 210; //
+       func_pass [4] = 156; // lich form
+       func_pass [5] = 157; // death channel
        func_pass [6] = 210; //
  break;
 
@@ -5754,7 +5828,7 @@ switch(sbook_type)
        func_pass [0] = 0;
        func_pass [1] = 60; // myst bolt
        func_pass [2] = 55; // bolt of inn
-       func_pass [3] = 54; // throw splint
+       func_pass [3] = 54; // crystal spear
        func_pass [4] = 210; //
        func_pass [5] = 210; //
        func_pass [6] = 210; //
@@ -5777,7 +5851,7 @@ switch(sbook_type)
        func_pass [1] = 24; // conf
        func_pass [2] = 63; // enslavement
        func_pass [3] = 44; // mass conf
-       func_pass [4] = 210; //
+       func_pass [4] = 69; // control undead
        func_pass [5] = 210; //
        func_pass [6] = 210; //
   break;
@@ -5860,7 +5934,7 @@ switch(sbook_type)
        func_pass [1] = 61; // swarm
        func_pass [2] = 77; // elemental
        func_pass [3] = 119; // demon
-       func_pass [4] = 210; //
+       func_pass [4] = 146; // recall
        func_pass [5] = 210; //
        func_pass [6] = 210; //
   break;
@@ -5930,7 +6004,7 @@ switch(sbook_type)
        func_pass [1] = 119; // demon
        func_pass [2] = 120; //
        func_pass [3] = 121; //
-       func_pass [4] = 210; //
+       func_pass [4] = 146; // recall
        func_pass [5] = 210; //
        func_pass [6] = 210; //
   break;
@@ -6964,7 +7038,7 @@ void build_vaults(char force_vault)
 // for some weird reason can't put a vault on level 1, because monster equip
 //  isn't generated.
 
-
+int altar_count = 0;
 char stair_exist [10];
 char stx, sty;
 
@@ -7033,9 +7107,13 @@ for (vx = 0; vx < 80; vx ++)
    case ']': grd [vx] [vy] = 84; break;
    case '[': grd [vx] [vy] = 88; break;
    case 'A': grd [vx] [vy] = 98; break; // Empty archway to Hell (opened by Horn)
-//   case 'B': grd [vx] [vy] = 95; break; // Tartarus
-//   case 'C': grd [vx] [vy] = 94; break; // Cocytus
-//   case 'D': grd [vx] [vy] = 92; break; // Dis
+   case 'B':
+   grd [vx] [vy] = 180 + altar_count;
+   altar_count ++;
+   if (altar_count == 3) altar_count ++;
+   if (altar_count == 5) altar_count ++;
+   if (altar_count == 10) altar_count ++;
+   break;
    case 'I': grd [vx] [vy] = 7; break; // orcish idol
    case 'R': grd [vx] [vy] = 67; // honey / Royal Jelly
     item_made = items(1, 4, 5 + (random3(3) == 0), 1, many_many, 250);
@@ -7398,6 +7476,58 @@ MHITNOT, //hitting,
 many_many,
 passed
 );
+
+return;
+
+} while (1);
+
+
+}
+
+
+
+void place_altar(void)
+{
+
+int px, py;
+int i, j;
+int k = 0;
+int l = 0;
+
+int altar_type = 180;
+
+do
+{
+ altar_type = 180 + random3(12);
+} while (altar_type == 183 | altar_type == 185 | altar_type == 190);
+
+do
+{
+rand_px : px = 15 + random3(55);
+py = 15 + random3(45);
+k ++;
+if (k == 5000) return;
+l = 0;
+ for (i = px - 2; i < px + 3; i ++)
+ {
+  for (j = py - 2; j < py + 3; j ++)
+  {
+   if (grd [i] [j] == 67) l ++;
+   if ((grd [i] [j] != 1 && grd [i] [j] != 3 && grd [i] [j] != 5 && grd [i] [j] != 67) | mgrd [i] [j] != MNG) goto rand_px;
+  }
+ }
+
+if (l == 0) goto rand_px;
+
+ for (i = px - 2; i < px + 3; i ++)
+ {
+  for (j = py - 2; j < py + 3; j ++)
+  {
+   grd [i] [j] = 67;
+  }
+ }
+
+grd [px] [py] = altar_type;
 
 return;
 

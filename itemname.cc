@@ -22,7 +22,7 @@ char retvow(char sed);
 void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char ncase, char str_pass [50]);
 
 
-char id [4] [30];
+char id [4] [50];
 
 int prop [4] [50] [3];
 int mss [20] [50];
@@ -172,7 +172,7 @@ switch(item_clas)
         case 5: strcat(glog , "Glaive of Prune"); break;
         case 6: strcat(glog , "Sceptre of Torment"); break;
         case 7: strcat(glog , "Sword of Zonguldrok"); break;
-        case 8: strcat(glog , "Sword of Okawaru"); break;
+        case 8: strcat(glog , "Sword of Cerebov"); break;
         case 9: strcat(glog , "Staff of Dispater"); break;
         case 10: strcat(glog , "Sceptre of Asmodeus"); break;
         case 11: strcat(glog , "Sword of Power"); break;
@@ -783,7 +783,7 @@ switch(item_da / 30)
         case 12: strcat(glog , "of curse armour"); break;
         case 13: strcat(glog , "of immolation"); break;
         case 14: strcat(glog , "of blinking"); break;
- case 15: strcat(glog , "of paper"); break;
+        case 15: strcat(glog , "of paper"); break;
         case 16: strcat(glog , "of magic mapping"); break;
         case 17: strcat(glog , "of forgetfulness"); break;
         case 18: strcat(glog , "of acquirement"); break;
@@ -791,6 +791,7 @@ switch(item_da / 30)
         case 20: strcat(glog , "of vorpalise weapon"); break;
         case 21: strcat(glog , "of recharging"); break;
         case 22: strcat(glog , "of enchant weapon III"); break;
+//        case 23: strcat(glog , "of portal travel"); break;
         } break;
 
         }
@@ -865,7 +866,7 @@ switch(item_da / 30)
  case 43: strcat(glog , "amulet of inaccuracy"); break;
  case 44: strcat(glog , "amulet of resist mutation"); break;
  }
-
+/* ? of imputed learning - 100% exp from tames/summoned kills */
         break;
         } // end of if ident_lev
 
@@ -1050,8 +1051,8 @@ switch(item_da / 10)
  case 14: strcat(glog , "book of Storms and Fire"); break;
  case 15: strcat(glog , "book of Death"); break;
  case 16: strcat(glog , "book of Hinderance"); break;
- case 17: strcat(glog , "book of Holy Vengeance"); break;
- case 18: strcat(glog , "book of Bodily Restorations"); break;
+ case 17: strcat(glog , "book of Changes"); break;
+ case 18: strcat(glog , "book of Transfigurations"); break;
  case 19: strcat(glog , "book of Useful Magic"); break;
  case 20: strcat(glog , "book of War Chants"); break;
  case 21: strcat(glog , "book of Clouds"); break;
@@ -1298,7 +1299,7 @@ return 1;
 
 
 
-void save_id(char identy [4] [30])
+void save_id(char identy [4] [50])
 {
 
 char ix = 0;
@@ -1306,7 +1307,7 @@ char jx = 0;
 
 for (ix = 0; ix < 4; ix ++)
 {
- for (jx = 0; jx < 30; jx ++)
+ for (jx = 0; jx < 50; jx ++)
  {
   identy [ix] [jx] = id [ix] [jx];
  }
@@ -1322,7 +1323,7 @@ char j = 0;
 
 for (i = 0; i < 4; i ++)
 {
-        for (j = 0; j < 30; j ++)
+        for (j = 0; j < 50; j ++)
         {
                 id [i] [j] = 0;
         }
@@ -1438,7 +1439,7 @@ void init_properties(void)
         mss [2] [16] = 180;
 
         // crystal plate
-        prop [2] [17] [0] = 12; // AC
+        prop [2] [17] [0] = 14; // AC
         prop [2] [17] [1] = -12; // evasion
         mss [2] [17] = 1200;
 
@@ -1840,7 +1841,7 @@ mss [13] [1] = 200; // crystal ball
         mss [1] [3] = 5;
 
         // large rock
-        prop [1] [5] [0] = 30;
+        prop [1] [5] [0] = 20;
         mss [1] [5] = 1000;
 
 }

@@ -191,7 +191,7 @@ if (spell_cast == 20 | spell_cast == 23 | spell_cast == 30 | spell_cast == 43) /
   case 30: beem[0].type = 1; break; // smiting
   case 43: beem[0].type = 3; break; // mutation
         } // end switch
-if (beem[0].trac_targ == MHITYOU)
+if (beem[0].trac_targ == MHITYOU | beem[0].trac_targ == MHITNOT)
 {
  if (mons_near(i) == 1) direct_effect(beem);
  return;
@@ -299,7 +299,7 @@ beem[0].source_y = menv [i].m_y;
 
 // Need to correct this for power of spellcaster
 int func_pass [10];
-func_pass [8] = menv [i].m_HD * 7;
+func_pass [8] = menv [i].m_HD * 6;
 
 int ufdg = mons_spells(spell_cast, func_pass, beem[0].beam_name);
 
@@ -319,6 +319,9 @@ if (spell_cast == 5 | spell_cast == 11 | spell_cast == 13 | spell_cast == 14) //
         beem[0].move_x = 0;
         beem[0].move_y = 0;
 }
+
+if (spell_cast == 14)
+ beem[0].ench_power = 2000;
 
 if (spell_cast == 20) // burst of hellfire
 {
@@ -514,6 +517,7 @@ if (beem[0].move_x != 0 | beem[0].move_y != 0)
                 if (mitm.iplus2 [menv [i].m_inv [0]] > 80) hoggl -= 100;
 
                 beem[0].damage += hoggl;
+                beem[0].damage += menv [i].m_HD;
 
 
                 /* elven bow w/ elven arrow, also orcis */
@@ -652,7 +656,7 @@ case 0: // magic missile
 func_pass [0] = 13;//inv_col [throw_2];//icolour [inv_class [throw_2]] [inv_type [throw_2]];
 strcpy(beam_name, "magic dart");// inv_name [throw_2]);
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 102 + (func_pass [8] / 100);
+func_pass [2] = 104 + (func_pass [8] / 100);
 func_pass [3] = 1500;
 func_pass [4] = 35;
 func_pass [6] = 4;
@@ -669,9 +673,9 @@ case 1: // flame
 func_pass [0] = 4;
 strcpy(beam_name, "puff of flame");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 104 + func_pass [8] / 40; // should this be the same as magic missile?
+func_pass [2] = 105 + func_pass [8] / 40; // should this be the same as magic missile?
 func_pass [3] = 60;
-func_pass [4] = 42; // maybe make return 0 put a # on wherever it hits?
+func_pass [4] = '#'; // maybe make return 0 put a # on wherever it hits?
 func_pass [6] = 4;
 func_pass [5] = 2; // fire
 return 0;
@@ -686,9 +690,9 @@ case 2: // frost
 func_pass [0] = 15;
 strcpy(beam_name, "puff of frost");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 104 + func_pass [8] / 40; // should this be the same as magic missile?
+func_pass [2] = 105 + func_pass [8] / 40; // should this be the same as magic missile?
 func_pass [3] = 60;
-func_pass [4] = 42; // maybe make return 0 put a # on wherever it hits?
+func_pass [4] = '#'; // maybe make return 0 put a # on wherever it hits?
 func_pass [6] = 4;
 func_pass [5] = 3; // cold
 return 0;
@@ -735,7 +739,7 @@ return 1;
 case 7: // venom bolt
 strcpy(beam_name, "bolt of poison");
 func_pass [1] = random2(10) + 8;
-func_pass [2] = 105 + func_pass [8] / 15;
+func_pass [2] = 106 + func_pass [8] / 15;
 func_pass [0] = LIGHTGREEN;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -747,7 +751,7 @@ return 1;
 case 8:
 strcpy(beam_name, "bolt of fire");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 107 + func_pass [8] / 15;
+func_pass [2] = 108 + func_pass [8] / 15;
 func_pass [0] = 4;
 func_pass [4] = 35; // 35
 func_pass [6] = 2;
@@ -760,7 +764,7 @@ return 1;
 case 9:
 strcpy(beam_name, "bolt of cold");
 func_pass [1] = random2(10) + 5;
-func_pass [2] = 107 + func_pass [8] / 15;
+func_pass [2] = 108 + func_pass [8] / 15;
 func_pass [0] = 15;
 func_pass [4] = 35;
 func_pass [6] = 2;
@@ -793,9 +797,9 @@ case 12: // fireball
 func_pass [0] = 4;
 strcpy(beam_name, "fireball");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 5 + func_pass [2] / 10;
+func_pass [2] = 7 + func_pass [2] / 10;
 func_pass [3] = 40;
-func_pass [4] = 42;
+func_pass [4] = '#';
 func_pass [6] = 3;
 func_pass [5] = 10; // fire
 return 0;
@@ -882,7 +886,7 @@ case 26: // ball of steam
 func_pass [0] = LIGHTGREY;
 strcpy(beam_name, "ball of steam");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 105;
+func_pass [2] = 106;
 func_pass [3] = 11;
 func_pass [4] = 35;
 func_pass [6] = 4;
@@ -899,7 +903,7 @@ func_pass [4] = 0;
 func_pass [0] = 13; // pain
 func_pass [6] = 2;
 func_pass [2] = 50;
-func_pass [3] = 6 + (func_pass [8] / 40);
+func_pass [3] = 7 + (func_pass [8] / 40);
 func_pass [5] = 4; // magic
 return 1;
 
@@ -909,7 +913,7 @@ case 31: // sticky flame
 func_pass [0] = 4;
 strcpy(beam_name, "sticky flame");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 103 + func_pass [8] / 20;
+func_pass [2] = 102 + func_pass [8] / 50;
 func_pass [3] = 8 + func_pass [8] / 25;
 func_pass [4] = '#';
 func_pass [6] = 4;
@@ -932,7 +936,7 @@ case 35: // purple bang thing
 func_pass [0] = 13;
 strcpy(beam_name, "blast");
 func_pass [1] = random2(5) + 7;
-func_pass [2] = 105;
+func_pass [2] = 106;
 func_pass [3] = 9;
 func_pass [4] = 35;
 func_pass [6] = 4;
@@ -944,7 +948,7 @@ return 0;
         func_pass [0] = GREEN;
         strcpy(beam_name, "sting");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 4 + func_pass [8] / 25;
+        func_pass [2] = 6 + func_pass [8] / 25;
         func_pass [3] = 60;
         func_pass [4] = '#';
         func_pass [6] = 4;

@@ -14,17 +14,20 @@
 #include "externs.h"
 #include "files.h"
 #include "fight.h"
+#include "items.h"
 #include "it_use2.h"
 #include "levels.h"
 #include "mstruct.h"
 #include "misc.h"
 #include "monplace.h"
 #include "ouch.h"
+#include "output.h"
 #include "player.h"
 #include "shopping.h"
 #include "skills.h"
-#include "skills2.h"
 #include "spells1.h"
+#include "skills2.h"
+#include "spells3.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -39,6 +42,8 @@ int c = 0;
 int cy = 0;
 
 //if (mitm.iquant [dest] <= 0) return;
+
+if (dest == 501) return;
 
 for (c = 0; c < MNST; c++)
 {
@@ -347,11 +352,11 @@ switch(env[0].cloud_type [cl] % 100)
    break;
 
    case 5:
-                        case 6:
+   case 6:
    case 7:
-   strcpy(info, "You are engulfed in a cloud of smoke!");
-                        mpr(info);
-                        break;
+   case 10:
+   mpr("You are engulfed in a cloud of smoke!");
+   break;
 
    case 8:
    strcpy(info, "You are engulfed in a cloud of scalding steam!");
@@ -421,6 +426,18 @@ if (you[0].burden_state == 5)
         return;
 }
 
+
+if (you[0].your_level == 0)
+{
+ mpr("Are you sure you want to leave the Dungeon?");
+ char kein = get_ch();
+ if (kein != 'y' && kein != 'Y')
+ {
+  mpr("Alright, then stay!");
+  return;
+ }
+}
+
 unsigned char old_level = you[0].your_level;
 
 you[0].your_level--;
@@ -462,6 +479,7 @@ switch(stair_find)
  case 132:
  case 134:
  case 137:
+ case 138:
  mpr("Welcome back to the Dungeon!");
  you[0].where_are_you = 0;
  break;
@@ -473,9 +491,14 @@ switch(stair_find)
  mpr("Welcome back to the Vaults!");
  you[0].where_are_you = 14;
  break;
+ case 141:
  case 136:
  mpr("Welcome back to the Crypt!");
  you[0].where_are_you = 15;
+ break;
+ case 140:
+ mpr("Welcome back to the Orcish Mines!");
+ you[0].where_are_you = 10;
  break;
 }
 char stair_taken = stair_find;
@@ -514,16 +537,8 @@ new_level();
 
 if (you[0].lev != 0)
 {
-
-        strcpy(info, "You float upwards... And bob straight up to the ceiling!");
-        mpr(info);
- strcpy(info, "The staircase disappears!");
- mpr(info);
-        return;
-}
-
-strcpy(info, "You climb upwards.");
-mpr(info);
+ mpr("You float upwards... And bob straight up to the ceiling!");
+} else mpr("You climb upwards.");
 
 save_game(0);
 
@@ -549,14 +564,14 @@ for (count_x = 0; count_x < GXM; count_x ++)
 
 
 
-void down_stairs(char remove_stairs)
+void down_stairs(char remove_stairs, int old_level)
 {
 
 int i;
 char old_level_type = you[0].level_type;
 char was_a_labyrinth = 0;
 unsigned char stair_find = grd [you[0].x_pos] [you[0].y_pos];
-int old_level = you[0].your_level;
+//int old_level = you[0].your_level;
 char leaving_abyss = 0;
 char old_where = you[0].where_are_you;
 
@@ -662,8 +677,36 @@ if ((grd [you[0].x_pos] [you[0].y_pos] >= 92 && grd [you[0].x_pos] [you[0].y_pos
   case 117: strcpy(info, "Welcome to the Hall of Zot!");
   you[0].where_are_you = 17;
   break;
+  case 118: strcpy(info, "Welcome to the Ecumenical Temple!");
+  you[0].where_are_you = 18;
+  break;
+  case 119: strcpy(info, "Welcome to the Snake Pit!");
+  you[0].where_are_you = 19;
+  break;
+  case 120: strcpy(info, "Welcome to the Elven Halls!");
+  you[0].where_are_you = 20;
+  break;
+  case 121: strcpy(info, "Welcome to the Tomb!");
+  you[0].where_are_you = 21;
+  break;
  }
  mpr(info);
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] == 81)
+{
+ you[0].level_type = 1;
+ grd [you[0].x_pos] [you[0].y_pos] = 67;
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] == 96)
+{
+ you[0].level_type = 2;
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] == 99)
+{
+ you[0].level_type = 3;
 }
 
 if (you[0].level_type == 1 | you[0].level_type == 2 | you[0].level_type == 3)
@@ -696,25 +739,10 @@ more();
 
 }
 
-if (grd [you[0].x_pos] [you[0].y_pos] == 81)
-{
- you[0].level_type = 1;
- grd [you[0].x_pos] [you[0].y_pos] = 67;
-}
-
-if (grd [you[0].x_pos] [you[0].y_pos] == 96)
-{
- you[0].level_type = 2;
-}
-
-if (grd [you[0].x_pos] [you[0].y_pos] == 99)
-{
- you[0].level_type = 3;
-}
-
 if (grd [you[0].x_pos] [you[0].y_pos] == 97 | grd [you[0].x_pos] [you[0].y_pos] == 100)
 {
- leaving_abyss = 1;
+ leaving_abyss = 1; /* or pan */
+ you[0].your_level --;
  strcpy(info, "You pass through the gate, and find yourself at the top of a staircase.");
  mpr(info);
  more();
@@ -778,6 +806,7 @@ if (you[0].level_type == 2)
  mpr(info);
  strcpy(info, "To return, you must find a gate leading back.");
  grd [you[0].x_pos] [you[0].y_pos] = 67;
+ you[0].your_level --;
  init_pandemonium(); /* colours only */
 } else
 if (you[0].level_type == 3)
@@ -842,6 +871,10 @@ void new_level(void)
   case 15: itoa(you[0].your_level - you[0].branch_stairs [5], temp_quant, 10); break;
   case 16: itoa(you[0].your_level - you[0].branch_stairs [6], temp_quant, 10); break;
   case 17: itoa(you[0].your_level - you[0].branch_stairs [7], temp_quant, 10); break;
+  case 18: itoa(you[0].your_level - you[0].branch_stairs [8], temp_quant, 10); break;
+  case 19: itoa(you[0].your_level - you[0].branch_stairs [9], temp_quant, 10); break;
+  case 20: itoa(you[0].your_level - you[0].branch_stairs [10], temp_quant, 10); break;
+  case 21: itoa(you[0].your_level - you[0].branch_stairs [11], temp_quant, 10); break;
  }
  gotoxy (46,12);
  env[0].floor_colour = LIGHTGREY;
@@ -955,6 +988,26 @@ void new_level(void)
    env[0].floor_colour = LIGHTGREY;
    env[0].rock_colour = LIGHTGREY;
    cprintf(" of the Hall of Zot           ");
+ break;
+ case 18:
+   env[0].floor_colour = LIGHTGREY;
+   env[0].rock_colour = LIGHTGREY;
+   cprintf(" of the Temple                ");
+ break;
+ case 19:
+   env[0].floor_colour = LIGHTGREEN;
+   env[0].rock_colour = YELLOW;
+   cprintf(" of the Snake Pit             ");
+ break;
+ case 20:
+   env[0].floor_colour = DARKGREY;
+   env[0].rock_colour = LIGHTGREY;
+   cprintf(" of the Elven Halls           ");
+ break;
+ case 21:
+   env[0].floor_colour = YELLOW;
+   env[0].rock_colour = LIGHTGREY;
+   cprintf(" of the Tomb                  ");
  break;
  }
  } // end else
@@ -1237,79 +1290,6 @@ exercise(18, 5 + random2(5));
 }
 
 
-
-void species_ability(void)
-{
-
-struct dist abild [1];
-struct bolt beam [1];
-
-if (you[0].hung_state <= 2)
-{
- strcpy(info, "You're too hungry.");
- mpr(info);
- return; // no you[0].turnover?
-}
-
-if (you[0].duration [17] != 0)
-{
- strcpy(info, "You can't do that yet.");
- mpr(info);
- return; // no you[0].turnover?
-}
-
-switch(you[0].species)
-{
- case 13: // Naga
- if (random2(you[0].xl + 3) == 0)
- {
-  strcpy(info, "Your venom glands misfire.");
-  mpr(info);
-  you[0].turnover = 1;
-  you[0].duration [17] += random2(5) + 3;
-  return;
- }
- if (spell_direction(abild, beam) == -1)
- {
-  strcpy(info, "Okay, then.");
-  mpr(info);
-  return;
- }
- strcpy(info, "You spit poison.");
- mpr(info);
- you[0].turnover = 1;
- you[0].duration [17] += random2(5) + 3;
- zapping(36, you[0].xl, beam);
- you[0].hunger -= 30 + random2(30) + random2(30);
- strcpy(info, "You feel slightly more hungry.");
- mpr(info);
- break;
-
- case 14: // Gnome
- if (random2(you[0].xl + 1) == 0)
- {
-  strcpy(info, "You sense nothing.");
-  mpr(info);
-  you[0].turnover = 1;
-  return;
- }
- strcpy(info, "You sense your surroundings.");
- mpr(info);
- you[0].duration [17] += 30 - you[0].xl + random2(40 - you[0].xl) + random2(5);
- magic_mapping(3 + random2(you[0].xl) + random2(you[0].xl), 40 + random2(you[0].xl) + random2(you[0].xl) + random2(you[0].xl));
- you[0].turnover = 1;
- break;
-
- default:
- strcpy(info, "Sorry, you can't do that.");
- mpr(info);
- return;
-}
-
-}
-
-
-
 int manage_clouds(void)
 {
 
@@ -1568,7 +1548,12 @@ char go_berserk(void)
   mpr(info);
   strcpy(info, "You feel mighty!");
   mpr(info);
-  you[0].berserker += 10 + random2(10) + random2(10);
+  you[0].berserker += 20 + random2(10) + random2(10);
+  calc_hp();
+  you[0].hp *= 15;
+  you[0].hp /= 10;
+  you[0].hp_ch = 1;
+  if (you[0].hp >= you[0].hp_max) you[0].hp = you[0].hp_max;
   if (you[0].might == 0)
   {
    you[0].strength_ch = 1;

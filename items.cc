@@ -8,13 +8,17 @@
 #include <stdlib.h>
 
 #include "externs.h"
+
+#include "effects.h"
 #include "fight.h"
 #include "invent.h"
 #include "itemname.h"
 #include "it_use2.h"
 #include "misc.h"
 #include "mstruct.h"
+#include "mutation.h"
 #include "player.h"
+#include "religion.h"
 #include "skills.h"
 #include "stuff.h"
 
@@ -39,7 +43,7 @@ char str_pass [50];
 
 int counter = 0;
 int counter_max = 0;
-if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 69 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 150)
+if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 69 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 200)
 {
  if (env[0].grid [you[0].x_pos] [you[0].y_pos] >= 82 && env[0].grid [you[0].x_pos] [you[0].y_pos] <= 85)
  {
@@ -76,14 +80,35 @@ switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
   case 115: mpr("There is a staircase to the Crypt here."); break;
   case 116: mpr("There is a staircase to the Hall of Blades here."); break;
   case 117: mpr("There is a staircase to the Hall of Zot here."); break;
+  case 118: mpr("There is a staircase to the Ecumenical Temple here."); break;
+  case 119: mpr("There is a staircase to the Snake Pit here."); break;
+  case 120: mpr("There is a staircase to the Elven Halls here."); break;
+  case 121: mpr("There is a staircase to the Tomb here."); break;
   case 130:
   case 131:
   case 134:
   case 137:
+  case 138:
   case 132: mpr("There is a staircase back to the Dungeon here."); break;
   case 133: mpr("There is a staircase back to the Lair here."); break;
   case 135: mpr("There is a staircase back to the Vaults here."); break;
+  case 141:
   case 136: mpr("There is a staircase back to the Crypt here."); break;
+  case 139: mpr("There is a staircase back to the Lair here."); break;
+  case 140: mpr("There is a staircase back to the Mines here."); break;
+
+  case 180: mpr("There is a glowing white marble altar of Zin here."); break;
+  case 181: mpr("There is a glowing golden altar of the Shining One here."); break;
+  case 182: mpr("There is an ancient bone altar of Kikubaaqudgha here."); break;
+//  case 183:
+  case 184: mpr("There is a shimmering altar of Xom here."); break;
+// case 185
+  case 186: mpr("There is an iron altar of Okawaru here."); break;
+  case 187: mpr("There is a burning altar of Makhleb here."); break;
+  case 188: mpr("There is a deep blue altar of Sif Muna here."); break;
+  case 189: mpr("There is a bloodstained altar of Trog here."); break;
+  case 190: mpr("There is a sparkling altar of Nemelex Xobeh here."); break;
+  case 191: mpr("There is a silver altar of Elyvilon here."); break;
 
  }
 }
@@ -805,27 +830,102 @@ void manage_corpses(void) /* causes corpses to rot away */
 /* because it occurs periodically, this function is useful for things which
 happen every now and then. */
 
-if (you[0].strength < you[0].max_strength && random2(100) == 0)
+if (you[0].disease == 0)
 {
- mpr("You feel your strength returning.");
- you[0].strength ++;
- you[0].strength_ch = 1;
+
+ if (you[0].strength < you[0].max_strength && random2(100) == 0)
+ {
+  mpr("You feel your strength returning.");
+  you[0].strength ++;
+  you[0].strength_ch = 1;
+ }
+
+ if (you[0].dex < you[0].max_dex && random2(100) == 0)
+ {
+  mpr("You feel your dexterity returning.");
+  you[0].dex ++;
+  you[0].dex_ch = 1;
+ }
+
+ if (you[0].intel < you[0].max_intel && random2(100) == 0)
+ {
+  mpr("You feel your intelligence returning.");
+  you[0].intel ++;
+  you[0].intel_ch = 1;
+ }
+} else
+   {
+    if (random2(50) == 0)
+    {
+     mpr("Your disease is taking its toll.");
+     lose_stat(100, 1);
+    }
+   }
+
+
+if (you[0].invis > 0 | (you[0].haste > 0 && you[0].berserker == 0))
+{
+ if (random2(8) != 0 && you[0].mpower < 100) you[0].mpower ++;
 }
 
-if (you[0].dex < you[0].max_dex && random2(100) == 0)
+if (you[0].mpower > 0 && random2(2) == 0)
 {
- mpr("You feel your dexterity returning.");
- you[0].dex ++;
- you[0].dex = 1;
+ if (random2(100) <= you[0].mpower)
+ {
+  mpr("You've been spending too much time under the influence of powerful magic!");
+  if (random2(2) == 0) mutate(100); else give_bad_mutation();
+ }
+ you[0].mpower --;
 }
 
-if (you[0].intel < you[0].max_intel && random2(100) == 0)
-{
- mpr("You feel your intelligence returning.");
- you[0].intel ++;
- you[0].intel_ch = 1;
-}
+/*
+case 1: return "Zin";
+case 2: return "The Shining One";
+case 3: return "Kikubaaqudgha";
+case 4: return "Yredelemnul";
+case 5: return "Xom";
+case 6: return "Vehumet";
+case 7: return "Okawaru";
+case 8: return "Makhleb";
+case 9: return "Sif Muna";
+case 10: return "Trog";
+case 11: return "Nemelex Xobeh";
+case 12: return "Elyvilon";
+*/
 
+if (you[0].religion != 0)
+{
+ switch(you[0].religion)
+ {
+  case 5:
+  if (random2(75) == 0) Xom_acts(1, you[0].xl + random2(15), 1);
+  break;
+
+  case 1: /* These gods like long-standing worshippers */
+  case 2:
+  case 12:
+  if (random2(20) == 0 && you[0].piety < 100) gain_piety(1);
+  break;
+
+  case 3: /* These gods require constant appeasement */
+  case 7:
+  case 10:
+  if (random2(7) == 0) lose_piety(1);
+  if (you[0].piety <= 0) excommunication();
+  break;
+
+  case 8:
+  if (random2(3) == 0) lose_piety(1);
+  if (you[0].piety <= 0) excommunication();
+  break;
+
+  case 9: /* Sif Muna */
+  if (random2(12) == 0) lose_piety(1);
+  if (you[0].piety <= 0) excommunication();
+  break;
+
+ }
+}
 
 
 int c = 0;

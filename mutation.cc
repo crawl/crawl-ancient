@@ -102,6 +102,15 @@ char *mutation_descrip [] [3] =
 {"You cover the ground very quickly.", "You cover the ground very quickly.", "You cover the ground very quickly."},
 {"You have supernaturally acute eyesight.", "You have supernaturally acute eyesight.", "You have supernaturally acute eyesight."},
 {"Armour fits poorly on your deformed body.", "Armour fits poorly on your badly deformed body.", "Armour fits poorly on your hideously deformed body."},
+
+{"You can teleport at will.", "You are good at teleporting at will.", "You can teleport instantly at will."},
+{"You can spit poison.", "You can spit poison.", "You can spit poison."},
+{"You can sense your immediate surroundings.", "You can sense your surroundings.", "You can sense a large area of your surroundings."},
+// 30
+{"You can breathe flames.", "You can breathe fire.", "You can breathe blasts of fire."},
+{"You can translocate small distances instantaneously.", "You can translocate small distances instantaneously.", "You can translocate small distances instantaneously."},
+{"", "", ""},
+{"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -144,6 +153,15 @@ char *gain_mutation [] [3] =
 {"You feel quick.", "You feel quick.", "You feel quick."},
 {"Your vision sharpens.", "Your vision sharpens.", "Your vision sharpens."},
 {"Your body twists and deforms.", "Your body twists and deforms.", "Your body twists and deforms."},
+{"You feel jumpy.", "You feel more jumpy.", "You feel even more jumpy."},
+{"There is a nasty taste in your mouth for a moment.", "There is a nasty taste in your mouth for a moment.", "There is a nasty taste in your mouth for a moment."},
+{"You feel aware of your surroundings.", "You feel more aware of your surroundings.", "You feel even more aware of your surroundings."},
+// 30
+{"Your throat feels hot.", "Your throat feels hot.", "Your throat feels hot."},
+{"You feel a little jumpy.", "You feel more jumpy.", "You feel even more jumpy."},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -180,6 +198,15 @@ char *lose_mutation [] [3] =
 {"You feel sluggish.", "You feel sluggish.", "You feel sluggish."},
 {"Your vision seems duller.", "Your vision seems duller.", "Your vision seems duller."},
 {"Your body's shape seems more normal.", "Your body's shape seems slightly more normal.", "Your body's shape seems slightly more normal."},
+{"You feel static.", "You feel less jumpy.", "You feel less jumpy."},
+{"You feel an ache in your throat.", "You feel an ache in your throat.", "You feel an ache in your throat."},
+{"You feel slightly disorientated.", "You feel slightly disorientated.", "You feel slightly disorientated."},
+// 30
+{"A chill runs up and down your throat.", "A chill runs up and down your throat.", "A chill runs up and down your throat."},
+{"You feel a little less jumpy.", "You feel less jumpy.", "You feel less jumpy."},
+{"", "", ""},
+{"", "", ""},
+{"", "", ""},
 {"", "", ""},
 {"", "", ""},
 {"", "", ""},
@@ -205,8 +232,8 @@ char mutation_rarity [] =
 4, // res cold
 2, // res elec
 3, // regen
-7, // slow meta
-10, // fast meta
+7, // fast meta
+10, // slow meta
 10, // abil loss
 10, // ""
 // 20
@@ -217,11 +244,15 @@ char mutation_rarity [] =
 1, // run
 2, // see invis
 8, // deformation
+2, // teleport at will
+8, // spit poison
+3, // sense surr
+// 30
+4, // breathe fire
+3, // blink
 0,
 0,
 0,
-0,
-0
 };
 
 
@@ -294,7 +325,7 @@ if (which_mutation == 100 && random2(15) < how_mutated())
 if (which_mutation == 100)
  do
  {
-  mutat = random2(27);
+  mutat = random2(32); /* if number change, change in lose_mut also */
   if (random2(1000) == 0) return 0;
  } while ((you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) | random2(10) > mutation_rarity [mutat] | you[0].mutation [mutat] > 13);
 
@@ -302,7 +333,8 @@ if (you[0].mutation [mutat] >= 3 && mutat != 1 && mutat != 2 && mutat != 3 && mu
 if (you[0].mutation [mutat] > 13) return 0;
 if (mutat == 0 | (mutat >= 4 && mutat <= 7) && body_covered() > 2) return 0;
 
-if ((mutat == 25 | mutat == 9) && you[0].species == 13) return 0; // nagas have see invis and res poison
+if ((mutat == 25 | mutat == 9 | mutat == 28) && you[0].species == 13) return 0; // nagas have see invis and res poison and can spit poison
+if (you[0].species == 14 && mutat == 29) return 0; /* gnomes can't sense surroundings */
 if (mutat == 15 && you[0].mutation [17] > 0) return 0; /* if you have a slow metabolism, no regen */
 if (mutat == 17 && you[0].mutation [15] > 0) return 0; /* if you have a slow metabolism, no regen */
 
@@ -485,7 +517,7 @@ char mutat = which_mutation;
 if (which_mutation == 100)
  do
  {
-  mutat = random2(27);
+  mutat = random2(32);
   if (random2(1000) == 0) return 0;
  } while ((you[0].mutation [mutat] == 0 && mutat != 1 && mutat != 2 && mutat != 3 && mutat != 18 && mutat != 19 && mutat != 20) | random2(10) > mutation_rarity [mutat]);
 
@@ -634,12 +666,13 @@ char body_covered(void)
 /* checks how much of your body is covered by scales etc */
 char covered = 0;
 if (you[0].species == 13) covered ++; /* naga */
+if (you[0].species >= 18 && you[0].species <= 29) return 3; /* Dracon */
 
 covered += you[0].mutation [0]; // thick skin
 covered += you[0].mutation [4];
 covered += you[0].mutation [5];
 covered += you[0].mutation [6];
-covered += you[0].mutation [7];
+//covered += you[0].mutation [7]; boney plates
 
 return covered;
 
@@ -661,4 +694,52 @@ char *mutation_name(char which_mutat)
 
  return mutation_descrip [which_mutat] [you[0].mutation [which_mutat]];
 
+}
+
+
+char give_good_mutation(void)
+{
+  switch(random2(23)) /* beneficial mutates */
+  {
+   case 0: return mutate(0); break;
+   case 1: return mutate(1); break;
+   case 2: return mutate(2); break;
+   case 3: return mutate(3); break;
+   case 4: return mutate(12); break;
+   case 5: return mutate(13); break;
+   case 6: return mutate(14); break;
+   case 7: return mutate(15); break;
+   case 8: return mutate(21); break;
+   case 9: return mutate(23); break;
+   case 10: return mutate(24); break;
+   case 11: return mutate(25); break;
+   case 12: return mutate(4); break;
+   case 13: return mutate(5); break;
+   case 14: return mutate(6); break;
+   case 15: return mutate(7); break;
+   case 16: return mutate(8); break;
+   case 17: return mutate(9); break;
+   case 18: return mutate(27); break;
+   case 19: return mutate(28); break;
+   case 20: return mutate(29); break;
+   case 21: return mutate(30); break;
+   case 22: return mutate(31); break;
+  }
+ return 0;
+}
+
+char give_bad_mutation(void)
+{
+  switch(random2(8)) /* bad mutations */
+  {
+   case 0: return mutate(10); break;
+   case 1: return mutate(11); break;
+   case 2: return mutate(16); break;
+   case 3: return mutate(18); break;
+   case 4: return mutate(19); break;
+   case 5: return mutate(20); break;
+   case 6: return mutate(22); break;
+   case 7: return mutate(26); break;
+  }
+ return 0;
 }

@@ -225,7 +225,7 @@ char empty_surrounds(int emx, int emy, unsigned char spc_wanted, char allow_cent
 char curse_an_item(char which, char power);
 void monster_blink(int mn);
 char random_near_space(int passed [2]);
-
+void mons_in_cloud(int i);
 int distance(int x1, int x2, int y1, int y2);
 void swap_places(int swap);
 void print_wounds(int wounded);
@@ -292,6 +292,8 @@ void drain_exp(void);
 
 /* output.cc */
 void print_stats(void);
+char show_abilities(char ability [20], int ability_fail [20]);
+
 
 /* player.cc */
 int player_teleport(void);

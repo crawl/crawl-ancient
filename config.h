@@ -1,7 +1,7 @@
 // Select _one_ OS below:
 
-// #define DOS
-#define LINUX
+#define DOS
+// #define LINUX
 
 // Nothing else to edit ..
 #ifdef LINUX

@@ -83,17 +83,6 @@ mpr(info);
 
 
 
-#
-#
-#
-#
-#
-#
-#
-#
-#
-#
-
 if (force_effect != 100) spec_effect = force_effect;
 
 
@@ -576,6 +565,11 @@ break; // end divinations
 // WAS HERE!!!
 
  case 16: // necromancy
+ if (you[0].religion == 3 && you[0].piety >= 50 && random2(150) <= you[0].piety)
+ {
+  mpr("Nothing appears to happen.");
+  break;
+ }
  switch(spec_effect)
  {
   case 0:
@@ -1127,8 +1121,7 @@ break; // end poison
 return 1;
 
 nothing_happening :
-strcpy(info, "Nothing appears to happen.");
-mpr(info);
+mpr("Nothing appears to happen.");
 
 return 0;
 
@@ -1330,6 +1323,23 @@ char key2 = 0;
 /* remember that this function is called from staff spells as well. */
 if (you[0].inv_class [book_read] == 11) key2 = spellbook_contents(you[0].inv_plus [book_read], you[0].inv_type [book_read] + 40);
  else key2 = spellbook_contents(you[0].inv_plus [book_read], you[0].inv_type [book_read]);
+
+if (you[0].inv_class [book_read] == 10)
+{
+ you[0].had_item [you[0].inv_type [book_read]] = 1;
+ if (you[0].inv_type [book_read] == 0 | you[0].inv_type [book_read] == 1 | you[0].inv_type [book_read] == 2)
+ {
+  you[0].had_item [0] = 1;
+  you[0].had_item [1] = 1;
+  you[0].had_item [2] = 1;
+ }
+ if (you[0].inv_type [book_read] == 3 | you[0].inv_type [book_read] == 4)
+ {
+  you[0].had_item [3] = 1;
+  you[0].had_item [4] = 1;
+ }
+}
+
 #ifdef LINUX
 redraw_screen();
 #endif

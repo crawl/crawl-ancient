@@ -332,7 +332,7 @@ if (beam[0].bx == you[0].x_pos && beam[0].by == you[0].y_pos) // && beam[0].colo
                 hurted += random2(beam[0].damage - 100);
         } else hurted += random2(beam[0].damage);
 
-        check_your_resists(hurted, beam[0].flavour);
+        hurted = check_your_resists(hurted, beam[0].flavour);
 
  hurted -= random2(player_AC() + 1);
  if (beam[0].flavour == 19) // shrapnel

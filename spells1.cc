@@ -31,8 +31,10 @@ void stinkcl(char cl_x, char cl_y, struct bolt beam [1]);
 
 void cast_big_c(int pow, char cty);
 void big_cloud(char clouds, char cl_x, char cl_y, int pow);
-void cast_lesser_healing(int mabil);
-void cast_greater_healing(int mabil);
+char cast_lesser_healing(int mabil);
+char cast_greater_healing(int mabil);
+char cast_greatest_healing(int mabil);
+char healing_spell(int healed);
 void cast_revivification(int mabil);
 void cast_cure_poison(int mabil);
 void purification(void);
@@ -81,7 +83,7 @@ if (grd [beam[0].target_x] [beam[0].target_y] <= 10 | mgrd [beam[0].target_x] [b
 {
   strcpy(info, "Your body is wracked with pain!");
   mpr(info);
-  if (you[0].deaths_door == 0) you[0].hp = 1;
+/*  if (you[0].deaths_door == 0) you[0].hp = 1; */
   you[0].hp_ch = 1;
   you_teleport2(0); /* instantaneous teleport */
   return;
@@ -532,45 +534,91 @@ if (clouds % 100 == 4) beam[0].colour = LIGHTGREEN;*/
 
 
 
-void cast_lesser_healing(int mabil)
+char cast_lesser_healing(void)
 {
 
-if (you[0].hp == you[0].hp_max)
-{
-strcpy(info, "Nothing appears to happen.");
-mpr(info);
-return;
-}
-
-strcpy(info, "You feel healed.");
-mpr(info);
-
-you[0].hp += 5 + random2(4) + random2(4) + random2(mabil / 5);
-you[0].hp_ch = 1;
-
-if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+ return healing_spell(5 + random2(4) + random2(4)); // + random2(mabil / 5));
 
 } // end of lesser healing
 
-void cast_greater_healing(int mabil)
+char cast_greater_healing(void)
 {
 
-if (you[0].hp == you[0].hp_max)
-{
- strcpy(info, "Nothing appears to happen.");
- mpr(info);
- return;
-}
-
-strcpy(info, "You feel greatly healed!");
-mpr(info);
-
-you[0].hp += 15 + random2(15) + random2(15) + random2(mabil / 2);
-you[0].hp_ch = 1;
-
-if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+ return healing_spell(15 + random2(15) + random2(15));// + random2(mabil / 2));
 
 } // end of void cast_greater_healing
+
+char cast_greatest_healing(void)
+{
+
+ return healing_spell(20 + random2(25) + random2(25));// + random2(mabil) + random2(mabil));
+
+} // end of void cast_greater_healing
+
+
+
+char healing_spell(int healed)
+{
+int mgr = 0;
+struct dist bmove [1];
+
+dirc : strcpy(info, "Which direction?");
+mpr(info);
+direction(0, bmove);
+
+mgr = mgrd [you[0].x_pos + bmove[0].move_x] [you[0].y_pos + bmove[0].move_y];
+
+if (bmove[0].nothing == -1)
+{
+        strcpy(info, "Huh?!");
+        mpr(info);
+        return 0;
+}
+
+if (bmove[0].move_x > 1 | bmove[0].move_y > 1)
+{
+        strcpy(info, "This spell doesn't reach that far.");
+        mpr(info);
+        goto dirc;
+}
+
+if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
+{
+        you[0].hp += healed;
+        you[0].hp_ch = 1;
+        if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
+        mpr("You are healed.");
+        return 1;
+}
+
+if (mgr == MNG)
+{
+        strcpy(info, "There isn't anything there!");
+        mpr(info);
+        return -1;
+}
+
+strcpy(info, "You heal ");
+strcat(info, monam(menv [mgr].m_sec,menv[mgr].m_class, menv [mgr].m_ench [2], 1));
+strcat(info, ".");
+mpr(info);
+
+menv [mgr].m_hp += healed;
+
+if (menv [mgr].m_hp >= menv [mgr].m_hp_max)
+{
+ menv [mgr].m_hp = menv [mgr].m_hp_max;
+ strcpy(info, monam(menv [mgr].m_sec,menv[mgr].m_class, menv [mgr].m_ench [2], 0));
+ strcat(info, " is completely healed.");
+ mpr(info);
+} else print_wounds(mgr);
+
+return 1;
+
+}
+
+
+
 
 void cast_revivification(int mabil)
 {
@@ -603,7 +651,7 @@ if (random2(mabil) < 8) you[0].base_hp -= 1;
 
 calc_hp();
 
-if (you[0].deaths_door != 0) /* heh heh heh */
+/*if (you[0].deaths_door != 0)
 {
  strcpy(info, "Your body is healed in an excruciatingly painful way!");
  mpr(info);
@@ -613,7 +661,7 @@ if (you[0].deaths_door != 0) /* heh heh heh */
  if (you[0].hp >= you[0].hp_max) you[0].hp = you[0].hp_max;
  you[0].hp_ch = 1;
  return;
-}
+}*/
 strcpy(info, "Your body is healed in an amazingly painful way.");
 mpr(info);
 
@@ -686,7 +734,8 @@ strcpy(info, "You seem to hear sand running through an hourglass...");
 mpr(info);
 
 you[0].deaths_door = 8 + random2(5) + random2(5) + random2(5) + random2(pow) / 10;
-you[0].hp = 0;
+you[0].hp = you[0].skills [29] + (you[0].religion == 3) * 13;
+if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
 you[0].hp_ch = 1;
 
 }
@@ -782,6 +831,14 @@ if (you[0].duration [12] > 0) cast_fly(pow);
 // 13 is teleport countdown
 if (you[0].duration [14] > 0) cast_teleport_control(pow);
 if (you[0].duration [16] > 0) cast_resist_poison(pow);
+/* 17 is breath */
+if (you[0].duration [18] > 0)
+{
+ mpr("Your transformation has been extended.");
+ you[0].duration [18] += 10 + random2(pow);
+ if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+}
+if (you[0].duration [19] > 0) cast_death_channel(pow);
 
 } // end extension
 

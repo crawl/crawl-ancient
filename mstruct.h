@@ -48,8 +48,6 @@ typedef int MYINT; // used for flags and the like
 // well, HCl will burn your flesh away. Anyway, couldn't find a better name for now
 #define C_MUTATE 5 // makes you mutate, of course
 
-//  Maybe C_ROT... Oh well, C_HCL is fine (LH)
-
 // zombie size
 #define Z_NOZOMBIE 0 // no zombie (and no skeleton)
 #define Z_SMALL 1

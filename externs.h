@@ -177,7 +177,7 @@ unsigned char pet_target;
 
 int your_level;
 
-unsigned char duration [30]; // lots of durational things. Why didn't I do this for haste etc right from the start? Oh well.
+int duration [30]; // lots of durational things. Why didn't I do this for haste etc right from the start? Oh well.
 /* There's a list of these in player.cc */
 
 int invis ;
@@ -216,7 +216,7 @@ char level_type;
 
 char where_are_you;
 
-unsigned char branch_stairs [20];
+unsigned char branch_stairs [30];
 
 char religion;
 unsigned char piety;
@@ -224,6 +224,8 @@ unsigned char gods [20];
 
 unsigned char mutation [50];
 unsigned char mpower;
+
+unsigned char had_item [50];
 
 unsigned char betrayal;
 

@@ -658,6 +658,22 @@ case 163: // Frost giant
 strcpy(descpr, "A frozen giant.");
 break;
 
+case 164: // Firedrake
+strcpy(descpr, "A small dragon, puffing clouds of smoke.");
+break;
+
+case 165: // Shadow dragon
+strcpy(descpr, "A great shadowy shape, radiating evil and death.");
+break;
+
+case 166: // yellow snake
+strcpy(descpr, "A large yellow tubular reptile.");
+break;
+
+case 167: // grey snake
+strcpy(descpr, "A very large grey python.");
+break;
+
 case 240: // Shadow wraith
 strcpy(descpr, "A skeletal shadow hanging in mid-air, this creature is almost invisible even to your magically enhanced sight. "); // assumes: to read this message, has see invis
 break;
@@ -828,7 +844,7 @@ strcpy(descpr, "An ancient and strangely serene demon. It regards you coldly fro
 break;
 
 case 253: // Okawaru
-strcpy(descpr, "A violent and wrathful demon, Okawaru appears as a giant human covered in shining golden armour and wielding a huge twisted sword. ");
+strcpy(descpr, "A violent and wrathful demon, Cerebov appears as a giant human covered in shining golden armour and wielding a huge twisted sword. ");
 break;
 
 case 254: // Kikubaaqudgha
@@ -930,6 +946,46 @@ break;
 
 case 365: // orb guardian
 strcpy(descpr, "A huge and glowing crystal statue. ");
+break;
+
+case 366: // Daeva
+strcpy(descpr, "A divine agent of the Shining One. It manifests as a winged figure obscured by an aura of brilliant golden light. ");
+break;
+
+case 367: // spectral thing
+strcpy(descpr, "A hideous glowing apparition.");
+break;
+
+case 368: // greater naga
+strcpy(descpr, "An unusually large and powerful naga.");
+break;
+
+case 369: // skeletal dragon
+strcpy(descpr, "A huge undead abomination, pieced together from the broken bones of many dragons.");
+break;
+
+case 370: // tentacled monstrosity
+strcpy(descpr, "A writhing mass of tentacles, all covered in putrid mucous.");
+break;
+
+case 371: // sphinx
+strcpy(descpr, "A large creature with a human head, the body of a lion, and the wings of a huge bird.");
+break;
+
+case 372: // rotting hulk
+strcpy(descpr, "A shambling undead, related to the ghoul.");
+break;
+
+case 373: // guardian mummy
+strcpy(descpr, "An ancient warrior, embalmed and cursed with the ability to walk even when dead.");
+break;
+
+case 374: // greater mummy
+strcpy(descpr, "The embalmed and undead corpse of an ancient ruler.");
+break;
+
+case 375: // mummy priest
+strcpy(descpr, "The embalmed and undead corpse of an ancient servant of darkness.");
 break;
 
 
@@ -1317,7 +1373,7 @@ switch(item_dam % 30)
   case 11: strcat(descpr, "It turns projectiles fired from it into bolts of fire. "); break;
   case 12: strcat(descpr, "It turns projectiles fired from it into bolts of frost. "); break;
   case 13: strcat(descpr, "It inflicts no extra harm, but heals its wielder somewhat when he or she strikes a living foe. "); break;
-  case 14: strcat(descpr, "Can inflict up to fourfold damage when used against the undead. "); break;
+  case 14: strcat(descpr, "It is a weapon blessed by Zin, and can inflict up to fourfold damage when used against the undead. "); break;
   case 15: strcat(descpr, "In the hands of one skilled in necromantic magic it inflicts extra damage on living creatures. "); break;
 }
 }
@@ -2064,7 +2120,7 @@ case 0:
  case 3: strcat(descpr, "A lamp. "); break;
  case 4: strcat(descpr, "A lump of rock. "); break;
  case 5: strcat(descpr, "A strange lantern made out of ancient bones. "); break;
- case 6: strcat(descpr, "A great silver horn, radiating unholy energy. "); break;
+ case 6: strcat(descpr, "A great silver horn, radiating unholy energies."); break;
  case 7: strcat(descpr, "A small black box. I wonder what's inside?"); break;
  case 8:
  case 9: strcat(descpr, "A deck of cards."); break;
@@ -2078,9 +2134,9 @@ default:
  {
  case 0: strcat(descpr, "A mighty efreet, captured by some wizard and bound into a bronze flask. Breaking the flask's seal will release it to wreak havoc - possibly on you."); break;
  case 1: strcat(descpr, "A magical device which allows one to see the layout of their surroundings. It requires a degree of magical ability to be used reliably, otherwise it can produce unpredictable and possibly harmful results. "); break;
- case 2: strcat(descpr, "A magical device for summoning air elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries a considerable element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
- case 3: strcat(descpr, "A magical device for summoning fire elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries a considerable element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
- case 4: strcat(descpr, "A magical device for summoning earth elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries a considerable element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
+ case 2: strcat(descpr, "A magical device for summoning air elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
+ case 3: strcat(descpr, "A magical device for summoning fire elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
+ case 4: strcat(descpr, "A magical device for summoning earth elementals. It is rather unreliable, and usually requires several attempts to function correctly. Using it carries an element of risk, which is reduced if one is skilled in the appropriate elemental magic. "); break;
  case 5: strcat(descpr, "An unholy device which calls on the powers of darkness to assist its user, with a small cost attached. "); break;
  case 6: strcat(descpr, "The horn belonging to Geryon, guardian of the Vestibule of Hell. Legends say that a mortal who desires access into one of the Hells must use it in order to gain entry. "); break;
  case 7: strcat(descpr, "A magical box containing many wild beasts. One may allow them to escape by opening the box's lid."); break;
@@ -2120,7 +2176,7 @@ if (item_class == 14)
   else itoa(mons_weight(item_plus) / 20, item_mass, 10);
 } else itoa(mass(item_class, item_type) / 10, item_mass, 10);
 strcat(descpr, item_mass);
-strcat(descpr, " aum. "); // arbitrary unit of mass
+strcat(descpr, " aum. "); /* arbitrary unit of mass */
 
 print_description(descpr);
 
@@ -2271,8 +2327,8 @@ case 41:
 strcat(descpr, " purifies the caster's body, removing poison, disease, and some malign enchantments. ");
 break;
 case 42:
-strcat(descpr, " is extremely powerful, but carries a great risk. It renders a living caster almost invulnerable to harm for a brief period of time, but brings them to the very brink of death in doing so. When the duration expires, the caster's life is forfeit. The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ");
-break;
+//strcat(descpr, " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but brings them to the very brink of death in doing so. When the duration expires, the caster will be returned to a state of near-death. The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ");
+strcat(descpr, " is extremely powerful, but carries a degree of risk. It renders a living caster almost invulnerable to harm for a brief period of time, but can bring them dangerously close to death (how close depends on their necromantic abilities). The spell can be cancelled at any time by any healing effect, and the caster will recieve one warning shortly before the spell expires. Undead cannot use this spell. ");break;
 case 43:
 strcat(descpr, " allows the caster to selectively erase a spell from memory and regain the magical energy bound up in it. One will be able to memorise this spell even if their mind is otherwise full of magic. ");
 break;
@@ -2510,6 +2566,42 @@ case 144:
 strcat(descpr, " causes a weird alteration in the caster's body. It may fail to affect those who are heavily mutated already. ");
 break;
 /* 145 - debugging ray */
+case 146:
+strcat(descpr, " is greatly prized by summoners and necromancers, as it allows the caster to recall any friendly creatures who may be nearby to a position adjacent to the caster.");
+break;
+case 147:
+strcat(descpr, " creates a gate allowing long-distance travel through a relatively ordinary environment (ie the Dungeon only). It lasts long enough for the caster and nearby creatures to enter. It will not take you past the level limits of your current area.");
+break;
+case 148:
+strcat(descpr, " cuts the resilience of a target creature in half, although it will never cause death directly.");
+break;
+case 149:
+strcat(descpr, " temporarily transforms the caster into a venomous spider-like creature.");
+break;
+case 150:
+strcat(descpr, " disrupts the matter of a creature's body, causing injury.");
+break;
+case 151:
+strcat(descpr, " tears apart the matter making up a creature's body, causing severe damage.");
+break;
+case 152:
+strcat(descpr, " temporarily transforms the caster's hands into long, scythe-shaped blades.");
+break;
+case 153:
+strcat(descpr, " temporarily transforms the caster into a slow-moving but extremely robust stone statue.");
+break;
+case 154:
+strcat(descpr, " temporarily transform's the caster's body into a frozen ice-creature.");
+break;
+case 155:
+strcat(descpr, " temporarily transforms the caster into a great fire-breathing dragon.");
+break;
+case 156:
+strcat(descpr, " infuses the caster's body with negative energies, changing him or her into a terrifying Lich-like undead. The caster becomes resistant to cold, poison, magic and hostile negative energies.");
+break;
+case 157:
+strcat(descpr, " raises any living creature slain by the caster into a state of unliving slavery as a spectral horror.");
+break;
 
 /*
 case 0:
@@ -2535,6 +2627,97 @@ window(1, 1, 80, 25);
 } // end void describe_item
 
 
+void describe_god(int which_god)
+{
+
+   char descpr [500];
+
+#ifdef DOS
+   char buffer[3400];
+   gettext(25, 1, 80, 25, buffer);
+
+   window(25, 1, 80, 25);
+#endif
+//   strcpy(st_pass, "");
+
+   clrscr();
+
+   strcpy(descpr, "");
+
+switch(which_god)
+{
+case 1:
+strcpy(descpr, "Zin is an ancient and revered God, dedicated to the \
+establishment of order and the destruction of the forces of chaos and night. \
+Valued \
+worshippers can gain a variety of powers useful in the fight against evil, \
+but must abstain from the use of necromancy and other forms of unholy magic. \
+Zin appreciates long-standing faith as well as sacrifices of valued objects \
+and the slaying of demons and the undead.");
+break;
+case 2:
+strcpy(descpr, "The Shining One is a powerful crusading diety, allied with \
+Zin in the fight against evil. Followers may be granted with the ability to \
+summarily dispense the wrath of heaven, but must never use any form of evil \
+magic and should fight honourably. The Shining One appreciates long-standing persistence in the endless \
+crusade, as well as the dedicated destruction of unholy creatures.");
+break;
+case 3:
+strcpy(descpr, "Kikubaaqudgha is a terrible Demon-God, served by those who \
+seek knowledge of the powers of death. Followers gain special powers \
+over the undead, and especially favoured servants can call on mighty demons \
+to slay their foes. Kikubaaqudgha requires the deaths of living creatures \
+and the offering of corpses, as often as possible.");
+break;
+case 5:
+strcpy(descpr, "Xom is a wild and unpredictable God of chaos, who seeks not \
+worshippers but playthings to toy with. Many choose to follow Xom in the \
+hope of receiving fabulous rewards and mighty powers, but Xom is nothing if \
+not capricious.");
+break;
+case 7:
+strcpy(descpr, "Okawaru is a dangerous and powerful God of battle. Followers \
+can gain a number of powers useful in combat, but must constantly prove \
+themselves through battle and the sacrifice of corpses and valuable items.");
+break;
+case 8:
+strcpy(descpr, "Makhleb the Destroyer is a fearsome God of chaos and violent \
+death. Followers, who must constantly appease Makhleb with blood, stand to \
+gain various powers of death and destruction. The Destroyer appreciates \
+sacrifices of corpses and valuable items.");
+break;
+case 9:
+strcpy(descpr, "Sif Muna is a contemplative but powerful deity, served by \
+those who seek magical knowledge. Sif Muna appreciates sacrifices of valuable \
+items, and the casting of spells as often as possible.");
+break;
+case 10:
+strcpy(descpr, "Trog is an ancient God of anger and violence. Followers are \
+expected to kill in Trog's name and sacrifice the dead, and in return gain \
+power in battle and occasional rewards.");
+break;
+case 12:
+strcpy(descpr, "Elyvilon the Healer is worshipped by the healers (among \
+others), who gain their healing powers by long worship and devotion. Although Elyvilon \
+prefers a creed of pacifism, those who crusade against evil are not \
+excluded. Elyvilon appreciates the offering of weapons.");
+break;
+
+}
+
+
+print_description(descpr);
+
+
+if (getch() == 0) getch();
+
+#ifdef DOS
+puttext(25, 1, 80, 25, buffer);
+window(1, 1, 80, 25);
+#endif
+
+
+}
 
 
 

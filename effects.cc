@@ -94,7 +94,7 @@ void banished(void)
 {
  you_teleport2(0); // this is to ensure that you're standing on a suitable space
  grd [you[0].x_pos] [you[0].y_pos] = 96;
- down_stairs(1); // heh heh
+ down_stairs(1, you[0].your_level); // heh heh
 }
 
 
@@ -398,7 +398,7 @@ switch(ru)
 }
 
 
-void acquirement(void)
+void acquirement(unsigned char force_class)
 {
 int thing_created = 0;
 // Remember lava!
@@ -419,50 +419,53 @@ for (acqc = 0; acqc < 50; acqc ++)
  already_has [acqc] = 0;
 }
 
-strcpy(info, "This is a scroll of acquirement!");
-mpr(info);
-query :
-strcpy(info, "a - weapon, b - armour, c - ring,");
-mpr(info);
-strcpy(info, "d - book, e - staff, f - miscellaneous");
-mpr(info);
-strcpy(info, "What kind of item would you like to acquire? ");
-mpr(info);
-keyin = get_ch();
-
-switch(keyin)
+if (force_class == 250)
 {
- case 'a':
- case 'A':
- class_wanted = 0;
- break;
 
- case 'b':
- case 'B':
- class_wanted = 2;
- break;
+ strcpy(info, "This is a scroll of acquirement!");
+ mpr(info);
+ query :
+ strcpy(info, "a - weapon, b - armour, c - ring,");
+ mpr(info);
+ strcpy(info, "d - book, e - staff, f - miscellaneous");
+ mpr(info);
+ strcpy(info, "What kind of item would you like to acquire? ");
+ mpr(info);
+ keyin = get_ch();
 
- case 'c':
- case 'C':
- class_wanted = 7;
- break;
+ switch(keyin)
+ {
+  case 'a':
+  case 'A':
+  class_wanted = 0;
+  break;
 
- case 'd':
- case 'D':
- class_wanted = 10;
- break;
+  case 'b':
+  case 'B':
+  class_wanted = 2;
+  break;
 
- case 'e':
- case 'E':
- class_wanted = 11;
- break;
+  case 'c':
+  case 'C':
+  class_wanted = 7;
+  break;
 
- case 'f':
- case 'F':
- class_wanted = 13;
- break;
+  case 'd':
+  case 'D':
+  class_wanted = 10;
+  break;
 
-}
+  case 'e':
+  case 'E':
+  class_wanted = 11;
+  break;
+
+  case 'f':
+  case 'F':
+  class_wanted = 13;
+  break;
+ }
+} else class_wanted = force_class;
 
 if (class_wanted > 2)
 {
@@ -472,7 +475,7 @@ for (acqc = 0; acqc < 52; acqc ++)
  {
   already_has [you[0].inv_type [acqc]] = 1;
 
-  if (class_wanted == 10)
+/*  if (class_wanted == 10)
   {
    if (you[0].inv_type [acqc] == 0)
    {
@@ -486,21 +489,13 @@ for (acqc = 0; acqc < 52; acqc ++)
    }
    if (you[0].inv_type [acqc] == 3) already_has [4] = 1;
    if (you[0].inv_type [acqc] == 4) already_has [3] = 1;
-   //if (you[0].inv_type [acqc] == 23) already_has [24] = 1;
-   //if (you[0].inv_type [acqc] == 24) already_has [23] = 1;
-  }
-/*  strcpy(info, "Found: ");
-//  mpr(info);
-itoa((int) you[0].inv_type [acqc], st_prn, 10); //grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 7], st_prn, 10);
-strcat(info, st_prn);
-mpr(info);
-*/
+  }*/
  }
 }
 
-if (class_wanted == 10) // these are books which that class wouldn't want (or shouldn't get, anyway)
+/*if (class_wanted == 10) // these are books which that class wouldn't want (or shouldn't get, anyway)
 {
-/* if (you[0].clas == 5)
+/ * if (you[0].clas == 5)
  {
   already_has [20] = 1; // holy books
   already_has [17] = 1;
@@ -515,7 +510,7 @@ if (class_wanted == 10) // these are books which that class wouldn't want (or sh
  {
   already_has [5] = 1;
   already_has [8] = 1;
- }*/
+ }* /
  if (you[0].clas == 2 | you[0].clas == 6)
  {
   already_has [15] = 1; // necromancy
@@ -523,7 +518,7 @@ if (class_wanted == 10) // these are books which that class wouldn't want (or sh
   already_has [24] = 1;
   already_has [34] = 1;
  }
-}
+}*/
 
 do
 {
@@ -558,60 +553,66 @@ which_book :
  {
   default:
   case 25: // spellcasting
-  if (already_has [43] == 0) type_wanted = 43;
-  if (already_has [42] == 0) type_wanted = 42;
+  if (you[0].had_item [43] == 0) type_wanted = 43;
+  if (you[0].had_item [42] == 0) type_wanted = 42;
   break;
 
   case 37: // Poison Magic
-  if (already_has [32] == 0) type_wanted = 32;
-  if (already_has [13] == 0) type_wanted = 13;
+  if (you[0].had_item [32] == 0) type_wanted = 32;
+  if (you[0].had_item [13] == 0) type_wanted = 13;
   break;
 
   case 36: // Earth
-  if (already_has [40] == 0) type_wanted = 40;
-  if (already_has [39] == 0) type_wanted = 39;
+  if (you[0].had_item [40] == 0) type_wanted = 40;
+  if (you[0].had_item [39] == 0) type_wanted = 39;
   break;
 
   case 35: // Air
-  if (already_has [29] == 0) type_wanted = 29;
-  if (already_has [28] == 0) type_wanted = 28;
+  if (you[0].had_item [29] == 0) type_wanted = 29;
+  if (you[0].had_item [28] == 0) type_wanted = 28;
   break;
 
   case 34: // Ice
-  if (already_has [9] == 0) type_wanted = 9;
-  if (already_has [6] == 0) type_wanted = 6;
+  if (you[0].had_item [9] == 0) type_wanted = 9;
+  if (you[0].had_item [6] == 0) type_wanted = 6;
   break;
 
   case 33: // fire
-  if (already_has [8] == 0) type_wanted = 8;
-  if (already_has [5] == 0) type_wanted = 5;
+  if (you[0].had_item [8] == 0) type_wanted = 8;
+  if (you[0].had_item [5] == 0) type_wanted = 5;
   break;
 
   case 28: // summ
-  if (already_has [27] == 0) type_wanted = 27;
-  if (already_has [7] == 0) type_wanted = 7;
-  if (already_has [25] == 0) type_wanted = 25;
+  if (you[0].had_item [27] == 0) type_wanted = 27;
+  if (you[0].had_item [7] == 0) type_wanted = 7;
+  if (you[0].had_item [25] == 0) type_wanted = 25;
   break;
 
   case 27: // ench
-  if (already_has [12] == 0) type_wanted = 12;
-  if (already_has [20] == 0) type_wanted = 20;
-  if (already_has [36] == 0) type_wanted = 36;
-  if (already_has [16] == 0) type_wanted = 16;
-  if (already_has [26] == 0) type_wanted = 26;
+  if (you[0].had_item [12] == 0) type_wanted = 12;
+  if (you[0].had_item [20] == 0) type_wanted = 20;
+  if (you[0].had_item [36] == 0) type_wanted = 36;
+  if (you[0].had_item [16] == 0) type_wanted = 16;
+  if (you[0].had_item [26] == 0) type_wanted = 26;
   break;
 
   case 26: // conj
-  if (already_has [33] == 0) type_wanted = 33;
-  if (already_has [3] == 0) type_wanted = 3;
+  if (you[0].had_item [33] == 0) type_wanted = 33;
+  if (you[0].had_item [3] == 0) type_wanted = 3;
   break;
 
   case 29: // necro
-  if (already_has [24] == 0) type_wanted = 24;
-  if (already_has [34] == 0) type_wanted = 34;
-  if (already_has [15] == 0) type_wanted = 15;
-  if (already_has [23] == 0) type_wanted = 23;
+  if (you[0].had_item [24] == 0) type_wanted = 24;
+  if (you[0].had_item [34] == 0) type_wanted = 34;
+  if (you[0].had_item [15] == 0) type_wanted = 15;
+  if (you[0].had_item [23] == 0) type_wanted = 23;
   break;
+
+  case 31: // transmutation
+  if (you[0].had_item [17] == 0) type_wanted = 17;
+  if (you[0].had_item [18] == 0) type_wanted = 18;
+  break;
+
 
  }
 
@@ -622,7 +623,12 @@ if (type_wanted == 99 && glof == 99)
 }
 
 
-if (type_wanted == 99) type_wanted = random2(27);
+if (type_wanted == 99)
+  do
+  {
+   type_wanted = random2(27);
+   if (random2(500) == 0) break;
+  } while (you[0].had_item [type_wanted] == 1);
 
 
   force_plus = 127;

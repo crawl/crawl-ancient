@@ -112,6 +112,8 @@ if (empty_surrounds(cr_x, cr_y, spcw, 1, empty) == 0)
 
 bkout : pets = 0;
 
+/* This is for the summon greater demons spell, where monsters are hostile
+but charmed: */
 if (dem_beha == 100) menv [summd].m_ench [0] = 30;
 
 if (dur != 0)

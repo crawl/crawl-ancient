@@ -320,7 +320,7 @@ you[0].ep_ch = 1;
 
 }
 
-void dancing_weapon(int pow)
+void dancing_weapon(int pow, char force_hostile)
 {
 int numsc = 21 + random2(pow) / 5;
 if (numsc > 25) numsc = 25;
@@ -332,7 +332,7 @@ char empty [2];
 
 if (empty_surrounds(you[0].x_pos, you[0].y_pos, 67, 0, empty) == 0)
 {
- failed_spell: strcpy(info, "The spell fails.");
+ failed_spell: strcpy(info, "You hear a popping sound.");
  mpr(info);
  return;
 }
@@ -342,7 +342,7 @@ if (you[0].equip [0] == -1 | you[0].inv_class [you[0].equip [0]] != 0 | (you[0].
  goto failed_spell;
 }
 
-if (you[0].inv_plus [you[0].equip [0]] >= 100) behavi = 1; /* a cursed weapon becomes hostile */
+if (you[0].inv_plus [you[0].equip [0]] >= 100 | force_hostile == 1) behavi = 1; /* a cursed weapon becomes hostile */
 
 summs = create_monster(144, numsc, behavi, empty [0], empty [1], you[0].pet_target, 1);
 
@@ -601,5 +601,144 @@ mpr("You hear a distant voice call your name.");
 
 noisy(30, plox [0], plox [1]);
 
+
+}
+
+/*
+Type recalled:
+0 = anything
+1 = undead only (Kiku religion ability)
+*/
+void recall(char type_recalled)
+{
+int i;
+int j = 0;
+int k = 1;
+int l = MNST - 1;
+char recalled = 0;
+
+if (random2(2) == 0)
+{
+ j = MNST - 1;
+ l = 0;
+ k = -1;
+} /* sometimes goes through monster list backwards */
+
+char empty [2];
+
+for (i = j; i != l; i += k)
+{
+ if (menv [i].m_class == -1) continue;
+ if (menv [i].m_beh != 7) continue;
+ if (menv [i].m_class >= MLAVA0) continue;
+ if (type_recalled == 1 && mons_holiness(menv [i].m_class) != 1) continue;
+
+ if (empty_surrounds(you[0].x_pos, you[0].y_pos, 67, 0, empty) == 0)
+ {
+  break; /* time to stop */
+ } else
+       {
+        mgrd [menv [i].m_x] [menv [i].m_y] = MNG;
+        menv [i].m_x = empty [0];
+        menv [i].m_y = empty [1];
+        mgrd [menv [i].m_x] [menv [i].m_y] = i;
+        recalled ++;
+        if (menv [i].m_ench [2] != 6 | player_see_invis() != 0)
+        {
+         strcpy(info, "You recall your ");
+         strcat(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 4));
+         strcat(info, ".");
+         mpr(info);
+        } else recalled --; /* you're not informed if you've recalled an invis creature */
+       } /* end else */
+
+}
+
+if (recalled == 0) mpr("Nothing appears to have answered your call.");
+
+}
+
+
+void portal(void)
+{
+
+char dir_sign = 0;
+
+if (you[0].where_are_you != 0) // && you[0].where_are_you < 10)
+{
+ mpr("This spell doesn't work here.");
+ return;
+}
+if (you[0].level_type != 0)
+{
+ mpr("This spell doesn't work here.");
+ return;
+}
+
+if (grd [you[0].x_pos] [you[0].y_pos] != 67)
+{
+ mpr("You must be on a piece of normal floor to cast this spell.");
+ return;
+}
+
+mpr("Which direction ('<' for up, '>' for down, 'x' to quit)?");
+get_dir : char keyi = get_ch();
+if (keyi != '<' && keyi != '>' && keyi != 'x') goto get_dir;
+if (keyi == '<' && you[0].your_level == 0)
+{
+ mpr("You can't go any further upwards with this spell.");
+ goto get_dir;
+}
+if (keyi == '>' && you[0].your_level == 35)
+{
+ mpr("You can't go any further downwards with this spell.");
+ goto get_dir;
+}
+
+if (keyi == 'x')
+{
+ mpr("Okay, then.");
+ return;
+}
+
+if (keyi == '>') dir_sign = 1; else dir_sign = -1;
+
+mpr("How many levels (1 - 9, 'x' to quit)?");
+get_dir2 : keyi = get_ch();
+if (keyi < 49 && keyi > 57 && keyi != 'x') goto get_dir2;
+
+if (keyi == 'x')
+{
+ mpr("Okay, then.");
+ return;
+}
+
+keyi -= 48;
+
+int target_level = you[0].your_level + keyi * dir_sign;
+
+if (you[0].where_are_you == 0)
+{
+ if (target_level < 0) target_level = 0;
+ if (target_level > 35) target_level = 35;
+}
+
+mpr("You fall through a mystic portal, and materialise at the foot of a staircase.");
+more();
+int old_lev = you[0].your_level;
+you[0].your_level = target_level - 1;
+grd [you[0].x_pos] [you[0].y_pos] = 82;
+
+down_stairs(1, old_lev);
+
+}
+
+void cast_death_channel(int pow)
+{
+
+mpr("You feel a great wave of evil energy pour through your body.");
+
+you[0].duration [19] += 15 + random2((pow / 3) + 1);
+if (you[0].duration [19] > 30) you[0].duration [19] = 30;
 
 }

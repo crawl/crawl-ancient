@@ -326,9 +326,9 @@ int chance2 = 0;
 
 chance -= spell_spec(spell, 0) * 7;
 
-chance -= you[0].intel;
+chance -= you[0].intel * 2;
 
-chance -= (you[0].intel - 10) * abs(you[0].intel - 10);
+//chance -= (you[0].intel - 10) * abs(you[0].intel - 10);
 
 //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
 
@@ -603,24 +603,6 @@ int spell_type(unsigned char spell, unsigned char typy)
 {
 unsigned long stype = 0;
 
-/*
-types of spells:
-11 = conjuration
-12 = enchantment
-13 = fire
-14 = ice
-15 = transmigration
-16 = necromancy
-17 = holy
-18 = summoning
-19 = divination
-20 = translocation
-21 = poison
-22 = Earth
-23 = Air
--see guidelines below
-*/
-
 switch(spell)
 {
         case 0: stype = 19; break; //6; // identify
@@ -746,8 +728,41 @@ switch(spell)
    case 141: stype = 21; break; // poison weapon
    case 142: stype = 2112; break; // resist poison
    case 143: stype = 12; break; // noise 2
-   case 144: stype = 15; break; // mutation
+   case 144: stype = 15; break; // alter self
    case 145: stype = 11; break; // debug ray
+   case 146: stype = 1820; break; // recall
+   case 147: stype = 20; break; // Portal
+   case 148: stype = 16; break; // Agony
+
+   case 149: stype = 1521; break; // Spider form
+   case 150: stype = 15; break; // Disrupt
+   case 151: stype = 15; break; // Disintegrate
+   case 152: stype = 15; break; // Blade Hands
+   case 153: stype = 2215; break; // Statue
+   case 154: stype = 1415; break; // Ice Form
+   case 155: stype = 1315; break; // Dragon Form
+   case 156: stype = 1615; break; // Lich Form
+
+   case 157: stype = 16; break; // Death channel
+
+/*
+types of spells:
+11 = conjuration
+12 = enchantment
+13 = fire
+14 = ice
+15 = transmigration
+16 = necromancy
+17 = holy
+18 = summoning
+19 = divination
+20 = translocation
+21 = poison
+22 = Earth
+23 = Air
+-see guidelines below
+*/
+
 
 
    // Make restore abilities necromancy?
@@ -993,7 +1008,7 @@ switch(spell)
    case 17: return 6; // bolt of lightning
    case 20: return 6; // polymorph other
    case 21: return 3; // slow
-   case 22: return 6; // haste
+   case 22: return 8; // haste
    case 23: return 4; // paralyse
    case 24: return 3; // confuse
    case 25: return 6; // invisibility
@@ -1103,6 +1118,18 @@ switch(spell)
    case 143: return 2; // create noise 2
    case 144: return 7; // mutation
    case 145: return 7; // debug ray
+   case 146: return 3; // recall
+   case 147: return 8; // portal
+   case 148: return 6; // agony
+   case 149: return 4; // Spider form
+   case 150: return 1; // Disrupt
+   case 151: return 6; // Disintegrate
+   case 152: return 3; // Blade Hands
+   case 153: return 5; // Statue form
+   case 154: return 5; // Ice beast form
+   case 155: return 8; // Dragon Form
+   case 156: return 8; // Lich Form
+   case 157: return 9; // Death Channel
 
    /*      case 86: strcpy(spln, "Guardian"); break;
       case 87: strcpy(spln, "Pestilence"); break;
@@ -1256,6 +1283,19 @@ void spell_name(unsigned char spell, char spln [60])
       case 143: strcpy(spln, "Projected Noise"); break;
       case 144: strcpy(spln, "Alter Self"); break;
       case 145: strcpy(spln, "Debugging ray"); break;
+      case 146: strcpy(spln, "Recall"); break;
+      case 147: strcpy(spln, "Portal"); break;
+      case 148: strcpy(spln, "Agony"); break;
+
+      case 149: strcpy(spln, "Spider Form"); break;
+      case 150: strcpy(spln, "Disrupt"); break;
+      case 151: strcpy(spln, "Disintegrate"); break;
+      case 152: strcpy(spln, "Blade Hands"); break;
+      case 153: strcpy(spln, "Statue Form"); break;
+      case 154: strcpy(spln, "Ice Form"); break;
+      case 155: strcpy(spln, "Dragon Form"); break;
+      case 156: strcpy(spln, "Lich Form"); break;
+      case 157: strcpy(spln, "Death Channel"); break;
 
 
 /* When adding enchantments, must add them to extension as well */

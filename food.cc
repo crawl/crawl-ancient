@@ -9,6 +9,7 @@
 #include "spells2.h"
 #include "mutation.h"
 #include "player.h"
+#include "religion.h"
 #include "stuff.h"
 #include "misc.h"
 #include "itemname.h"
@@ -381,14 +382,14 @@ if (you[0].lev != 0 && wearing_amulet(42) == 0)
         return 0;
 }
 
-if (you[0].equip [0] == -1 && you[0].species != 16)
+if (you[0].equip [0] == -1 && you[0].species != 16 && you[0].attribute [5] != 2 && you[0].attribute [5] != 5)
 {
  strcpy(info, "What, with your bare hands?");
  mpr(info);
  return 0;
 }
 
-if (you[0].species != 16 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 1 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 3)
+if (you[0].species != 16  && you[0].attribute [5] != 2 && you[0].attribute [5] != 5 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 1 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 3)
 {
  strcpy(info, "Maybe you should try using a sharper implement.");
  mpr(info);
@@ -448,10 +449,18 @@ if (items_here == 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 | you[0].attribute [5] == 2 | you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-//   naughty(7, 3);
+   if (you[0].duration [3] != 0 && (you[0].religion == 3 | you[0].religion == 8 | you[0].religion == 10))
+   {
+    offer_corpse(item_got);
+    you[0].turnover = 1;
+    destroy_item(item_got);
+    you[0].delay_t = 0;
+    you[0].delay_doing = 0;
+    return 1; /* no chunks */
+   }
 
    you[0].turnover = 1;
    place_chunks(mitm.iplus [item_got], mitm.idam [item_got], you[0].x_pos, you[0].y_pos, mitm.icol [item_got]);
@@ -496,7 +505,7 @@ if (items_here > 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16) mpr("You start tearing the corpse apart.");
+   if (you[0].species == 16 | you[0].attribute [5] == 2 | you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
    place_chunks(mitm.iplus [item_got], mitm.idam [item_got], you[0].x_pos, you[0].y_pos, mitm.icol [item_got]);

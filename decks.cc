@@ -187,7 +187,7 @@ break;
 case 27: // acquirement
 strcpy(info, "The card unfolds to form a scroll of paper.");
 mpr(info);
-acquirement();
+acquirement(250);
 break;
 
 }

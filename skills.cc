@@ -155,7 +155,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
         }
         if (exsk == 25)
         {
-         you[0].spell_levels += 4;
+         you[0].spell_levels += 2;
 //         if (you[0].clas == 2 | you[0].clas == 6) you[0].spell_levels -= 2;
 //         you[0].ep_max ++;
 //         you[0].ep ++;

@@ -8,6 +8,7 @@
 #include "monplace.h"
 #include "mutation.h"
 #include "player.h"
+#include "religion.h"
 #include "skills.h"
 #include "spell.h"
 #include "spells.h"
@@ -16,6 +17,7 @@
 #include "spells2.h"
 #include "spells3.h"
 #include "stuff.h"
+#include "transform.h"
 #include "it_use2.h"
 #include "view.h"
 
@@ -162,14 +164,19 @@ int spfl = random2(33) + random2(34) + random2(35);
 
  if (spfl < spell_fail(spc2))
  {
-  strcpy(info, "You miscast the spell.");
-  mpr(info);
+  mpr("You miscast the spell.");
+  if (you[0].religion == 9 && you[0].piety >= 100 && random2(150) <= you[0].piety)
+  {
+   mpr("Nothing appears to happen.");
+   return 0;
+  }
   char sptype = 0;
   do
   {
    sptype = 11 + random2(13);
   } while (spell_type(spc2, sptype) == 0);
   miscast_effect(sptype, spell_value(spc2), spell_fail(spc2) - spfl, 100);
+  if (you[0].religion == 5 && random2(75) < spell_value(spc2)) Xom_acts(random2(2), spell_value(spc2), 0);
   return 0;
  }
 }
@@ -181,11 +188,17 @@ if (you[0].species == 12 && spell_type(spc2, 17) == 1)
   return -1;
 }
 
-if (spc2 == 62 | spc2 == 82)
+if (spc2 == 62 | spc2 == 82 | spc2 == 119 | spc2 == 120 | spc2 == 121 | spc2 == 118)
 {
-// naughty(spell_value(spc2) * 2, 2); // not necromancy, but bad nonetheless
+ naughty(2, 10 + spell_value(spc2)); // not necromancy, but bad for other reasons
 }
-//if (spell_type(spc2, 16) == 1) naughty(spell_value(spc2) * 2, 1);
+
+if (spell_type(spc2, 16) == 1) naughty(1, 10 + spell_value(spc2));
+
+if (you[0].religion == 9 && you[0].piety < 200) /* Sif Muna */
+{
+ if (random2(10) <= spell_value(spc2)) gain_piety(1);
+}
 
 switch(spc2)
 {
@@ -319,11 +332,11 @@ switch(spc2)
    break; // teleport creature (I think)
 
    case 38:
-   cast_lesser_healing(powc);
+   cast_lesser_healing();
    break;
 
    case 39:
-   cast_greater_healing(powc);
+   cast_greater_healing();
    break;
 
    case 40:
@@ -356,7 +369,7 @@ switch(spc2)
 
    case 47: // holy word
    holy_word(50);
-   you[0].conf += random2(3) + 2;
+//   you[0].conf += random2(3) + 2;
    break;
 
    case 48:
@@ -586,12 +599,12 @@ switch(spc2)
 
    case 113: // banishment
    if (spell_direction(spd, beam) == -1) return 1;
-   if (beam[0].move_x == 0 && beam[0].move_y == 0)
+/*   if (beam[0].move_x == 0 && beam[0].move_y == 0)
    {
     strcpy(info, "Why would you want to do that?");
     mpr(info);
     return 1;
-   }
+   }*/
    zapping(27, powc, beam);
    return 1;
 
@@ -616,7 +629,7 @@ switch(spc2)
    return 1;
 
    case 117: // dancing weapon
-   dancing_weapon(powc);
+   dancing_weapon(powc, 0);
    return 1;
 
    case 118: // hellfire - should only be available from staff of Dispater & Sceptre of Asmodeus
@@ -769,7 +782,14 @@ switch(spc2)
    return 1;
 
    case 144: // mutation
+   if (you[0].hp < you[0].hp_max / 2)
+   {
+    mpr("Your body is in too bad a condition for this spell to function.");
+    return 1;
+   }
    mpr("Your body is suffused with transfigurative energy!");
+   you[0].hp = random2(you[0].hp) + 1;
+   you[0].hp_ch = 1;
    if (mutate(100) == 0) mpr("The spell fails.");
    return 1;
 
@@ -778,7 +798,69 @@ switch(spc2)
    zapping(37, powc, beam);
    return 1;
 
+   case 146: // recall
+   recall(0);
+   return 1;
 
+   case 147: // portal
+   portal();
+   return 1;
+
+   case 148: if (spell_direction(spd, beam) == -1) return 1;
+   if (beam[0].move_x == 0 && beam[0].move_y == 0)
+   {
+    mpr("Why would you want to do that?");
+    return 1;
+   }
+   zapping(44, powc, beam);
+   return 1; // Agony
+
+   case 149: // spider form
+   transform(powc, 1);
+   return 1;
+
+   case 150: if (spell_direction(spd, beam) == -1) return 1;
+   if (beam[0].move_x == 0 && beam[0].move_y == 0)
+   {
+    mpr("Why would you want to do that?");
+    return 1;
+   }
+   zapping(45, powc, beam);
+   return 1; // Disrupt
+
+   case 151: if (spell_direction(spd, beam) == -1) return 1;
+   if (beam[0].move_x == 0 && beam[0].move_y == 0)
+   {
+    strcpy(info, "Why would you want to do that?");
+    mpr(info);
+    return 1;
+   }
+   zapping(45, powc, beam);
+   return 1; // Disintegrate
+
+   case 152: // blade hands
+   transform(powc, 2);
+   return 1;
+
+   case 153: // statue
+   transform(powc, 3);
+   return 1;
+
+   case 154: // ice beast
+   transform(powc, 4);
+   return 1;
+
+   case 155: // dragon form
+   transform(powc, 5);
+   return 1;
+
+   case 156: // Lich
+   transform(powc, 6);
+   return 1;
+
+   case 157: // death chan
+   cast_death_channel(powc);
+   return 1;
 
 default:
 strcpy(info, "Invalid spell!");

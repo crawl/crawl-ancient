@@ -30,6 +30,14 @@ int mons_level_crypt(int mcls);
 int mons_rare_crypt(int mcls);
 int mons_level_hall_ob(int mcls);
 int mons_rare_hall_ob(int mcls);
+int mons_level_snake(int mcls);
+int mons_rare_snake(int mcls);
+int mons_level_elf(int mcls);
+int mons_rare_elf(int mcls);
+int mons_level_tomb(int mcls);
+int mons_rare_tomb(int mcls);
+
+
 
 extern int many_many;
 
@@ -73,6 +81,7 @@ case 119: return 37; // iron golem
 case 130: return 38; // spec
 case 137: return 36; // flayed ghost
 case 144: return 37; // dancing weapon
+case 369: return 41; // skeletal dragon
 default: return 0;
 } // end switch
 }
@@ -113,6 +122,8 @@ case 119: return 39; // iron golem
 case 130: return 40; // spec
 case 137: return 39; // flayed ghost
 case 245: return 42; // pit fiend
+case 369: return 41; // skeletal dragon
+
 default: return 0;
 } // end switch
 }
@@ -157,6 +168,8 @@ case 119: return 10; // iron golem
 case 130: return 10; // spec
 case 137: return 25; // flayed ghost
 case 144: return 10; // dancing weapon
+case 369: return 20; // skeletal dragon
+
 default: return 0;
 } // end switch
 
@@ -200,6 +213,7 @@ case 119: return 5; // iron golem
 case 130: return 20; // spec
 case 137: return 32; // flayed ghost
 case 245: return 7; // pit fiend
+case 369: return 10; // skeletal dragon
 default: return 0;
 } // end switch
 }
@@ -235,6 +249,7 @@ case 87: return 37; // "blue devil"
 case 107:
 case 108: return 36; // "skeleton"
 case 130: return 39; // spec
+case 369: return 41; // skeletal dragon
 default: return 0;
 }
 }
@@ -268,6 +283,7 @@ case 87: return 76; // "blue devil"
 case 107:
 case 108: return 85; // "skeleton"
 case 130: return 20;
+case 369: return 12; // skeletal dragon
 default: return 0;
 }
 }
@@ -309,6 +325,8 @@ case 109: return 39; // "hell knight");
 case 110: return 40; // "necromancer");
 case 130: return 39; // spec
 case 137: return 37; // flayed ghost
+case 165: return 42; // shadow dragon
+case 369: return 41; // skeletal dragon
 default: return 0;
 }
 }
@@ -348,6 +366,8 @@ case 109: return 14; //strcat(gmon_name, "hell knight"); break;
 case 110: return 12; //strcat(gmon_name, "necromancer"); break;
 case 130: return 45;
 case 137: return 30; // flayed ghost
+case 165: return 12; // shadow dragon
+case 369: return 40; // skeletal dragon
 default: return 0;
 }
 }
@@ -441,6 +461,8 @@ case 226:
  case 260:
  case 261:
  case 364: // shining eye
+ case 369: // skeletal dragon
+ case 370: // tentacled monstr
  return 1;
 //found = 1; break;
 default: return 0;
@@ -540,7 +562,9 @@ case 226:
  case 260:
  case 261:
  case 364: // shining eye
+ case 370: // tentacled monstr
  return 5;
+case 369: return 20; // skeletal dragon
 default: return 0;
 
 
@@ -565,6 +589,9 @@ switch(you[0].where_are_you)
 /* 14 - the vaults - just uses normal monsters */
  case 15: return mons_level_crypt(mcls); // the lair
  case 16: return mons_level_hall_ob(mcls); // the lair
+ case 19: return mons_level_snake(mcls); // the lair
+ case 20: return mons_level_elf(mcls); // the lair
+ case 21: return mons_level_tomb(mcls); // the lair
 }
 
 if (you[0].level_type == 2) return mons_level_abyss(mcls);
@@ -722,6 +749,7 @@ case 146: return 10; // Golden dragon
 case 160: return 32; // iron Troll
 case 162: return 34; // fire giant
 case 163: return 34; // frost giant
+case 165: return 36; // shadow dragon
 
 case 240: return 30; // shadow wraith
 case 241: return 27; // giant amoeba
@@ -746,6 +774,9 @@ case 272: return 30; // deep elf annihilator
 case 273: return 30; // deep elf sorceror
 case 274: return 30; // deep elf death mage
 case 364: return 23; // shining eye
+case 369: return 31; // skeletal dragon
+case 370: return 37; // tentacled monstr
+case 371: return 32; // sphinx
 
 case MLAVA0: return 500; // "lava worm"
 case MLAVA1: return 500; // "lava fish"
@@ -784,6 +815,9 @@ switch(you[0].where_are_you)
 /* 14 - the vaults - uses normal monsters */
  case 15: return mons_rare_crypt(mcls); // the crypt
  case 16: return mons_rare_hall_ob(mcls); // the lair
+ case 19: return mons_rare_snake(mcls); // the lair
+ case 20: return mons_rare_elf(mcls); // the lair
+ case 21: return mons_rare_tomb(mcls); // the tomb
 }
 
 if (you[0].level_type == 2) return mons_rare_abyss(mcls);
@@ -922,13 +956,14 @@ case 139: return 20; // red back
 case 140: return 20; // wisp
 case 141: return 5; // vapour
 case 142: return 45; // Ogre mage
-case 143: return 45; // Spiny worm
+case 143: return 30; // Spiny worm
 case 144: return 5; // dancing weapon
 case 145: return 15; // Titan
 case 146: return 10; // Golden dragon
 case 160: return 25; // iron Troll
 case 162: return 25; // fire giant
 case 163: return 25; // frost giant
+case 165: return 20; // shadow dragon
 
 case 240: return 10; // shadow wraith
 case 241: return 35; // giant amoeba
@@ -953,6 +988,9 @@ case 272: return 3; // deep elf annihilator
 case 273: return 3; // deep elf sorceror
 case 274: return 3; // deep elf death mage
 case 364: return 2; // shining eye
+case 369: return 10; // skeletal dragon
+case 370: return 17; // tentacled monstr
+case 371: return 20; // sphinx
 
 case MLAVA0: return 500; // "lava worm"
 case MLAVA1: return 500; // "lava fish"
@@ -1131,6 +1169,7 @@ case 152: return you[0].branch_stairs [2] + 1 + 4; // green rat
 case 153: return you[0].branch_stairs [2] + 1 + 6; // orange rat
 case 154: return you[0].branch_stairs [2] + 1 + 7; // black snake
 case 155: return you[0].branch_stairs [2] + 1 + 6; // sheep
+case 164: return you[0].branch_stairs [2] + 1 + 7; // fire drake
 case 242: return you[0].branch_stairs [2] + 1 + 5; // giant slug
 case 243: return you[0].branch_stairs [2] + 1 + 6; // giant snail
 case 246: return you[0].branch_stairs [2] + 1 + 9; // boring beetle
@@ -1192,6 +1231,7 @@ case 152: return 74; // green rat
 case 153: return 46; // orange rat
 case 154: return 47; // black snake
 case 155: return 36; // sheep
+case 164: return 36; // fire drake
 case 242: return 55; // giant slug
 case 243: return 56; // giant snail
 case 246: return 29; // boring beetle
@@ -1220,6 +1260,7 @@ case 275: mlev = 3; break; // ooze
 case 276: mlev = 3; break; // azure jelly
 case 277: mlev = 5; break; // death ooze
 case 278: mlev = 3; break; // acid blob
+case 370: return 5; // tentacled monstr
 
 }
 
@@ -1242,6 +1283,7 @@ case 275: mlev = 150; break; // ooze
 case 276: mlev = 30; break; // azure jelly
 case 277: mlev = 20; break; // death ooze
 case 278: mlev = 100; break; // acid blob
+case 370: mlev = 2; break; // tentacled monstr
 
 }
 
@@ -1287,6 +1329,8 @@ case 156: mlev = 3; break; // ghoul
 case 240: mlev = 4; break; // shadow wraith
 case 362: mlev = 4; break; // vampire knight
 case 363: mlev = 4; break; // vampire mage
+case 369: mlev = 4; break; // skeletal dragon
+case 372: mlev = 3; break; // rotting hulk
 
 default: mlev = 99;
 
@@ -1328,10 +1372,12 @@ case 110: mlev = 25; break; //strcat(gmon_name, "necromancer");
 case 130: mlev = 14; break; //strcat(gmon_name, "spectre");
 case 131: mlev = 3; break; // pulsating mass
 case 137: mlev = 13; break; // flayed ghost
-case 156: mlev = 20; break; // ghoul
+case 156: mlev = 25; break; // ghoul
 case 240: mlev = 10; break; // shadow wraith
 case 362: mlev = 20; break; // vampire knight
 case 363: mlev = 20; break; // vampire mage
+case 369: mlev = 24; break; // skeletal dragon
+case 372: mlev = 17; break; // rotting hulk
 
 default: mlev = 0;
 
@@ -1364,6 +1410,211 @@ return 0;
 
 }
 
+
+int mons_level_snake(int mcls)
+{
+int mlev = 0;
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+
+switch(mcls)
+{
+case 44: mlev = 1; break; // snake
+case 128: mlev = 2; break; // brown snake
+case 154: mlev = 2; break; // black snake
+case 166: mlev = 2; break; // yellow snake
+case 167: mlev = 2; break; // grey snake
+
+case 161: mlev = 3; break; // naga
+case 260: mlev = 5; break; // naga mage
+case 261: mlev = 4; break; // naga warrior
+
+default: mlev = 99;
+
+
+}
+
+return mlev + you[0].branch_stairs [9] + 1;
+
+}
+
+int mons_rare_snake(int mcls)
+{
+int mlev = 0;
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+
+switch(mcls)
+{
+case 44: mlev = 99; break; // snake
+case 128: mlev = 99; break; // brown snake
+case 154: mlev = 72; break; // black snake
+case 166: mlev = 32; break; // yellow snake
+case 167: mlev = 32; break; // grey snake
+
+case 161: mlev = 53; break; // naga
+case 260: mlev = 15; break; // naga mage
+case 261: mlev = 34; break; // naga warrior
+
+default: mlev = 0;
+
+
+}
+
+return mlev;
+
+}
+
+int mons_level_elf(int mcls)
+{
+int mlev = 0;
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+
+switch(mcls)
+{
+case 5: mlev = 3; break; // fungus
+
+case 263: mlev = 1; break; // deep elf soldier
+case 264: mlev = 1; break; // deep elf fighter
+case 265: mlev = 4; break; // deep elf knight
+case 266: mlev = 2; break; // deep elf mage
+case 267: mlev = 2; break; // deep elf summoner
+case 268: mlev = 3; break; // deep elf conjurer
+case 269: mlev = 4; break; // deep elf priest
+case 270: mlev = 7; break; // deep elf high priest
+case 271: mlev = 7; break; // deep elf demonologist
+case 272: mlev = 7; break; // deep elf annihilator
+case 273: mlev = 7; break; // deep elf sorceror
+case 274: mlev = 7; break; // deep elf death mage
+
+
+case 14: mlev = 1; break; // "orc"
+case 52: mlev = 1; break; // "orc warrior"
+case 54: mlev = 2; break; // "orc wizard"
+case 55: mlev = 3; break; // "orc knight"
+case 103: mlev = 4; break; //strcat(gmon_name, "orc sorceror"); break; break;
+case 112: mlev = 5; break; //strcat(gmon_name, "orc priest"); break; break;
+case 113: mlev = 5; break; //strcat(gmon_name, "orc high priest"); break; break;
+
+default: mlev = 99; break;
+
+}
+
+return mlev + you[0].branch_stairs [10] + 1;
+
+}
+
+int mons_rare_elf(int mcls)
+{
+int mlev = 0;
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+
+switch(mcls)
+{
+case 5: mlev = 300; break; // fungus
+case 263: mlev = 100; break; // deep elf soldier
+case 264: mlev = 100; break; // deep elf fighter
+case 265: mlev = 80; break; // deep elf knight
+case 266: mlev = 100; break; // deep elf mage
+case 267: mlev = 72; break; // deep elf summoner
+case 268: mlev = 63; break; // deep elf conjurer
+case 269: mlev = 44; break; // deep elf priest
+case 270: mlev = 10; break; // deep elf high priest
+case 271: mlev = 17; break; // deep elf demonologist
+case 272: mlev = 13; break; // deep elf annihilator
+case 273: mlev = 17; break; // deep elf sorceror
+case 274: mlev = 13; break; // deep elf death mage
+
+case 14: mlev = 20; break; // "orc"
+case 52: mlev = 11; break; // "orc warrior"
+case 54: mlev = 13; break; // "orc wizard"
+case 55: mlev = 5; break; // "orc knight"
+case 103: mlev = 10; break; //strcat(gmon_name, "orc sorceror"); break; break;
+case 112: mlev = 5; break; //strcat(gmon_name, "orc priest"); break; break;
+case 113: mlev = 5; break; //strcat(gmon_name, "orc high priest"); break; break;
+
+default: mlev = 0; break;
+
+}
+
+return mlev;
+
+}
+
+
+int mons_level_tomb(int mcls)
+{
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+int mlev = 0;
+
+
+switch(mcls)
+{
+case 25: mlev = 0; break; // "zombie"
+case 37: mlev = 3; break; // "lich"
+case 38: mlev = 1; break; // "mummy"
+case 51: mlev = 1; break; // "zombie"
+case 72: mlev = 2; break; // "flying skull"
+case 107:
+case 108: mlev = 1; break; // "skeleton"
+case 373: mlev = 2; break; // "guardian mummy"
+case 375: mlev = 3; break; // "mummy priest"
+
+default: mlev = 99;
+
+
+}
+ return mlev + you[0].branch_stairs [5] + 1;
+} // end mons_level(mcls)
+
+
+int mons_rare_tomb(int mcls)
+{
+
+/*
+Note: When adding new branches or levels above 50, must change
+pre-game deletion routine in new_game in newgame.cc.
+*/
+int mlev = 0;
+
+
+switch(mcls)
+{
+case 25: mlev = 20; break; // "zombie"
+case 37: mlev = 4; break; // "lich"
+case 38: mlev = 300; break; // "mummy"
+case 51: mlev = 21; break; // "zombie"
+case 72: mlev = 33; break; // "flying skull"
+case 107:
+case 108: mlev = 21; break; // "skeleton"
+case 373: mlev = 202; break; // "guardian mummy"
+case 375: mlev = 40; break; // "mummy priest"
+default: mlev = 0;
+
+
+}
+ return mlev;
+} // end mons_level(mcls)
+
+
 /*
 New branch must be added in:
 new_game stair location
@@ -1388,6 +1639,10 @@ case 4: return 8; // the vaults
 case 5: return 5; // the crypt
 case 6: return 1; // the hall of blades
 case 7: return 1; // the hall of Zot
+case 8: return 1; // the ecumenical temple
+case 9: return 5; // the snake pit
+case 10: return 7; // the elven halls
+case 11: return 3; // the Tomb
 }
 return 0;
 }
