@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "effects.h"
 #include "fight.h"
@@ -95,7 +96,7 @@ switch(env[0].grid [you[0].x_pos] [you[0].y_pos])
   case 134:
   case 138:
   case 132: mpr("There is a staircase back to the Dungeon here."); break;
-  case 142: mpr("There is a staircase back to the Mines here."); break;
+  case 142: mpr("There is a staircase back to the Lair here."); break;
   case 133: mpr("There is a staircase back to the Lair here."); break;
   case 135: mpr("There is a staircase back to the Vaults here."); break;
   case 141:
@@ -213,7 +214,7 @@ int nothing = 0;
 char str_pass [50];
 char keyin = 0;
 
-if (you[0].lev != 0 && wearing_amulet(42) == 0)
+if (you[0].lev != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
 {
         mpr("You can't reach the floor from up here.");
         return;
@@ -693,7 +694,7 @@ if (you[0].inv_no == 0)
         return;
         }
 
-query2 : strcpy(info, "Drop which item?");
+query2 : strcpy(info, "Drop which item? ");
 mpr(info);
 
 unsigned char keyin = get_ch();
@@ -779,11 +780,13 @@ quant_drop = 0;
 if (item_drop_1 > 47 && item_drop_1 < 58)
 {
         quant_drop = item_drop_1 - 48;
+    putch(keyin);
         keyin = get_ch();
         item_drop_1 = (int) keyin;
         if (item_drop_1 > 47 && item_drop_1 < 58)
                 {
                 quant_drop = (quant_drop * 10 + (item_drop_1 - 48));
+        putch(keyin);
                 keyin = get_ch();
                 item_drop_1 = (int) keyin;
                 }
@@ -816,14 +819,14 @@ if ((item_drop_1 < 65 || (item_drop_1 > 90 && item_drop_1 < 97) || item_drop_1 >
                 }
         }
 
-        if (item_drop_2 == you[0].equip [7] || item_drop_2 == you[0].equip [8] || item_drop_2 == you[0].equip [9])
+        if (item_drop_2 == you[0].equip [EQ_LEFT_RING] || item_drop_2 == you[0].equip [EQ_RIGHT_RING] || item_drop_2 == you[0].equip [EQ_AMULET])
         {
                 strcpy(info, "You will have to take that off first.");
                 mpr(info);
                 return;
         }
 
-        if (item_drop_2 == you[0].equip [0] && you[0].inv_class [item_drop_2] == 0 && you[0].inv_plus [item_drop_2] >= 130)
+        if (item_drop_2 == you[0].equip [EQ_WEAPON] && you[0].inv_class [item_drop_2] == 0 && you[0].inv_plus [item_drop_2] >= 130)
         {
                 strcpy(info, "That object is stuck to you!");
                 mpr(info);
@@ -841,10 +844,10 @@ if ((item_drop_1 < 65 || (item_drop_1 > 90 && item_drop_1 < 97) || item_drop_1 >
         strcat(info, ".");
         mpr(info);
 
-        if (item_drop_2 == you[0].equip [0])
+        if (item_drop_2 == you[0].equip [EQ_WEAPON])
         {
         unwield_item(item_drop_2);
-                you[0].equip [0] = -1;
+                you[0].equip [EQ_WEAPON] = -1;
                 mpr("You are empty handed.");
         }
 
@@ -946,20 +949,20 @@ if (you[0].disease == 0)
     }
    }
 
-if (you[0].mutation [38] > 0 && random2(100) <= you[0].mutation [38] * 5 - 2)
+if (you[0].mutation [MUT_DETERIORATION] > 0 && random2(200) <= you[0].mutation [MUT_DETERIORATION] * 5 - 2)
      lose_stat(100, 1);
 
 
 if (you[0].invis > 0 || (you[0].haste > 0 && you[0].berserker == 0))
 {
- if (random2(2) == 0 && you[0].mpower < 100) you[0].mpower ++;
+ if (random2(10) == 0 && you[0].mpower < 100) you[0].mpower ++;
 }
 
-you[0].mpower += random2(scan_randarts(25) + 1); // mutagenic radiation
+you[0].mpower += random2(scan_randarts(RAP_MUTAGENIC) + 1); // mutagenic radiation
 
 if (you[0].mpower > 0 && random2(2) == 0)
 {
- if (you[0].mpower > 4 && random2(100) <= you[0].mpower)
+ if (you[0].mpower > 4 && random2(150) <= you[0].mpower)
  {
   mpr("You've accumulated too much magical radiation!");
   if (random2(2) == 0) mutate(100); else give_bad_mutation();
@@ -982,7 +985,7 @@ case 11: return "Nemelex Xobeh";
 case 12: return "Elyvilon";
 */
 
-if (you[0].religion != 0)
+if (you[0].religion != GOD_NO_GOD)
 {
  switch(you[0].religion)
  {
@@ -1024,16 +1027,16 @@ if (you[0].religion != 0)
 
   case 11: /* Nemelex - relatively patient */
   if (random2(35) == 0) lose_piety(1);
-  if (you[0].attribute [6] > 0 && random2(2) == 0) you[0].attribute [6] --;
+  if (you[0].attribute [ATTR_CARD_COUNTDOWN] > 0 && random2(2) == 0) you[0].attribute [ATTR_CARD_COUNTDOWN] --;
   if (you[0].piety <= 0) excommunication();
   break;
 
  }
 }
 
-if (you[0].mutation [35] > 0)
+if (you[0].mutation [MUT_LOST] > 0)
 {
- if (random2(100) <= you[0].mutation [35] * 5) forget_map(5 + random2(you[0].mutation [35] * 10));
+ if (random2(100) <= you[0].mutation [MUT_LOST] * 5) forget_map(5 + random2(you[0].mutation [MUT_LOST] * 10));
 }
 
 int c = 0;
@@ -1077,10 +1080,10 @@ for (c = 0; c < 52; c ++)
  {
    if (you[0].inv_class [c] == 4)
    {
-    if (you[0].equip [0] == c)
+    if (you[0].equip [EQ_WEAPON] == c)
     {
-     unwield_item(you[0].equip [0]);
-     you[0].equip [0] = -1;
+     unwield_item(you[0].equip [EQ_WEAPON]);
+     you[0].equip [EQ_WEAPON] = -1;
     }
     you[0].inv_quant [c] = 0;
     burden_change();
@@ -1094,10 +1097,10 @@ for (c = 0; c < 52; c ++)
    }
    if (mons_skeleton(you[0].inv_plus [c]) == 0)
    {
-    if (you[0].equip [0] == c)
+    if (you[0].equip [EQ_WEAPON] == c)
     {
-     unwield_item(you[0].equip [0]);
-     you[0].equip [0] = -1;
+     unwield_item(you[0].equip [EQ_WEAPON]);
+     you[0].equip [EQ_WEAPON] = -1;
     }
     you[0].inv_quant [c] = 0;
     burden_change();
@@ -1113,27 +1116,27 @@ for (c = 0; c < 52; c ++)
  you[0].inv_dam [c] -= rotted;
 } // end for c
 
-if (you[0].equip [6] == -1) goto practise_stealth;
-if (you[0].inv_type [you[0].equip [6]] < 2) goto practise_stealth;
-if (random() % 1000 <= mass(2, you[0].inv_type [you[0].equip [6]]) && random() % 7 == 0)
- exercise(13, 1);
+if (you[0].equip [EQ_BODY_ARMOUR] == -1) goto practise_stealth;
+if (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < 2) goto practise_stealth;
+if (random() % 1000 <= mass(OBJ_ARMOUR, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]]) && random() % 7 == 0)
+ exercise(SK_ARMOUR, 1);
 
 
 // also skills:
 practise_stealth : if (you[0].burden_state != 0) return;
 
-if (you[0].equip [6] != -1)
+if (you[0].equip [EQ_BODY_ARMOUR] != -1)
 {
- if (you[0].inv_dam [you[0].equip [6]] / 30 != 4) /* elven armours don't hamper stealth */
-  if (you[0].inv_type [you[0].equip [6]] > 1 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25)) /* neither do robes or steam/mottled DSM */
-     if (random() % mass(2, you[0].inv_type [you[0].equip [6]]) >= 100 || random() % 3 != 0) return;
+ if (you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] / 30 != 4) /* elven armours don't hamper stealth */
+  if (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > 1 && (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < 22 || you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > 25)) /* neither do robes or steam/mottled DSM */
+     if (random() % mass(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]]) >= 100 || random() % 3 != 0) return;
 }
 
 //if (you[0].lev != 0) return; // can't really practise stealth while floating, and an amulet of control flight shouldn't make much difference
 
 if (you[0].special_wield == 50) return; // shadow lantern stops stealth
 
-if (random() % 6 == 0) exercise(15, 1);
+if (random() % 6 == 0) exercise(SK_STEALTH, 1);
 
 
 } // end manage_corpses

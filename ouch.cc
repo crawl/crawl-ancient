@@ -27,6 +27,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "chardump.h"
 #include "view.h"
@@ -89,7 +90,7 @@ int check_your_resists(int hurted, int flavour)
                 break;
 
  case 5: /* electricity */
- if (you[0].attribute [0] > 0)
+ if (you[0].attribute [ATTR_RESIST_LIGHTNING] > 0)
  {
   mpr("You resist.");
   hurted = 0;
@@ -112,18 +113,24 @@ int check_your_resists(int hurted, int flavour)
                 hurted = 0;
                 break;
         }
-//        strcat(info, ".");
-//        mpr(info);
-/*        if (you[0].duration [3] != 0 && you[0].religion == 1 && random2(150) < you[0].piety)
-        {
-         strcpy(info, "Zin protects your life force!");
-         mpr(info);
-         break;
-        }*/
  mpr("You feel drained!");
- drain_exp(); /* lose_level(); */
-/* strcpy(info, "How terrible");*/
+ drain_exp();
         break;
+
+                case 23: /* ice */
+                if (player_res_cold() > 100)
+                {
+                        mpr("You partially resist.");
+                        hurted /= 2; /* should really be more complex, but I don't have time right now */
+                } else
+                       if (player_res_cold() < 100)
+                       {
+                        mpr("You feel a painful chill!");
+                        hurted *= 13;
+                        hurted /= 10;
+                       }
+                break;
+
 
  } /* end switch */
 
@@ -184,11 +191,11 @@ for (splc = 1; splc < 7; splc++)
 
 void weapon_acid(char acid_strength)
 {
-        char hand_thing = you[0].equip [0];
+        char hand_thing = you[0].equip [EQ_WEAPON];
 
-        if (you[0].equip [0] == -1)
+        if (you[0].equip [EQ_WEAPON] == -1)
         {
-                if (you[0].equip [3] != -1) hand_thing = you[0].equip [3];
+                if (you[0].equip [EQ_GLOVES] != -1) hand_thing = you[0].equip [EQ_GLOVES];
                         else return; /* take extra damage */
         }
 
@@ -218,7 +225,7 @@ void item_corrode(char itco)
  if (you[0].inv_class [itco] == 0 && you[0].inv_dam [itco] > 180) return; // unique
  if (you[0].inv_class [itco] == 0 && you[0].inv_dam [itco] % 30 >= 25) return; // unique
  if (you[0].inv_class [itco] == 2 && you[0].inv_dam [itco] % 30 >= 25) return; // unique
- if (wearing_amulet(39) == 1 && random() % 10 != 0)
+ if (wearing_amulet(AMU_RESIST_CORROSION) == 1 && random() % 10 != 0)
  {
 #ifdef DEBUG
 strcpy(info, "Amulet protects.");
@@ -259,7 +266,7 @@ mpr(info);
 
         you[0].AC_ch = 1;
 
-        if (you[0].equip [0] == itco) wield_change = 1;
+        if (you[0].equip [EQ_WEAPON] == itco) wield_change = 1;
 
 }
 
@@ -272,7 +279,7 @@ unsigned char burnc;
 unsigned char burn2;
 unsigned char burn_no = 0;
 
-if (wearing_amulet(41) == 1 && random() % 10 != 0)
+if (wearing_amulet(AMU_CONSERVATION) == 1 && random() % 10 != 0)
 {
 #ifdef DEBUG
 strcpy(info, "Amulet conserves.");
@@ -288,16 +295,16 @@ for (burnc = 0; burnc < 52; burnc++)
 
         for (burn2 = 0; burn2 < you[0].inv_quant [burnc]; burn2++)
         {
-                if (random2(40) < burn_strength)
+                if (random2(70) < burn_strength)
                 {
                         you[0].inv_quant [burnc] --;
                         burn_no++;
                         if (you[0].inv_quant [burnc] <= 0)
                         {
                                 you[0].inv_no--;
-                                if (burnc == you[0].equip [0]) // I can't assume any level of intelligence on the player's behalf.
+                                if (burnc == you[0].equip [EQ_WEAPON]) // I can't assume any level of intelligence on the player's behalf.
                                 {
-                                        you[0].equip [0] = -1;
+                                        you[0].equip [EQ_WEAPON] = -1;
                                         strcpy(info, "You are now empty handed.");
                                         mpr(info);
                                 }
@@ -357,7 +364,7 @@ if (dam > -9000)
  case 3:
  case 7:
  case 12:
- if (dam >= you[0].hp && you[0].duration [3] > 0 && random2(you[0].piety) >= 30)
+ if (dam >= you[0].hp && you[0].duration [DUR_PRAYER] > 0 && random2(you[0].piety) >= 30)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " protects you from harm!");
@@ -514,7 +521,7 @@ strcat(death_string, point_print);
  break;
 
  case 6: // falling into water
- if (you[0].species == 12) strcat(death_string, " soaked and fell apart");
+ if (you[0].species == SP_MUMMY) strcat(death_string, " soaked and fell apart");
    else strcat(death_string, " drowned");
  break;
 
@@ -622,15 +629,17 @@ if (death_type != 11 && death_type != 12)
   case 13: itoa(you[0].your_level - you[0].branch_stairs [3], st_prn, 10); break;
   case 14: itoa(you[0].your_level - you[0].branch_stairs [4], st_prn, 10); break;
  }*/
-
+if (you[0].where_are_you != 3)
+{
         strcat(death_string, " on L");
         strcat(death_string, st_prn);
+}
 
 switch (you[0].where_are_you)
 {
  case 1: strcat(death_string, " of Dis"); break;
  case 2: strcat(death_string, " of Gehenna"); break;
- case 3: strcat(death_string, " of the Vestibule"); break;
+ case 3: strcat(death_string, " in the Vestibule"); break;
  case 4: strcat(death_string, " of Cocytus"); break;
  case 5: strcat(death_string, " of Tartarus"); break;
  case 10: strcat(death_string, " of the Mines"); break;
@@ -788,9 +797,9 @@ for (i = 0; i < 52; i ++)
         }
 }
 
-if (status2 == 0) /* invent(you[0].inv_plus2, -1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].equip [6], you[0].equip [5], you[0].equip [2], you[0].equip [1], you[0].equip [3], you[0].equip [4], you[0].ring, 1); */
+if (status2 == 0) /* invent(you[0].inv_plus2, -1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [EQ_WEAPON], you[0].equip [EQ_BODY_ARMOUR], you[0].equip [EQ_SHIELD], you[0].equip [EQ_HELMET], you[0].equip [EQ_CLOAK], you[0].equip [EQ_GLOVES], you[0].equip [EQ_BOOTS], you[0].ring, 1); */
         invent(-1, 1);
-  else /* invent(you[0].inv_plus2, -1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [0], you[0].equip [6], you[0].equip [5], you[0].equip [2], you[0].equip [1], you[0].equip [3], you[0].equip [4], you[0].ring, 0); */
+  else /* invent(you[0].inv_plus2, -1, you[0].inv_quant, you[0].inv_dam, you[0].inv_class, you[0].inv_type, you[0].inv_plus, you[0].inv_ident, you[0].equip [EQ_WEAPON], you[0].equip [EQ_BODY_ARMOUR], you[0].equip [EQ_SHIELD], you[0].equip [EQ_HELMET], you[0].equip [EQ_CLOAK], you[0].equip [EQ_GLOVES], you[0].equip [EQ_BOOTS], you[0].ring, 0); */
         invent(-1, 0);
   if (dump_char((status2 == 0), "morgue.txt") == 1)
    strcpy(info, "Char dumped successfully (morgue.txt).");
@@ -841,6 +850,7 @@ for (i = 0; i < ITEMS; i++)
 
 
 highscore(death_string, points);
+get_ch();
         end(0);
 }
 
@@ -1060,7 +1070,7 @@ if (you[0].ep < 0) you[0].ep = 0;
 void drain_exp(void)
 {
 
-if (you[0].duration [3] != 0 &&  (you[0].religion == 1 || you[0].religion == 2 || you[0].religion == 12) && random2(150) < you[0].piety)
+if (you[0].duration [DUR_PRAYER] != 0 &&  (you[0].religion == GOD_ZIN || you[0].religion == GOD_SHINING_ONE || you[0].religion == GOD_ELYVILON) && random2(150) < you[0].piety)
 {
          strcpy(info, god_name(you[0].religion));
          strcat(info, " protects your life force!");

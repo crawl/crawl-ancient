@@ -5,6 +5,7 @@
 
 #include "defines.h"
 #include "externs.h"
+#include "enum.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -278,11 +279,11 @@ for (i = 0; i < 15; i ++)
 
          inv_count --;
 
-                        if (j == you[0].equip [0]) cprintf(" (weapon)");
-                        if (j == you[0].equip [1] || j == you[0].equip [2] || j == you[0].equip [3] || j == you[0].equip [4] || j == you[0].equip [5] || j == you[0].equip [6]) cprintf(" (worn)");
-                        if (j == you[0].equip [7]) cprintf(" (left hand)");
-                        if (j == you[0].equip [8]) cprintf(" (right hand)");
-                        if (j == you[0].equip [9]) cprintf(" (around neck)");
+                        if (j == you[0].equip [EQ_WEAPON]) cprintf(" (weapon)");
+                        if (j == you[0].equip [EQ_CLOAK] || j == you[0].equip [EQ_HELMET] || j == you[0].equip [EQ_GLOVES] || j == you[0].equip [EQ_BOOTS] || j == you[0].equip [EQ_SHIELD] || j == you[0].equip [EQ_BODY_ARMOUR]) cprintf(" (worn)");
+                        if (j == you[0].equip [EQ_LEFT_RING]) cprintf(" (left hand)");
+                        if (j == you[0].equip [EQ_RIGHT_RING]) cprintf(" (right hand)");
+                        if (j == you[0].equip [EQ_AMULET]) cprintf(" (around neck)");
 
 if (show_price == 1)
 {

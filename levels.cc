@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "externs.h"
+#include "enum.h"
 #include "monplace.h"
 #include "mstruct.h"
 #include "stuff.h"
@@ -154,6 +155,6 @@ if (random2(40) == 0)
  } while (mons_pan(pan_mons) == 0);
 }
 
-mons_place(pan_mons, 0, 50, 50, 0, MHITNOT, 250, 52);
+mons_place(pan_mons, 0, 50, 50, 1, MHITNOT, 250, 52);
 
 }

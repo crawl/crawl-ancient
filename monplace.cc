@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "externs.h"
+#include "enum.h"
 
 #include "dungeon.h"
 #include "stuff.h"

@@ -7,6 +7,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #ifdef DOS
 #include <file.h>
@@ -129,6 +130,7 @@ static void reset_ch () {
   you[0].xp_ch = 1;
   you[0].gp_ch = 1;
   you[0].hung_ch = 1;
+  you[0].hung_state = 3;
 }
 
 
@@ -431,6 +433,7 @@ void load (unsigned char stair_taken, char moving_level, char was_a_labyrinth, c
       else if (stair_taken >= 130 && stair_taken < 150) stair_taken -= 20;
       else if (stair_taken >= 110 && stair_taken < 130) stair_taken += 20;
       else if (stair_taken > 90) stair_taken = 86;
+      else if (stair_taken == 67) stair_taken = 67;
       else stair_taken -= 4;
 
       for (count_x = 0; count_x < GXM; count_x ++) {
@@ -470,8 +473,8 @@ found_stair :
 
     if (((you[0].level_type==0) || (you[0].level_type==3)) && (want_followers==1) && (just_made_new_lev==0)) {
       for (ic = 0; ic < 2; ic ++) {
-        for (count_x = you[0].x_pos - 3; count_x < you[0].x_pos + 4; count_x ++) {
-          for (count_y = you[0].y_pos - 3; count_y < you[0].y_pos + 4; count_y ++) {
+        for (count_x = you[0].x_pos - 6; count_x < you[0].x_pos + 7; count_x ++) {
+          for (count_y = you[0].y_pos - 6; count_y < you[0].y_pos + 7; count_y ++) {
             if ((ic==0) &&
                 (
                  (count_x<you[0].x_pos-1) ||
@@ -741,6 +744,14 @@ out_of_foll :
     count_y = you[0].y_pos;
     goto found_stair;
   } else {
+        if (stair_taken == 67)
+     for (count_x = 0; count_x < GXM; count_x ++)
+     {
+       for (count_y = 0; count_y < GYM; count_y ++)
+       {
+         if (grd [count_x] [count_y] == stair_taken) goto found_stair;
+       }
+     }
     if (stair_taken >= 130 && stair_taken < 150) stair_taken -= 20;
     else if (stair_taken >= 110 && stair_taken < 130) stair_taken += 20;
     else if (stair_taken < 86) stair_taken += 4;
@@ -976,7 +987,7 @@ void save_game (char leave_game) {
   strupr(char_f);
 #endif
 
-  int datalen=30+35+10+69+6+5+25+2+30+5+25+12*52+50*5+50*4+50+50+6*50+50+50+30+30+30+100+50+100;
+  int datalen=30+35+10+69+6+5+25+2+30+5+25+12*52+50*5+50*4+50+50+6*50+50+50+30+30+30+100+50+100+NO_UNRANDARTS;
   char *buf=(char*)malloc(datalen);
   char *p=buf;
 
@@ -1148,6 +1159,8 @@ void save_game (char leave_game) {
 
   for (j=0; j<100; ++j) *p++=you[0].demon_pow[j];
 
+  for (j = 0; j < NO_UNRANDARTS; ++j) *p++= does_unrandart_exist(j);
+
   if (p!=buf+datalen) {
     perror("opa (3)...");
     end(-1);
@@ -1213,7 +1226,7 @@ void restore_game () {
     end(-1);
   }
 
-  int datalen=30+35+10+69+6+5+25+2+30+5+25+12*52+50*5+50*4+50+50+6*50+50+50+30+30+30+100+50+100;
+  int datalen=30+35+10+69+6+5+25+2+30+5+25+12*52+50*5+50*4+50+50+6*50+50+50+30+30+30+100+50+100+NO_UNRANDARTS;
   char *buf=(char*)malloc(datalen);
   char *p=buf;
   if (datalen!=read2(handle, buf, datalen)) {
@@ -1341,10 +1354,10 @@ void restore_game () {
     for (j=0; j<50; ++j) {
       unsigned char ch=*p++;
       switch (i) {
-        case 0: set_id(3, j, ch); break;
-        case 1: set_id(6, j, ch); break;
-        case 2: set_id(7, j, ch); break;
-        case 3: set_id(8, j, ch); break;
+        case 0: set_id(OBJ_WANDS, j, ch); break;
+        case 1: set_id(OBJ_SCROLLS, j, ch); break;
+        case 2: set_id(OBJ_JEWELLERY, j, ch); break;
+        case 3: set_id(OBJ_POTIONS, j, ch); break;
       }
     }
   }
@@ -1370,6 +1383,8 @@ void restore_game () {
   for (j=0; j<50; ++j) you[0].had_item[j]=*p++;
 
   for (j=0; j<100; ++j) you[0].demon_pow[j]=*p++;
+
+  for (j = 0; j < NO_UNRANDARTS; ++j) set_unrandart_exist(j, *p++);
 
   if (p!=buf+datalen) {
     free(buf);
@@ -1412,30 +1427,30 @@ void save_ghost () {
   buf1[24]=player_res_fire();
   /* note - as ghosts, automatically get res poison + prot_life */
   buf1[25]=player_res_cold();
-  buf1[26]=you[0].attribute[0];
+  buf1[26]=you[0].attribute[ATTR_RESIST_LIGHTNING];
 
   int d=4;
   int e=0;
-  if (you[0].species==16) d+=you[0].xl;
-  d += you[0].skills [19]; /* Unarmed combat */
-  if (you[0].equip[0]!= -1)
+  if (you[0].species==SP_TROLL) d+=you[0].xl;
+  d += you[0].skills [SK_UNARMED_COMBAT]; /* Unarmed combat */
+  if (you[0].equip[EQ_WEAPON]!= -1)
   {
-    if (you[0].inv_class[you[0].equip[0]]==0)
+    if (you[0].inv_class[you[0].equip[EQ_WEAPON]]==0)
     {
-      d=property(you[0].inv_class[you[0].equip[0]], you[0].inv_type[you[0].equip[0]], 0);
-      if (you[0].inv_dam[you[0].equip[0]]<180) e=you[0].inv_dam[you[0].equip[0]]%30;
-      if (you[0].inv_dam[you[0].equip[0]]%30>=25) e=randart_wpn_properties(you[0].inv_class[you[0].equip[0]], you[0].inv_type[you[0].equip[0]], you[0].inv_dam[you[0].equip[0]], you[0].inv_plus[you[0].equip[0]], you[0].inv_plus2[you[0].equip[0]], 0, 0);
+      d=property(you[0].inv_class[you[0].equip[EQ_WEAPON]], you[0].inv_type[you[0].equip[EQ_WEAPON]], 0);
+      if (you[0].inv_dam[you[0].equip[EQ_WEAPON]]<180) e=you[0].inv_dam[you[0].equip[EQ_WEAPON]]%30;
+      if (you[0].inv_dam[you[0].equip[EQ_WEAPON]]%30>=25) e=randart_wpn_properties(you[0].inv_class[you[0].equip[EQ_WEAPON]], you[0].inv_type[you[0].equip[EQ_WEAPON]], you[0].inv_dam[you[0].equip[EQ_WEAPON]], you[0].inv_plus[you[0].equip[EQ_WEAPON]], you[0].inv_plus2[you[0].equip[EQ_WEAPON]], 0, RAP_BRAND);
     }
-    if (you[0].inv_class[you[0].equip[0]]==11) d=5;
+    if (you[0].inv_class[you[0].equip[EQ_WEAPON]]==11) d=5;
   }
 
-  if (((you[0].equip[0]!=-1) && (you[0].inv_class[you[0].equip[0]]==0)) ||
-      (you[0].inv_class[you[0].equip[0]]==11)) {
-    d*=26+you[0].skills[weapon_skill(you[0].inv_class[you[0].equip[0]], you[0].inv_type[you[0].equip[0]])];
+  if (((you[0].equip[EQ_WEAPON]!=-1) && (you[0].inv_class[you[0].equip[EQ_WEAPON]]==0)) ||
+      (you[0].inv_class[you[0].equip[EQ_WEAPON]]==11)) {
+    d*=26+you[0].skills[weapon_skill(you[0].inv_class[you[0].equip[EQ_WEAPON]], you[0].inv_type[you[0].equip[EQ_WEAPON]])];
     d/=25;
   }
 
-  d*=31+you[0].skills[0];
+  d*=31+you[0].skills[SK_FIGHTING];
   d/=30;
 
   d+=you[0].strength/4;

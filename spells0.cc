@@ -7,6 +7,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #include "itemname.h"
 #include "macro.h"
@@ -334,13 +335,13 @@ chance -= you[0].intel * 2;
 
 //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
 
-if (you[0].equip [6] != -1)
- chance += (abs(property(2, you[0].inv_type [you[0].equip [6]], 1)) * 3) - 2;
+if (you[0].equip [EQ_BODY_ARMOUR] != -1)
+ chance += (abs(property(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]], 1)) * 3) - 2;
 
-if (you[0].equip [5] != -1)
+if (you[0].equip [EQ_SHIELD] != -1)
 {
-  if (you[0].inv_type [you[0].equip [5]] == 8) chance += 5;
-  if (you[0].inv_type [you[0].equip [5]] == 14) chance += 15;
+  if (you[0].inv_type [you[0].equip [EQ_SHIELD]] == 8) chance += 5;
+  if (you[0].inv_type [you[0].equip [EQ_SHIELD]] == 14) chance += 15;
 }
 
 switch(spell_value(spell))
@@ -389,14 +390,14 @@ if (chance < -140) chance2 = 4;
 if (chance < -160) chance2 = 2;
 if (chance < -180) chance2 = 0;
 
-if (you[0].religion == 6 && you[0].duration [3] != 0 && you[0].piety >= 50 && (spell_type(spell, 11) != 0 || spell_type(spell, 18) != 0))
+if (you[0].religion == GOD_VEHUMET && you[0].duration [DUR_PRAYER] != 0 && you[0].piety >= 50 && (spell_type(spell, 11) != 0 || spell_type(spell, 18) != 0))
 {
- chance /= 2;
+ chance2 /= 2;
 }
 
-if (you[0].duration [18] > 0 && you[0].attribute [5] == 2)
+if (you[0].duration [DUR_TRANSFORMATION] > 0 && you[0].attribute [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
 {
- chance += 20;
+ chance2 += 20;
 }
 
 return chance2;
@@ -426,55 +427,55 @@ if (spellsy != 0)
 {
 if (spell_type(spell, 11) == 1)
 {
- power += (you[0].skills [26] * 2) / spellsy;
+ power += (you[0].skills [SK_CONJURATIONS] * 2) / spellsy;
 }
 if (spell_type(spell, 12) == 1)
 {
- power += (you[0].skills [27] * 2) / spellsy;
+ power += (you[0].skills [SK_ENCHANTMENTS] * 2) / spellsy;
 }
 if (spell_type(spell, 15) == 1)
 {
- power += (you[0].skills [31] * 2) / spellsy;
+ power += (you[0].skills [SK_TRANSMIGRATION] * 2) / spellsy;
 }
 if (spell_type(spell, 16) == 1)
 {
- power += (you[0].skills [29] * 2) / spellsy;
+ power += (you[0].skills [SK_NECROMANCY] * 2) / spellsy;
 }
 if (spell_type(spell, 18) == 1)
 {
- power += (you[0].skills [28] * 2) / spellsy;
+ power += (you[0].skills [SK_SUMMONINGS] * 2) / spellsy;
 }
 if (spell_type(spell, 19) == 1)
 {
- power += (you[0].skills [32] * 2) / spellsy;
+ power += (you[0].skills [SK_DIVINATIONS] * 2) / spellsy;
 }
 if (spell_type(spell, 20) == 1)
 {
- power += (you[0].skills [30] * 2) / spellsy;
+ power += (you[0].skills [SK_TRANSLOCATIONS] * 2) / spellsy;
 }
 if (spell_type(spell, 21) == 1)
 {
- power += (you[0].skills [37] * 2) / spellsy;
+ power += (you[0].skills [SK_POISON_MAGIC] * 2) / spellsy;
 }
 if (spell_type(spell, 22) == 1)
 {
- power += (you[0].skills [36] * 2) / spellsy;
+ power += (you[0].skills [SK_EARTH_MAGIC] * 2) / spellsy;
 }
 if (spell_type(spell, 23) == 1)
 {
- power += (you[0].skills [35] * 2) / spellsy;
+ power += (you[0].skills [SK_AIR_MAGIC] * 2) / spellsy;
 }
 if (spell_type(spell, 13) == 1)
 {
- power += (you[0].skills [33] * 2) / spellsy;
+ power += (you[0].skills [SK_FIRE_MAGIC] * 2) / spellsy;
 }
 if (spell_type(spell, 14) == 1)
 {
- power += (you[0].skills [34] * 2) / spellsy;
+ power += (you[0].skills [SK_ICE_MAGIC] * 2) / spellsy;
 }
 } // end if spellsy != 0
 
-power += (you[0].skills [25] * 5) / 10;
+power += (you[0].skills [SK_SPELLCASTING] * 5) / 10;
 
 power += player_mag_abil(); // currently only affected by staves/rings of wizardry
 
@@ -768,6 +769,13 @@ switch(spell)
    case 157: stype = 16; break; // Death channel
    case 158: stype = 16; break; // Symbol of Torment
    case 159: stype = 1223; break; // deflect missiles
+   case SPELL_ORB_OF_FRAGMENTATION: stype = 1122; break;
+   case SPELL_ICE_BOLT: stype = 1114; break;
+   case SPELL_ICE_STORM: stype = 1114; break;
+   case SPELL_ARC: stype = 23; break;
+   case SPELL_AIRSTRIKE: stype = 23; break;
+   case SPELL_SHADOW_CREATURES: stype = 18; break;
+
 
 /*
 types of spells:
@@ -1128,7 +1136,7 @@ switch(spell)
    case 129: return 3; // stone arrow
    case 130: return 7; // tomb of doro
    case 131: return 6; // stonemail
-   case 132: return 1; // shock
+   case 132: return 3; // shock
    case 133: return 2; // swiftness
    case 134: return 4; // fly
    case 135: return 4; // insulation
@@ -1156,6 +1164,12 @@ switch(spell)
    case 157: return 9; // Death Channel
    case 158: return 6; // Symbol of Torment
    case 159: return 6; // deflect missiles
+   case SPELL_ORB_OF_FRAGMENTATION: return 7;
+   case SPELL_ICE_BOLT: return 4;
+   case SPELL_ICE_STORM: return 9;
+   case SPELL_ARC: return 1;
+   case SPELL_AIRSTRIKE: return 4;
+   case SPELL_SHADOW_CREATURES: return 5;
 
 default: return 2;
 
@@ -1281,7 +1295,7 @@ void spell_name(unsigned char spell, char spln [60])
       case 125: strcpy(spln, "Freezing Aura"); break;
       case 126: strcpy(spln, "Lethal Infusion"); break;
 
-      case 127: strcpy(spln, "Throw Pebble"); break;
+      case 127: strcpy(spln, "Crush"); break;
       case 128: strcpy(spln, "Bolt of Iron"); break;
       case 129: strcpy(spln, "Stone Arrow"); break;
       case 130: strcpy(spln, "Tomb of Doroklohe"); break;
@@ -1316,6 +1330,12 @@ void spell_name(unsigned char spell, char spln [60])
       case 157: strcpy(spln, "Death Channel"); break;
       case 158: strcpy(spln, "Symbol of Torment"); break;
       case 159: strcpy(spln, "Deflect Missiles"); break;
+      case 160: strcpy(spln, "Orb of Fragmentation"); break;
+      case 161: strcpy(spln, "Ice Bolt"); break;
+      case 162: strcpy(spln, "Ice Storm"); break;
+      case 163: strcpy(spln, "Arc"); break;
+      case 164: strcpy(spln, "Airstrike"); break;
+      case 165: strcpy(spln, "Shadow Creatures"); break;
 
 
 /* When adding enchantments, must add them to extension as well */
@@ -1326,10 +1346,9 @@ Contingency?
 Trigger contingency
 Preserve Corpses
 Permanency
-Gate
 Ball Lightning
 Explosive rune?
-Fennel wands (+ credit)
+Fennel wands
 More summonings!
 */
 

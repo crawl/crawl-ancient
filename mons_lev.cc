@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include "externs.h"
+#include "enum.h"
 #include "mstruct.h"
 
 int mons_rarity(int mcls);

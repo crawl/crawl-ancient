@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "macro.h"
 #include "mstruct.h"
 #include "player.h"

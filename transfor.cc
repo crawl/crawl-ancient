@@ -1,7 +1,9 @@
+#include "config.h"
 
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "it_use2.h"
 #include "itemname.h"
@@ -21,14 +23,14 @@ int remove_equipment(char remove_stuff [8])
 
 int i;
 
-if (remove_stuff [0] == 1 && you[0].equip [0] != -1)
+if (remove_stuff [EQ_WEAPON] == 1 && you[0].equip [EQ_WEAPON] != -1)
 {
-  unwield_item(you[0].equip [0]);
-  you[0].equip [0] = -1;
+  unwield_item(you[0].equip [EQ_WEAPON]);
+  you[0].equip [EQ_WEAPON] = -1;
   mpr("You are empty handed.");
 }
 
-for (i = 1; i < 7; i ++)
+for (i = EQ_CLOAK; i < EQ_LEFT_RING; i ++)
 {
  if (remove_stuff [i] == 0) continue;
  if (you[0].equip [i] == -1) continue;
@@ -63,7 +65,7 @@ return 1;
 char transform(int pow, char which_trans)
 {
 
-if (you[0].attribute [5] != 0) untransform();
+if (you[0].attribute [ATTR_TRANSFORMATION] != TRAN_NONE) untransform();
 
 if (you[0].is_undead != 0)
 {
@@ -72,8 +74,8 @@ if (you[0].is_undead != 0)
 }
 
 char rem_stuff [8];
-int i = 0;
-for (i = 0; i < 8; i ++)
+int i = EQ_WEAPON;
+for (i = EQ_WEAPON; i < EQ_RIGHT_RING; i ++)
 {
  rem_stuff [i] = 1;
 }
@@ -84,67 +86,67 @@ you[0].dex_ch = 1;
 you[0].evasion_ch = 1;
 you[0].AC_ch = 1;
 
-if (you[0].species == 13)
- if (which_trans != 2 && which_trans != 6) you[0].attribute [4] --;
+if (you[0].species == SP_NAGA)
+ if (which_trans != TRAN_BLADE_HANDS && which_trans != TRAN_LICH) you[0].attribute [ATTR_WALK_SLOWLY] --;
 
 /* Remember, it can still fail in the switch below... */
 
 switch(which_trans)
 {
- case 1: /* also AC + 2, ev + 3, fast_run */
+ case TRAN_SPIDER: /* also AC + 2, ev + 3, fast_run */
  mpr("You turn into a venomous arachnid creature.");
  remove_equipment(rem_stuff);
  you[0].dex += 5;
  you[0].max_dex += 5;
- you[0].attribute [5] = 1;
- you[0].duration [18] = 20 + random2(pow) + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_SPIDER;
+ you[0].duration [DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  your_sign = 's';
  your_colour = DARKGREY;
  return 1;
 
- case 2:
- rem_stuff [1] = 0; rem_stuff [2] = 0; rem_stuff [4] = 0; rem_stuff [6] = 0;
+ case TRAN_BLADE_HANDS:
+ rem_stuff [EQ_CLOAK] = 0; rem_stuff [EQ_HELMET] = 0; rem_stuff [EQ_BOOTS] = 0; rem_stuff [EQ_BODY_ARMOUR] = 0;
  remove_equipment(rem_stuff);
  mpr("Your hands turn into razor-sharp scythe blades.");
- you[0].attribute [5] = 2;
- you[0].duration [18] = 10 + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_BLADE_HANDS;
+ you[0].duration [DUR_TRANSFORMATION] = 10 + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  return 1;
 
- case 3: /* also AC + 20, ev - 5 */
+ case TRAN_STATUE: /* also AC + 20, ev - 5 */
  mpr("You turn into a living statue of rough stone.");
- rem_stuff [0] = 0; /* can still hold a weapon */
+ rem_stuff [EQ_WEAPON] = 0; /* can still hold a weapon */
  remove_equipment(rem_stuff);
  you[0].dex -= 2;
  you[0].max_dex -= 2;
  you[0].strength += 2;
  you[0].max_strength += 2;
- you[0].attribute [5] = 3;
- you[0].duration [18] = 20 + random2(pow) + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_STATUE;
+ you[0].duration [DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  your_sign = '8';
  your_colour = LIGHTGREY;
  extra_hp(15);
  return 1;
 
- case 4: /* also AC + 2, res_cold * 3, -1 * res_fire */
+ case TRAN_ICE_BEAST: /* also AC + 2, res_cold * 3, -1 * res_fire */
  mpr("You turn into a creature of crystalline ice.");
  remove_equipment(rem_stuff);
- you[0].attribute [5] = 4;
- you[0].duration [18] = 20 + random2(pow) + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_ICE_BEAST;
+ you[0].duration [DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  your_sign = 'I';
  your_colour = WHITE;
  extra_hp(12);
  return 1;
 
- case 5: /* also AC + 7, ev - 3, -1 * res_cold, 2 * res_fire */
+ case TRAN_DRAGON: /* also AC + 7, ev - 3, -1 * res_cold, 2 * res_fire */
  mpr("You turn into a fearsome dragon!");
  remove_equipment(rem_stuff);
- you[0].attribute [5] = 5;
- you[0].duration [18] = 20 + random2(pow) + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_DRAGON;
+ you[0].duration [DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  you[0].strength += 10;
  you[0].max_strength += 10;
  your_sign = 'D';
@@ -152,7 +154,7 @@ switch(which_trans)
  extra_hp(16);
  return 1;
 
- case 6: /* also AC + 3, 1 * res_cold, prot_life, res_poison, is_undead, res_magic, drain attack (if empty-handed) */
+ case TRAN_LICH: /* also AC + 3, 1 * res_cold, prot_life, res_poison, is_undead, res_magic, drain attack (if empty-handed) */
  if (you[0].deaths_door != 0)
  {
   mpr("The transformation conflicts with an enchantment already in effect.");
@@ -160,9 +162,9 @@ switch(which_trans)
  }
  mpr("Your body is suffused with negative energy!");
  /* no remove_equip */
- you[0].attribute [5] = 6;
- you[0].duration [18] = 20 + random2(pow) + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].attribute [ATTR_TRANSFORMATION] = TRAN_LICH;
+ you[0].duration [DUR_TRANSFORMATION] = 20 + random2(pow) + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
  you[0].strength += 3;
  you[0].max_strength += 3;
  your_sign = 'L';
@@ -180,11 +182,11 @@ return 0;
 void untransform(void)
 {
 
-unsigned char was_transformed = you[0].attribute [5];
+unsigned char was_transformed = you[0].attribute [ATTR_TRANSFORMATION];
 
 char rem_stuff [8];
 int i = 0;
-for (i = 0; i < 8; i ++)
+for (i = EQ_WEAPON; i < EQ_RIGHT_RING; i ++)
 {
  rem_stuff [i] = 0;
 }
@@ -198,19 +200,19 @@ you[0].AC_ch = 1;
 your_sign = '@';
 your_colour = LIGHTGREY;
 
-switch(you[0].attribute [5])
+switch(you[0].attribute [ATTR_TRANSFORMATION])
 {
- case 1:
+ case TRAN_SPIDER:
  mpr("Your transformation has ended.");
  you[0].dex -= 5;
  you[0].max_dex -= 5;
  break;
 
- case 2:
+ case TRAN_BLADE_HANDS:
  mpr("Your hands shrink back to their normal proportions.");
  break;
 
- case 3:
+ case TRAN_STATUE:
  mpr("You revert to your normal fleshy form.");
  you[0].dex += 2;
  you[0].max_dex += 2;
@@ -218,17 +220,17 @@ switch(you[0].attribute [5])
  you[0].max_strength -= 2;
  break;
 
- case 4:
+ case TRAN_ICE_BEAST:
  mpr("You warm up again.");
  break;
 
- case 5:
+ case TRAN_DRAGON:
  you[0].strength -= 10;
  you[0].max_strength -= 10;
  mpr("Your transformation has ended.");
  break;
 
- case 6:
+ case TRAN_LICH:
  you[0].strength -= 3;
  you[0].max_strength -= 3;
  mpr("You feel yourself come back to life.");
@@ -238,13 +240,13 @@ switch(you[0].attribute [5])
 
 } /* end switch */
 
-you[0].attribute [5] = 0;
-you[0].duration [18] = 0;
-if (you[0].species == 13 && you[0].equip [4] != -1 && you[0].inv_plus2 [you[0].equip [4]] != 1) /* If nagas wear boots while transformed, they fall off again afterwards */
+you[0].attribute [ATTR_TRANSFORMATION] = TRAN_NONE;
+you[0].duration [DUR_TRANSFORMATION] = 0;
+if (you[0].species == SP_NAGA && you[0].equip [EQ_BOOTS] != -1 && you[0].inv_plus2 [you[0].equip [EQ_BOOTS]] != 1) /* If nagas wear boots while transformed, they fall off again afterwards */
 {
- rem_stuff [4] = 1;
+ rem_stuff [EQ_BOOTS] = 1;
  remove_equipment(rem_stuff);
- if (was_transformed != 2 && was_transformed != 6) you[0].attribute [4] ++;
+ if (was_transformed != TRAN_BLADE_HANDS && was_transformed != TRAN_LICH) you[0].attribute [ATTR_WALK_SLOWLY] ++;
 }
 
 calc_hp();
@@ -254,29 +256,29 @@ calc_hp();
 char can_equip(char use_which)
 {
 
-if (you[0].attribute [5] == 0 || you[0].attribute [5] == 2 || you[0].attribute [5] == 6) /* or it's a transformation which doesn't change overall shape */
+if (you[0].attribute [ATTR_TRANSFORMATION] == TRAN_NONE || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_LICH) /* or it's a transformation which doesn't change overall shape */
 /* if more cases are added to this if must also change in item_use for naga barding */
 {
- if (you[0].species == 13 && use_which == 4) return 0;
- if (you[0].species == 30 && use_which == 4) return 0; /* Neither nagas or centaurs can use boots */
- if ((you[0].species == 33 || you[0].species == 36) && use_which == 2) return 0; /* Minotaurs/Kenku can't wear headgear */
- if (you[0].species == 36 && use_which == 4) return 0; /* Kenku can't wear footgear */
+ if (you[0].species == SP_NAGA && use_which == EQ_BOOTS) return 0;
+ if (you[0].species == SP_CENTAUR && use_which == EQ_BOOTS) return 0; /* Neither nagas or centaurs can use boots */
+ if ((you[0].species == SP_MINOTAUR || you[0].species == SP_KENKU) && use_which == EQ_HELMET) return 0; /* Minotaurs/Kenku can't wear headgear */
+ if (you[0].species == SP_KENKU && use_which == EQ_BOOTS) return 0; /* Kenku can't wear footgear */
 }
 
-if (use_which == 2 && you[0].mutation [32] != 0) return 0; /* horns prevent wearing a helmet */
+if (use_which == EQ_HELMET && you[0].mutation [MUT_HORNS] != 0) return 0; /* horns prevent wearing a helmet */
 
-switch(you[0].attribute [5])
+switch(you[0].attribute [ATTR_TRANSFORMATION])
 {
- case 0: return 1;
- case 1: /* spider - can't wear anything */
+ case TRAN_NONE: return 1;
+ case TRAN_SPIDER: /* spider - can't wear anything */
  return 0;
- case 2: /* scythe hands */
- if (use_which == 0 || use_which == 3 || use_which == 5) return 0;
+ case TRAN_BLADE_HANDS: /* scythe hands */
+ if (use_which == EQ_WEAPON || use_which == EQ_GLOVES || use_which == EQ_SHIELD) return 0;
  return 1;
- case 3: /* statue */
- if (use_which == 0) return 1;
+ case TRAN_STATUE: /* statue */
+ if (use_which == EQ_WEAPON) return 1;
  return 0;
- case 6:
+ case TRAN_LICH:
  return 1;
  default: return 0;
 }

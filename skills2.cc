@@ -8,6 +8,7 @@ This file was extensively modified by Wladimir van der Laan.
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1845,7 +1846,7 @@ reprint_stuff:
         char scrln=3,scrcol=1;
         for(x=0;x<50;x++) {
                 /* spells in second column */
-                if(x==25) { scrln=3; scrcol=40; }
+                if(x==SK_SPELLCASTING) { scrln=3; scrcol=40; }
                 gotoxy(scrcol,scrln);
                 if(you[0].skills [x] > 0)
                 {
@@ -1873,7 +1874,9 @@ reprint_stuff:
                         scrln++;
                 }
                 /* Extra CR between classes of weapons and such things */
-                if(x==7 || x==12 || x==18 || x == 38) scrln++;
+                if(   x==SK_STAVES      || x==SK_THROWING
+                   || x==SK_TRAPS_DOORS || x==SK_INVOCATIONS
+                  ) scrln++;
         }
 // if any more skills added, must adapt letters to go into caps
         gotoxy(1, 24);
@@ -1979,16 +1982,16 @@ for (i = max_skill; i >= min_skill; i --)
  }
 }
 
-if (you[0].skills [0] >= skmk && min_skill <= 0)
+if (you[0].skills [SK_FIGHTING] >= skmk && min_skill <= 0)
 {
  skillb = 0;
- skmk = you[0].skills [0];
+ skmk = you[0].skills [SK_FIGHTING];
 }
 
-/*if (you[0].skills [25] >= skmk && min_skill <= 25 && max_skill >= 25)
+/*if (you[0].skills [SK_SPELLCASTING] >= skmk && min_skill <= 25 && max_skill >= 25)
 {
  skillb = 25;
- skmk = you[0].skills [25];
+ skmk = you[0].skills [SK_SPELLCASTING];
 }*/
 
 return skillb;
@@ -2002,7 +2005,7 @@ int calc_hp(void)
 int hitp = you[0].hp_max;
 
 hitp = you[0].base_hp - 5000 + you[0].base_hp2 - 5000;
-hitp += you[0].xl * you[0].skills [0] / 5;
+hitp += you[0].xl * you[0].skills [SK_FIGHTING] / 5;
 
 /* being berserk makes you resistant to damage. I don't know why */
 if (you[0].berserker != 0)
@@ -2012,17 +2015,18 @@ if (you[0].berserker != 0)
 }
 
 /* some transformations give you extra hp */
-if (you[0].duration [18] != 0)
+if (you[0].duration [DUR_TRANSFORMATION] != 0)
 {
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 3: hitp *= 15; hitp /= 10; break;
-  case 4: hitp *= 12; hitp /= 10; break;
+  case TRAN_STATUE: hitp *= 15; hitp /= 10; break;
+  case TRAN_ICE_BEAST: hitp *= 12; hitp /= 10; break;
+  case TRAN_DRAGON: hitp *= 16; hitp /= 10; break;
  }
 }
 
 /* frail and robust mutations */
-hitp *= (10 + you[0].mutation [42] - you[0].mutation [41]);
+hitp *= (10 + you[0].mutation [MUT_ROBUST] - you[0].mutation [MUT_FRAIL]);
 hitp /= 10;
 
 you[0].hp_max = hitp;
@@ -2039,8 +2043,8 @@ int enp = you[0].ep_max;
 
 enp = you[0].base_ep - 5000 + you[0].base_ep2 - 5000;
 
-int spell_extra = you[0].xl * you[0].skills [25] / 6;
-int invoc_extra = you[0].xl * you[0].skills [38] / 4;;
+int spell_extra = you[0].xl * you[0].skills [SK_SPELLCASTING] / 6;
+int invoc_extra = you[0].xl * you[0].skills [SK_INVOCATIONS] / 4;;
 
 if (invoc_extra > spell_extra) enp += invoc_extra; else enp += spell_extra;
 
@@ -2136,9 +2140,9 @@ return 0;
 int species_skills(char skill, char species)
 {
 
-if (skill == 25) return (spec_skills [species - 1] [skill] * 130) / 100;
+if (skill == SK_SPELLCASTING) return (spec_skills [species - 1] [skill] * 130) / 100;
 /* Spellcasting requires more practice */
-if (skill == 38) return (spec_skills [species - 1] [skill] * 70) / 100;
+if (skill == SK_INVOCATIONS) return (spec_skills [species - 1] [skill] * 70) / 100;
 /* Invocations requires less */
 
 return spec_skills [species - 1] [skill];
@@ -2165,7 +2169,10 @@ for (skc = min_skill; skc <= max_skill; skc ++)
 {
  if (you[0].practise_skill [skc] == 0)
  {
-  if ((skc >= 1 && skc <= 11) || (skc >= 13 && skc <= 15) || (skc >= 26 && skc <= 36))
+  if (   (skc >= SK_SHORT_BLADES && skc <= SK_DARTS)
+      || (skc >= SK_ARMOUR       && skc <= SK_STEALTH)
+      || (skc >= SK_CONJURATIONS && skc <= SK_EARTH_MAGIC))
+/* cdl -- should SK_EARTH_MAGIC be SK_POISON_MAGIC? */
     continue;
  }
  if (you[0].skills [skc] > 0 && you[0].skills [skc] < 27) numb_sk ++;
@@ -2177,7 +2184,10 @@ for (skc = min_skill; skc <= max_skill; skc ++)
 {
  if (you[0].practise_skill [skc] == 0)
  {
-  if ((skc >= 1 && skc <= 11) || (skc >= 13 && skc <= 15) || (skc >= 26 && skc <= 36))
+  if (   (skc >= SK_SHORT_BLADES && skc <= SK_DARTS)
+      || (skc >= SK_ARMOUR       && skc <= SK_STEALTH)
+      || (skc >= SK_CONJURATIONS && skc <= SK_EARTH_MAGIC))
+/* cdl -- should SK_EARTH_MAGIC be SK_POISON_MAGIC? */
     continue;
  }
  if (you[0].skills [skc] > 0 && you[0].skills [skc] < 27)

@@ -5,7 +5,9 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
+#include "describe.h"
 #include "invent.h"
 #include "itemname.h"
 #include "macro.h"
@@ -198,7 +200,7 @@ itty = igrd [0] [5 + shoppy];
 
        if (i % 2 == 0) textcolor(LIGHTGREY); else textcolor(WHITE);
 
-        item_name(mitm.iplus2 [itty], mitm.iclass [itty], mitm.itype [itty], mitm.idam [itty], mitm.iplus [itty], mitm.iquant [itty], mitm.iid [itty], 3, st_pass);
+           item_name(mitm.iplus2 [itty], mitm.iclass [itty], mitm.itype [itty], mitm.idam [itty], mitm.iplus [itty], mitm.iquant [itty], mitm.iid [itty], 3, st_pass);
        putch(i + 96);
        cprintf(" - ");
        cprintf(st_pass);
@@ -218,7 +220,7 @@ itty = igrd [0] [5 + shoppy];
 
       textcolor(LIGHTGREY);
 
-      shop_print("Type letter of item to buy it, x or Esc to leave, or ? or * for an inventory.", 23);
+      shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, V to examine.", 23);
 
       purchase :
       strcpy(sh_name, "You have ");
@@ -235,6 +237,33 @@ itty = igrd [0] [5 + shoppy];
       ft = shop_getch();
 
       if (ft == 'x' || ft == 27) goto goodbye;
+
+      if (ft == 'V')
+      {
+       shop_print("Examine which item?", 20);
+       ft = shop_getch();
+
+       if (ft < 'a' || ft > 'z')
+         {
+          goto huh;
+         }
+
+       ft -= 97;
+
+       if (ft > 18) goto huh;
+
+       if (shop_items [ft] == 501)
+         {
+          shop_print("I'm sorry, you seem to be confused.", 20);
+          more3();
+          goto purchase;
+         }
+
+       describe_item(mitm.iclass [shop_items [ft]], mitm.itype [shop_items [ft]], mitm.iplus [shop_items [ft]], mitm.iplus2 [shop_items [ft]], mitm.idam [shop_items [ft]], mitm.iid [shop_items [ft]]);
+
+       goto print_stock;
+
+      }
 
       if (ft == '?' || ft == '*')
       {
@@ -309,14 +338,14 @@ int j = 0;
     if (env[0].sh_type [i] != 2 && env[0].sh_type [i] != 3 && env[0].sh_type [i] != 4)
        for (j = 0; j < 50; j ++)
        {
-        shop_id [0] [j] = get_id(3, j);
-        set_id(3, j, 1);
-        shop_id [1] [j] = get_id(6, j);
-        set_id(6, j, 1);
-        shop_id [2] [j] = get_id(7, j);
-        set_id(7, j, 1);
-        shop_id [3] [j] = get_id(8, j);
-        set_id(8, j, 1);
+        shop_id [0] [j] = get_id(OBJ_WANDS, j);
+        set_id(OBJ_WANDS, j, 1);
+        shop_id [1] [j] = get_id(OBJ_SCROLLS, j);
+        set_id(OBJ_SCROLLS, j, 1);
+        shop_id [2] [j] = get_id(OBJ_JEWELLERY, j);
+        set_id(OBJ_JEWELLERY, j, 1);
+        shop_id [3] [j] = get_id(OBJ_POTIONS, j);
+        set_id(OBJ_POTIONS, j, 1);
        }
 
 
@@ -330,10 +359,10 @@ int j = 0;
        for (j = 0; j < 50; j ++)
        {
 //        shop_id [i] [j] = get_id(i, j);
-        set_id(3, j, shop_id [0] [j]);
-        set_id(6, j, shop_id [1] [j]);
-        set_id(7, j, shop_id [2] [j]);
-        set_id(8, j, shop_id [3] [j]);
+        set_id(OBJ_WANDS, j, shop_id [0] [j]);
+        set_id(OBJ_SCROLLS, j, shop_id [1] [j]);
+        set_id(OBJ_JEWELLERY, j, shop_id [2] [j]);
+        set_id(OBJ_POTIONS, j, shop_id [3] [j]);
        }
 }
 
@@ -344,10 +373,10 @@ void shop_set_id(int i, int shop_id [4] [50], unsigned char iclass, unsigned cha
   {
       switch(iclass)
         {
-          case 3: shop_id [0] [itype] = 1; break;
-          case 6: shop_id [1] [itype] = 1; break;
-          case 7: shop_id [2] [itype] = 1; break;
-          case 8: shop_id [3] [itype] = 1; break;
+          case OBJ_WANDS: shop_id [0] [itype] = 1; break;
+          case OBJ_SCROLLS: shop_id [1] [itype] = 1; break;
+          case OBJ_JEWELLERY: shop_id [2] [itype] = 1; break;
+          case OBJ_POTIONS: shop_id [3] [itype] = 1; break;
         }
       set_id(iclass, itype, 1);
   }
@@ -438,7 +467,7 @@ int charge_value = 0;
 
 switch(item_clas)
   {
-        case 0:
+        case OBJ_WEAPONS:
 
  if (item_da > 180)
  {
@@ -467,40 +496,40 @@ switch(item_clas)
 //        valued = 30;
         switch(item_typ)
         {
-        case 0: valued += 10; break; //strcat(glog , "club"); break;
-        case 1: valued += 30; break; //strcat(glog , "mace"); break;
-        case 2: valued += 35; break; //strcat(glog , "flail"); break;
-        case 3: valued += 20; break; //strcat(glog , "dagger"); break;
-        case 4: valued += 35; break; //strcat(glog , "spiked mace"); break;
-        case 5: valued += 32; break; //strcat(glog , "short sword"); break;
-        case 6: valued += 45; break; //strcat(glog , "long sword"); break;
-        case 7: valued += 60; break; //strcat(glog , "great sword"); break;
-        case 8: valued += 45; break; //strcat(glog , "scimitar"); break;
-        case 9: valued += 28; break; //strcat(glog , "hand axe"); break;
-        case 10: valued += 65; break; //strcat(glog , "battleaxe"); break;
-        case 11: valued += 32; break; //strcat(glog , "spear"); break;
-        case 12: valued += 52; break; //strcat(glog , "halberd"); break;
-        case 13: valued += 15; break; //strcat(glog , "sling"); break;
-        case 14: valued += 31; break; //strcat(glog , "bow"); break;
-        case 15: valued += 41; break; //strcat(glog , "crossbow"); break;
-        case 16: valued += 51; break; //strcat(glog , "hand crossbow"); break;
-        case 17: valued += 55; break; //strcat(glog , "glaive"); break;
-        case 18: valued += 25; break; //strcat(glog , "quarterstaff"); break;
-        case 19: valued += 30; break; //strcat(glog , "scythe"); break;
-        case 20: valued += 17; break; //strcat(glog , "giant club"); break;
-        case 21: valued += 19; break; //strcat(glog , "giant spiked club"); break;
-        case 22: valued += 65; break; // eveningstar
-        case 23: valued += 250; break; // quick blade
-        case 24: valued += 300; break; // katana
-        case 25: valued += 100; break; // exec axe
-        case 26: valued += 200; break; // 2x sw
-        case 27: valued += 300; break; // 3x sw
-        case 28: valued += 30; break; // hammer
-        case 29: valued += 40; break; // ancus
-        case 30: valued += 25; break; // whip
-        case 31: valued += 40; break; // sabre
-        case 32: valued += 300; break; // demon blade
-        case 33: valued += 230; break; // demon whip
+        case WPN_CLUB: valued += 10; break; //strcat(glog , "club"); break;
+        case WPN_MACE: valued += 30; break; //strcat(glog , "mace"); break;
+        case WPN_FLAIL: valued += 35; break; //strcat(glog , "flail"); break;
+        case WPN_DAGGER: valued += 20; break; //strcat(glog , "dagger"); break;
+        case WPN_MORNINGSTAR: valued += 35; break; //strcat(glog , "spiked mace"); break;
+        case WPN_SHORT_SWORD: valued += 32; break; //strcat(glog , "short sword"); break;
+        case WPN_LONG_SWORD: valued += 45; break; //strcat(glog , "long sword"); break;
+        case WPN_GREAT_SWORD: valued += 60; break; //strcat(glog , "great sword"); break;
+        case WPN_SCIMITAR: valued += 45; break; //strcat(glog , "scimitar"); break;
+        case WPN_HAND_AXE: valued += 28; break; //strcat(glog , "hand axe"); break;
+        case WPN_BATTLEAXE: valued += 65; break; //strcat(glog , "battleaxe"); break;
+        case WPN_SPEAR: valued += 32; break; //strcat(glog , "spear"); break;
+        case WPN_HALBERD: valued += 52; break; //strcat(glog , "halberd"); break;
+        case WPN_SLING: valued += 15; break; //strcat(glog , "sling"); break;
+        case WPN_BOW: valued += 31; break; //strcat(glog , "bow"); break;
+        case WPN_CROSSBOW: valued += 41; break; //strcat(glog , "crossbow"); break;
+        case WPN_HAND_CROSSBOW: valued += 51; break; //strcat(glog , "hand crossbow"); break;
+        case WPN_GLAIVE: valued += 55; break; //strcat(glog , "glaive"); break;
+        case WPN_QUARTERSTAFF: valued += 25; break; //strcat(glog , "quarterstaff"); break;
+        case WPN_SCYTHE: valued += 30; break; //strcat(glog , "scythe"); break;
+        case WPN_GIANT_CLUB: valued += 17; break; //strcat(glog , "giant club"); break;
+        case WPN_GIANT_SPIKED_CLUB: valued += 19; break; //strcat(glog , "giant spiked club"); break;
+        case WPN_EVENINGSTAR: valued += 65; break; // eveningstar
+        case WPN_QUICK_BLADE: valued += 250; break; // quick blade
+        case WPN_KATANA: valued += 300; break; // katana
+        case WPN_EXECUTIONERS_AXE: valued += 100; break; // exec axe
+        case WPN_DOUBLE_SWORD: valued += 200; break; // 2x sw
+        case WPN_TRIPLE_SWORD: valued += 300; break; // 3x sw
+        case WPN_HAMMER: valued += 30; break; // hammer
+        case WPN_ANCUS: valued += 40; break; // ancus
+        case WPN_WHIP: valued += 25; break; // whip
+        case WPN_SABRE: valued += 40; break; // sabre
+        case WPN_DEMON_BLADE: valued += 300; break; // demon blade
+        case WPN_DEMON_WHIP: valued += 230; break; // demon whip
 
         }
 
@@ -509,29 +538,29 @@ if (ident_lev > 1)
 {
  switch(item_da % 30)
  {
-  case 0: break;
-  case 1: valued *= 25; break; //strcat(glog, " of flaming"); break;
-  case 2: valued *= 25; break; //strcat(glog, " of freezing"); break;
-  case 3: valued *= 50; break; //strcat(glog, " of holy wrath"); break;
-  case 4: valued *= 30; break; //strcat(glog, " of electrocution"); break;
-  case 5: valued *= 21; break; //strcat(glog, " of orc slaying"); break;
-  case 6: valued *= 23; break; //strcat(glog, " of venom"); break;
-  case 7: valued *= 20; break; //strcat(glog, " of protection"); break;
-  case 8: valued *= 64; break; //strcat(glog, " of draining"); break;
-  case 9: valued *= 40; break; //strcat(glog, " of speed"); break;
-  case 10: valued *= 30; break; // slicing etc
-  case 11: valued *= 50; break; // flaming
-  case 12: valued *= 50; break; // frost
-  case 13: valued *= 60; break; // vampiric
-  case 14: valued *= 50; break; // mace of disruption
-  case 15: valued *= 30; break; // pain
-  case 16: valued *= 30; break; // distortion
+  case SPWPN_NORMAL: break;
+  case SPWPN_FLAMING: valued *= 25; break; //strcat(glog, " of flaming"); break;
+  case SPWPN_FREEZING: valued *= 25; break; //strcat(glog, " of freezing"); break;
+  case SPWPN_HOLY_WRATH: valued *= 50; break; //strcat(glog, " of holy wrath"); break;
+  case SPWPN_ELECTROCUTION: valued *= 30; break; //strcat(glog, " of electrocution"); break;
+  case SPWPN_ORC_SLAYING: valued *= 21; break; //strcat(glog, " of orc slaying"); break;
+  case SPWPN_VENOM: valued *= 23; break; //strcat(glog, " of venom"); break;
+  case SPWPN_PROTECTION: valued *= 20; break; //strcat(glog, " of protection"); break;
+  case SPWPN_DRAINING: valued *= 64; break; //strcat(glog, " of draining"); break;
+  case SPWPN_SPEED: valued *= 40; break; //strcat(glog, " of speed"); break;
+  case SPWPN_VORPAL: valued *= 30; break; // slicing etc
+  case SPWPN_FLAME: valued *= 50; break; // flaming
+  case SPWPN_FROST: valued *= 50; break; // frost
+  case SPWPN_VAMPIRICISM: valued *= 60; break; // vampiric
+  case SPWPN_DISRUPTION: valued *= 50; break; // mace of disruption
+  case SPWPN_PAIN: valued *= 30; break; // pain
+  case SPWPN_DISTORTION: valued *= 30; break; // distortion
   default: valued *= 70; break; /* randart */
  }
  if (item_da % 30 != 0) valued /= 10;
 }
 
-if (item_da / 30 == 4 || item_da / 30 == 5) // elf/dwarf
+if (item_da / 30 == DWPN_ELVEN || item_da / 30 == DWPN_DWARVEN) // elf/dwarf
 {
   valued *= 12;
   valued /= 10;
@@ -624,7 +653,7 @@ if (item_da / 30 == 6) // orc
  break;
 
 
-        case 1: // ammunition
+        case OBJ_MISSILES: // ammunition
         if (ident_lev > 0)
         {
          // assume not cursed (can they be anyway?)
@@ -634,12 +663,12 @@ if (item_da / 30 == 6) // orc
 
         switch(item_typ)
         {
-        case 0: valued += 1; break; //strcat(glog , "stone"); break;
-        case 1: valued += 2; break; //strcat(glog , "arrow"); break;
-        case 2: valued += 2; break; //strcat(glog , "bolt"); break;
-        case 3: valued += 1; break; //strcat(glog , "dart"); break;
-        case 4: valued += 1; break; //strcat(glog , "eggplant"); break;
-        case 5: valued += 1; break; //strcat(glog , "large rock"); break;
+        case MI_STONE: valued += 1; break; //strcat(glog , "stone"); break;
+        case MI_ARROW: valued += 2; break; //strcat(glog , "arrow"); break;
+        case MI_BOLT: valued += 2; break; //strcat(glog , "bolt"); break;
+        case MI_DART: valued += 1; break; //strcat(glog , "dart"); break;
+        case MI_EGGPLANT: valued += 1; break; //strcat(glog , "eggplant"); break;
+        case MI_LARGE_ROCK: valued += 1; break; //strcat(glog , "large rock"); break;
         case 6: valued += 5; break; //strcat(glog , ""); break;
         case 7: valued += 5; break; //strcat(glog , ""); break;
         case 8: valued += 5; break; //strcat(glog , ""); break;
@@ -656,7 +685,7 @@ if (item_da / 30 == 6) // orc
 
 
 
-        case 2: // armour
+        case OBJ_ARMOUR: // armour
 
 
   /*
@@ -670,39 +699,39 @@ if (item_da / 30 == 6) // orc
 
         switch(item_typ )
         {
-        case 0: valued += 7; break; //strcat(glog , "robe"); break;
-        case 1: valued += 20; break; //strcat(glog , "leather armour");
-        case 2: valued += 40; break; //strcat(glog , "ring mail"); break;
-        case 3: valued += 83; break; //strcat(glog , "scale mail"); break;
-        case 4: valued += 110; break; //strcat(glog , "chain mail"); break;
-        case 5: valued += 140; break; //strcat(glog , "splint mail"); break;
-        case 6: valued += 150; break; //strcat(glog , "banded mail"); break;
-        case 7: valued += 230; break; //strcat(glog , "plate mail"); break;
-        case 8: valued += 45; break; //strcat(glog , "shield"); break;
-        case 9: valued += 10; break; //strcat(glog , "cloak");
-        case 10: valued += 25; break; //strcat(glog , "helmet"); break;
-        case 11: valued += 12; break; //strcat(glog , "gloves");
-        case 12: valued += 15; break; //strcat(glog , "boots");
-        case 13: valued += 25; break; //strcat(glog , "buckler"); break;
-        case 14: valued += 75; break; //strcat(glog , "large shield"); break;
-        case 15: valued += 500; break; //strcat(glog , "dragon hide"); break;
-        case 16: valued += 130; break; // strcat(glog , "troll hide"); break;
-        case 17: valued += 500; break; // strcat(glog , "crystal plate mail"); break;
-        case 18: valued += 750; break; // strcat(glog , "dragon scale mail"); break;
-        case 19: valued += 500; break; // strcat(glog , "troll leather armour"); break;
-        case 20: valued += 500; break; // strcat(glog , "ice dragon hide"); break;
-        case 21: valued += 750; break; // strcat(glog , "ice dragon scale mail"); break;
-        case 22: valued += 200; break; //strcat(glog , "steam dragon hide"); break;
-        case 23: valued += 300; break; //  , "steam dragon scale mail"); break;
-        case 24: valued += 300; break; //  , "mottled dragon hide"); break;
-        case 25: valued += 400; break; //  , "mottled dragon scale mail"); break;
-        case 26: valued += 900; break; //  , "storm dragon hide"); break;
-        case 27: valued += 1050; break; //  , "storm dragon scale mail"); break;
-        case 28: valued += 1400; break; //  , "gold dragon hide"); break;
-        case 29: valued += 1600; break; //  , "gold dragon scale mail"); break;
-                case 30: valued += 3; break; // animal skins
-        case 31: valued += 400; break; // strcat(glog , "swamp dragon hide"); break;
-        case 32: valued += 650; break; // strcat(glog , "swamp dragon scale mail"); break;
+        case ARM_ROBE: valued += 7; break; //strcat(glog , "robe"); break;
+        case ARM_LEATHER_ARMOUR: valued += 20; break; //strcat(glog , "leather armour");
+        case ARM_RING_MAIL: valued += 40; break; //strcat(glog , "ring mail"); break;
+        case ARM_SCALE_MAIL: valued += 83; break; //strcat(glog , "scale mail"); break;
+        case ARM_CHAIN_MAIL: valued += 110; break; //strcat(glog , "chain mail"); break;
+        case ARM_SPLINT_MAIL: valued += 140; break; //strcat(glog , "splint mail"); break;
+        case ARM_BANDED_MAIL: valued += 150; break; //strcat(glog , "banded mail"); break;
+        case ARM_PLATE_MAIL: valued += 230; break; //strcat(glog , "plate mail"); break;
+        case ARM_SHIELD: valued += 45; break; //strcat(glog , "shield"); break;
+        case ARM_CLOAK: valued += 10; break; //strcat(glog , "cloak");
+        case ARM_HELMET: valued += 25; break; //strcat(glog , "helmet"); break;
+        case ARM_GLOVES: valued += 12; break; //strcat(glog , "gloves");
+        case ARM_BOOTS: valued += 15; break; //strcat(glog , "boots");
+        case ARM_BUCKLER: valued += 25; break; //strcat(glog , "buckler"); break;
+        case ARM_LARGE_SHIELD: valued += 75; break; //strcat(glog , "large shield"); break;
+        case ARM_DRAGON_HIDE: valued += 500; break; //strcat(glog , "dragon hide"); break;
+        case ARM_TROLL_HIDE: valued += 130; break; // strcat(glog , "troll hide"); break;
+        case ARM_CRYSTAL_PLATE_MAIL: valued += 500; break; // strcat(glog , "crystal plate mail"); break;
+        case ARM_DRAGON_ARMOUR: valued += 750; break; // strcat(glog , "dragon scale mail"); break;
+        case ARM_TROLL_LEATHER_ARMOUR: valued += 500; break; // strcat(glog , "troll leather armour"); break;
+        case ARM_ICE_DRAGON_HIDE: valued += 500; break; // strcat(glog , "ice dragon hide"); break;
+        case ARM_ICE_DRAGON_ARMOUR: valued += 750; break; // strcat(glog , "ice dragon scale mail"); break;
+        case ARM_STEAM_DRAGON_HIDE: valued += 200; break; //strcat(glog , "steam dragon hide"); break;
+        case ARM_STEAM_DRAGON_ARMOUR: valued += 300; break; //  , "steam dragon scale mail"); break;
+        case ARM_MOTTLED_DRAGON_HIDE: valued += 300; break; //  , "mottled dragon hide"); break;
+        case ARM_MOTTLED_DRAGON_ARMOUR: valued += 400; break; //  , "mottled dragon scale mail"); break;
+        case ARM_STORM_DRAGON_HIDE: valued += 900; break; //  , "storm dragon hide"); break;
+        case ARM_STORM_DRAGON_ARMOUR: valued += 1050; break; //  , "storm dragon scale mail"); break;
+        case ARM_GOLD_DRAGON_HIDE: valued += 1400; break; //  , "gold dragon hide"); break;
+        case ARM_GOLD_DRAGON_ARMOUR: valued += 1600; break; //  , "gold dragon scale mail"); break;
+                case ARM_ANIMAL_SKIN: valued += 3; break; // animal skins
+        case ARM_SWAMP_DRAGON_HIDE: valued += 400; break; // strcat(glog , "swamp dragon hide"); break;
+        case ARM_SWAMP_DRAGON_ARMOUR: valued += 650; break; // strcat(glog , "swamp dragon scale mail"); break;
 
 
         }
@@ -712,38 +741,38 @@ if (item_da / 30 == 6) // orc
  {
   switch(item_da % 30)
   {
-   case 0: break;
-   case 1: valued *= 40; break; //strcat(glog, " of running"); break;
-   case 2: valued *= 30; break; //strcat(glog, " of fire resistance"); break;
-   case 3: valued *= 30; break; //strcat(glog, " of cold resistance"); break;
-   case 4: valued *= 20; break; //strcat(glog, " of poison resistance"); break;
-   case 5: valued *= 30; break; //strcat(glog, " of see invisible"); break;
-   case 6: valued *= 60; break; //strcat(glog, " of invisibility"); break;
-   case 7: valued *= 30; break; //strcat(glog, " of strength"); break;
-   case 8: valued *= 30; break; //strcat(glog, " of dexterity"); break;
-   case 9: valued *= 30; break; //strcat(glog, " of intelligence"); break;
-  case 10: valued *= 5; break; //strcat(glog, " of ponderousness"); break;
-  case 11: valued *= 30; break; //strcat(glog, " of levitation"); break;
-  case 12: valued *= 40; break; //strcat(glog, " of magic resistance"); break;
-  case 13: valued *= 40; break; //strcat(glog, " of protection"); break;
-  case 14: valued *= 30; break; // of stealth
-  case 15: valued *= 60; break; // of resistance
-  case 16: valued *= 50; break; // of life prot
-  case 17: valued *= 100; break; // of the Archmagi
-  case 18: valued *= 30; break; // of preservation
+   case SPARM_NORMAL: break;
+   case SPARM_RUNNING: valued *= 40; break; //strcat(glog, " of running"); break;
+   case SPARM_FIRE_RESISTANCE: valued *= 30; break; //strcat(glog, " of fire resistance"); break;
+   case SPARM_COLD_RESISTANCE: valued *= 30; break; //strcat(glog, " of cold resistance"); break;
+   case SPARM_POISON_RESISTANCE: valued *= 20; break; //strcat(glog, " of poison resistance"); break;
+   case SPARM_SEE_INVISIBLE: valued *= 30; break; //strcat(glog, " of see invisible"); break;
+   case SPARM_DARKNESS: valued *= 60; break; //strcat(glog, " of invisibility"); break;
+   case SPARM_STRENGTH: valued *= 30; break; //strcat(glog, " of strength"); break;
+   case SPARM_DEXTERITY: valued *= 30; break; //strcat(glog, " of dexterity"); break;
+   case SPARM_INTELLIGENCE: valued *= 30; break; //strcat(glog, " of intelligence"); break;
+  case SPARM_PONDEROUSNESS: valued *= 5; break; //strcat(glog, " of ponderousness"); break;
+  case SPARM_LEVITATION: valued *= 30; break; //strcat(glog, " of levitation"); break;
+  case SPARM_MAGIC_RESISTANCE: valued *= 40; break; //strcat(glog, " of magic resistance"); break;
+  case SPARM_PROTECTION: valued *= 40; break; //strcat(glog, " of protection"); break;
+  case SPARM_STEALTH: valued *= 30; break; // of stealth
+  case SPARM_RESISTANCE: valued *= 60; break; // of resistance
+  case SPARM_POSITIVE_ENERGY: valued *= 50; break; // of life prot
+  case SPARM_ARCHMAGI: valued *= 100; break; // of the Archmagi
+  case SPARM_PRESERVATION: valued *= 30; break; // of preservation
   default: /* assume a randart */
        valued *= 70; break;
   }
  if (item_da % 30 != 0) valued /= 10;
  }
 
-if (item_da / 30 == 4 || item_da / 30 == 5) // elf/dwarf
+if (item_da / 30 == DARM_ELVEN || item_da / 30 == DARM_DWARVEN) // elf/dwarf
 {
   valued *= 12;
   valued /= 10;
 }
 
-if (item_da / 30 == 6) // orc
+if (item_da / 30 == DARM_ORCISH) // orc
 {
   valued *= 8;
   valued /= 10;
@@ -798,32 +827,32 @@ if (item_da / 30 == 6) // orc
  break;
 
 
-        case 3: // devices
+        case OBJ_WANDS: // devices
         charge_value = 0;
         if (id [0] [item_typ] >= 1)
         {
                 switch(item_typ)
                 {
-                case 0: valued += 5; charge_value += 2; break; //strcat(glog, "wand of flame"); break;
-                case 1: valued += 5; charge_value += 2; break; //strcat(glog, "wand of frost"); break;
-                case 2: valued += 10; charge_value += 3; break; //strcat(glog, "wand of slowing"); break;
-                case 3: valued += 15; charge_value += 3; break; //strcat(glog, "wand of hasting"); break;
-                case 4: valued += 3; charge_value += 1; break; //strcat(glog, "wand of magic darts"); break;
-                case 5: valued += 7; charge_value += 3; break; //strcat(glog, "wand of healing"); break;
-                case 6: valued += 12; charge_value += 3; break; //strcat(glog, "wand of paralysis"); break;
-                case 7: valued += 15; charge_value += 3; break; //strcat(glog, "wand of fire"); break;
-                case 8: valued += 15; charge_value += 3; break; //strcat(glog, "wand of cold"); break;
-                case 9: valued += 10; charge_value += 2; break; //strcat(glog, "wand of confusion"); break;
-                case 10: valued += 15; charge_value += 2; break; //strcat(glog, "wand of invisibility"); break;
-                case 11: valued += 10; charge_value += 2; break; //strcat(glog, "wand of digging"); break;
-      case 12: valued += 20; charge_value += 5; break; //strcat(glog, "wand of fireball"); break;
-      case 13: valued += 10; charge_value += 2; break; //strcat(glog, "wand of teleportation"); break;
+                case WAND_FLAME: valued += 5; charge_value += 2; break; //strcat(glog, "wand of flame"); break;
+                case WAND_FROST: valued += 5; charge_value += 2; break; //strcat(glog, "wand of frost"); break;
+                case WAND_SLOWING: valued += 10; charge_value += 3; break; //strcat(glog, "wand of slowing"); break;
+                case WAND_HASTING: valued += 15; charge_value += 3; break; //strcat(glog, "wand of hasting"); break;
+                case WAND_MAGIC_DARTS: valued += 3; charge_value += 1; break; //strcat(glog, "wand of magic darts"); break;
+                case WAND_HEALING: valued += 7; charge_value += 3; break; //strcat(glog, "wand of healing"); break;
+                case WAND_PARALYSIS: valued += 12; charge_value += 3; break; //strcat(glog, "wand of paralysis"); break;
+                case WAND_FIRE: valued += 15; charge_value += 3; break; //strcat(glog, "wand of fire"); break;
+                case WAND_COLD: valued += 15; charge_value += 3; break; //strcat(glog, "wand of cold"); break;
+                case WAND_CONFUSION: valued += 10; charge_value += 2; break; //strcat(glog, "wand of confusion"); break;
+                case WAND_INVISIBILITY: valued += 15; charge_value += 2; break; //strcat(glog, "wand of invisibility"); break;
+                case WAND_DIGGING: valued += 10; charge_value += 2; break; //strcat(glog, "wand of digging"); break;
+      case WAND_FIREBALL: valued += 20; charge_value += 5; break; //strcat(glog, "wand of fireball"); break;
+      case 13: valued += WAND_INVISIBILITY; charge_value += 2; break; //strcat(glog, "wand of teleportation"); break;
                 case 14: valued += 20; charge_value += 5; break; //strcat(glog, "wand of lightning"); break;
-      case 15: valued += 15; charge_value += 4; break; //strcat(glog, "wand of polymorph"); break;
-      case 16: valued += 15; charge_value += 3; break; //strcat(glog, "wand of enslavement"); break;
+      case 15: valued += WAND_POLYMORPH_OTHER; charge_value += 4; break; //strcat(glog, "wand of polymorph"); break;
+      case 16: valued += WAND_POLYMORPH_OTHER; charge_value += 3; break; //strcat(glog, "wand of enslavement"); break;
       case 17: valued += 20; charge_value += 4; break; //strcat(glog, "wand of draining"); break;
-      case 18: valued += 13; charge_value += 3; break; //strcat(glog, "wand of random effects"); break;
-      case 19: valued += 17; charge_value += 4; break; //strcat(glog, "wand of disintegration"); break;
+      case 18: valued += WAND_TELEPORTATION; charge_value += 3; break; //strcat(glog, "wand of random effects"); break;
+      case 19: valued += WAND_DRAINING; charge_value += 4; break; //strcat(glog, "wand of disintegration"); break;
       default: valued += 10; break;
       } //else valued = 10;
 
@@ -839,7 +868,7 @@ if (item_da / 30 == 6) // orc
 
 
 
-        case 8: // potions
+        case OBJ_POTIONS: // potions
 
         if (id [3] [item_typ] == 0)
         {
@@ -848,65 +877,65 @@ if (item_da / 30 == 6) // orc
         }
                 switch(item_typ)
                 {
-                case 0: valued += 20; break; //strcat(glog , "healing"); break;
-                case 1: valued += 30; break; //strcat(glog , "heal wounds"); break;
-                case 2: valued += 25; break; //strcat(glog , "speed"); break;
-                case 3: valued += 25; break; //strcat(glog , "might"); break;
-                case 4: valued += 350; break; //strcat(glog , "gain strength"); break;
-                case 5: valued += 350; break; //strcat(glog , "gain dexterity"); break;
-                case 6: valued += 350; break; //strcat(glog , "gain intelligence"); break;
-                case 7: valued += 20; break; //strcat(glog , "levitation"); break;
-                case 8: valued += 1; break; //strcat(glog , "poison"); break;
-                case 9: valued += 1; break; //strcat(glog , "slowing"); break;
-                case 10: valued += 1; break; //strcat(glog , "paralysis"); break;
-                case 11: valued += 1; break; //strcat(glog , "confusion"); break;
-                case 12: valued += 55; break; //strcat(glog , "invisibility"); break;
-                case 13: valued += 10; break; //strcat(glog , "porridge"); break;
-                case 14: valued += 1; break; //strcat(glog , "degeneration"); break;
-                case 15: valued += 1; break; //strcat(glog , "decay"); break; // Rare!
-                case 16: valued += 1; break; //strcat(glog , "water"); break;
-                case 17: valued += 500; break; //strcat(glog , "experience"); break;
-                case 18: valued += 120; break; //strcat(glog , "magic"); break;
-                case 19: valued += 50; break; //strcat(glog , "restore abilities"); break;
-                case 20: valued += 1; break; //strcat(glog , "strong poison"); break;
-                case 21: valued += 30; break; // berserk rage
-                case 22: valued += 150; break; // cure mutation
-                case 23: valued += 50; break; // mutation
+                case POT_HEALING: valued += 20; break; //strcat(glog , "healing"); break;
+                case POT_HEAL_WOUNDS: valued += 30; break; //strcat(glog , "heal wounds"); break;
+                case POT_SPEED: valued += 25; break; //strcat(glog , "speed"); break;
+                case POT_MIGHT: valued += 25; break; //strcat(glog , "might"); break;
+                case POT_GAIN_STRENGTH: valued += 350; break; //strcat(glog , "gain strength"); break;
+                case POT_GAIN_DEXTERITY: valued += 350; break; //strcat(glog , "gain dexterity"); break;
+                case POT_GAIN_INTELLIGENCE: valued += 350; break; //strcat(glog , "gain intelligence"); break;
+                case POT_LEVITATION: valued += 20; break; //strcat(glog , "levitation"); break;
+                case POT_POISON: valued += 1; break; //strcat(glog , "poison"); break;
+                case POT_SLOWING: valued += 1; break; //strcat(glog , "slowing"); break;
+                case POT_PARALYSIS: valued += 1; break; //strcat(glog , "paralysis"); break;
+                case POT_CONFUSION: valued += 1; break; //strcat(glog , "confusion"); break;
+                case POT_INVISIBILITY: valued += 55; break; //strcat(glog , "invisibility"); break;
+                case POT_PORRIDGE: valued += 10; break; //strcat(glog , "porridge"); break;
+                case POT_DEGENERATION: valued += 1; break; //strcat(glog , "degeneration"); break;
+                case POT_DECAY: valued += 1; break; //strcat(glog , "decay"); break; // Rare!
+                case POT_WATER: valued += 1; break; //strcat(glog , "water"); break;
+                case POT_EXPERIENCE: valued += 500; break; //strcat(glog , "experience"); break;
+                case POT_MAGIC: valued += 120; break; //strcat(glog , "magic"); break;
+                case POT_RESTORE_ABILITIES: valued += 50; break; //strcat(glog , "restore abilities"); break;
+                case POT_STRONG_POISON: valued += 1; break; //strcat(glog , "strong poison"); break;
+                case POT_BERSERK_RAGE: valued += 30; break; // berserk rage
+                case POT_CURE_MUTATION: valued += 150; break; // cure mutation
+                case POT_MUTATION: valued += 50; break; // mutation
                 }
         break;
 
-        case 4: // food
+        case OBJ_FOOD: // food
 //      icolour  = 6;
         switch(item_typ )
         {
-        case 0: valued = 10; break; //strcat(glog , "meat ration"); break;
-        case 1: valued = 10; break; //strcat(glog , "bread ration"); break;
-        case 2: valued = 3; break; //strcat(glog , "pear"); break;
-        case 3: valued = 3; break; //strcat(glog , "apple"); break; break; // make this less common.
-        case 4: valued = 5; break; //strcat(glog , "choko"); break;
-        case 5: valued = 14; break; //strcat(glog , "honeycomb"); break;
-        case 6: valued = 35; break; //strcat(glog , "royal jell"); break; break; // maybe a joke monster of the same name? - mix something with jelly crystals?
-        case 7: valued = 1; break; //strcat(glog , "snozzcumber"); break;
- case 8: valued = 5; break; //strcat(glog , "slice of pizza"); break;
- case 9: valued = 3; break; //strcat(glog , "apricot"); break;
- case 10: valued = 4; break; //strcat(glog , "orange"); break;
- case 11: valued = 3; break; //strcat(glog , "banana"); break;
- case 12: valued = 1; break; //strcat(glog , "strawberr"); break;
- case 13: valued = 1; break; //strcat(glog , "rambutan"); break;
- case 14: valued = 4; break; //strcat(glog , "lemon"); break;
- case 15: valued = 1; break; //strcat(glog , "grape"); break;
- case 16: valued = 1; break; //strcat(glog , "sultana"); break;
- case 17: valued = 2; break; //strcat(glog , "lychee"); break;
- case 18: valued = 7; break; //strcat(glog , "beef jerk"); break;
- case 19: valued = 6; break; //strcat(glog , "cheese"); break;
- case 20: valued = 4; break; //strcat(glog , "sausage"); break;
- case 21: valued = 1; break;
+        case FOOD_MEAT_RATION: valued = 10; break; //strcat(glog , "meat ration"); break;
+        case FOOD_BREAD_RATION: valued = 10; break; //strcat(glog , "bread ration"); break;
+        case FOOD_PEAR: valued = 3; break; //strcat(glog , "pear"); break;
+        case FOOD_APPLE: valued = 3; break; //strcat(glog , "apple"); break; break; // make this less common.
+        case FOOD_CHOKO: valued = 5; break; //strcat(glog , "choko"); break;
+        case FOOD_HONEYCOMB: valued = 14; break; //strcat(glog , "honeycomb"); break;
+        case FOOD_ROYAL_JELLY: valued = 35; break; //strcat(glog , "royal jell"); break; break; // maybe a joke monster of the same name? - mix something with jelly crystals?
+        case FOOD_SNOZZCUMBER: valued = 1; break; //strcat(glog , "snozzcumber"); break;
+ case FOOD_PIZZA: valued = 5; break; //strcat(glog , "slice of pizza"); break;
+ case FOOD_APRICOT: valued = 3; break; //strcat(glog , "apricot"); break;
+ case FOOD_ORANGE: valued = 4; break; //strcat(glog , "orange"); break;
+ case FOOD_BANANA: valued = 3; break; //strcat(glog , "banana"); break;
+ case FOOD_STRAWBERRY: valued = 1; break; //strcat(glog , "strawberr"); break;
+ case FOOD_RAMBUTAN: valued = 1; break; //strcat(glog , "rambutan"); break;
+ case FOOD_LEMON: valued = 4; break; //strcat(glog , "lemon"); break;
+ case FOOD_GRAPE: valued = 1; break; //strcat(glog , "grape"); break;
+ case FOOD_SULTANA: valued = 1; break; //strcat(glog , "sultana"); break;
+ case FOOD_LYCHEE: valued = 2; break; //strcat(glog , "lychee"); break;
+ case FOOD_BEEF_JERKY: valued = 7; break; //strcat(glog , "beef jerk"); break;
+ case FOOD_CHEESE: valued = 6; break; //strcat(glog , "cheese"); break;
+ case FOOD_SAUSAGE: valued = 4; break; //strcat(glog , "sausage"); break;
+ case FOOD_CHUNK: valued = 1; break;
       // break;
  }
  valued *= 8;
  break;
 
-        case 6: // scrolls
+        case OBJ_SCROLLS: // scrolls
 
         if (id [1] [item_typ] == 0)
         {
@@ -915,33 +944,33 @@ if (item_da / 30 == 6) // orc
 
         switch(item_typ)
         {
-        case 0: valued += 20; break; //strcat(glog , "of identify"); break;
-        case 1: valued += 30; break; //strcat(glog , "of teleportation"); break;
-        case 2: valued += 45; break; //strcat(glog , "of fear"); break;
-        case 3: valued += 2; break; //strcat(glog , "of noise"); break;
-        case 4: valued += 30; break; //strcat(glog , "of remove curse"); break;
-        case 5: valued += 20; break; //strcat(glog , "of detect curse"); break;
-        case 6: valued += 95; break; //strcat(glog , "of summoning"); break;
-        case 7: valued += 48; break; //strcat(glog , "of enchant weapon"); break;
-        case 8: valued += 48; break; //strcat(glog , "of enchant armour"); break;
-        case 9: valued += 75; break; //strcat(glog , "of torment"); break;
-        case 10: valued += 2; break; //strcat(glog , "of random uselessness"); break;
-        case 11: valued += 1; break; //strcat(glog , "of curse weapon"); break;
-        case 12: valued += 1; break; //strcat(glog , "of curse armour"); break;
-        case 13: valued += 1; break; //strcat(glog , "of immolation"); break;
-        case 14: valued += 30; break; //strcat(glog , "of blinking"); break;
-        case 15: valued += 1; break; //strcat(glog , "of paper"); break;
-        case 16: valued += 35; break; //strcat(glog , "of magic mapping"); break;
-        case 17: valued += 1; break; //strcat(glog , "of forgetfulness"); break;
-        case 18: valued += 520; break; //strcat(glog , "of acquirement"); break;
-        case 19: valued += 55; break; //strcat(glog , "of enchant weapon II"); break;
-        case 20: valued += 200; break; //strcat(glog , "of vorpalise weapon"); break;
-        case 21: valued += 50; break; // recharging
-        case 22: valued += 200; break; // ench wpn iii
+        case SCR_IDENTIFY: valued += 20; break; //strcat(glog , "of identify"); break;
+        case SCR_TELEPORTATION: valued += 30; break; //strcat(glog , "of teleportation"); break;
+        case SCR_FEAR: valued += 45; break; //strcat(glog , "of fear"); break;
+        case SCR_NOISE: valued += 2; break; //strcat(glog , "of noise"); break;
+        case SCR_REMOVE_CURSE: valued += 30; break; //strcat(glog , "of remove curse"); break;
+        case SCR_DETECT_CURSE: valued += 20; break; //strcat(glog , "of detect curse"); break;
+        case SCR_SUMMONING: valued += 95; break; //strcat(glog , "of summoning"); break;
+        case SCR_ENCHANT_WEAPON_I: valued += 48; break; //strcat(glog , "of enchant weapon"); break;
+        case SCR_ENCHANT_ARMOUR: valued += 48; break; //strcat(glog , "of enchant armour"); break;
+        case SCR_TORMENT: valued += 75; break; //strcat(glog , "of torment"); break;
+        case SCR_RANDOM_USELESSNESS: valued += 2; break; //strcat(glog , "of random uselessness"); break;
+        case SCR_CURSE_WEAPON: valued += 1; break; //strcat(glog , "of curse weapon"); break;
+        case SCR_CURSE_ARMOUR: valued += 1; break; //strcat(glog , "of curse armour"); break;
+        case SCR_IMMOLATION: valued += 1; break; //strcat(glog , "of immolation"); break;
+        case SCR_BLINKING: valued += 30; break; //strcat(glog , "of blinking"); break;
+        case SCR_PAPER: valued += 1; break; //strcat(glog , "of paper"); break;
+        case SCR_MAGIC_MAPPING: valued += 35; break; //strcat(glog , "of magic mapping"); break;
+        case SCR_FORGETFULNESS: valued += 1; break; //strcat(glog , "of forgetfulness"); break;
+        case SCR_ACQUIREMENT: valued += 520; break; //strcat(glog , "of acquirement"); break;
+        case SCR_ENCHANT_WEAPON_II: valued += 55; break; //strcat(glog , "of enchant weapon II"); break;
+        case SCR_VORPALISE_WEAPON: valued += 200; break; //strcat(glog , "of vorpalise weapon"); break;
+        case SCR_RECHARGING: valued += 50; break; // recharging
+        case SCR_ENCHANT_WEAPON_III: valued += 200; break; // ench wpn iii
         }
         break;
 
-        case 7: // jewellery
+        case OBJ_JEWELLERY: // jewellery
 
         if (id [2] [item_typ] == 0)
         {
@@ -961,48 +990,48 @@ if (item_da / 30 == 6) // orc
    if (id [2] [item_typ] > 0)
         {
 
-        if (ident_lev > 1 && item_typ == 1 || item_typ == 5 || item_typ == 11 || item_typ == 14 || item_typ == 15)
+        if (ident_lev > 1 && item_typ == RING_PROTECTION || item_typ == RING_STRENGTH || item_typ == RING_EVASION || item_typ == RING_DEXTERITY || item_typ == RING_INTELLIGENCE)
         {
                 if (it_plus >= 50 && (it_plus <= 130 || it_plus >= 150)) valued += 10 * (it_plus % 50);
         }
 
         switch(item_typ)
         {
-        case 0: valued += 75; break; //strcat(glog , "ring of regeneration"); break;
-        case 1: valued += 10; break; //strcat(glog , "ring of protection"); break;
-        case 2: valued += 30; break; //strcat(glog , "ring of protection from fire"); break;
-        case 3: valued += 30; break; //strcat(glog , "ring of poison resistance"); break;
-        case 4: valued += 30; break; //strcat(glog , "ring of protection from cold"); break;
-        case 5: valued += 10; break; //strcat(glog , "ring of strength"); break;
-        case 6: valued += 30; break; //strcat(glog , "ring of slaying"); break;
-        case 7: valued += 20; break; //strcat(glog , "ring of see invisible"); break;
-        case 8: valued += 100; break; //strcat(glog , "ring of invisibility"); break;
-        case 9: valued -= 50; break; //strcat(glog , "ring of hunger"); break;
-        case 10: valued -= 10; break; //strcat(glog , "ring of teleportation"); break;
-        case 11: valued += 10; break; //strcat(glog , "ring of evasion"); break;
- case 12: valued += 25; break; //strcat(glog , "ring of sustain abilities"); break;
- case 13: valued += 25; break; //strcat(glog , "ring of sustenance"); break;
- case 14: valued += 10; break; //strcat(glog , "ring of dexterity"); break;
- case 15: valued += 10; break; //strcat(glog , "ring of intelligence"); break;
- case 16: valued += 35; break; //strcat(glog , "ring of wizardry"); break;
- case 17: valued += 40; break; //strcat(glog , "ring of magical power"); break;
- case 18: valued += 30; break; //strcat(glog , "ring of levitation"); break;
- case 19: valued += 60; break; //strcat(glog , "ring of life protection"); break;
- case 20: valued += 40; break; //strcat(glog , "ring of protection from magic"); break;
- case 21: valued += 62; break; //strcat(glog , "ring of fire"); break;
- case 22: valued += 62; break; //strcat(glog , "ring of ice"); break;
- case 23: valued += 42; break; // ring of teleport control
+        case RING_REGENERATION: valued += 75; break; //strcat(glog , "ring of regeneration"); break;
+        case RING_PROTECTION: valued += 10; break; //strcat(glog , "ring of protection"); break;
+        case RING_PROTECTION_FROM_FIRE: valued += 30; break; //strcat(glog , "ring of protection from fire"); break;
+        case RING_POISON_RESISTANCE: valued += 30; break; //strcat(glog , "ring of poison resistance"); break;
+        case RING_PROTECTION_FROM_COLD: valued += 30; break; //strcat(glog , "ring of protection from cold"); break;
+        case RING_STRENGTH: valued += 10; break; //strcat(glog , "ring of strength"); break;
+        case RING_SLAYING: valued += 30; break; //strcat(glog , "ring of slaying"); break;
+        case RING_SEE_INVISIBLE: valued += 20; break; //strcat(glog , "ring of see invisible"); break;
+        case RING_INVISIBILITY: valued += 100; break; //strcat(glog , "ring of invisibility"); break;
+        case RING_HUNGER: valued -= 50; break; //strcat(glog , "ring of hunger"); break;
+        case RING_TELEPORTATION: valued -= 10; break; //strcat(glog , "ring of teleportation"); break;
+        case RING_EVASION: valued += 10; break; //strcat(glog , "ring of evasion"); break;
+ case RING_SUSTAIN_ABILITIES: valued += 25; break; //strcat(glog , "ring of sustain abilities"); break;
+ case RING_SUSTENANCE: valued += 25; break; //strcat(glog , "ring of sustenance"); break;
+ case RING_DEXTERITY: valued += 10; break; //strcat(glog , "ring of dexterity"); break;
+ case RING_INTELLIGENCE: valued += 10; break; //strcat(glog , "ring of intelligence"); break;
+ case RING_WIZARDRY: valued += 35; break; //strcat(glog , "ring of wizardry"); break;
+ case RING_MAGICAL_POWER: valued += 40; break; //strcat(glog , "ring of magical power"); break;
+ case RING_LEVITATION: valued += 30; break; //strcat(glog , "ring of levitation"); break;
+ case RING_LIFE_PROTECTION: valued += 60; break; //strcat(glog , "ring of life protection"); break;
+ case RING_PROTECTION_FROM_MAGIC: valued += 40; break; //strcat(glog , "ring of protection from magic"); break;
+ case RING_FIRE: valued += 62; break; //strcat(glog , "ring of fire"); break;
+ case RING_ICE: valued += 62; break; //strcat(glog , "ring of ice"); break;
+ case RING_TELEPORT_CONTROL: valued += 42; break; // ring of teleport control
 
- case 35: valued += 20; break; //amulet of rage
- case 36: valued += 30; break; //amulet of maintain speed - not foolproof
- case 37: valued += 30; break; //amulet of clarity - not foolproof
- case 38: valued += 30; break; //amulet of warding
- case 39: valued += 30; break; //amulet of resist corrosion
- case 40: valued += 15; break; //amulet of the gourmand
- case 41: valued += 25; break; //amulet of conservation
- case 42: valued += 25; break; //amulet of controlled flight
- case 43: valued -= 50; break; //amulet of inaccuracy
- case 44: valued += 30; break; //amulet of resist mutation
+ case AMU_RAGE: valued += 20; break; //amulet of rage
+ case AMU_MAINTAIN_SPEED: valued += 30; break; //amulet of maintain speed - not foolproof
+ case AMU_CLARITY: valued += 30; break; //amulet of clarity - not foolproof
+ case AMU_WARDING: valued += 30; break; //amulet of warding
+ case AMU_RESIST_CORROSION: valued += 30; break; //amulet of resist corrosion
+ case AMU_THE_GOURMAND: valued += 15; break; //amulet of the gourmand
+ case AMU_CONSERVATION: valued += 25; break; //amulet of conservation
+ case AMU_CONTROLLED_FLIGHT: valued += 25; break; //amulet of controlled flight
+ case AMU_INACCURACY: valued -= 50; break; //amulet of inaccuracy
+ case AMU_RESIST_MUTATION: valued += 30; break; //amulet of resist mutation
 
  // got to do delusion!
  }
@@ -1016,18 +1045,18 @@ if (item_da / 30 == 6) // orc
  } // end of if ident_lev
 break;
 
-case 13: // Miscellaneous
+case OBJ_MISCELLANY: // Miscellaneous
 switch(ident_lev)
 {
 case 0:
  switch(item_typ)
  {
- case 0: valued += 350; break; //strcat(glog, "sealed bronze flask"); break;
- case 1: valued += 450; break; //strcat(glog, "crystal ball"); break;
+ case MISC_BOTTLED_EFREET: valued += 350; break; //strcat(glog, "sealed bronze flask"); break;
+ case MISC_CRYSTAL_BALL_OF_SEEING: valued += 450; break; //strcat(glog, "crystal ball"); break;
 // case 2: valued += 40; break; //strcat(glog, ""); break;
- case 6: valued += 1000; break; // silver horn
- case 14: valued += 1000; break; // rune
- case 15: valued += 100; break; // deck of tricks
+ case MISC_HORN_OF_GERYON: valued += 1000; break; // silver horn
+ case MISC_RUNE_OF_ZOT: valued += 1000; break; // rune
+ case MISC_DECK_OF_TRICKS: valued += 100; break; // deck of tricks
  default: valued += 400;
  }
 break;
@@ -1035,17 +1064,17 @@ break;
 default:
  switch(item_typ)
  {
- case 0: valued += 400; break; //strcat(glog, "bottled efreet"); break;
- case 1: valued += 500; break; //strcat(glog, "crystal ball of seeing"); break;
+ case MISC_BOTTLED_EFREET: valued += 400; break; //strcat(glog, "bottled efreet"); break;
+ case MISC_CRYSTAL_BALL_OF_SEEING: valued += 500; break; //strcat(glog, "crystal ball of seeing"); break;
 // case 2: valued += 40; break; //strcat(glog, ""); break;
- case 6: valued += 5000; break; // horn of Geryon
-      case 11:
+ case MISC_HORN_OF_GERYON: valued += 5000; break; // horn of Geryon
+      case MISC_EMPTY_EBONY_CASKET:
       case 12:
       valued += 20; break;
- case 13: // disc of storms
+ case MISC_DISC_OF_STORMS: // disc of storms
       valued += 2000;
       break;
- case 14: valued += 1200; break; // rune of Zot
+ case MISC_RUNE_OF_ZOT: valued += 1200; break; // rune of Zot
  default: valued += 500;
  }
 break;
@@ -1055,7 +1084,7 @@ break;
 
 //case 10: break;
 
-case 10:
+case OBJ_BOOKS:
 //strcpy(glog, "");
 if (ident_lev == 0)
 {
@@ -1095,7 +1124,7 @@ if (item_typ == 17 || item_typ == 35)
 break;
 
 
-case 11: // magical staves
+case OBJ_STAVES: // magical staves
 if (ident_lev == 0)
 {
  valued = 120;
@@ -1103,14 +1132,14 @@ if (ident_lev == 0)
 } // end if
 
 valued = 250;
-if (item_typ == 10 || item_typ == 16 || item_typ == 17)
+if (item_typ == STAFF_SMITING || item_typ == STAFF_WARDING || item_typ == STAFF_DISCOVERY)
   {
    valued = 150;
   }
 break;
 
 
-case 12:
+case OBJ_ORBS:
 valued = 10000;
      //strcpy(glog , "Orb of Zot");
 break;
@@ -1133,123 +1162,123 @@ char book_rarity(char which_book)
 
  switch(which_book)
  {
-  case 0:
-  case 1:
-  case 2:
+  case BOOK_MINOR_MAGIC_I:
+  case BOOK_MINOR_MAGIC_II:
+  case BOOK_MINOR_MAGIC_III:
 //  case 3:
 //  case 4:
   return 1;
 
-  case 3:
-  case 4:
+  case BOOK_CONJURATIONS_I:
+  case BOOK_CONJURATIONS_II:
   return 3;
 
-  case 5:
-  case 6:
+  case BOOK_FLAMES:
+  case BOOK_FROST:
   return 4;
 
-  case 7:
+  case BOOK_INVOCATIONS:
   return 18;
 
-  case 8:
-  case 9:
+  case BOOK_FIRE:
+  case BOOK_ICE:
   return 10;
 
-  case 10:
+  case BOOK_SURVEYANCES:
   return 1;
 
-  case 11:
+  case BOOK_SPATIAL_TRANSLOCATIONS:
   return 5;
 
-  case 12:
+  case BOOK_ENCHANTMENTS:
   return 7;
 
-  case 13:
+  case BOOK_POISONINGS:
   return 1;
 
-  case 14:
-  case 15:
+  case BOOK_STORMS_AND_FIRE:
+  case BOOK_DEATH:
   return 11;
 
-  case 16:
+  case BOOK_HINDERANCE:
   return 1;
 
-  case 17:
+  case BOOK_CHANGES:
   return 2;
 
-  case 18:
+  case BOOK_TRANSFIGURATIONS:
   return 8;
 
-  case 19:
+  case BOOK_USEFUL_MAGIC:
   return 3;
 
-  case 21:
+  case BOOK_CLOUDS:
   return 6;
 
-  case 22:
+  case BOOK_HEALING:
   return 100;
 
-  case 23:
+  case BOOK_NECROMANCY:
   return 3;
 
-  case 24:
+  case BOOK_NECRONOMICON:
   return 20;
 
-  case 25:
+  case BOOK_SUMMONINGS:
   return 3;
 
-  case 26:
+  case BOOK_CHARMS:
   return 2;
 
-  case 27:
+  case BOOK_DEMONOLOGY:
   return 15;
 
-  case 28:
+  case BOOK_AIR:
   return 4;
 
-  case 29:
+  case BOOK_SKY:
   return 10;
 
-  case 30:
+  case BOOK_DIVINATIONS:
   return 8;
 
-  case 31:
+  case BOOK_WARP:
   return 6;
 
-  case 32:
+  case BOOK_ENVENOMATIONS:
   return 12;
 
-  case 33:
+  case BOOK_ANNIHILATIONS:
   return 17;
 
-  case 34:
+  case BOOK_UNLIFE:
   return 10;
 
-  case 35: // tome of destruction
+  case BOOK_DESTRUCTION: // tome of destruction
   return 30;
 
-  case 36:
+  case BOOK_CONTROL:
   return 10;
 
-  case 37:
+  case BOOK_MUTATIONS:
   return 12;
 
-  case 38:
+  case BOOK_TUKIMA:
   return 16;
 
-  case 39:
+  case BOOK_GEOMANCY:
   return 4;
 
-  case 40:
+  case BOOK_EARTH:
   return 10;
 
-  case 41: // manuals
+  case BOOK_MANUAL: // manuals
   return 20;
 
-  case 42: // wizardry
+  case BOOK_WIZARDRY: // wizardry
   return 3;
 
-  case 43: // power
+  case BOOK_POWER: // power
   return 6;
 
  }

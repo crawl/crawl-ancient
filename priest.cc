@@ -1,9 +1,12 @@
+#include "config.h"
+
 #include <stdlib.h>
 #include "dungeon.h"
 #include "levels.h"
 #include "message.h"
 
 #include "externs.h"
+#include "enum.h"
 
 void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsigned char gy2);
 char area_shift(void);

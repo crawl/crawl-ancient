@@ -8,6 +8,7 @@
 //#include <stdlib.h> only needed for itoa
 
 #include "externs.h"
+#include "enum.h"
 #include "spells2.h"
 #include "macro.h"
 #include "mutation.h"
@@ -51,7 +52,7 @@ if (you[0].hunger < 7000)
  you[0].hung_state = 3; // -
  return;
 }
-if (you[0].species == 35)
+if (you[0].species == SP_GHOUL)
 {
  you[0].hunger = 10999;
  you[0].hung_state = 3;
@@ -120,7 +121,7 @@ unsigned char keyin;
 int items_here = 0;
 int item_got = 0;
 
-if (you[0].lev != 0 && wearing_amulet(42) == 0)
+if (you[0].lev != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
 {
 //      strcpy(info, "You can't reach the floor from up here.");
 //      mpr(info);
@@ -179,7 +180,7 @@ if (items_here == 1)
                         you[0].hung_ch = 1;
 
 
-   if (you[0].species == 35 || you[0].species == 11 || you[0].mutation [10] == 3) // kobold, ghoul, mutant
+   if (you[0].species == SP_GHOUL || you[0].species == SP_KOBOLD || you[0].mutation [MUT_CARNIVOROUS] == 3) // kobold, ghoul, mutant
    {
     if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
@@ -191,12 +192,12 @@ if (items_here == 1)
 
    if (mitm.itype [item_got] == 21)
    {
-    if (you[0].mutation [11] > 1)
+    if (you[0].mutation [MUT_HERBIVOROUS] > 1)
     {
      mpr("You can't eat raw meat!");
      return 0;
     }
-    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35 && you[0].mutation [10] == 0)
+    if (you[0].hung_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 && you[0].species != SP_KOBOLD && you[0].species != SP_OGRE && you[0].species != SP_TROLL && you[0].species != SP_GHOUL && you[0].mutation [MUT_CARNIVOROUS] == 0)
     {
      strcpy(info, "You aren't quite hungry enough to eat that!");
      mpr(info);
@@ -275,7 +276,7 @@ if (items_here > 1)
 
                         item_got = o;
 
-   if (you[0].species == 35 || you[0].species == 11 || you[0].mutation [10] == 3) // kobold etc
+   if (you[0].species == SP_GHOUL || you[0].species == SP_KOBOLD || you[0].mutation [MUT_CARNIVOROUS] == 3) // kobold etc
    {
     if ((mitm.itype [item_got] >= 1 && mitm.itype [item_got] <= 4) || (mitm.itype [item_got] >= 7 && mitm.itype [item_got] <= 17))
      {
@@ -287,12 +288,12 @@ if (items_here > 1)
 
    if (mitm.itype [item_got] == 21)
    {
-    if (you[0].mutation [11] > 1)
+    if (you[0].mutation [MUT_HERBIVOROUS] > 1)
     {
      mpr("You can't eat raw meat!");
      return 0;
     }
-    if (you[0].hung_state > 2 && wearing_amulet(40) == 0 && you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35 && you[0].mutation [10] == 0)
+    if (you[0].hung_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 && you[0].species != SP_KOBOLD && you[0].species != SP_OGRE && you[0].species != SP_TROLL && you[0].species != SP_GHOUL && you[0].mutation [MUT_CARNIVOROUS] == 0)
     {
      strcpy(info, "You aren't quite hungry enough to eat that!");
      mpr(info);
@@ -394,21 +395,21 @@ if (igrd [you[0].x_pos] [you[0].y_pos] == 501)
 }
 
 
-if (you[0].lev != 0 && wearing_amulet(42) == 0)
+if (you[0].lev != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
 {
         strcpy(info, "You can't reach the floor from up here.");
         mpr(info);
         return 0;
 }
 
-if (you[0].equip [0] == -1 && you[0].species != 16 && you[0].attribute [5] != 2 && you[0].attribute [5] != 5)
+if (you[0].equip [EQ_WEAPON] == -1 && you[0].species != SP_TROLL && you[0].species != SP_GHOUL && you[0].attribute [ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS && you[0].attribute [ATTR_TRANSFORMATION] != TRAN_DRAGON)
 {
  strcpy(info, "What, with your bare hands?");
  mpr(info);
  return 0;
 }
 
-if (you[0].species != 16  && you[0].attribute [5] != 2 && you[0].attribute [5] != 5 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 1 && damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) != 3)
+if (you[0].species != SP_TROLL && you[0].species != SP_GHOUL && you[0].attribute [ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS && you[0].attribute [ATTR_TRANSFORMATION] != TRAN_DRAGON && damage_type(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]]) != 1 && damage_type(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]]) != 3)
 {
  strcpy(info, "Maybe you should try using a sharper implement.");
  mpr(info);
@@ -468,10 +469,10 @@ if (items_here == 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 || you[0].species == 35 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == SP_TROLL || you[0].species == SP_GHOUL || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_DRAGON) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-   if (you[0].duration [3] != 0 && (you[0].religion == 7 || you[0].religion == 8 || you[0].religion == 10))
+   if (you[0].duration [DUR_PRAYER] != 0 && (you[0].religion == GOD_OKAWARU || you[0].religion == GOD_MAKHLEB || you[0].religion == GOD_TROG))
    {
     offer_corpse(item_got);
     you[0].turnover = 1;
@@ -524,10 +525,10 @@ if (items_here > 1)
    you[0].delay_t = 4;
    you[0].delay_doing = 4;
 
-   if (you[0].species == 16 || you[0].species == 35 || you[0].attribute [5] == 2 || you[0].attribute [5] == 5) mpr("You start tearing the corpse apart.");
+   if (you[0].species == SP_TROLL || you[0].species == SP_GHOUL || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_DRAGON) mpr("You start tearing the corpse apart.");
     else mpr("You start hacking away.");
 
-   if (you[0].duration [3] != 0 && (you[0].religion == 7 || you[0].religion == 8 || you[0].religion == 10))
+   if (you[0].duration [DUR_PRAYER] != 0 && (you[0].religion == GOD_OKAWARU || you[0].religion == GOD_MAKHLEB || you[0].religion == GOD_TROG))
    {
     offer_corpse(item_got);
     you[0].turnover = 1;
@@ -577,18 +578,18 @@ return 0;
 void eat_meat(int fod_eat_2)
 {
 
- if (wearing_amulet(40) == 1 && (fod_eat_2 == 2 || fod_eat_2 == 3)) fod_eat_2 = 1;
+ if (wearing_amulet(AMU_THE_GOURMAND) == 1 && (fod_eat_2 == 2 || fod_eat_2 == 3)) fod_eat_2 = 1;
 
  switch(fod_eat_2)
  {
   case 1:
   appetising :
-  if (you[0].species == 35)
+  if (you[0].species == SP_GHOUL)
   {
    ghoul_eat_flesh(0);
    break;
   }
-  if (you[0].species == 10 || you[0].species == 11 || you[0].species == 15 || you[0].species == 16 || you[0].mutation [10] > 0)
+  if (you[0].species == SP_HILL_ORC || you[0].species == SP_KOBOLD || you[0].species == SP_OGRE || you[0].species == SP_TROLL || you[0].mutation [MUT_CARNIVOROUS] > 0)
    mpr("This raw flesh tastes good.");
     else
      mpr("This raw flesh is not very appetising.");
@@ -600,13 +601,13 @@ void eat_meat(int fod_eat_2)
   case 2:
   if (random2(3) != 0) goto appetising;
   case 50:
-  if (you[0].species == 35)
+  if (you[0].species == SP_GHOUL)
   {
    ghoul_eat_flesh(fod_eat_2 == 50);
    break;
   }
-  if ((you[0].species == 11 || you[0].species == 16) && random2(15) != 0) goto appetising; // kobold, troll
-  if ((you[0].species == 10  || you[0].species == 15) && random2(5) != 0) goto appetising; // orc, ogre
+  if ((you[0].species == SP_KOBOLD || you[0].species == SP_TROLL) && random2(15) != 0) goto appetising; // kobold, troll
+  if ((you[0].species == SP_HILL_ORC  || you[0].species == SP_OGRE) && random2(5) != 0) goto appetising; // orc, ogre
   if (you[0].is_undead != 0) goto appetising;
   strcpy(info, "There is something wrong with this meat.");
   mpr(info);
@@ -701,59 +702,59 @@ switch(food_eat_3)
         case 0:
         mpr("That meat ration really hit the spot!");
         func_pass [0] += 5000;
-        func_pass [0] += you[0].mutation [10] * 500;
-        func_pass [0] -= you[0].mutation [11] * 1500; /* should never be 3 * 2000 */
+        func_pass [0] += you[0].mutation [MUT_CARNIVOROUS] * 500;
+        func_pass [0] -= you[0].mutation [MUT_HERBIVOROUS] * 1500; /* should never be 3 * 2000 */
         func_pass [1] = 4;
         func_pass [2] = 0;
         //hung_ch = 1;
         return 0;
 
         case 1:
-    if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+    if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That bread ration really hit the spot!");
-        func_pass [0] -= you[0].mutation [10] * 1000;
-        func_pass [0] += you[0].mutation [11] * 500;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 1000;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 500;
         func_pass [0] += 4400;
         func_pass [1] = 4;
         func_pass [2] = 0;
         return 0;
 
         case 3: // apple
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("Mmmm... Yummy apple.");
         func_pass [0] += 700;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         //hung_ch = 1;
         return 0;
 
         case 2: // pear
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("Mmmm... Yummy pear.");
         //incrl();
         //hung += 300;
         //delay_t = 1;
         //delay_doing = 0;
         func_pass [0] += 700;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         //hung_ch = 1;
         return 0;
 
         case 4:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That choko was very bland.");
         //incrl();
         //hung += 300;
         //delay_t = 1;
         //delay_doing = 0;
         func_pass [0] += 600;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         //hung_ch = 1;
@@ -774,11 +775,11 @@ switch(food_eat_3)
         return 0;
 
         case 7: // maybe a nasty side-effect from RD's book?
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That snozzcumber tasted truly putrid!");
         func_pass [0] += 1500;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
@@ -804,107 +805,107 @@ switch(food_eat_3)
         return 0;
 
         case 9:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else mpr("That apricot was delicious!");
         func_pass [0] += 700;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 10:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   {       mpr("That orange was delicious!");
                         if (random2(8) == 0) strcat(info, " Even the peel tasted good!");
                 }
         func_pass [0] += 1000;
-        func_pass [0] -= you[0].mutation [10] * 300;
-        func_pass [0] += you[0].mutation [11] * 300;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 300;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 300;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 11:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else {mpr("That banana was delicious!");
  if (random2(8) == 0) strcat(info, " Even the peel tasted good!");
               }
         func_pass [0] += 1000;
-        func_pass [0] -= you[0].mutation [10] * 300;
-        func_pass [0] += you[0].mutation [11] * 300;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 300;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 300;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 12:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That strawberry was delicious!");
         func_pass [0] += 200;
-        func_pass [0] -= you[0].mutation [10] * 50;
-        func_pass [0] += you[0].mutation [11] * 50;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 50;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 50;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 13:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That rambutan was delicious!");
         func_pass [0] += 600;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 14:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That lemon was rather sour... But delicious nonetheless!");
         func_pass [0] += 1000;
-        func_pass [0] -= you[0].mutation [10] * 300;
-        func_pass [0] += you[0].mutation [11] * 300;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 300;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 300;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 15:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That grape was delicious!");
         func_pass [0] += 100;
-        func_pass [0] -= you[0].mutation [10] * 20;
-        func_pass [0] += you[0].mutation [11] * 20;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 20;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 20;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 16:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That sultana was delicious! (but very small)");
         func_pass [0] += 70; // won't rescue you from starvation
-        func_pass [0] -= you[0].mutation [10] * 20;
-        func_pass [0] += you[0].mutation [11] * 20;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 20;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 20;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 17:
-        if (you[0].mutation [10] > 0) mpr ("Blech - you need meat!");
+        if (you[0].mutation [MUT_CARNIVOROUS] > 0) mpr ("Blech - you need meat!");
          else   mpr("That lychee was delicious!");
         func_pass [0] += 600;
-        func_pass [0] -= you[0].mutation [10] * 200;
-        func_pass [0] += you[0].mutation [11] * 200;
+        func_pass [0] -= you[0].mutation [MUT_CARNIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_HERBIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;
 
         case 18:
-        if (you[0].mutation [11] > 0) mpr ("Blech - you need vegetation!");
+        if (you[0].mutation [MUT_HERBIVOROUS] > 0) mpr ("Blech - you need vegetation!");
          else { mpr("That beef jerky was delicious!");
  if (random2(4) == 0) mpr("That beef jerky was jerk-a-riffic!");
               }
         func_pass [0] += 1500;
-        func_pass [0] -= you[0].mutation [11] * 200;
-        func_pass [0] += you[0].mutation [10] * 200;
+        func_pass [0] -= you[0].mutation [MUT_HERBIVOROUS] * 200;
+        func_pass [0] += you[0].mutation [MUT_CARNIVOROUS] * 200;
         func_pass [1] = 1;
         func_pass [2] = 0;
         return 0;

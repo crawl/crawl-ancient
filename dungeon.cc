@@ -23,9 +23,11 @@
 #include <assert.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "mons_lev.h"
 #include "maps.h"
+#include "randart.h"
 #include "shopping.h"
 #include "mstruct.h"
 #include "itemname.h"
@@ -193,17 +195,17 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
         76,             // Freeze
         27,             // Throw frost
         81,             // Ice armour
-        80,             // Ice beast
-        16,             // Frost bolt
-        29 },   // Frost cloud
+        SPELL_ICE_BOLT,
+        16,     // Frost bolt
+        29 },    // freez cloud
 
         // Book of invocations
     {   0,
         146,    // Recall
+        SPELL_SHADOW_CREATURES,
         61,             // Swarm
         62,             // Thing
         72,             // Summon wraiths
-        210,
         210 },
 
         // Book of fire
@@ -219,9 +221,9 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
     {   0,
         125,    // Freezing aura
         77,             // Summon elemental
+        80,             // Ice beast
         78,             // Refrigeration
-        210,
-        210,
+        SPELL_ICE_STORM,
         210 },
 
     // 10 - Book of surveyance
@@ -389,21 +391,22 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // Book of air
     {   0,
-        132,    // Shock
+        SPELL_ARC,
         133,    // Swiftness
         83,             // Repel missiles
-        52,             // Levitation
+//        52,           // Levitation
         30,             // Mephitic cloud
+        132,    // Shock
         77 },   // Summon elemental
 
     // Book of the sky
     {   0,
         135,    // Insulation
+        SPELL_AIRSTRIKE,
         134,    // Fly
         159,    // Deflect missiles
         17,             // Lightning bolt
-        136,    // Orb of electroc
-        210 },
+        136 }, // Orb of electroc
 
     // 30 - Book of divinations
     {   0,
@@ -435,17 +438,17 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
     // Book of annihilations
     {   0,
         60,     // Myst bolt
-        29,             // Freezing cloud
         56,             // Poison cloud
         136,    // Orb of electro
         54,             // Crystal spear
+        SPELL_ICE_STORM,
         57 },   // Firestorm
 
     // Book of unlife
     {   0,
         116,    // Sublimation of Blood
-        66,     // Animate dead
-        110,    // Twisted resurrection
+        66,     // Animate Dead
+        110,    // Twisted Resurrection
         74,             // Revivification
         210,
         210 },
@@ -488,7 +491,7 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // Book of geomancy
     {   0,
-        127,    // Throw pebble
+        127,    // Crush
         129,    // Stone arrow
         64,             // Magic mapping
         14,             // Dig
@@ -497,10 +500,10 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
 
     // 40 - Book of earth
     {   0,
-        131,    // Stonewall
+        131,    // Stonemail
         130,    // Tomb
-        54,             // Throw splinters
-        210,
+        SPELL_ORB_OF_FRAGMENTATION,
+        54,             // lehudib's crystal sphere
         210,
         210 },
 
@@ -513,7 +516,7 @@ int spellbook_template_array [ NUMBER_SPELLBOOKS ] [ 7 ] = {
         210,
         210 },
 
-    // Book fo wizardry
+    // Book of wizardry
     {   0,
         137,    // Detect creatures
         77,             // Summon elemental
@@ -1774,7 +1777,7 @@ int place_monster(
                 }
 
 
-                if (lev_mons == 51)
+                if (lev_mons == 51 || you[0].level_type == 3) /* Abyss or Pandemonium. Almost never called from Pan; probably only if a rand demon gets summon anything spell */
                 {
                         do
                         {
@@ -3176,19 +3179,38 @@ int items(unsigned char allow_uniques,
 
                         if (allow_uniques == 1)
                         {
-   /* Note there is nothing to stop randarts being reproduced */
+
+   /* Note there is nothing to stop randarts being reproduced, except vast improbability */
                                 if (mitm.itype [bp] > 0 && random3(2000) <= 100 + many_many * 3 && random() % 2 == 0 && many_many > 2)
                                 {
-                                mitm.idam [bp] = 25 + random3(5);
+
+                    if (random3(50) == 0 && you[0].level_type != 2 && you[0].level_type != 3)
+                    {
+                                         icky = find_okay_unrandart(OBJ_WEAPONS);
+                     if (icky != -1)
+                     {
+                      quant = 1;
+                                          make_item_unrandart(icky, bp);
+                      break;
+                     }
+                    } /* not in Abyss or pan */
+
+                                mitm.idam [bp] = 26 + random3(4);
                                 mitm.iplus [bp] = 50;
                                 mitm.iplus2 [bp] = 50;
                                 mitm.iplus [bp] += random3(7);
                                 mitm.iplus2 [bp] += random3(7);
                                 if (random3(3) == 0) mitm.iplus [bp] += random3(7);
                                 if (random3(3) == 0) mitm.iplus2 [bp] += random3(7);
-                                if (random3(6) == 0) mitm.iplus [bp] -= random3(7);
-                                if (random3(6) == 0) mitm.iplus2 [bp] -= random3(7);
+                                if (random3(9) == 0) mitm.iplus [bp] -= random3(7);
+                                if (random3(9) == 0) mitm.iplus2 [bp] -= random3(7);
                                 quant = 1;
+                    if (random3(4) == 0)
+                    {
+                     mitm.iplus [bp] = 150 - random3(6);
+                     mitm.iplus2 [bp] = 50 - random3(6);
+                    } else
+                            if (random3(3) != 0 && (mitm.iplus [bp] < 50 || mitm.iplus2 [bp] < 50)) mitm.iplus [bp] += 100; /* cursed! nasty */
                                 break;
                                 }
 
@@ -3213,7 +3235,7 @@ int items(unsigned char allow_uniques,
                                         switch(no_unique)
                                         {
                                         case 0: mitm.itype [bp] = 6; mitm.idam [bp] = 181; mitm.iplus [bp] += 7; mitm.iplus2 [bp] += 6; break;
-                                        case 1: mitm.itype [bp] = 10; mitm.idam [bp] = 182; mitm.iplus [bp] += 3; mitm.iplus2 [bp] += 8; break;
+                                        case 1: mitm.itype [bp] = 10; mitm.idam [bp] = 182; mitm.iplus [bp] += 3; mitm.iplus2 [bp] += 11; break;
                                                 case 2: mitm.itype [bp] = 19; mitm.idam [bp] = 183; mitm.iplus [bp] += 11; mitm.iplus2 [bp] += 11; break;
                                         case 3: mitm.itype [bp] = 1; mitm.idam [bp] = 184; mitm.iplus [bp] += random3(12) - 4; mitm.iplus2 [bp] += random3(12) - 4; break;
                                         case 4: mitm.itype [bp] = 17; mitm.idam [bp] = 185; mitm.iplus [bp] += 0; mitm.iplus2 [bp] += 12; break;
@@ -3565,7 +3587,7 @@ int items(unsigned char allow_uniques,
                         if (random() % 7 == 0 && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 1;
                         if (random() % 7 == 0 && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 2;
                         if ((random() % 5 == 0 || mitm.idam [bp] == 90 && random() % 3 == 0) && mitm.itype [bp] >= 1 && mitm.itype [bp] <= 3) mitm.idam [bp] = mitm.idam [bp] % 30 + 3;
-            quant = random3(9) + random3 (9) + random3 (10) + random3(9) + 1;
+            quant = random3(9) + random3 (12) + random3 (15) + random3(12) + 1;
             if (10 + many_many >= random3(100)) mitm.iplus [bp] = random3(5);
                         mitm.iplus [bp] += 50;
                         break;
@@ -3594,6 +3616,18 @@ int items(unsigned char allow_uniques,
 
                         if (allow_uniques == 1 && random3(2000) <= 100 + many_many * 3 && random() % 2 == 0 && many_many > 2)
                         {
+
+                 if (random3(50) == 0 && you[0].level_type != 2 && you[0].level_type != 3)
+                   {
+                                        icky = find_okay_unrandart(OBJ_ARMOUR);
+                    if (icky != -1)
+                    {
+                     quant = 1;
+                                         make_item_unrandart(icky, bp);
+                     break;
+                    }
+                   }
+
                         if (mitm.itype [bp] == 15) mitm.itype [bp] = 18; /* No troll hides etc */
                         if (mitm.itype [bp] == 16) mitm.itype [bp] = 19;
                         if (mitm.itype [bp] == 20) mitm.itype [bp] = 21;
@@ -3601,7 +3635,7 @@ int items(unsigned char allow_uniques,
                         if (mitm.itype [bp] == 26) mitm.itype [bp] = 27;
                         if (mitm.itype [bp] == 28) mitm.itype [bp] = 29;
                         if (mitm.itype [bp] == 31) mitm.itype [bp] = 32;
-                mitm.idam [bp] = 25 + random3(5);
+                mitm.idam [bp] = 26 + random3(4);
                                 mitm.iplus [bp] = 50;
                                 mitm.iplus2 [bp] = random3(150);
                 if (mitm.itype [bp] == 12)
@@ -3618,6 +3652,11 @@ int items(unsigned char allow_uniques,
                                 if (random3(5) == 0) mitm.iplus [bp] += random3(4);
                                 if (random3(6) == 0) mitm.iplus [bp] -= random3(8);
                                 quant = 1;
+                if (random3(5) == 0)
+                {
+                   mitm.iplus [bp] = 150 - random3(6);
+                } else
+                        if (random3(3) != 0 && mitm.iplus [bp] < 50) mitm.iplus [bp] += 100; /* cursed! nasty */
                                 break;
                         }
 
@@ -3919,8 +3958,19 @@ int items(unsigned char allow_uniques,
                         mitm.iplus [bp] = 0;
                         break;
 
-                case 7: // rings
-                        mitm.iclass [bp] = 7;
+                case OBJ_JEWELLERY: // rings
+
+                   if (random3(50) == 0 && you[0].level_type != 2 && you[0].level_type != 3)
+                   {
+                                        icky = find_okay_unrandart(OBJ_JEWELLERY);
+                    if (icky != -1)
+                    {
+                     quant = 1;
+                                         make_item_unrandart(icky, bp);
+                     break;
+                    }
+                   }
+
                         mitm.itype [bp] = random3(24);
             if (random() % 4 == 0) mitm.itype [bp] = 35 + random() % 10;
                         if (force_type != 250) mitm.itype [bp] = force_type;
@@ -5030,7 +5080,7 @@ void give_item(void)
                 case 144: // dancing weapon - note that give_level is adjusted above
                 case 290:// Michael
                 case 291:// Joseph
-                case 292:// Anita
+//              case 292:// Anita
                 case 295:// Harold
                 case 300:// Louise
                 case 301:// Francis
@@ -5428,7 +5478,7 @@ void give_item(void)
                 case 286: // Psyche
 
                 case 291:// Joseph
-                case 292:// Anita
+//              case 292:// Anita
                 case 293:// Erica
                 case 294:// Josephine
                 case 295:// Harold
@@ -5592,6 +5642,8 @@ void item_colour(int p)
         switch(mitm.iclass [bp])
         {
                 case 0:
+                        if (mitm.idam [bp] % 30 == 25) break; /* unrandarts have already been coloured */
+
                         if (mitm.idam [bp] > 180)
                         {
                                 switch(mitm.idam [bp] - 180)
@@ -5646,6 +5698,7 @@ void item_colour(int p)
                     if (mitm.idam [bp] / 30 == 5) mitm.icol [bp] = CYAN; // dwarven
                                         break;
                         }
+                if (random3(5) == 0 && mitm.idam [bp] % 30 >= 25) mitm.icol [bp] = random3(15) + 1;
                         break;
 
                 case 1:
@@ -5668,6 +5721,7 @@ void item_colour(int p)
                         break;
 
                 case 2:
+                        if (mitm.idam [bp] % 30 == 25) break; /* unrandarts have already been coloured */
                         switch(mitm.itype [bp])
                         {
                                 case 0:
@@ -5703,6 +5757,7 @@ void item_colour(int p)
                 if (mitm.idam [bp] / 30 == 5) mitm.icol [bp] = CYAN;
                                 break;
                         }
+                if (random3(5) == 0 && mitm.idam [bp] % 30 >= 25) mitm.icol [bp] = random3(15) + 1;
                         break;
 
                 case 3: mitm.idam [bp] = you[0].item_description [0] [mitm.itype [bp]];
@@ -5825,11 +5880,15 @@ void item_colour(int p)
         //                      break;
                         } break;
 
-                case 7: // jewellery
+                case OBJ_JEWELLERY: // jewellery
             if (mitm.idam [bp] == 200)
             {
              mitm.icol [bp] = 1 + random3(15);
              break;
+            }
+            if (mitm.idam [bp] == 201)
+            {
+             break; /* unrandarts have already been coloured */
             }
                         mitm.icol [bp] = 14;
 
@@ -5994,10 +6053,12 @@ void place_traps(void)
 
                 env[0].trap_type [bi] = 0;
 
-                if (random3(many_many + 1) > 1) env[0].trap_type [bi] = 1;
-                if (random3(many_many + 1) > 3) env[0].trap_type [bi] = 2;
-                if (random3(many_many + 1) > 5) env[0].trap_type [bi] = 3;
-                if (random3(many_many + 1) > 9) env[0].trap_type [bi] = 6; // blade - nasty!
+                if (random3(many_many + 1) > 1) env[0].trap_type [bi] = 1; /* arrow */
+                if (random3(many_many + 1) > 3) env[0].trap_type [bi] = 2; /* spear */
+                if (random3(many_many + 1) > 5) env[0].trap_type [bi] = 3; /* axe */
+                if (random3(many_many + 1) > 7) env[0].trap_type [bi] = 7; /* bolt trap */
+                if (random3(many_many + 1) > 11) env[0].trap_type [bi] = 6; // blade - nasty!
+                if ((random3(many_many + 1) > 14 && random3(3) == 0) || (you[0].where_are_you == 17 && random3(2) == 0)) env[0].trap_type [bi] = 8; /* Zot trap */
                 if (random3(20) == 0) env[0].trap_type [bi] = 4;
                 if (random3(40) == 0) env[0].trap_type [bi] = 5;
 
@@ -7193,7 +7254,7 @@ int place_specific_trap(unsigned char spec_x, unsigned char spec_y,
 
         int tcount = 0;
 
-        if (spec_type == 100) spec_type = random() % 7;
+        if (spec_type == 100) spec_type = random() % 9;
 
 
         for (tcount = 0; tcount < NTRAPS; tcount ++)

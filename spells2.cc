@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "mstruct.h"
 #include "message.h"
@@ -36,8 +37,8 @@ int count_x;
     {
         if (grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] == 78)
                                         {
-   if (env[0].trap_type [count_x] < 4 || env[0].trap_type [count_x] == 6) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 75;
-   if (env[0].trap_type [count_x] == 4 || env[0].trap_type [count_x] == 5) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 76;
+   if (env[0].trap_type [count_x] < 4 || env[0].trap_type [count_x] == 6 || env[0].trap_type [count_x] == 7) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 75;
+   if (env[0].trap_type [count_x] == 4 || env[0].trap_type [count_x] == 5 || env[0].trap_type [count_x] == 8) grd [env[0].trap_x [count_x]] [env[0].trap_y [count_x]] = 76;
        env[0].map [env[0].trap_x [count_x] - 1] [env[0].trap_y [count_x] - 1] = '^';
        traps_found++;
      }
@@ -64,7 +65,7 @@ for (i = you[0].x_pos - map_radius; i < you[0].x_pos + map_radius; i ++)
  for (j = you[0].y_pos - map_radius; j < you[0].y_pos + map_radius; j ++)
  {
   if (i < 5 || j < 5 || i > 75 || j > 65) continue;
-  if (igrd [i] [j] != 501) env[0].map [i - 1] [j - 1] = 15;
+  if (igrd [i] [j] != 501) env[0].map [i - 1] [j - 1] = '*';
  }
 }
 
@@ -271,7 +272,7 @@ if (mitm.iclass [igrd [axps] [ayps]] != 14) return 0;
 
 if (class_allowed == 1 && mitm.itype [igrd [axps] [ayps]] != 1) return 0;
 
-if (raise_corpse(igrd [axps] [ayps], axps, ayps, corps_beh, corps_hit, 1) > 0);
+if (raise_corpse(igrd [axps] [ayps], axps, ayps, corps_beh, corps_hit, 1) > 0)
 {
   strcpy(info, "The dead are walking!");
   mpr(info);
@@ -289,8 +290,8 @@ if (mons_zombie_size(mitm.iplus [corps]) == 0) return 0;
 
 if (actual == 0) return 1;
 
-if (mitm.itype [corps] == 0) create_monster(25, 0, corps_beh, corx, cory, corps_hit, mitm.iplus [corps]);
- else create_monster(107, 0, corps_beh, corx, cory, corps_hit, mitm.iplus [corps]);
+if (mitm.itype [corps] == 0) create_monster(MONS_SMALL_ZOMBIE, 0, corps_beh, corx, cory, corps_hit, mitm.iplus [corps]);
+ else create_monster(MONS_SMALL_SKELETON, 0, corps_beh, corx, cory, corps_hit, mitm.iplus [corps]);
 
 //strcpy(info, monam (250, mitm.iplus [corps], 0, 0));
 //strcat(info, " lurches to"
@@ -388,60 +389,60 @@ char brand_weapon(char which_brand, int power)
 
 char duration_affected = 0;
 
-if (you[0].duration [5] != 0 || you[0].duration [6] != 0 || you[0].duration [7] != 0 || you[0].duration [8] != 0)
+if (you[0].duration [DUR_VORPAL_BLADE] != 0 || you[0].duration [DUR_FIRE_BRAND] != 0 || you[0].duration [DUR_ICE_BRAND] != 0 || you[0].duration [DUR_LETHAL_INFUSION] != 0)
         return 0;
 
-if (you[0].equip [0] == -1)
+if (you[0].equip [EQ_WEAPON] == -1)
 {
  return 0;
 }
 
-if (you[0].inv_class [you[0].equip [0]] != 0 || (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) || you[0].inv_type [you[0].equip [0]] == 0)
+if (you[0].inv_class [you[0].equip [EQ_WEAPON]] != 0 || (you[0].inv_type [you[0].equip [EQ_WEAPON]] >= 13 && you[0].inv_type [you[0].equip [EQ_WEAPON]] <= 16) || you[0].inv_type [you[0].equip [EQ_WEAPON]] == 0)
 {
  return 0;
 }
 
-if (you[0].inv_dam [you[0].equip [0]] % 30 != 0 || you[0].inv_dam [you[0].equip [0]] > 180 || you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
+if (you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 != 0 || you[0].inv_dam [you[0].equip [EQ_WEAPON]] > 180 || you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
 {
  return 0;
 }
 
-item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
 strcpy(info, str_pass);
 
 switch(which_brand)
 {
  case 1: // flaming
- you[0].inv_dam [you[0].equip [0]] += 1;
+ you[0].inv_dam [you[0].equip [EQ_WEAPON]] += 1;
  strcat(info, " bursts into flame!");
  duration_affected = 6;
  break;
 
  case 2: // freezing
- you[0].inv_dam [you[0].equip [0]] += 2;
+ you[0].inv_dam [you[0].equip [EQ_WEAPON]] += 2;
  strcat(info, " glows blue.");
  duration_affected = 7;
  break;
 
  case 6: // venom
- if (damage_type(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]]) == 0) return 0;
- you[0].inv_dam [you[0].equip [0]] += 6;
+ if (damage_type(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]]) == 0) return 0;
+ you[0].inv_dam [you[0].equip [EQ_WEAPON]] += 6;
  strcat(info, " starts dripping with poison.");
  duration_affected = 15;
  break;
 
  case 7: // draining
- you[0].inv_dam [you[0].equip [0]] += 8;
+ you[0].inv_dam [you[0].equip [EQ_WEAPON]] += 8;
  strcat(info, " crackles with unholy energy.");
  duration_affected = 8;
  break;
 
  case 10: // vorpal blade
- if (damage_type(0, you[0].inv_type [you[0].equip [0]]) != 1)
+ if (damage_type(0, you[0].inv_type [you[0].equip [EQ_WEAPON]]) != 1)
  {
   return 0;
  }
- you[0].inv_dam [you[0].equip [0]] += 10;
+ you[0].inv_dam [you[0].equip [EQ_WEAPON]] += 10;
  strcat(info, " glows silver and looks extremely sharp.");
  duration_affected = 5;
  break;
@@ -911,6 +912,14 @@ if (b_f == 3)
 {
  strcpy(info, "You freeze ");
 }
+if (b_f == 0)
+{
+ strcpy(info, "You crush ");
+}
+if (b_f == 5)
+{
+ strcpy(info, "You zap ");
+}
 strcat(info, monam(menv [mgr].m_sec,menv[mgr].m_class, menv [mgr].m_ench [2], 1));
 strcat(info, ".");
 mpr(info);
@@ -918,7 +927,7 @@ mpr(info);
 int hurted = 1 + random2(4) + random2(3) + random2(pow) / 25;
 struct bolt beam [1];
 beam[0].flavour = b_f;
-hurted = check_mons_resists(beam, mgr, hurted);
+if (b_f != 0) hurted = check_mons_resists(beam, mgr, hurted);
 menv [mgr].m_hp -= hurted;
 
 if (menv [mgr].m_hp <= 0)
@@ -1023,7 +1032,7 @@ if (restricted_type != 0 && type_summoned != restricted_type)
  mpr(info);
  return 0;
 }
-if (random2(100) <= unfriendly || (type_summoned == 124 && random2(10) >= you[0].skills [5]) || (type_summoned == MWATER4 && random2(5) >= you[0].skills [34]) || (type_summoned == 125 && random2(5) >= you[0].skills [35]) || (type_summoned == 123 && random2(5) >= you[0].skills [36]))
+if (random2(100) <= unfriendly || (type_summoned == 124 && random2(5) >= you[0].skills [SK_FIRE_MAGIC]) || (type_summoned == MWATER4 && random2(5) >= you[0].skills [SK_ICE_MAGIC]) || (type_summoned == 125 && random2(5) >= you[0].skills [SK_AIR_MAGIC]) || (type_summoned == 123 && random2(5) >= you[0].skills [SK_EARTH_MAGIC]))
 {
  strcpy(info, "The elemental doesn't seem to appreciate being summoned.");
  mpr(info);
@@ -1042,8 +1051,8 @@ return 1;
 void summon_small_mammals(void)
 {
 
-if (random2(2) == 0) create_monster(17, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   else create_monster(1, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+if (random2(2) == 0) create_monster(MONS_RAT, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   else create_monster(MONS_GIANT_BAT, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
 } // end of summon_small_mammals
 
 void summon_scorpions(int pow)
@@ -1051,7 +1060,7 @@ void summon_scorpions(int pow)
 int numsc;
 int scount = 0;
 
-numsc = 1 + random2(pow) / 20 + random2(pow) / 20;
+numsc = 1 + random2(pow) / 10 + random2(pow) / 10;
 
 if (numsc > 2) numsc = (numsc - 2) / 2 + 2;
 if (numsc > 4) numsc = (numsc - 4) / 2 + 4;
@@ -1061,16 +1070,16 @@ if (numsc > 8) numsc = 8;
 
 for (scount = 0; scount < numsc; scount ++)
 {
-if (random2(pow) <= 5)
+if (random2(pow) <= 3)
 {
- if (create_monster(18, 22, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250) != -1)
+ if (create_monster(MONS_SCORPION, 22, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250) != -1)
  {
   strcpy(info, "A scorpion appears. It doesn't look very happy.");
   mpr(info);
  }
 } else
  {
-   if (create_monster(18, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250) != -1)
+   if (create_monster(MONS_SCORPION, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250) != -1)
    {
     strcpy(info, "A scorpion appears.");
     mpr(info);
@@ -1245,13 +1254,13 @@ if (big_things > 8) big_things = 8;
 //for (scount = 0; scount < numsc; scount ++)
 while (big_things > 0)
 {
-  create_monster(49, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_SMALL_ABOMINATION, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   big_things--;
 }
 
 while (numsc > 0)
 {
-  create_monster(23, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_LARGE_ABOMINATION, 22, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   numsc--;
 }
 
@@ -1270,7 +1279,7 @@ void summon_butter(void)
 int scount = 0;
 for (scount = 0; scount < 8; scount ++)
 {
-  create_monster(66, 21, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_BUTTERFLY, 21, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
 }
 // maybe in some rare circumstances produce caterpillars?
 } // end butterflies

@@ -19,6 +19,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1324,7 +1325,12 @@ int spec_ench = 0;
 switch(item_class)
 {
 case 0: // weapons
-switch(item_type)
+
+if (item_dam % 30 == 25 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
+{
+  strcpy(descpr, unrandart_descrip(1, item_class, item_type, item_plus, item_plus2));
+} else
+ switch(item_type)
 {
 case 0:
 strcpy(descpr, "A heavy piece of wood. ");
@@ -1579,7 +1585,7 @@ break;
 }
 
 spec_ench = item_dam % 30;
-if (item_dam % 30 >= 25) spec_ench = randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 0);
+if (item_dam % 30 >= 25) spec_ench = randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_BRAND);
 
 if (spec_ench != 0 && item_id >= 2)
 {
@@ -1665,7 +1671,11 @@ if (item_id == 3 && item_plus > 50)
 break;
 
 case 2: // armour
-switch(item_type)
+if (item_dam % 30 == 25 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
+{
+  strcpy(descpr, unrandart_descrip(1, item_class, item_type, item_plus, item_plus2));
+} else
+ switch(item_type)
 {
 case 0:
 strcpy(descpr, "A cloth robe. ");
@@ -2148,11 +2158,15 @@ break;
 break;
 
 case 7:
-if (get_id(7, item_type) == 0)
+if (item_dam == 201 && strlen(unrandart_descrip(1, item_class, item_type, item_plus, item_plus2)) != 0)
+{
+  strcpy(descpr, unrandart_descrip(1, item_class, item_type, item_plus, item_plus2));
+} else
+ if (get_id(7, item_type) == 0)
 {
 strcat(descpr, "A piece of jewellery. ");
 } else
-switch(item_type)
+ switch(item_type)
 {
 case 0:
 strcat(descpr, "This wonderful ring greatly increases the recuperative powers of its wearer, but also considerably speeds his or her metabolism. ");
@@ -2263,7 +2277,7 @@ if (item_id > 0 && item_plus >= 100)
 strcat(descpr, "It has a curse placed upon it. ");
 }
 /* randart properties: */
-if (item_id >= 2 && item_dam == 200)
+if (item_id >= 2 && (item_dam == 200 || item_dam == 201))
 {
  randart_descpr(descpr, item_class, item_type, item_plus, item_plus2, item_dam);
 }
@@ -2353,7 +2367,9 @@ if (item_type >= 10 && item_type < 25)
 {
  strcat(descpr, "Casting a spell from it consumes no food, and will not fail. ");
 }
-strcat(descpr, "It falls into the 'staves' category.");
+strcat(descpr, "$Damage rating: 7 $Accuracy rating: +6 $Speed multiplier (x10): +12");
+
+strcat(descpr, "$It falls into the 'staves' category. ");
 break;
 
 case 12:
@@ -2455,145 +2471,150 @@ Appends the various powers of a random artefact to the descpr string.
 */
 void randart_descpr(char descpr [1000], int item_class, int item_type, int item_plus, int item_plus2, int item_dam)
 {
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 1) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_AC) != 0)
  {
   strcat(descpr, "$It affects your AC (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 1), 1);
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_AC), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 2) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_EVASION) != 0)
  {
   strcat(descpr, "$It affects your evasion (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 2), 1);
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_EVASION), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 3) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_STRENGTH) != 0)
  {
   strcat(descpr, "$It affects your strength (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 3), 1);
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_STRENGTH), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 4) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_INTELLIGENCE) != 0)
  {
   strcat(descpr, "$It affects your intelligence (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 4), 1);
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_INTELLIGENCE), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 5) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_DEXTERITY) != 0)
  {
   strcat(descpr, "$It affects your dexterity (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 5), 1);
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_DEXTERITY), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 26) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_ACCURACY) != 0)
  {
-  strcat(descpr, "$It makes you more accurate (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 26), 1);
+  strcat(descpr, "$It affects your accuracy (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_ACCURACY), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 27) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_DAMAGE) != 0)
  {
-  strcat(descpr, "$It increases your damage-dealing abilities (");
-  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 27), 1);
+  strcat(descpr, "$It affects your damage-dealing abilities (");
+  append_value(descpr, randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_DAMAGE), 1);
   strcat(descpr, ").");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == -1)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_FIRE) <= -1)
  {
   strcat(descpr, "$It makes you susceptible to fire. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == 1)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_FIRE) == 1)
  {
   strcat(descpr, "$It protects you from fire. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 6) == 2)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_FIRE) == 2)
  {
   strcat(descpr, "$It renders you almost immune to fire. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == -1)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_COLD) <= -1)
  {
   strcat(descpr, "$It makes you susceptible to cold. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == 1)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_COLD) == 1)
  {
   strcat(descpr, "$It protects you from cold. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 7) == 2)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_COLD) == 2)
  {
   strcat(descpr, "$It renders you almost immune to cold. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 8) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_ELECTRICITY) != 0)
  {
   strcat(descpr, "$It insulates you from electricity. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 9) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_POISON) != 0)
  {
   strcat(descpr, "$It protects you from poison. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 10) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_NEGATIVE_ENERGY) != 0)
  {
   strcat(descpr, "$It protects you from negative energy. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 11) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_MAGIC) != 0)
  {
   strcat(descpr, "$It protects you from magic. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 12) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_EYESIGHT) != 0)
  {
   strcat(descpr, "$It enhances your eyesight. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 13) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_INVISIBLE) != 0)
  {
   strcat(descpr, "$It lets you turn invisible. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 14) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_LEVITATE) != 0)
  {
   strcat(descpr, "$It lets you levitate. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 15) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_BLINK) != 0)
  {
   strcat(descpr, "$It lets you blink. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 16) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_CAN_TELEPORT) != 0)
  {
   strcat(descpr, "$It lets you teleport. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 17) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_BERSERK) != 0)
  {
   strcat(descpr, "$It lets you go berserk. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 18) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_MAPPING) != 0)
  {
   strcat(descpr, "$It lets you sense your surroundings. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 19) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_NOISES) != 0)
  {
   strcat(descpr, "$It makes noises. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 20) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_PREVENT_SPELLCASTING) != 0)
  {
   strcat(descpr, "$It prevents spellcasting. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 21) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_CAUSE_TELEPORTATION) != 0)
  {
   strcat(descpr, "$It causes teleportation. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 22) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_PREVENT_TELEPORTATION) != 0)
  {
-  strcat(descpr, "$It prevents some teleportation. ");
+  strcat(descpr, "$It prevents most forms of teleportation. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 23) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_ANGRY) != 0)
  {
   strcat(descpr, "$It makes you angry. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 24) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_METABOLISM) != 0)
  {
   strcat(descpr, "$It speeds your metabolism. ");
  }
- if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 25) > 0)
+ if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, 25) != 0)
  {
   strcat(descpr, "$It emits mutagenic radiations, which may remain in your system for quite some time. ");
  }
  strcat(descpr, "$");
+ if ((item_dam == 25 && (item_class == OBJ_WEAPONS || item_class == OBJ_ARMOUR)) || (item_dam == 201 && item_class == OBJ_JEWELLERY))
+ {
+  strcat(descpr, unrandart_descrip(0, item_class, item_type, item_plus, item_plus2));
+  strcat(descpr, "$");
+ }
 }
 
 /*
@@ -2923,7 +2944,7 @@ case 126:
 strcat(descpr, " infuses a weapon held by the caster with unholy energies. It will not affect weapons which are otherwise affected by special enchantments. ");
 break;
 case 127:
-strcat(descpr, " creates a small pebble and hurls it in the direction indicated by the caster. ");
+strcat(descpr, " crushes a nearby creature with waves of gravitational force. ");
 break;
 case 128:
 strcat(descpr, " hurls a large and heavy metal bolt at the caster's foes. ");
@@ -3019,6 +3040,24 @@ break;
 case 159:
 strcat(descpr, " protects the caster from any kind of projectile attack, although particular powerful attacks (lightning bolts, etcetera) are deflected less than lighter missiles. ");
 break;
+case SPELL_ORB_OF_FRAGMENTATION:
+strcat(descpr, " throws a heavy sphere of metal which explodes on impact into a blast of deadly jagged fragments. It can rip a creature to shreds, but is ineffective against heavily armoured targets.");
+break;
+case SPELL_ICE_BOLT:
+strcat(descpr, " throws a chunk of ice. It is particularly effective against those creatures not immune to the effects of freezing temperatures, but half of its destructive potential comes from its weight and sharp edges and cannot be ignored even by cold-resistant creatures.");
+break;
+case SPELL_ICE_STORM:
+strcat(descpr, " conjures forth a raging blizzard of ice, sleet and freezing gasses.");
+break;
+case SPELL_ARC:
+strcat(descpr, " zaps a nearby creature with a powerful electrical current.");
+break;
+case SPELL_AIRSTRIKE:
+strcat(descpr, " causes the air around a creature to twist itself into a whirling vortex and attack.");
+break;
+case SPELL_SHADOW_CREATURES:
+strcat(descpr, " weaves a creature from shadows and threads of Abyssal matter. The creature thus brought into existence will be a recreation of some type of creature found in the caster's immediate vicinity. The spell even creates appropriate pieces of equipment for the creature, which are given a lasting substance by their contact with firm reality.");
+break;
 
 /*
 case 0:
@@ -3089,7 +3128,7 @@ over the undead, and especially favoured servants can call on mighty demons \
 to slay their foes. $Kikubaaqudgha requires the deaths of living creatures \
 as often as possible, but is not interested in the offering of corpses except \
  at an appropriate altar.");
-if (you[0].piety >= 50 && you[0].religion == 3)
+if (you[0].piety >= 50 && you[0].religion == GOD_KIKUBAAQUDGHA)
  strcat(descpr, "$Kikubaaqudgha is protecting you from the side-effects of death magic.");
 break;
 case 4:
@@ -3111,7 +3150,7 @@ Followers gain various useful powers to enhance their command of \
 the hermetic arts, and the most favoured stand to gain access to \
 some of the fearsome spells in Vehumet's library. One's devotion to Vehumet \
 can be proved by the causing of as much carnage and destruction as possible.");
-if (you[0].religion == 6)
+if (you[0].religion == GOD_VEHUMET)
 {
  if (you[0].piety >= 30)
   strcat(descpr, "$You can gain power from the those you kill in Vehumet's name, or those slain by your servants.");
@@ -3132,14 +3171,14 @@ strcpy(descpr, "Makhleb the Destroyer is a fearsome God of chaos and violent \
 death. Followers, who must constantly appease Makhleb with blood, stand to \
 gain various powers of death and destruction. The Destroyer appreciates \
 sacrifices of corpses and valuable items.");
-if (you[0].piety >= 30 && you[0].religion == 8)
+if (you[0].piety >= 30 && you[0].religion == GOD_MAKHLEB)
  strcat(descpr, "$You can gain power from the deaths of those killed in Makhleb's name.");
 break;
 case 9:
 strcpy(descpr, "Sif Muna is a contemplative but powerful deity, served by \
 those who seek magical knowledge. Sif Muna appreciates sacrifices of valuable \
 items, and the casting of spells as often as possible.");
-if (you[0].piety >= 100 && you[0].religion == 9)
+if (you[0].piety >= 100 && you[0].religion == GOD_SIF_MUNA)
  strcat(descpr, "$Sif Muna is protecting you from some of the side-effects of magic.");
 break;
 case 10:

@@ -1,7 +1,9 @@
+#include "config.h"
 
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "ouch.h"
 #include "message.h"
 #include "stuff.h"
@@ -154,7 +156,7 @@ void quit_game(void)
 
 void version(void)
 {
-        strcpy(info, "This is Dungeon Crawl v"VERSION". (Last build 9/2/99)");
+        strcpy(info, "This is Dungeon Crawl v"VERSION". (Last build 26/3/99)");
         mpr(info);
 }
 
@@ -310,7 +312,7 @@ void adjust_item(void)
         strcat(info, str_pass);
         mpr(info);
 
-        if (throw_3 == you[0].equip [0]) wield_change = 1;
+        if (throw_3 == you[0].equip [EQ_WEAPON]) wield_change = 1;
 
 }
 

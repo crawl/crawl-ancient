@@ -1,5 +1,9 @@
+#include "config.h"
+
 #include <string.h>
 #include <stdlib.h>
+
+#include "enum.h"
 
 #include "monplace.h"
 #include "stuff.h"
@@ -3546,10 +3550,10 @@ strcpy(vgrid [9],  "..xxxxxxxx2.");
 strcpy(vgrid [10], "...x2xxxx3..");
 strcpy(vgrid [11], ".3.......33.");
 
-mons_array [0] = 175; // Queen ant
-mons_array [1] = 173; // soldier ant
-mons_array [2] = 0; // giant ant
-mons_array [3] = 175; // ant larva
+mons_array [0] = MONS_QUEEN_ANT; // Queen ant
+mons_array [1] = MONS_SOLDIER_ANT; // soldier ant
+mons_array [2] = MONS_GIANT_ANT; // giant ant
+mons_array [3] = MONS_ANT_LARVA; // ant larva
 
 
 return 1;

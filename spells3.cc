@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "beam.h"
 #include "direct.h"
@@ -12,6 +13,7 @@
 #include "items.h"
 #include "misc.h"
 #include "monplace.h"
+#include "monstuff.h"
 #include "mstruct.h"
 #include "player.h"
 #include "priest.h"
@@ -111,25 +113,25 @@ you[0].spells [spc2] = 210;
 void remove_curse(void)
 {
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0)
+if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0)
         {
-         if (you[0].inv_plus [you[0].equip [0]] > 130) you[0].inv_plus [you[0].equip [0]] -= 100;
+         if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] > 130) you[0].inv_plus [you[0].equip [EQ_WEAPON]] -= 100;
          wield_change = 1;
         }
 
-        if (you[0].equip [7] != -1)
+        if (you[0].equip [EQ_LEFT_RING] != -1)
         {
-        if (you[0].inv_plus [you[0].equip [7]] > 80) you[0].inv_plus [you[0].equip [7]] -= 100;
+        if (you[0].inv_plus [you[0].equip [EQ_LEFT_RING]] > 80) you[0].inv_plus [you[0].equip [EQ_LEFT_RING]] -= 100;
         }
 
-        if (you[0].equip [8] != -1)
+        if (you[0].equip [EQ_RIGHT_RING] != -1)
         {
-        if (you[0].inv_plus [you[0].equip [8]] > 130) you[0].inv_plus [you[0].equip [8]] -= 100;
+        if (you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]] > 130) you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]] -= 100;
         }
 
-        if (you[0].equip [9] != -1)
+        if (you[0].equip [EQ_AMULET] != -1)
         {
-        if (you[0].inv_plus [you[0].equip [9]] > 130) you[0].inv_plus [you[0].equip [9]] -= 100;
+        if (you[0].inv_plus [you[0].equip [EQ_AMULET]] > 130) you[0].inv_plus [you[0].equip [EQ_AMULET]] -= 100;
         }
         int i;
         for (i = 1; i < 7; i ++)
@@ -204,23 +206,60 @@ menv [i].m_hp -= random2(8) + random2(pow) / 3;
 menv [i].m_hp -= random2(8) + random2(pow) / 3;
 menv [i].m_hp -= random2(8) + random2(pow) / 3;
 
-if (menv [i].m_hp <= 0) monster_die(i, 1, 0);
+if (menv [i].m_hp <= 0) monster_die(i, 1, 0); else print_wounds(i);
 
 } /* end of smiting */
+
+void airstrike(int pow)
+{
+
+struct dist beam [1];
+int i;
+int hurted = 0;
+
+strcpy(info, "Strike whom?");
+mpr(info);
+
+direction(100, beam);
+
+if (beam[0].nothing == -1 || mgrd [beam[0].target_x] [beam[0].target_y] == MNG)
+{
+        strcpy(info, "The spell fizzles.");
+        mpr(info);
+        return;
+}
+
+i = mgrd [beam[0].target_x] [beam[0].target_y];
+
+strcpy(info, "The air twists around and strikes ");
+strcat(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 1));
+strcat(info, "!");
+mpr(info);
+
+hurted += random2(12) + random2(pow) / 6 + random2(pow) / 7;
+
+hurted -= random2(menv [i].m_AC + 1);
+if (hurted < 0) hurted = 0;
+
+menv [i].m_hp -= hurted;
+
+if (menv [i].m_hp <= 0) monster_die(i, 1, 0); else print_wounds(i);
+
+}
 
 
 
 void cast_bone_shards(int power)
 {
 
-if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 14)//  || you[0].inv_type [you[0].equip [0]] != 1)
+if (you[0].equip [EQ_WEAPON] == -1 || you[0].inv_class [you[0].equip [EQ_WEAPON]] != 14)//  || you[0].inv_type [you[0].equip [0]] != 1)
 {
  strcpy(info, "The spell fails.");
  mpr(info);
  return;
 }
 
-if (you[0].inv_type [you[0].equip [0]] != 1)
+if (you[0].inv_type [you[0].equip [EQ_WEAPON]] != 1)
 {
  strcpy(info, "The corpse collapses into a mass of pulpy flesh.");
  mpr(info);
@@ -229,7 +268,7 @@ if (you[0].inv_type [you[0].equip [0]] != 1)
 }
 
 power *= 15;
-power += mons_weight(you[0].inv_plus [you[0].equip [0]]);
+power += mons_weight(you[0].inv_plus [you[0].equip [EQ_WEAPON]]);
 
 struct dist spelld [1];
 struct bolt beam [1];
@@ -239,17 +278,17 @@ if (spell_direction(spelld, beam) == -1) return;
    strcpy(info, "The skeleton explodes into sharp fragments of bone!");
    mpr(info);
 
-unwield_item(you[0].equip [0]);
-you[0].inv_quant [you[0].equip [0]] --;
-if (you[0].inv_quant [you[0].equip [0]] == 0) /* can this be false? */
+unwield_item(you[0].equip [EQ_WEAPON]);
+you[0].inv_quant [you[0].equip [EQ_WEAPON]] --;
+if (you[0].inv_quant [you[0].equip [EQ_WEAPON]] == 0) /* can this be false? */
 {
                 you[0].inv_no --;
-                you[0].equip [0] = -1;
+                you[0].equip [EQ_WEAPON] = -1;
                 strcpy(info, "You are now empty handed.");
                 mpr(info);
 }
 
-   zapping(26, power, beam);
+   zapping(ZAP_BONE_SHARDS, power, beam);
 /*   zapping(26, power);*/
    burden_change();
 
@@ -261,7 +300,7 @@ void sublimation(int pow)
 
 unsigned char was_wielded = 0;
 
-if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 4 || you[0].inv_type [you[0].equip [0]] != 21)
+if (you[0].equip [EQ_WEAPON] == -1 || you[0].inv_class [you[0].equip [EQ_WEAPON]] != 4 || you[0].inv_type [you[0].equip [EQ_WEAPON]] != 21)
 {
  if (you[0].deaths_door != 0)
  {
@@ -308,9 +347,9 @@ you[0].ep += 7 + random2(7);
 you[0].ep += random2(pow) / 3;
 you[0].ep += random2(pow) / 3;*/
 
-was_wielded = you[0].equip [0];
-unwield_item(you[0].equip [0]);
-you[0].equip [0] = -1;
+was_wielded = you[0].equip [EQ_WEAPON];
+unwield_item(you[0].equip [EQ_WEAPON]);
+you[0].equip [EQ_WEAPON] = -1;
 
 you[0].inv_quant [was_wielded] --;
 if (you[0].inv_quant [was_wielded] <= 0)
@@ -342,14 +381,14 @@ if (empty_surrounds(you[0].x_pos, you[0].y_pos, 67, 0, empty) == 0)
  return;
 }
 
-if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 0 || (you[0].inv_type [you[0].equip [0]] >= 13 && you[0].inv_type [you[0].equip [0]] <= 16) || you[0].inv_dam [you[0].equip [0]] >= 180)
+if (you[0].equip [EQ_WEAPON] == -1 || you[0].inv_class [you[0].equip [EQ_WEAPON]] != 0 || (you[0].inv_type [you[0].equip [EQ_WEAPON]] >= 13 && you[0].inv_type [you[0].equip [EQ_WEAPON]] <= 16) || you[0].inv_dam [you[0].equip [EQ_WEAPON]] >= 180)
 {
  goto failed_spell;
 }
 
-if (you[0].inv_plus [you[0].equip [0]] >= 100 || force_hostile == 1) behavi = 1; /* a cursed weapon becomes hostile */
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] >= 100 || force_hostile == 1) behavi = 1; /* a cursed weapon becomes hostile */
 
-summs = create_monster(144, numsc, behavi, empty [0], empty [1], you[0].pet_target, 1);
+summs = create_monster(MONS_DANCING_WEAPON, numsc, behavi, empty [0], empty [1], you[0].pet_target, 1);
 
 if (summs == -1) goto failed_spell;
 
@@ -363,13 +402,13 @@ for (i = 0; i < ITEMS; i++)
  }
         if (mitm.iquant [i] == 0)
         {
-                mitm.iid [i] = you[0].inv_ident [you[0].equip [0]];
-                mitm.iclass [i] = you[0].inv_class [you[0].equip [0]];
-                mitm.itype [i] = you[0].inv_type [you[0].equip [0]];
-                mitm.iplus [i] = you[0].inv_plus [you[0].equip [0]];
-                mitm.iplus2 [i] = you[0].inv_plus2 [you[0].equip [0]];
-                mitm.idam [i] = you[0].inv_dam [you[0].equip [0]];
-                mitm.icol [i] = you[0].inv_col [you[0].equip [0]];
+                mitm.iid [i] = you[0].inv_ident [you[0].equip [EQ_WEAPON]];
+                mitm.iclass [i] = you[0].inv_class [you[0].equip [EQ_WEAPON]];
+                mitm.itype [i] = you[0].inv_type [you[0].equip [EQ_WEAPON]];
+                mitm.iplus [i] = you[0].inv_plus [you[0].equip [EQ_WEAPON]];
+                mitm.iplus2 [i] = you[0].inv_plus2 [you[0].equip [EQ_WEAPON]];
+                mitm.idam [i] = you[0].inv_dam [you[0].equip [EQ_WEAPON]];
+                mitm.icol [i] = you[0].inv_col [you[0].equip [EQ_WEAPON]];
                 mitm.iquant [i] = 1;
                 mitm.ilink [i] = 501;
                 /* it_no ++; */
@@ -377,16 +416,16 @@ for (i = 0; i < ITEMS; i++)
         }
 } /* end of i loop */
 
-item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
 strcpy(info, str_pass);
 strcat(info, " dances into the air!");
 mpr(info);
 
 
-unwield_item(you[0].equip [0]);
+unwield_item(you[0].equip [EQ_WEAPON]);
 
-you[0].inv_quant [you[0].equip [0]] = 0;
-you[0].equip [0] = -1;
+you[0].inv_quant [you[0].equip [EQ_WEAPON]] = 0;
+you[0].equip [EQ_WEAPON] = -1;
 you[0].inv_no --;
 
 menv [summs].m_inv [0] = i;
@@ -398,24 +437,24 @@ menv [summs].m_sec = mitm.icol [i];
 void you_teleport(void)
 {
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
- if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0 && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_PREVENT_TELEPORTATION) > 0)
  {
   mpr("You feel a weird sense of stasis.");
   return;
  }
 
-if (you[0].duration [13] != 0)
+if (you[0].duration [DUR_TELEPORT] != 0)
 {
  strcpy(info, "You feel strangely stable.");
  mpr(info);
- you[0].duration [13] = 0;
+ you[0].duration [DUR_TELEPORT] = 0;
  return;
 }
 
 strcpy(info, "You feel strangely unstable.");
 mpr(info);
-you[0].duration [13] = 4 + random2(3);
+you[0].duration [DUR_TELEPORT] = 4 + random2(3);
 
 }
 
@@ -426,7 +465,7 @@ void you_teleport2(char allow_control)
 
 int plox [2];
 
-if (you[0].attribute [3] != 0 && you[0].level_type != 2 && you[0].conf == 0 && allow_control == 1)
+if (you[0].attribute [ATTR_CONTROL_TELEPORT] != 0 && you[0].level_type != 2 && you[0].conf == 0 && allow_control == 1)
 {
  mpr("You may choose your destination (press '.' or delete to select).");
  mpr("Expect minor deviation; teleporting into an open area is recommended.");
@@ -564,19 +603,19 @@ mpr(info);
 void cast_poison_ammo(void)
 {
 
-if (you[0].equip [0] == -1 || you[0].inv_class [you[0].equip [0]] != 1 || you[0].inv_dam [you[0].equip [0]] != 0 || you[0].inv_type [you[0].equip [0]] == 0 || you[0].inv_type [you[0].equip [0]] == 5)
+if (you[0].equip [EQ_WEAPON] == -1 || you[0].inv_class [you[0].equip [EQ_WEAPON]] != 1 || you[0].inv_dam [you[0].equip [EQ_WEAPON]] != 0 || you[0].inv_type [you[0].equip [EQ_WEAPON]] == 0 || you[0].inv_type [you[0].equip [EQ_WEAPON]] == 5)
 {
  mpr("Nothing appears to happen.");
  return;
 }
 
-item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
 strcpy(info, str_pass);
-if (you[0].inv_quant [you[0].equip [0]] == 1) strcat(info, " is covered in a thin film of poison.");
+if (you[0].inv_quant [you[0].equip [EQ_WEAPON]] == 1) strcat(info, " is covered in a thin film of poison.");
  else strcat(info, " are covered in a thin film of poison.");
 mpr(info);
 
-you[0].inv_dam [you[0].equip [0]] = 3;
+you[0].inv_dam [you[0].equip [EQ_WEAPON]] = 3;
 wield_change = 1;
 
 }
@@ -756,7 +795,7 @@ void cast_death_channel(int pow)
 
 mpr("You feel a great wave of evil energy pour through your body.");
 
-you[0].duration [19] += 15 + random2((pow / 3) + 1);
-if (you[0].duration [19] > 30) you[0].duration [19] = 30;
+you[0].duration [DUR_DEATH_CHANNEL] += 15 + random2((pow / 3) + 1);
+if (you[0].duration [DUR_DEATH_CHANNEL] > 30) you[0].duration [DUR_DEATH_CHANNEL] = 30;
 
 }

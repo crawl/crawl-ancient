@@ -11,6 +11,7 @@
 #include "beam.h"
 #include "effects.h"
 #include "externs.h"
+#include "enum.h"
 #include "invent.h"
 #include "items.h"
 #include "it_use2.h"
@@ -58,8 +59,8 @@ char loopj = 0;
 int spec_effect = 0;
 int hurted = 0;
 
-spec_effect = mag_pow * mag_fail * (10 + mag_pow) / 10;
-if (random2(50) > spec_effect && random2(50) > spec_effect)
+spec_effect = mag_pow * mag_fail * (10 + mag_pow) / 7;
+if (force_effect == 100 && random2(40) > spec_effect && random2(40) > spec_effect)
 {
  goto nothing_happening;
 }
@@ -209,7 +210,7 @@ switch(spec_effect)
  switch(random2(2))
  {
   case 0:
-  potion_effect(7, 20); // levitation
+  potion_effect(POT_LEVITATION, 20); // levitation
   break;
   case 1:
   random_uselessness(2 + random2(7), 0);
@@ -226,10 +227,10 @@ switch(spec_effect)
   mpr(info);
   break;
   case 1:
-  potion_effect(9, 10); // slow
+  potion_effect(POT_SLOWING, 10); // slow
   break;
   case 2:
-  potion_effect(21, 10); // berserk
+  potion_effect(POT_BERSERK_RAGE, 10); // berserk
   break;
  }
  break;
@@ -247,10 +248,10 @@ switch(spec_effect)
   mpr(info);
   break;
   case 1:
-  potion_effect(10, 10); // paral
+  potion_effect(POT_PARALYSIS, 10); // paral
   break;
   case 2:
-  potion_effect(11, 10); // conf
+  potion_effect(POT_CONFUSION, 10); // conf
   break;
   case 3:
   if (mutate(100) == 0) mpr("Nothing appears to happen.");
@@ -300,7 +301,7 @@ switch(spec_effect)
   case 2:
   strcpy(info, "Space twists in upon itself!");
   mpr(info);
-  create_monster(244, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_SPATIAL_VORTEX, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
  break;
@@ -321,14 +322,14 @@ switch(spec_effect)
   if (random2(3) == 0) you_teleport2(1);
         else random_blink();
   ouch(5 + random2(5) + random2(5), 0, 18);
-  potion_effect(11, 10); // conf
+  potion_effect(POT_CONFUSION, 10); // conf
   break;
   case 2:
   strcpy(info, "Space twists in upon itself!");
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(244, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_SPATIAL_VORTEX, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
  }
@@ -349,7 +350,7 @@ switch(spec_effect)
   mpr(info);
   you_teleport2(1);
   ouch(7 + random2(7) + random2(7), 0, 18);
-  potion_effect(11, 30); // conf
+  potion_effect(POT_CONFUSION, 30); // conf
   break;
   case 2:
   strcpy(info, "You are cast into the Abyss!");
@@ -400,7 +401,7 @@ switch(spec_effect)
   case 1:
   strcpy(info, "Space twists in upon itself!");
   mpr(info);
-  create_monster(244, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_SPATIAL_VORTEX, 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
 
@@ -412,13 +413,13 @@ switch(spec_effect)
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(244, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_SPATIAL_VORTEX, 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
   case 1:
   strcpy(info, "Something appears in a flash of light!");
   mpr(info);
-  create_monster(220 + random2(5), 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_WHITE_IMP + random2(5), 24, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
  }
  break;
@@ -430,19 +431,19 @@ switch(spec_effect)
   case 0:
   strcpy(info, "Something forms out of thin air.");
   mpr(info);
-  create_monster(23, 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_LARGE_ABOMINATION, 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
   case 1:
   strcpy(info, "You sense a hostile presence.");
   mpr(info);
-  create_monster(220 + random2(10), 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_WHITE_IMP + random2(10), 0, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   break;
   case 2:
   strcpy(info, "Something turns its attention towards you...");
   mpr(info);
   for (loopj = 0; loopj < 2 + random2(3); loopj ++)
   {
-   create_monster(220 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_WHITE_IMP + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   }
   break;
   case 3:
@@ -487,7 +488,7 @@ switch(spec_effect)
   forget_map(10 + random2(10));
   break;
   case 1:
-  potion_effect(11, 1); // conf
+  potion_effect(POT_CONFUSION, 1); // conf
   break;
  }
  break;
@@ -512,13 +513,13 @@ switch(spec_effect)
   mpr(info);
   you[0].intel --;
   you[0].intel_ch = 1;
-  potion_effect(11, 1); // conf
+  potion_effect(POT_CONFUSION, 1); // conf
   break;
   case 1:
   strcpy(info, "You feel lost.");
   mpr(info);
   forget_map(40 + random2(40));
-  potion_effect(11, 1); // conf
+  potion_effect(POT_CONFUSION, 1); // conf
   break;
 
  }
@@ -538,7 +539,7 @@ switch(spec_effect)
   strcpy(info, "You feel completely lost.");
   mpr(info);
   forget_map(100);
-  potion_effect(11, 100); // conf
+  potion_effect(POT_CONFUSION, 100); // conf
   break;
   case 2:
   if (you[0].is_undead != 0)
@@ -558,7 +559,7 @@ switch(spec_effect)
   you[0].intel -= 2 + random2(2);
   if (you[0].intel <= 3) you[0].intel = 3;
   you[0].intel_ch = 1;
-  potion_effect(11, 100); // conf
+  potion_effect(POT_CONFUSION, 100); // conf
   break;
  }
  break;
@@ -567,7 +568,7 @@ switch(spec_effect)
 break; // end divinations
 
  case 16: // necromancy
- if (you[0].religion == 3 && you[0].piety >= 50 && random2(150) <= you[0].piety)
+ if (you[0].religion == GOD_KIKUBAAQUDGHA && you[0].piety >= 50 && random2(150) <= you[0].piety)
  {
   mpr("Nothing appears to happen.");
   break;
@@ -608,7 +609,7 @@ break; // end divinations
    case 1:
    strcpy(info, "You feel horribly lethargic.");
    mpr(info);
-   potion_effect(9, 15); // slow
+   potion_effect(POT_SLOWING, 15); // slow
    break;
    case 2:
    strcpy(info, "You smell decay."); // identical to a harmless message
@@ -624,7 +625,7 @@ break; // end divinations
    case 0:
    strcpy(info, "You are surrounded by flickering shadows.");
    mpr(info);
-   create_monster(63, 21, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_SHADOW, 21, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
    break;
    case 1:
    if (random2(3) == 0 && player_prot_life() == 0)
@@ -688,7 +689,7 @@ break; // end divinations
    case 4:
    strcpy(info, "Something reaches out for you...");
    mpr(info);
-   create_monster(48, 23, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_WRAITH, 23, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
    break;
   }
   break;
@@ -741,10 +742,10 @@ break; // end divinations
     mutate(100);
     break;
     case 2:
-    potion_effect(10, 10); // paral
+    potion_effect(POT_PARALYSIS, 10); // paral
     break;
     case 3:
-    potion_effect(11, 10); // conf
+    potion_effect(POT_CONFUSION, 10); // conf
     break;
    }
    break;
@@ -877,7 +878,7 @@ switch(spec_effect)
   case 2:
   strcpy(info, "You are covered in liquid fire!");
   mpr(info);
-  you[0].duration [0] += 1 + random2(3) + random2(3) + random2(3);
+  you[0].duration [DUR_LIQUID_FLAMES] += 1 + random2(3) + random2(3) + random2(3);
   break;
  }
  break;
@@ -1460,6 +1461,20 @@ char spell_string [60];
 int levels_needed = 0;
 
 
+int i;
+int j = 0;
+
+for (i = SK_SPELLCASTING; i < SK_POISON_MAGIC; i ++)
+{
+ if (you[0].skills [i] != 0) j ++;
+}
+
+if (j == 0)
+{
+ mpr("You can't use spell magic! I'm afraid it's scrolls only for now.");
+ return;
+}
+
 if (which_spellbook() == 0) return;
 
 sc_read_1 = (int) book_thing;
@@ -1502,7 +1517,7 @@ if (you[0].spell_no == 21 && specspell != 43) //if changed, must also change for
  return;
 }
 
-if (you[0].species == 12 && spell_type(specspell, 17) == 1)
+if (you[0].species == SP_MUMMY && spell_type(specspell, 17) == 1)
 {
   strcpy(info, "You can't use this type of magic!");
   mpr(info);
@@ -1613,7 +1628,7 @@ redraw_screen();
 }
 mesclr();
 
-if (you[0].mutation [39] > 0 && random2(4) < you[0].mutation [39])
+if (you[0].mutation [MUT_BLURRY_VISION] > 0 && random2(4) < you[0].mutation [MUT_BLURRY_VISION])
 {
  mpr("The writing blurs into unreadable gibberish.");
  you[0].turnover = 1;

@@ -29,6 +29,7 @@ Sub-Crawl 1.0
 #include <sys/stat.h>
 
 #include "externs.h"
+#include "enum.h"
 
 
 #include "ability.h"
@@ -274,7 +275,7 @@ void input(void)
                                 case 1: mpr("You finish putting on your armour."); break;
                                 case 2: mpr("You finish taking off your armour."); break;
                         case 3: mpr("You finish memorising."); break;
-                                case 4: if (you[0].species == 16 || you[0].species == 35) mpr("You finish ripping the corpse into pieces.");
+                                case 4: if (you[0].species == SP_TROLL || you[0].species == SP_GHOUL) mpr("You finish ripping the corpse into pieces.");
                                 else mpr("You finish chopping the corpse into pieces.");
                                 break;
                         }
@@ -431,7 +432,7 @@ void input(void)
                 case 'V': original_name(); break;
                 case 'p': pray(); break;
                 case '^':
-                        if (you[0].religion == 0)
+                        if (you[0].religion == GOD_NO_GOD)
                         {
                                 mpr("You aren't religious.");
                                 break;
@@ -460,8 +461,8 @@ void input(void)
                         you[0].turnover = 1; break;
                 case 'Z':
                 /* randart wpns */
-                        if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
-                        if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 20) == 1)
+                        if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0 && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+                        if (randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_PREVENT_SPELLCASTING) == 1)
                         {
                 mpr("Something is interfering with your magic!");
                                 break;
@@ -791,7 +792,7 @@ break;
                 return;
         }
 
-//if (random2(10) < you[0].skills [18] + 2) search_around();
+//if (random2(10) < you[0].skills [SK_TRAPS_DOORS] + 2) search_around();
 
         stealth = check_stealth();
 
@@ -814,10 +815,10 @@ break;
 
 
 
-        if (you[0].duration [0] > 0) you[0].duration [0] --;
-// paradox: it both lasts longer & does more damage if you're moving slower.
+        if (you[0].duration [DUR_LIQUID_FLAMES] > 0) you[0].duration [DUR_LIQUID_FLAMES] --;
+// paradox: it both lasts longer & does more damage overall if you're moving slower.
 // rationalisation: I guess it gets rubbed off/falls off/etc if you move around more.
-        if (you[0].duration [0] != 0)
+        if (you[0].duration [DUR_LIQUID_FLAMES] != 0)
         {
                 mpr("You are covered in liquid flames!");
                 scrolls_burn(8, 6);
@@ -838,273 +839,273 @@ break;
                 }
 
         }
-        if (you[0].duration [1] > 1)
+        if (you[0].duration [DUR_ICY_ARMOUR] > 1)
         {
-                you[0].duration [1] --;
+                you[0].duration [DUR_ICY_ARMOUR] --;
 //              scrolls_burn(4, 8);
         }
-        if (you[0].duration [1] == 1)
+        if (you[0].duration [DUR_ICY_ARMOUR] == 1)
         {
                 mpr("Your icy armour evaporates.");
 /* you[0].AC -= 6; */
                 you[0].AC_ch = 1;
-                you[0].duration [1] = 0;
+                you[0].duration [DUR_ICY_ARMOUR] = 0;
         }
 
-        if (you[0].duration [2] > 0)
+        if (you[0].duration [DUR_REPEL_MISSILES] > 0)
     {
-      you[0].duration [2] --;
-      if (you[0].duration [2] == 6)
+      you[0].duration [DUR_REPEL_MISSILES] --;
+      if (you[0].duration [DUR_REPEL_MISSILES] == 6)
       {
        mpr("Your repel missiles spell is about to expire...");
-       you[0].duration [2] -= random2(2);
+       you[0].duration [DUR_REPEL_MISSILES] -= random2(2);
       }
     }
-        if (you[0].duration [2] == 1)
+        if (you[0].duration [DUR_REPEL_MISSILES] == 1)
         {
                 mpr("You feel less protected from missiles.");
-                you[0].duration [2] = 0;
+                you[0].duration [DUR_REPEL_MISSILES] = 0;
         }
 
-        if (you[0].duration [2] > 0)
+        if (you[0].duration [DUR_REPEL_MISSILES] > 0)
     {
-      you[0].duration [20] --;
-      if (you[0].duration [20] == 6)
+      you[0].duration [DUR_DEFLECT_MISSILES] --;
+      if (you[0].duration [DUR_DEFLECT_MISSILES] == 6)
       {
        mpr("Your deflect missiles spell is about to expire...");
-       you[0].duration [20] -= random2(2);
+       you[0].duration [DUR_DEFLECT_MISSILES] -= random2(2);
       }
     }
-        if (you[0].duration [20] == 1)
+        if (you[0].duration [DUR_DEFLECT_MISSILES] == 1)
         {
                 mpr("You feel less protected from missiles.");
-                you[0].duration [20] = 0;
+                you[0].duration [DUR_DEFLECT_MISSILES] = 0;
         }
 
-        if (you[0].duration [4] > 0)
+        if (you[0].duration [DUR_REGENERATION] > 0)
         {
-                you[0].duration [4] --;
-        if (you[0].duration [4] == 6)
+                you[0].duration [DUR_REGENERATION] --;
+        if (you[0].duration [DUR_REGENERATION] == 6)
         {
          mpr("Your skin is crawling a little less now.");
-         you[0].duration [4] -= random2(2);
+         you[0].duration [DUR_REGENERATION] -= random2(2);
         }
-                if (you[0].duration [4] == 1)
+                if (you[0].duration [DUR_REGENERATION] == 1)
                 {
                         mpr("Your skin stops crawling.");
-                        you[0].duration [4] = 0;
+                        you[0].duration [DUR_REGENERATION] = 0;
 /* you[0].rate_regen -= 100;*/
                         you[0].hunger_inc -= 4;
                 }
         }
 
-        if (you[0].duration [3] > 0) you[0].duration [3] --;
-        if (you[0].duration [3] == 1)
+        if (you[0].duration [DUR_PRAYER] > 0) you[0].duration [DUR_PRAYER] --;
+        if (you[0].duration [DUR_PRAYER] == 1)
         {
                 mpr("Your prayer is over.");
-                you[0].duration [3] = 0;
+                you[0].duration [DUR_PRAYER] = 0;
         }
 
-        if (you[0].duration [5] > 0) you[0].duration [5] --;
-        if (you[0].duration [5] == 1)
+        if (you[0].duration [DUR_VORPAL_BLADE] > 0) you[0].duration [DUR_VORPAL_BLADE] --;
+        if (you[0].duration [DUR_VORPAL_BLADE] == 1)
         {
-                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " seems blunter.");
                 mpr(info);
-                you[0].duration [5] = 0;
-                you[0].inv_dam [you[0].equip [0]] -= 10;
+                you[0].duration [DUR_VORPAL_BLADE] = 0;
+                you[0].inv_dam [you[0].equip [EQ_WEAPON]] -= 10;
                 wield_change = 1;
         }
 
-        if (you[0].duration [6] > 0) you[0].duration [6] --;
-        if (you[0].duration [6] == 1)
+        if (you[0].duration [DUR_FIRE_BRAND] > 0) you[0].duration [DUR_FIRE_BRAND] --;
+        if (you[0].duration [DUR_FIRE_BRAND] == 1)
         {
-                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " goes out.");
                 mpr(info);
-                you[0].duration [6] = 0;
-                you[0].inv_dam [you[0].equip [0]] -= 1;
+                you[0].duration [DUR_FIRE_BRAND] = 0;
+                you[0].inv_dam [you[0].equip [EQ_WEAPON]] -= 1;
                 wield_change = 1;
         }
 
-        if (you[0].duration [7] > 0) you[0].duration [7] --;
-        if (you[0].duration [7] == 1)
+        if (you[0].duration [DUR_ICE_BRAND] > 0) you[0].duration [DUR_ICE_BRAND] --;
+        if (you[0].duration [DUR_ICE_BRAND] == 1)
         {
-                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " stops glowing.");
                 mpr(info);
-                you[0].duration [7] = 0;
-                you[0].inv_dam [you[0].equip [0]] -= 2;
+                you[0].duration [DUR_ICE_BRAND] = 0;
+                you[0].inv_dam [you[0].equip [EQ_WEAPON]] -= 2;
                 wield_change = 1;
 
         }
 
 
-        if (you[0].duration [8] > 0) you[0].duration [8] --;
-        if (you[0].duration [8] == 1)
+        if (you[0].duration [DUR_LETHAL_INFUSION] > 0) you[0].duration [DUR_LETHAL_INFUSION] --;
+        if (you[0].duration [DUR_LETHAL_INFUSION] == 1)
         {
-                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " stops crackling.");
                 mpr(info);
-                you[0].duration [8] = 0;
-                you[0].inv_dam [you[0].equip [0]] -= 8;
+                you[0].duration [DUR_LETHAL_INFUSION] = 0;
+                you[0].inv_dam [you[0].equip [EQ_WEAPON]] -= 8;
                 wield_change = 1;
         }
 
-        if (you[0].duration [15] > 0) you[0].duration [15] --;
-        if (you[0].duration [15] == 1)
+        if (you[0].duration [DUR_POISON_WEAPON] > 0) you[0].duration [DUR_POISON_WEAPON] --;
+        if (you[0].duration [DUR_POISON_WEAPON] == 1)
         {
-                item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+                item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
                 strcpy(info, str_pass);
                 strcat(info, " stops dripping with poison.");
                 mpr(info);
-                you[0].duration [15] = 0;
-                you[0].inv_dam [you[0].equip [0]] -= 6;
+                you[0].duration [DUR_POISON_WEAPON] = 0;
+                you[0].inv_dam [you[0].equip [EQ_WEAPON]] -= 6;
                 wield_change = 1;
         }
 
-        if (you[0].duration [17] > 0) you[0].duration [17] --;
-        if (you[0].duration [17] == 1)
+        if (you[0].duration [DUR_BREATH_WEAPON] > 0) you[0].duration [DUR_BREATH_WEAPON] --;
+        if (you[0].duration [DUR_BREATH_WEAPON] == 1)
         {
                 mpr("You have got your breath back.");
-                you[0].duration [17] = 0;
+                you[0].duration [DUR_BREATH_WEAPON] = 0;
         }
 
-        if (you[0].duration [18] > 0)
+        if (you[0].duration [DUR_TRANSFORMATION] > 0)
         {
-                you[0].duration [18] --;
-                if (you[0].duration [18] == 10)
+                you[0].duration [DUR_TRANSFORMATION] --;
+                if (you[0].duration [DUR_TRANSFORMATION] == 10)
                 {
                         mpr("Your transformation is almost over.");
-                        you[0].duration [18] -= random2(3);
+                        you[0].duration [DUR_TRANSFORMATION] -= random2(3);
                 }
         }
-        if (you[0].duration [18] == 1)
+        if (you[0].duration [DUR_TRANSFORMATION] == 1)
         {
                 untransform();
-                you[0].duration [17] = 0;
+                you[0].duration [DUR_BREATH_WEAPON] = 0;
         }
 
 
-        if (you[0].duration [9] > 0)
+        if (you[0].duration [DUR_SWIFTNESS] > 0)
     {
-     you[0].duration [9] --;
-     if (you[0].duration [9] == 6)
+     you[0].duration [DUR_SWIFTNESS] --;
+     if (you[0].duration [DUR_SWIFTNESS] == 6)
      {
         mpr("You start to feel a little slower.");
-        you[0].duration [9] -= random2(2);
+        you[0].duration [DUR_SWIFTNESS] -= random2(2);
      }
     }
-        if (you[0].duration [9] == 1)
+        if (you[0].duration [DUR_SWIFTNESS] == 1)
         {
                 mpr("You feel sluggish."); // swiftness runs out
-                you[0].duration [9] = 0;
+                you[0].duration [DUR_SWIFTNESS] = 0;
 /* you[0].fast_you[0].run --;*/
         }
 
-        if (you[0].duration [10] > 0)
+        if (you[0].duration [DUR_INSULATION] > 0)
     {
-      you[0].duration [10] --;
-      if (you[0].duration [10] == 6)
+      you[0].duration [DUR_INSULATION] --;
+      if (you[0].duration [DUR_INSULATION] == 6)
       {
         mpr("You start to feel a little less insulated.");
-        you[0].duration [10] -= random2(2);
+        you[0].duration [DUR_INSULATION] -= random2(2);
       }
     }
-        if (you[0].duration [10] == 1)
+        if (you[0].duration [DUR_INSULATION] == 1)
         {
                 mpr("You feel conductive."); // insulation (lightning resistance) wore off
-                you[0].duration [10] = 0;
-                you[0].attribute [0] --;
+                you[0].duration [DUR_INSULATION] = 0;
+                you[0].attribute [ATTR_RESIST_LIGHTNING] --;
         }
 
-        if (you[0].duration [11] > 1)
+        if (you[0].duration [DUR_STONEMAIL] > 1)
     {
-     you[0].duration [11] --;
-     if (you[0].duration [11] == 6)
+     you[0].duration [DUR_STONEMAIL] --;
+     if (you[0].duration [DUR_STONEMAIL] == 6)
      {
         mpr("Your scaley stone armour is starting to flake away.");
-        you[0].duration [11] -= random2(2);
+        you[0].duration [DUR_STONEMAIL] -= random2(2);
      }
     }
-        if (you[0].duration [11] == 1)
+        if (you[0].duration [DUR_STONEMAIL] == 1)
         {
                 mpr("Your scaley stone armour disappears.");
 /* you[0].AC -= 7;
  you[0].evasion += 2;
  you[0].evasion_ch = 1;
  you[0].AC_ch = 1;*/
-                you[0].duration [11] = 0;
+                you[0].duration [DUR_STONEMAIL] = 0;
                 burden_change();
         }
 
-        if (you[0].duration [13] > 1) you[0].duration [13] --;
-        if (you[0].duration [13] == 1)
+        if (you[0].duration [DUR_TELEPORT] > 1) you[0].duration [DUR_TELEPORT] --;
+        if (you[0].duration [DUR_TELEPORT] == 1)
         {
                 you_teleport2(1);
-                you[0].duration [13] = 0;
+                you[0].duration [DUR_TELEPORT] = 0;
         }
 
-        if (you[0].duration [14] > 1)
+        if (you[0].duration [DUR_CONTROL_TELEPORT] > 1)
     {
-      you[0].duration [14] --;
-      if (you[0].duration [14] == 6)
+      you[0].duration [DUR_CONTROL_TELEPORT] --;
+      if (you[0].duration [DUR_CONTROL_TELEPORT] == 6)
       {
         mpr("You start to feel a little uncertain.");
-        you[0].duration [14] -= random2(2);
+        you[0].duration [DUR_CONTROL_TELEPORT] -= random2(2);
       }
     }
-        if (you[0].duration [14] == 1)
+        if (you[0].duration [DUR_CONTROL_TELEPORT] == 1)
         {
                 mpr("You feel uncertain."); // teleport control
-                you[0].duration [14] = 0;
-                you[0].attribute [3] --;
+                you[0].duration [DUR_CONTROL_TELEPORT] = 0;
+                you[0].attribute [ATTR_CONTROL_TELEPORT] --;
         }
 
-        if (you[0].duration [16] > 1)
+        if (you[0].duration [DUR_RESIST_POISON] > 1)
     {
-      you[0].duration [16] --;
-      if (you[0].duration [16] == 6)
+      you[0].duration [DUR_RESIST_POISON] --;
+      if (you[0].duration [DUR_RESIST_POISON] == 6)
       {
         mpr("Your poison resistance is about to expire.");
-        you[0].duration [16] -= random2(2);
+        you[0].duration [DUR_RESIST_POISON] -= random2(2);
       }
     }
-        if (you[0].duration [16] == 1)
+        if (you[0].duration [DUR_RESIST_POISON] == 1)
         {
                 mpr("Your poison resistance expires."); // poison resistance wore off
-                you[0].duration [16] = 0;
+                you[0].duration [DUR_RESIST_POISON] = 0;
         }
 
-        if (you[0].duration [19] > 1)
+        if (you[0].duration [DUR_DEATH_CHANNEL] > 1)
     {
-      you[0].duration [19] --;
-      if (you[0].duration [19] == 6)
+      you[0].duration [DUR_DEATH_CHANNEL] --;
+      if (you[0].duration [DUR_DEATH_CHANNEL] == 6)
       {
         mpr("Your unholy channel is weakening.");
-        you[0].duration [19] -= random2(2);
+        you[0].duration [DUR_DEATH_CHANNEL] -= random2(2);
       }
     }
-        if (you[0].duration [19] == 1)
+        if (you[0].duration [DUR_DEATH_CHANNEL] == 1)
         {
                 mpr("Your unholy channel expires."); // Death channel wore off
-                you[0].duration [19] = 0;
+                you[0].duration [DUR_DEATH_CHANNEL] = 0;
         }
 
 
 
 
-        if (you[0].duration [0] > 0) you[0].duration [0] --;
+        if (you[0].duration [DUR_LIQUID_FLAMES] > 0) you[0].duration [DUR_LIQUID_FLAMES] --;
 
-        if (you[0].duration [13] > 1) you[0].duration [13] --;
-        if (you[0].duration [13] == 1)
+        if (you[0].duration [DUR_TELEPORT] > 1) you[0].duration [DUR_TELEPORT] --;
+        if (you[0].duration [DUR_TELEPORT] == 1)
         {
                 you_teleport2(1);
-                you[0].duration [13] = 0;
+                you[0].duration [DUR_TELEPORT] = 0;
         }
 
         if (you[0].invis > 1)
@@ -1198,14 +1199,14 @@ break;
 
         if (you[0].lev > 1)
         {
-        if (you[0].species != 36 || you[0].xl < 15)
+        if (you[0].species != SP_KENKU || you[0].xl < 15)
                  you[0].lev--;
                 if (you[0].lev == 10)
                 {
                         strcpy(info, "You are starting to lose your buoyancy!");
                         mpr(info);
                         you[0].lev -= random2(6); // so you never know how much time you have left!
-                        if (you[0].duration [12] > 0) you[0].duration [12] = you[0].lev;
+                        if (you[0].duration [DUR_CONTROLLED_FLIGHT] > 0) you[0].duration [DUR_CONTROLLED_FLIGHT] = you[0].lev;
                 }
         }
 
@@ -1215,29 +1216,31 @@ break;
                 mpr(info);
                 you[0].lev = 0;
             burden_change();
-        you[0].duration [12] = 0;
+        you[0].duration [DUR_CONTROLLED_FLIGHT] = 0;
                 if (grd [you[0].x_pos] [you[0].y_pos] == 61 || grd [you[0].x_pos] [you[0].y_pos] == 62) fall_into_a_pool(1, grd [you[0].x_pos] [you[0].y_pos]);
         }
 
 
-        if (you[0].rotting > 0 || you[0].species == 35)
+        if (you[0].rotting > 0 || (you[0].species == SP_GHOUL && random2(2) == 0))
         {
-                if (random2(20) <= (you[0].rotting - 1) || (you[0].species == 35 && random2(200) == 0))
-                {
-                        ouch(1, 0, 21);
-                        you[0].hp_max --;
-                you[0].base_hp --;
-                        you[0].hp_ch = 1;
-                        mpr("You feel your flesh rotting away.");
-                        you[0].rotting--;
-                }
-
+        if (you[0].species == SP_MUMMY)
+          you[0].rotting = 0;
+                        else
+                                if (random2(20) <= (you[0].rotting - 1) || (you[0].species == SP_GHOUL && random2(200) == 0))
+                                {
+                                        ouch(1, 0, 21);
+                                        you[0].hp_max --;
+                                you[0].base_hp --;
+                                        you[0].hp_ch = 1;
+                                        mpr("You feel your flesh rotting away.");
+                                        you[0].rotting--;
+                                }
         }
 
         if (you[0].disease > 0)
         {
                 you[0].disease --;
-                if (you[0].species == 11 && you[0].disease > 5) you[0].disease -= 2;
+                if (you[0].species == SP_KOBOLD && you[0].disease > 5) you[0].disease -= 2;
                 if (you[0].disease == 0)
                 {
                         strcpy(info, "You feel your health improve.");
@@ -1284,7 +1287,7 @@ break;
 
         if (you[0].deaths_door > 0)
         {
-                if (you[0].hp > you[0].skills [29] + (you[0].religion == 3) * 13)
+                if (you[0].hp > you[0].skills [SK_NECROMANCY] + (you[0].religion == GOD_KIKUBAAQUDGHA) * 13)
                 {
                         strcpy(info, "Your life is in your own hands once again.");
                         mpr(info);
@@ -1403,7 +1406,7 @@ break;
       if (random2(3) == 0)
       {
        mpr("A hostile presence attacks your mind!");
-       miscast_effect(19, random2(15), random2(150), 100);
+       miscast_effect(SPTYP_DIVINATION, random2(15), random2(150), 100);
       }
       visible [2] --;
      }
@@ -1429,7 +1432,7 @@ break;
                 }
         }
 
-        if (you[0].hung_state == 3 && you[0].hunger <= 2600 && you[0].hunger_inc > 0)
+        if (you[0].hung_state == 3 && you[0].hunger <= 2600) // && you[0].hunger_inc > 0)
         {
                 strcpy(info, "You are feeling hungry.");
                 mpr(info);
@@ -1438,7 +1441,7 @@ break;
         }
 
 
-        if (you[0].hung_state == 2 && you[0].hunger <= 1000 && you[0].hunger_inc > 0)
+        if (you[0].hung_state == 2 && you[0].hunger <= 1000) // && you[0].hunger_inc > 0)
         {
                 strcpy(info, "You are starving!");
                 mpr(info);
@@ -1447,13 +1450,13 @@ break;
         }
 
 
-        if (you[0].hung_state == 4 && you[0].hunger < 7000 && you[0].hunger_inc > 0)
+        if (you[0].hung_state == 4 && you[0].hunger < 7000) // && you[0].hunger_inc > 0)
         {
                 you[0].hung_state = 3;
                 you[0].hung_ch = 1;
         }
 
-        if (you[0].hung_state == 5 && you[0].hunger < 11000 && you[0].hunger_inc > 0)
+        if (you[0].hung_state == 5 && you[0].hunger < 11000) // && you[0].hunger_inc > 0)
         {
                 you[0].hung_state = 4;
                 you[0].hung_ch = 1;
@@ -1479,12 +1482,12 @@ break;
             switch(you[0].level_type)
         {
                 case 1: break; /* labyrinth */
-            case 2: if (random2(5) == 0) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, 51);
+            case 2: if (random2(5) == 0) mons_place(2500, 0, 50, 50, 1, MHITNOT, 250, 51);
                         break; /* Abyss  */
                 case 3: if (random2(50) == 0) pandemonium_mons(); //mons_place(250, 0, 50, 50, 0, MHITNOT, 250, 52);
                         break; /* Pandemonium */
         }
-        } else if (random2(240) == 0 && you[0].level_type != 1 && you[0].where_are_you != 18) mons_place(2500, 0, 50, 50, 0, MHITNOT, 250, you[0].your_level);
+        } else if (random2(240) == 0 && you[0].level_type != 1 && you[0].where_are_you != 18) mons_place(2500, 0, 50, 50, 1, MHITNOT, 250, you[0].your_level);
 
         return;
 
@@ -1523,15 +1526,13 @@ move_y = door_y;*/
                 return;
         }
 
-        if (move_x != 100 && env[0].cgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != CNG)
-        {
-                strcpy(info, "You can't get to that trap right now.");
-                mpr(info);
-                return;
-        }
-
         if (move_x != 100 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] >= 75 && grd [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] <= 77)
         {
+            if (env[0].cgrid [you[0].x_pos + door_move[0].move_x] [you[0].y_pos + door_move[0].move_y] != CNG)
+            {
+                 mpr("You can't get to that trap right now.");
+                 return;
+            }
                 disarm_trap(door_move);
                 return;
         }
@@ -1984,7 +1985,7 @@ void move(char move_x, char move_y)
 
         if (attacking == 0 && (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] >= MINMOVE))
         {
-        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 78 && random() % (you[0].skills [18] + 1) > 3)
+        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] == 78 && random() % (you[0].skills [SK_TRAPS_DOORS] + 1) > 3)
         {
                 strcpy(info, "Wait a moment, ");
             strcat(info, you[0].your_name);
@@ -1996,8 +1997,8 @@ void move(char move_x, char move_y)
                         {
                                 if (env[0].trap_x [i] == you[0].x_pos + move_x && env[0].trap_y [i] == you[0].y_pos + move_y) break;
                         }
-                        if (env[0].trap_type [i] < 4) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 75;
-            if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 76;
+                        if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6 || env[0].trap_type [i] == 7) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 75;
+            if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5 || env[0].trap_type [i] == 8) grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] = 76;
             return;
                 }
                 you[0].x_pos += move_x;
@@ -2027,7 +2028,7 @@ void move(char move_x, char move_y)
                         you[0].time_taken *= 6;
                         you[0].time_taken /= 10;
                 }
-                if (you[0].attribute [4] != 0)
+                if (you[0].attribute [ATTR_WALK_SLOWLY] != 0)
                 {
                         you[0].time_taken *= 14;
                         you[0].time_taken /= 10;
@@ -2045,8 +2046,8 @@ void move(char move_x, char move_y)
                                 {
                                         if (env[0].trap_x [i] == you[0].x_pos && env[0].trap_y [i] == you[0].y_pos) break;
                                 }
-                                if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6) grd [you[0].x_pos] [you[0].y_pos] = 75;
-                                if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [you[0].x_pos] [you[0].y_pos] = 76;
+                                if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6 || env[0].trap_type [i] == 7) grd [you[0].x_pos] [you[0].y_pos] = 75;
+                                if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5 || env[0].trap_type [i] == 8) grd [you[0].x_pos] [you[0].y_pos] = 76;
                         trap_known = 0;
 
                                 // else if (trap_type is magic etc
@@ -2058,6 +2059,8 @@ void move(char move_x, char move_y)
                                 if (env[0].trap_x [i] == you[0].x_pos && env[0].trap_y [i] == you[0].y_pos) break;
                         }
 
+                if (you[0].lev != 0 && (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6 || env[0].trap_type [i] == 7))
+                goto out_of_traps; /* Can fly over mechanical traps */
 
                         switch(env[0].trap_type [i])
                         {
@@ -2091,9 +2094,9 @@ void move(char move_x, char move_y)
                                         break;
 
                                 case 4:
-                                        mpr("You step on a teleport trap!");
-                                        if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
-                                if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+                                        mpr("You enter a teleport trap!");
+                                        if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0 && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+                                if (randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_PREVENT_TELEPORTATION) > 0)
                                     {
                                         mpr("You feel a weird sense of stasis.");
                                         break;
@@ -2106,6 +2109,15 @@ void move(char move_x, char move_y)
                                         forget_map(random2(50) + random2(50) + 2);
                                         break;
 
+                                case 7:
+                                        strcpy(beam[0].beam_name, " bolt");
+                                        beam[0].damage = 13;
+                                        trapped = i;
+                                        dart_trap(trap_known, i, beam);
+                                        break;
+
+
+
                                 default: handle_traps(env[0].trap_type [i], trap_known); break;
 
 
@@ -2115,7 +2127,7 @@ void move(char move_x, char move_y)
         }
 
 
-        if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] <= MINMOVE)
+        out_of_traps : if (grd [you[0].x_pos + move_x] [you[0].y_pos + move_y] <= MINMOVE)
         {
                 move_x = 0;
                 move_y = 0;

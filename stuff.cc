@@ -9,6 +9,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 #include <stdlib.h>
 #include <string.h>
 

@@ -1,6 +1,9 @@
+#include "config.h"
+
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "beam.h"
 #include "player.h"
@@ -88,7 +91,7 @@ switch(z_type)
         func_pass [0] = 4;
         strcpy(str_pass, "puff of flame");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 104 + func_pass [8] / 16; // should this be the same as magic missile? no
+        func_pass [2] = 104 + func_pass [8] / 35; // should this be the same as magic missile? no
         func_pass [3] = 60;
         func_pass [4] = '#'; // maybe make missile() put a # on wherever it hits?
         func_pass [6] = 4; //3;
@@ -103,7 +106,7 @@ switch(z_type)
         func_pass [0] = 15;
         strcpy(str_pass, "puff of frost");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 104 + func_pass [8] / 16; // should this be the same as magic missile?
+        func_pass [2] = 104 + func_pass [8] / 35; // should this be the same as magic missile?
         func_pass [3] = 60;
         func_pass [4] = '#'; // maybe make missile() put a # on wherever it hits?
         func_pass [6] = 4;//3;
@@ -142,7 +145,7 @@ switch(z_type)
         func_pass [0] = 13;//you[0].inv_col [throw_2];//icolour [you[0].inv_class [throw_2]] [you[0].inv_type [throw_2]];
         strcpy(str_pass, "magic dart");// you[0].inv_name [throw_2]);
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 102 + (func_pass [8] / 22) + random2(2);
+        func_pass [2] = 102 + (func_pass [8] / 45) + random2(2);
         func_pass [3] = 1500;
         func_pass [4] = 35;
         func_pass [6] = 4;//3;
@@ -177,13 +180,13 @@ switch(z_type)
         case 7:
         strcpy(str_pass, "bolt of fire");
         func_pass [1] = random2(10) + 8;
-        func_pass [2] = 106 + func_pass [8] / 12;
+        func_pass [2] = 107 + func_pass [8] / 11;
         func_pass [0] = 4;
         func_pass [4] = 35; // 35
         func_pass [6] = 2;//1;
         func_pass [5] = 2; // fire
         func_pass [7] = 1;
- func_pass [3] = 8 + random2(func_pass [8]) / 80;
+ func_pass [3] = 10 + random2(func_pass [8]) / 80;
         return 2;
         //break;
 //}
@@ -194,13 +197,13 @@ switch(z_type)
         case 8:
         strcpy(str_pass, "bolt of cold");
         func_pass [1] = random2(10) + 8;
-        func_pass [2] = 106 + func_pass [8] / 12;
+        func_pass [2] = 107 + func_pass [8] / 11;
         func_pass [0] = WHITE; //LIGHTCYAN;
         func_pass [4] = 35;
         func_pass [6] = 2;//1;
         func_pass [5] = 3; // cold
         func_pass [7] = 1;
- func_pass [3] = 8 + random2(func_pass [8]) / 80;
+ func_pass [3] = 10 + random2(func_pass [8]) / 80;
         return 2;
         //break;
 
@@ -265,7 +268,7 @@ switch(z_type)
         case 14: // lightning
         strcpy(str_pass, "bolt of lightning");
         func_pass [1] = random2(10) + 9;
-        func_pass [2] = 105 + func_pass [8] / 14;
+        func_pass [2] = 106 + func_pass [8] / 12;
         func_pass [0] = LIGHTCYAN;
         func_pass [4] = 35;
         func_pass [6] = 2;//1;
@@ -509,7 +512,7 @@ switch(z_type)
         func_pass [0] = LIGHTCYAN;
         strcpy(str_pass, "zap");
         func_pass [1] = random2(5) + 9;
-        func_pass [2] = 5 + (func_pass [8] / 8);
+        func_pass [2] = 10 + (func_pass [8] / 6);
         func_pass [3] = 1500;
         func_pass [4] = 35;
         func_pass [6] = 2;
@@ -702,6 +705,39 @@ switch(z_type)
         func_pass [5] = 4; // magic
         return 2;
 
+        case ZAP_ORB_OF_FRAGMENTATION: // orb of frag
+        func_pass [0] = CYAN;
+        strcpy(str_pass, "metal orb");
+        func_pass [1] = random2(7) + 10;
+        func_pass [2] = 10 + func_pass [8] / 7;
+        func_pass [3] = 20;
+        func_pass [4] = '#';
+        func_pass [6] = 2;
+        func_pass [5] = 1;
+        return 1;
+
+        case ZAP_ICE_BOLT:
+        func_pass [0] = WHITE;
+        strcpy(str_pass, "bolt of ice");
+        func_pass [1] = random2(5) + 9;
+        func_pass [2] = 105 + (func_pass [8] / 10);
+        func_pass [3] = 9 + func_pass [8] / 12;
+        func_pass [4] = '#';
+        func_pass [6] = 2;
+        func_pass [5] = 23; /* ice */
+        return 1;
+
+        case ZAP_ICE_STORM:
+        func_pass [0] = BLUE;
+        strcpy(str_pass, "great blast of cold");
+        func_pass [1] = random2(5) + 10;
+        func_pass [2] = 5 + (func_pass [8] / 10);
+        func_pass [3] = 9 + func_pass [8] / 12;
+        func_pass [4] = '#';
+        func_pass [6] = 2;
+        func_pass [5] = 3; /* ice */
+        return 1;
+
 
 
 /*
@@ -733,7 +769,7 @@ if (pow >= 150) pow = 150;
 
 switch(pot_eff)
 {
-        case 0:
+        case POT_HEALING:
         mpr("You feel better.");
         you[0].hp += random2(7) + 5;
         if (you[0].hp >= you[0].hp_max)
@@ -750,7 +786,7 @@ switch(pot_eff)
 /*      beam[0].wand_id = 1;*/
         break;
 
-        case 1:
+        case POT_HEAL_WOUNDS:
         mpr("You feel much better.");
         you[0].hp += random2(10) + random2(10) + random2(10) + 10;
         if (you[0].hp >= you[0].hp_max)
@@ -765,7 +801,7 @@ switch(pot_eff)
 /*      wand_id = 1; */
         break;
 
-        case 2:
+        case POT_SPEED:
         if (you[0].haste == 0) strcpy(info, "You feel yourself speed up.");
                 else strcpy(info, "Your high speed feels more durable.");
         mpr(info);
@@ -779,7 +815,7 @@ switch(pot_eff)
  break;
 //}
 
-        case 3: // potion of might
+        case POT_MIGHT: // potion of might
         if (you[0].might == 0) strcpy(info, "You feel very mighty all of a sudden.");
         else
         {
@@ -796,8 +832,8 @@ switch(pot_eff)
  if (you[0].might > 75) you[0].might = 75;
         break;
 
-        case 4: // potion of increase you[0].strength
-        mutate(1);
+        case POT_GAIN_STRENGTH: // potion of increase you[0].strength
+        mutate(MUT_STRONG);
 /*      strcpy(info, "You feel strong!");
         mpr(info);
         abil_change = random2 (2) + 1;
@@ -806,8 +842,8 @@ switch(pot_eff)
         you[0].strength_ch = 1;*/
         break;
 
-        case 5: // potion of increase dexterity
-        mutate(3);
+        case POT_GAIN_DEXTERITY: // potion of increase dexterity
+        mutate(MUT_AGILE);
 /*      strcpy(info, "You feel dextrous!");
         mpr(info);
         abil_change = random2 (2) + 1;
@@ -816,8 +852,8 @@ switch(pot_eff)
         you[0].dex_ch = 1;*/
         break;
 
-        case 6: // potion of increase intelligence
-        mutate(2);
+        case POT_GAIN_INTELLIGENCE: // potion of increase intelligence
+        mutate(MUT_CLEVER);
 /*      strcpy(info, "You feel intelligent!");
         mpr(info);
         abil_change = random2 (2) + 1;
@@ -826,7 +862,7 @@ switch(pot_eff)
         you[0].intel_ch = 1;*/
         break;
 
-        case 7: // levitation
+        case POT_LEVITATION: // levitation
         if (you[0].lev == 0)
         {
                 strcpy(info, "You feel very buoyant!");
@@ -843,7 +879,7 @@ switch(pot_eff)
         burden_change();
         break;
 
-        case 8: // poison!!
+        case POT_POISON: // poison!!
         if (player_res_poison() > 0)
         {
                 strcpy (info, "You feel slightly nauseous.");
@@ -863,8 +899,8 @@ switch(pot_eff)
 /*      wand_id = 1;*/
         break;
 
-        case 9: // slow
-        if (wearing_amulet(36) == 1)
+        case POT_SLOWING: // slow
+        if (wearing_amulet(AMU_MAINTAIN_SPEED) == 1)
         {
          strcpy(info, "You feel momentarily lethargic.");
          mpr(info);
@@ -881,7 +917,7 @@ switch(pot_eff)
  if (you[0].slow > 90) you[0].slow = 90;
         break;
 
-        case 10: // paralysis
+        case POT_PARALYSIS: // paralysis
         if (you[0].paralysis == 0) strcpy(info, "You suddenly lose the ability to move!");
                 else strcpy(info, "You still can't move!");
         mpr(info);
@@ -891,8 +927,8 @@ switch(pot_eff)
  if (you[0].paralysis > 13) you[0].paralysis = 13;
         break;
 
-        case 11: // confusion
-        if (wearing_amulet(37) == 1)
+        case POT_CONFUSION: // confusion
+        if (wearing_amulet(AMU_CLARITY) == 1)
         {
          strcpy(info, "You feel momentarily bewildered.");
          mpr(info);
@@ -907,7 +943,7 @@ switch(pot_eff)
  if (you[0].conf > 20) you[0].conf = 20;
         break;
 
-        case 12: // Invisibility (can I do it?)
+        case POT_INVISIBILITY: // Invisibility (can I do it?)
         if (you[0].invis == 0)  strcpy(info, "You fade into invisibility!");
                 else strcpy(info, "You feel hidden.");
         mpr(info);
@@ -916,7 +952,7 @@ switch(pot_eff)
  if (you[0].invis > 100) you[0].invis = 100;
         break;
 
-        case 13: // oatmeal - always gluggy white/grey?
+        case POT_PORRIDGE: // oatmeal - always gluggy white/grey?
         strcpy(info, "That potion was really gluggy!");
         mpr(info);
         you[0].hunger += 6000;
@@ -924,14 +960,14 @@ switch(pot_eff)
  if (you[0].hunger > 12000) you[0].hunger = 12000;
         break;
 
-        case 14: // degeneration
+        case POT_DEGENERATION: // degeneration
         strcpy(info, "There was something very wrong with that liquid!");
         mpr(info);
         lose_stat(100, random2(3) + random2(2) + 1);
         break;
 
         // Don't generate randomly - should be rare and interesting
-        case 15: // decay
+        case POT_DECAY: // decay
         if (you[0].is_undead != 0)
         {
          strcpy(info, "You feel terrible.");
@@ -943,13 +979,13 @@ switch(pot_eff)
         you[0].rotting += random2(10) + 10;
         break;
 
- case 16: // water
+ case POT_WATER: // water
  strcpy(info, "This tastes like water.");
  mpr(info);
  you[0].hunger += 20;
  break;
 
- case 17: // experience
+ case POT_EXPERIENCE: // experience
  strcpy(info, "You feel more experienced!");
  mpr(info);
  if (you[0].xl < 27)
@@ -957,7 +993,7 @@ switch(pot_eff)
  level_change();
  break; // I'll let this slip past robe of archmagi
 
- case 18: // magic
+ case POT_MAGIC: // magic
  strcpy(info, "You feel magical!");
  mpr(info);
         you[0].ep += random2(10) + random2(10) + 5;
@@ -970,7 +1006,7 @@ switch(pot_eff)
         you[0].ep_ch = 1;
  break;
 
- case 19: // restore abilities
+ case POT_RESTORE_ABILITIES: // restore abilities
  strcpy(info, "You feel refreshed."); // ...can't think of anything better right now
  mpr(info);
  restore_str();
@@ -978,7 +1014,7 @@ switch(pot_eff)
  restore_dex();
  break;
 
-        case 20: // strong poison!!
+        case POT_STRONG_POISON: // strong poison!!
         if (player_res_poison() > 0)
         {
                 strcpy (info, "You feel extremely nauseous.");
@@ -998,7 +1034,7 @@ switch(pot_eff)
 /*      wand_id = 1;*/
         break;
 
- case 21: // berserk
+ case POT_BERSERK_RAGE: // berserk
  if (go_berserk() == 0)
  {
   strcpy(info, "You feel angry!");
@@ -1006,7 +1042,7 @@ switch(pot_eff)
  }
  break;
 
- case 22:
+ case POT_CURE_MUTATION:
  mpr("It has a very clean taste.");
  delete_mutation(100);
  delete_mutation(100);
@@ -1017,7 +1053,7 @@ switch(pot_eff)
  delete_mutation(100);
  break;
 
- case 23:
+ case POT_MUTATION:
  mpr("You feel extremely strange.");
  mutate(100);
  mutate(100);
@@ -1092,38 +1128,38 @@ char i_dam = you[0].inv_dam [unw] % 30;
 
 if (you[0].inv_dam [unw] % 30 >= 25)
 {
- i_dam = randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 0);
+ i_dam = randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_BRAND);
 }
 
 switch(i_dam)
 {
 
-  case 1:
+  case SPWPN_FLAMING:
   strcat(info, " stops flaming.");
   mpr(info);
   break;
 
-  case 2:
+  case SPWPN_FREEZING:
   strcat(info, " stops glowing.");
   mpr(info);
   break;
 
-  case 3:
+  case SPWPN_HOLY_WRATH:
   strcat(info, " stops glowing.");
   mpr(info);
   break;
 
-  case 4:
+  case SPWPN_ELECTROCUTION:
   strcat(info, " stops crackling.");
   mpr(info);
   break;
 
-  case 6:
+  case SPWPN_VENOM:
   strcat(info, " stops dripping with poison.");
   mpr(info);
   break;
 
-  case 7:
+  case SPWPN_PROTECTION:
   strcpy(info, "You feel less protected.");
   mpr(info);
 /*                player_AC() -= 5; */
@@ -1133,12 +1169,12 @@ switch(i_dam)
   /* case 8: draining
      case 9: speed, 10 slicing etc */
 
-  case 13:
+  case SPWPN_VAMPIRICISM:
   you[0].hunger_inc -= 6;
         //      mpr(info);
                 break;
 
-  case 16:
+  case SPWPN_DISTORTION:
   miscast_effect(20, 9, 90, 100);
   break;
 
@@ -1155,13 +1191,13 @@ if (you[0].inv_dam [unw] % 30 >= 25)
 
 
 
-if (you[0].duration [5] != 0 || you[0].duration [6] != 0 || you[0].duration [7] != 0 || you[0].duration [8] != 0 || you[0].duration [15] != 0)
+if (you[0].duration [DUR_VORPAL_BLADE] != 0 || you[0].duration [DUR_FIRE_BRAND] != 0 || you[0].duration [DUR_ICE_BRAND] != 0 || you[0].duration [DUR_LETHAL_INFUSION] != 0 || you[0].duration [DUR_POISON_WEAPON] != 0)
 {
-  you[0].duration [5] = 0;
-  you[0].duration [6] = 0;
-  you[0].duration [7] = 0;
-  you[0].duration [8] = 0;
-  you[0].duration [15] = 0;
+  you[0].duration [DUR_VORPAL_BLADE] = 0;
+  you[0].duration [DUR_FIRE_BRAND] = 0;
+  you[0].duration [DUR_ICE_BRAND] = 0;
+  you[0].duration [DUR_LETHAL_INFUSION] = 0;
+  you[0].duration [DUR_POISON_WEAPON] = 0;
 //  you[0].inv_dam [unw] = (you[0].inv_dam [unw] / 30) * 30;
   you[0].inv_dam [unw] -= you[0].inv_dam [unw] % 30;
   mpr("Your branding spell evaporates.");
@@ -1171,15 +1207,15 @@ if (you[0].duration [5] != 0 || you[0].duration [6] != 0 || you[0].duration [7] 
 }
 
 
-if (you[0].inv_class [you[0].equip [0]] == 11)
+if (you[0].inv_class [you[0].equip [EQ_WEAPON]] == 11)
 {
- switch(you[0].inv_type [you[0].equip [0]])
+ switch(you[0].inv_type [you[0].equip [EQ_WEAPON]])
         {
- case 0: /* wizardry */
+ case STAFF_WIZARDRY: /* wizardry */
 /* you[0].mag_abil -= 4; */
         break;
 
- case 1: /* magic */
+ case STAFF_POWER: /* magic */
  you[0].ep_max -= 13;
  you[0].base_ep2 -= 13;
  if (you[0].ep > you[0].ep_max) you[0].ep = you[0].ep_max;
@@ -1188,46 +1224,46 @@ if (you[0].inv_class [you[0].equip [0]] == 11)
  calc_ep();
  break;
 
- case 2: /* fire */
+ case STAFF_FIRE: /* fire */
 /*        you[0].spec_fire --;
  player_res_fire(you) --;*/
         break;
 
-        case 3: /* cold */
+        case STAFF_COLD: /* cold */
 /* you[0].spec_cold --;
  player_res_cold(you) --;*/
         break;
 
- case 4:
+ case STAFF_POISON:
 /* you[0].spec_poison --;
  you[0].res_poison --;*/
         break;
 
- case 5:
+ case STAFF_ENERGY:
 /* you[0].energy --; */
         break;
 
- case 6:
+ case STAFF_DEATH:
 // you[0].spec_death --;
  break;
 
- case 7:
+ case STAFF_CONJURATION:
 // you[0].spec_conj --;
  break;
 
- case 8:
+ case STAFF_ENCHANTMENT:
 // you[0].spec_ench --;
  break;
 
- case 9:
+ case STAFF_SUMMONING_I:
 // you[0].spec_summ --;
  break;
 
- case 25:
- you[0].attribute [0] --; /* res elec */
+ case STAFF_AIR:
+ you[0].attribute [ATTR_RESIST_LIGHTNING] --; /* res elec */
  break;
 
- case 26:
+ case STAFF_EARTH:
  break;
 
         }
@@ -1246,26 +1282,26 @@ you[0].evasion_ch = 1;
 
 switch(you[0].inv_type [unw])
 {
- case 18:
+ case ARM_DRAGON_ARMOUR:
 /* player_res_fire(you) --;
  player_res_cold(you) ++;*/
  break;
 
- case 19:
+ case ARM_TROLL_LEATHER_ARMOUR:
 /* you[0].rate_regen -= 50;*/
 // you[0].hunger_inc -= 1;
  break;
 
- case 21:
+ case ARM_ICE_DRAGON_ARMOUR:
 /* player_res_fire(you) ++;
  player_res_cold(you) --;*/
  break;
 
-                 case 27: /* storm dragon */
-                 you[0].attribute [0] --;
+                 case ARM_STORM_DRAGON_ARMOUR: /* storm dragon */
+                 you[0].attribute [ATTR_RESIST_LIGHTNING] --;
                  break;
 
-                 case 29: /* gold dragon */
+                 case ARM_GOLD_DRAGON_ARMOUR: /* gold dragon */
 /*                 player_res_fire(you) --;
                  player_res_cold(you) --;
                  you[0].res_poison --;*/
@@ -1276,19 +1312,19 @@ switch(you[0].inv_type [unw])
 switch(you[0].inv_dam [unw] % 30)
 {
 
-  case 1:
+  case SPARM_RUNNING:
   strcpy(info, "You feel rather sluggish.");
   mpr(info);
 /*  you[0].fast_run --; */
   break;
 
-  case 2:
+  case SPARM_FIRE_RESISTANCE:
 //  player_res_fire(you) --;
   strcpy(info, "You feel less resistant to fire.");
   mpr(info);
   break;
 
-  case 3:
+  case SPARM_COLD_RESISTANCE:
 //  player_res_cold(you) --;
   if (player_res_cold() == 0)
   {
@@ -1297,7 +1333,7 @@ switch(you[0].inv_dam [unw] % 30)
   }
   break;
 
-  case 4:
+  case SPARM_POISON_RESISTANCE:
 //  you[0].res_poison --;
                 if (player_res_poison() == 0)
                 {
@@ -1306,7 +1342,7 @@ switch(you[0].inv_dam [unw] % 30)
                 }
   break;
 
-  case 5:
+  case SPARM_SEE_INVISIBLE:
 /*  you[0].see_invis ++; */
                 if (player_see_invis() == 0)
                 {
@@ -1315,13 +1351,13 @@ switch(you[0].inv_dam [unw] % 30)
                 }
   break;
 
- case 6: /* invisibility */
+ case SPARM_DARKNESS: /* invisibility */
 // you[0].invis ++;
  if (you[0].invis != 0) you[0].invis = 1;
 // you[0].hunger_inc -= 7;
  break;
 
- case 7:
+ case SPARM_STRENGTH:
  strcpy(info, "You feel weak.");
  mpr(info);
  you[0].strength -= 3;
@@ -1329,7 +1365,7 @@ switch(you[0].inv_dam [unw] % 30)
  you[0].strength_ch = 1;
  break;
 
- case 8:
+ case SPARM_DEXTERITY:
  strcpy(info, "You feel clumsy.");
  mpr(info);
  you[0].dex -= 3;
@@ -1337,7 +1373,7 @@ switch(you[0].inv_dam [unw] % 30)
  you[0].dex_ch = 1;
  break;
 
- case 9:
+ case SPARM_INTELLIGENCE:
  strcpy(info, "You feel dopey."); /* inspired messages, aren't they? */
  mpr(info);
  you[0].intel -= 3;
@@ -1345,49 +1381,49 @@ switch(you[0].inv_dam [unw] % 30)
  you[0].intel_ch = 1;
  break;
 
- case 10:
+ case SPARM_PONDEROUSNESS:
  strcpy(info, "You feel rather less ponderous.");
  you[0].speed -= 2;
 /* player_evasion(you) += 1;*/
  you[0].evasion_ch = 1;
  break;
 
-        case 11: /* levitation */
+        case SPARM_LEVITATION: /* levitation */
 //        you[0].lev ++;
         if (you[0].lev != 0) you[0].lev = 1;
         break;
 
- case 12:
+ case SPARM_MAGIC_RESISTANCE:
  strcpy(info, "You feel less resistant to magic.");
  mpr(info);
 /* you[0].res_magic -= 40;*/
  break;
 
- case 13:
+ case SPARM_PROTECTION:
  strcpy(info, "You feel less protected.");
  mpr(info);
 // player_AC(you) -= 3;
  break;
 
- case 14:
+ case SPARM_STEALTH:
  strcpy(info, "You feel less stealthy.");
  mpr(info);
  break;
 
- case 15:
+ case SPARM_RESISTANCE:
  strcpy(info, "You feel all hot and cold.");
  mpr(info);
 // player_res_cold(you) --;
 // player_res_fire(you) --;
  break;
 
- case 16:
+ case SPARM_POSITIVE_ENERGY:
  strcpy(info, "You feel vulnerable.");
  mpr(info);
 // player_prot_life(you) --;
  break;
 
- case 17:
+ case SPARM_ARCHMAGI:
  strcpy(info, "You feel strangely numb.");
  mpr(info);
 /* you[0].mag_abil -= 2;
@@ -1411,41 +1447,41 @@ if (you[0].inv_dam [unw] % 30 >= 25)
 void unuse_randart(unsigned char unw)
 {
 
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 1) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_AC) != 0)
  {
 //  mpr("You feel vulnerable.");
   you[0].AC_ch = 1;
  }
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 2) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_EVASION) != 0)
  {
 //  mpr("You feel like a sitting duck.");
   you[0].evasion_ch = 1;
  }
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_STRENGTH) != 0)
  {
 //  mpr("You feel weak.");
   you[0].strength_ch = 1;
-  you[0].strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3);
-  you[0].max_strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 3);
+  you[0].strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_STRENGTH);
+  you[0].max_strength -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_STRENGTH);
  }
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_INTELLIGENCE) != 0)
  {
 //  mpr("You feel dopey.");
   you[0].intel_ch = 1;
-  you[0].intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4);
-  you[0].max_intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 4);
+  you[0].intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_INTELLIGENCE);
+  you[0].max_intel -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_INTELLIGENCE);
  }
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_DEXTERITY) != 0)
  {
 //  mpr("You feel clumsy.");
   you[0].dex_ch = 1;
-  you[0].dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5);
-  you[0].max_dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 5);
+  you[0].dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_DEXTERITY);
+  you[0].max_dex -= randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_DEXTERITY);
  }
- if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, 8) > 0)
+ if (randart_wpn_properties(you[0].inv_class [unw], you[0].inv_type [unw], you[0].inv_dam [unw], you[0].inv_plus [unw], you[0].inv_plus2 [unw], 0, RAP_ELECTRICITY) != 0)
  {
 //  mpr("You feel vulnerable to electricity.");
-  you[0].attribute [0] --;
+  you[0].attribute [ATTR_RESIST_LIGHTNING] --;
  }
 
 }

@@ -6,6 +6,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #include <string.h>
 

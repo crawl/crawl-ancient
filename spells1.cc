@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "beam.h"
 #include "direct.h"
@@ -25,6 +26,8 @@
 #include "stuff.h"
 #include "view.h"
 #include "it_use2.h"
+
+extern char wield_change; /* defined in output.cc */
 
 void blink(void);
 void random_blink(void);
@@ -60,8 +63,8 @@ void blink(void)
 
 struct dist beam [1];
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
- if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0 && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_PREVENT_TELEPORTATION) > 0)
  {
   mpr("You feel a weird sense of stasis.");
   return;
@@ -90,11 +93,9 @@ if (see_grid(beam[0].target_x, beam[0].target_y) == 0)
 
 if (grd [beam[0].target_x] [beam[0].target_y] <= 10 || mgrd [beam[0].target_x] [beam[0].target_y] != MNG)
 {
-  strcpy(info, "The blink fails. Your body is severely harmed!");
+  strcpy(info, "Oops! Maybe something was there already.");
   mpr(info);
-  if (you[0].deaths_door == 0) you[0].hp = 1;
-  you[0].hp_ch = 1;
-  you_teleport2(0); /* instantaneous teleport */
+  random_blink();
   return;
 }
 
@@ -115,15 +116,15 @@ void random_blink(void)
 {
  int passed [2];
 
-if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
- if (randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 22) > 0)
+if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == 0 && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+ if (randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_PREVENT_TELEPORTATION) > 0)
  {
   mpr("You feel a weird sense of stasis.");
   return;
  }
 
 
- if (you[0].attribute [3] != 0 && you[0].conf == 0)
+ if (you[0].attribute [ATTR_CONTROL_TELEPORT] != 0 && you[0].conf == 0)
  {
   blink();
   return;
@@ -187,7 +188,7 @@ beam[0].move_y = fire_ball[0].move_y;
 beam[0].target_x = fire_ball[0].target_x;
 beam[0].target_y = fire_ball[0].target_y;
 
-zapping(12, power, beam);
+zapping(ZAP_FIREBALL, power, beam);
 
 }
 
@@ -360,15 +361,18 @@ void identify(char pow)
                         item_name(you[0].inv_plus2 [sc_read_2], you[0].inv_class [sc_read_2], you[0].inv_type [sc_read_2], you[0].inv_dam [sc_read_2], you[0].inv_plus [sc_read_2], you[0].inv_quant [sc_read_2], you[0].inv_ident [sc_read_2], 3, str_pass);
                         strcat(info, str_pass);
 
-                        if (sc_read_2 == you[0].equip [0]) strcat(info, " (weapon in hand)");
-                        if (sc_read_2 == you[0].equip [6]) strcat(info, " (being worn)");
+                        if (sc_read_2 == you[0].equip [EQ_WEAPON])
+                        {
+              strcat(info, " (weapon in hand)");
+              wield_change = 1;
+            }
+                        if (sc_read_2 == you[0].equip [EQ_BODY_ARMOUR]) strcat(info, " (being worn)");
 
-                        if (sc_read_2 == you[0].equip [7]) strcat(info, " (on left hand)");
-                        if (sc_read_2 == you[0].equip [8]) strcat(info, " (on right hand)");
-                        if (sc_read_2 == you[0].equip [9]) strcat(info, " (around neck)");
+                        if (sc_read_2 == you[0].equip [EQ_LEFT_RING]) strcat(info, " (on left hand)");
+                        if (sc_read_2 == you[0].equip [EQ_RIGHT_RING]) strcat(info, " (on right hand)");
+                        if (sc_read_2 == you[0].equip [EQ_AMULET]) strcat(info, " (around neck)");
 
                         mpr(info);
-
 
         id_used -= 1;
 
@@ -563,7 +567,7 @@ if (clouds % 100 == 4) beam[0].colour = LIGHTGREEN;*/
 
                 lasts = 2 + random2(5) + pow / 2;
 
-          if (lasts > 20) lasts = 20 + random2(4);
+          if (lasts > 12) lasts = 12 + random2(4);
 
             if (grd [cl_x + stx] [cl_y + sty] > 10 && env[0].cgrid [cl_x + stx] [cl_y + sty] == CNG)
             {
@@ -778,7 +782,7 @@ strcpy(info, "You seem to hear sand running through an hourglass...");
 mpr(info);
 
 you[0].deaths_door = 8 + random2(5) + random2(5) + random2(5) + random2(pow) / 10;
-you[0].hp = you[0].skills [29] + (you[0].religion == 3) * 13;
+you[0].hp = you[0].skills [SK_NECROMANCY] + (you[0].religion == GOD_KIKUBAAQUDGHA) * 13;
 if (you[0].hp > you[0].hp_max) you[0].hp = you[0].hp_max;
 you[0].hp_ch = 1;
 
@@ -822,40 +826,40 @@ void extension(int pow)
 
 if (you[0].haste > 0)
 {
- potion_effect(2, pow);
+ potion_effect(POT_SPEED, pow);
 }
 
 if (you[0].might > 0)
 {
- potion_effect(3, pow);
+ potion_effect(POT_MIGHT, pow);
 }
 
 if (you[0].lev > 0)
 {
- potion_effect(7, pow);
+ potion_effect(POT_LEVITATION, pow);
 }
 
 if (you[0].invis > 0)
 {
- potion_effect(12, pow);
+ potion_effect(POT_INVISIBILITY, pow);
 }
 
-if (you[0].duration [1] > 0)
+if (you[0].duration [DUR_ICY_ARMOUR] > 0)
 {
  ice_armour(pow, 1);
 }
 
-if (you[0].duration [2] > 0)
+if (you[0].duration [DUR_REPEL_MISSILES] > 0)
 {
  missile_prot(pow);
 }
 
-if (you[0].duration [4] > 0)
+if (you[0].duration [DUR_REGENERATION] > 0)
 {
  cast_regen(pow);
 }
 
-if (you[0].duration [20] > 0)
+if (you[0].duration [DUR_DEFLECT_MISSILES] > 0)
 {
  deflection(pow);
 }
@@ -868,26 +872,26 @@ if (you[0].shock_shield > 0)
  mpr(info);
 }
 
-if (you[0].duration [5] > 0 && you[0].duration [5] < 80) you[0].duration [5] += 10 + random() % 10;
-if (you[0].duration [6] > 0 && you[0].duration [6] < 80) you[0].duration [6] += 10 + random() % 10;
-if (you[0].duration [7] > 0 && you[0].duration [7] < 80) you[0].duration [7] += 10 + random() % 10;
-if (you[0].duration [8] > 0 && you[0].duration [8] < 80) you[0].duration [8] += 10 + random() % 10;
+if (you[0].duration [DUR_VORPAL_BLADE] > 0 && you[0].duration [DUR_VORPAL_BLADE] < 80) you[0].duration [DUR_VORPAL_BLADE] += 10 + random() % 10;
+if (you[0].duration [DUR_FIRE_BRAND] > 0 && you[0].duration [DUR_FIRE_BRAND] < 80) you[0].duration [DUR_FIRE_BRAND] += 10 + random() % 10;
+if (you[0].duration [DUR_ICE_BRAND] > 0 && you[0].duration [DUR_ICE_BRAND] < 80) you[0].duration [DUR_ICE_BRAND] += 10 + random() % 10;
+if (you[0].duration [DUR_LETHAL_INFUSION] > 0 && you[0].duration [DUR_LETHAL_INFUSION] < 80) you[0].duration [DUR_LETHAL_INFUSION] += 10 + random() % 10;
 
-if (you[0].duration [9] > 0) cast_swiftness(pow);
-if (you[0].duration [10] > 0) cast_insulation(pow);
-if (you[0].duration [11] > 0) stone_scales(pow);
-if (you[0].duration [12] > 0) cast_fly(pow);
+if (you[0].duration [DUR_SWIFTNESS] > 0) cast_swiftness(pow);
+if (you[0].duration [DUR_INSULATION] > 0) cast_insulation(pow);
+if (you[0].duration [DUR_STONEMAIL] > 0) stone_scales(pow);
+if (you[0].duration [DUR_CONTROLLED_FLIGHT] > 0) cast_fly(pow);
 // 13 is teleport countdown
-if (you[0].duration [14] > 0) cast_teleport_control(pow);
-if (you[0].duration [16] > 0) cast_resist_poison(pow);
+if (you[0].duration [DUR_CONTROL_TELEPORT] > 0) cast_teleport_control(pow);
+if (you[0].duration [DUR_RESIST_POISON] > 0) cast_resist_poison(pow);
 /* 17 is breath */
-if (you[0].duration [18] > 0)
+if (you[0].duration [DUR_TRANSFORMATION] > 0)
 {
  mpr("Your transformation has been extended.");
- you[0].duration [18] += 10 + random2(pow);
- if (you[0].duration [18] > 100) you[0].duration [18] = 100;
+ you[0].duration [DUR_TRANSFORMATION] += 10 + random2(pow);
+ if (you[0].duration [DUR_TRANSFORMATION] > 100) you[0].duration [DUR_TRANSFORMATION] = 100;
 }
-if (you[0].duration [19] > 0) cast_death_channel(pow);
+if (you[0].duration [DUR_DEATH_CHANNEL] > 0) cast_death_channel(pow);
 
 } // end extension
 
@@ -898,9 +902,9 @@ void ice_armour(int pow, char extending)
 
 int dur_change = 0;
 
-if (you[0].equip [6] != -1 && extending == 0)
+if (you[0].equip [EQ_BODY_ARMOUR] != -1 && extending == 0)
 {
- if (you[0].inv_type [you[0].equip [6]] > 1 && you[0].inv_type [you[0].equip [6]] != 16 && you[0].inv_type [you[0].equip [6]] != 19 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25))
+ if (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > 1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] != 16 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] != 19 && (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < 22 || you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > 25))
  {
   strcpy(info, "You are wearing too much armour.");
   mpr(info);
@@ -908,14 +912,14 @@ if (you[0].equip [6] != -1 && extending == 0)
  }
 }
 
-if (you[0].duration [11] != 0)
+if (you[0].duration [DUR_STONEMAIL] != 0)
 {
  strcpy(info, "The spell conflicts with another spell still in effect.");
  mpr(info);
  return;
 }
 
-if (you[0].duration [1] == 0)
+if (you[0].duration [DUR_ICY_ARMOUR] == 0)
 {
  strcpy(info, "A film of ice covers your body!");
 /* player_AC(you) += 6;*/
@@ -926,12 +930,12 @@ mpr(info);
 
  dur_change = 20 + random2(pow) + random2(pow);
 
- if (dur_change + you[0].duration [1] >= 100) you[0].duration [1] = 100;
-  else you[0].duration [1] += dur_change;
+ if (dur_change + you[0].duration [DUR_ICY_ARMOUR] >= 100) you[0].duration [DUR_ICY_ARMOUR] = 100;
+  else you[0].duration [DUR_ICY_ARMOUR] += dur_change;
 /*
- you[0].duration [1] += 20 + random2(pow) / 2 + random2(pow) / 2;
+ you[0].duration [DUR_ICY_ARMOUR] += 20 + random2(pow) / 2 + random2(pow) / 2;
 
- if (you[0].duration [1] >= 100) you[0].duration [1] = 100;
+ if (you[0].duration [DUR_ICY_ARMOUR] >= 100) you[0].duration [DUR_ICY_ARMOUR] = 100;
 */
 }
 
@@ -942,14 +946,14 @@ void stone_scales(int pow)
 
 int dur_change = 0;
 
-if (you[0].duration [1] != 0)
+if (you[0].duration [DUR_ICY_ARMOUR] != 0)
 {
  strcpy(info, "The spell conflicts with another spell still in effect.");
  mpr(info);
  return;
 }
 
-if (you[0].duration [11] == 0)
+if (you[0].duration [DUR_STONEMAIL] == 0)
 {
  strcpy(info, "A set of stone scales covers your body!");
 /* player_AC(you) += 7;
@@ -962,8 +966,8 @@ mpr(info);
 
  dur_change = 20 + random2(pow) + random2(pow);
 
- if (dur_change + you[0].duration [11] >= 100) you[0].duration [11] = 100;
-  else you[0].duration [11] += dur_change;
+ if (dur_change + you[0].duration [DUR_STONEMAIL] >= 100) you[0].duration [DUR_STONEMAIL] = 100;
+  else you[0].duration [DUR_STONEMAIL] += dur_change;
 
  burden_change();
 
@@ -978,9 +982,9 @@ if (pow > 100) pow = 100;
 strcpy(info, "You feel protected from missiles.");
 mpr(info);
 
- you[0].duration [2] += 10 + random2(pow) + random2(pow);
+ you[0].duration [DUR_REPEL_MISSILES] += 10 + random2(pow) + random2(pow);
 
- if (you[0].duration [2] >= 100) you[0].duration [2] = 100;
+ if (you[0].duration [DUR_REPEL_MISSILES] >= 100) you[0].duration [DUR_REPEL_MISSILES] = 100;
 
 }
 
@@ -992,9 +996,9 @@ if (pow > 100) pow = 100;
 strcpy(info, "You feel very safe from missiles.");
 mpr(info);
 
- you[0].duration [20] += 15 + random2(pow);
+ you[0].duration [DUR_DEFLECT_MISSILES] += 15 + random2(pow);
 
- if (you[0].duration [20] >= 100) you[0].duration [20] = 100;
+ if (you[0].duration [DUR_DEFLECT_MISSILES] >= 100) you[0].duration [DUR_DEFLECT_MISSILES] = 100;
 
 }
 
@@ -1008,7 +1012,7 @@ int dur_change = 0;
 strcpy(info, "Your skin crawls.");
 mpr(info);
 
-if (you[0].duration [4] == 0)
+if (you[0].duration [DUR_REGENERATION] == 0)
 {
 /* you[0].rate_regen += 100; */
  you[0].hunger_inc += 4;
@@ -1016,8 +1020,8 @@ if (you[0].duration [4] == 0)
 
  dur_change = 5 + random2(pow) + random2(pow) + random2(pow);
 
- if (dur_change + you[0].duration [4] >= 100) you[0].duration [4] = 100;
-  else you[0].duration [4] += dur_change;
+ if (dur_change + you[0].duration [DUR_REGENERATION] >= 100) you[0].duration [DUR_REGENERATION] = 100;
+  else you[0].duration [DUR_REGENERATION] += dur_change;
 
 // if (you[0].duration [4] >= 100) you[0].duration [1] = 100;
 
@@ -1038,7 +1042,7 @@ void cast_swiftness(int power)
 
 int dur_incr = 0;
 
- if (you[0].duration [9] == 0)
+ if (you[0].duration [DUR_SWIFTNESS] == 0)
  {
   if (player_fast_run() != 0)
   {
@@ -1048,14 +1052,14 @@ int dur_incr = 0;
 //  you[0].fast_run ++;
  }
 
- if (you[0].species != 13) strcpy(info, "You feel quick on your feet.");
+ if (you[0].species != SP_NAGA) strcpy(info, "You feel quick on your feet.");
    else strcpy(info, "You feel quick.");
  mpr(info);
 
  dur_incr = random2(power) + random2(power) + 20;
 
- if (dur_incr + you[0].duration [9] > 100) you[0].duration [9] = 100;
-   else you[0].duration [9] += dur_incr;
+ if (dur_incr + you[0].duration [DUR_SWIFTNESS] > 100) you[0].duration [DUR_SWIFTNESS] = 100;
+   else you[0].duration [DUR_SWIFTNESS] += dur_incr;
 
 }
 
@@ -1079,8 +1083,8 @@ int dur_change = 0;
  if (you[0].lev + dur_change > 100) you[0].lev = 100;
      else you[0].lev += dur_change;
 
- if (you[0].duration [12] + dur_change > 100) you[0].duration [12] = 100;
-    else you[0].duration [12] += dur_change;
+ if (you[0].duration [DUR_CONTROLLED_FLIGHT] + dur_change > 100) you[0].duration [DUR_CONTROLLED_FLIGHT] = 100;
+    else you[0].duration [DUR_CONTROLLED_FLIGHT] += dur_change;
  /* duration [12] makes the game think you're wearing an amulet of controlled flight */
 
         burden_change();
@@ -1092,9 +1096,9 @@ void cast_insulation(int power)
 
 int dur_incr = 0;
 
- if (you[0].duration [10] == 0)
+ if (you[0].duration [DUR_INSULATION] == 0)
  {
-  you[0].attribute [0] ++;
+  you[0].attribute [ATTR_RESIST_LIGHTNING] ++;
  }
 
  strcpy(info, "You feel insulated.");
@@ -1102,8 +1106,8 @@ int dur_incr = 0;
 
  dur_incr = random2(power) + 10;
 
- if (dur_incr + you[0].duration [10] > 100) you[0].duration [10] = 100;
-   else you[0].duration [10] += dur_incr;
+ if (dur_incr + you[0].duration [DUR_INSULATION] > 100) you[0].duration [DUR_INSULATION] = 100;
+   else you[0].duration [DUR_INSULATION] += dur_incr;
 
 }
 
@@ -1117,8 +1121,8 @@ int dur_incr = 0;
 
  dur_incr = random2(power) + 10;
 
- if (dur_incr + you[0].duration [16] > 100) you[0].duration [16] = 100;
-   else you[0].duration [16] += dur_incr;
+ if (dur_incr + you[0].duration [DUR_RESIST_POISON] > 100) you[0].duration [DUR_RESIST_POISON] = 100;
+   else you[0].duration [DUR_RESIST_POISON] += dur_incr;
 
 }
 
@@ -1127,9 +1131,9 @@ void cast_teleport_control(int power)
 
 int dur_incr = 0;
 
- if (you[0].duration [14] == 0)
+ if (you[0].duration [DUR_CONTROL_TELEPORT] == 0)
  {
-  you[0].attribute [3] ++;
+  you[0].attribute [ATTR_CONTROL_TELEPORT] ++;
  }
 
  strcpy(info, "You feel controlled.");
@@ -1137,8 +1141,8 @@ int dur_incr = 0;
 
  dur_incr = random2(power) + 10;
 
- if (dur_incr + you[0].duration [14] > 100) you[0].duration [14] = 100;
-   else you[0].duration [14] += dur_incr;
+ if (dur_incr + you[0].duration [DUR_CONTROL_TELEPORT] > 100) you[0].duration [DUR_CONTROL_TELEPORT] = 100;
+   else you[0].duration [DUR_CONTROL_TELEPORT] += dur_incr;
 
 }
 

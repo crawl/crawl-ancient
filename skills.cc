@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "macro.h"
 #include "player.h"
 #include "skills.h"
@@ -56,7 +57,7 @@ if (cutting == 1) goto cut_through;
 #endif
 
 // does not yet allow for loss of skill levels.
- if (you[0].exp_available <= 0) return;
+ if (you[0].exp_available <= 0 && (exsk != SK_SPELLCASTING || you[0].skills [SK_SPELLCASTING] > 0)) return;
  if (you[0].skills [exsk] == 27) return; // already maximum
 
  if (you[0].practise_skill [exsk] == 0 && random2(4) != 0) return;
@@ -90,49 +91,99 @@ if (you[0].skills [exsk] >= 10) skill_change *= (you[0].skills [exsk] - 9) / 3;
 
  if (skill_change > 500) skill_change = 500;
 
-/*                itoa(skill_change, st_prn, 10);
-                strcpy(info, "skill_change (1): ");
-                strcat(info, st_prn);
-                mpr(info);*/
+ if (exsk == SK_SPELLCASTING && you[0].skills [SK_SPELLCASTING] < 1)
+    skill_change = 0; /* makes it easier for non-spellcasters to learn
+           spellcasting by reading scrolls. */
 
-
-if (exsk < 8) // being good at some weapons makes others easier to learn:
+// being good at some weapons makes others easier to learn:
+if (exsk < SK_SLINGS)
 {
- if ((exsk == 1 || exsk == 2 || exsk == 3) && (you[0].skills [1] > you[0].skills [exsk] || you[0].skills [2] > you[0].skills [exsk] || you[0].skills [2] > you[0].skills [exsk]))
- {
-  deg += random2(3);
- }
- if ((exsk == 4 || exsk == 6) && (you[0].skills [4] > you[0].skills [exsk] || you[0].skills [6] > you[0].skills [exsk]))
- {
-  deg += random2(3);
- }
- if ((exsk == 6 || exsk == 7) && (you[0].skills [6] > you[0].skills [exsk] || you[0].skills [7] > you[0].skills [exsk]))
- {
-  deg += random2(3);
- }
- if ((exsk == 4 || exsk == 5) && (you[0].skills [4] > you[0].skills [exsk] || you[0].skills [5] > you[0].skills [exsk]))
- {
-  deg += random2(3);
- }
+  /* blades to blades */
+  if (
+       (    exsk == SK_SHORT_BLADES
+         || exsk == SK_LONG_SWORDS
+         || exsk == SK_GREAT_SWORDS
+       )
+     &&
+       (    you[0].skills [SK_SHORT_BLADES] > you[0].skills [exsk]
+         || you[0].skills [SK_LONG_SWORDS]  > you[0].skills [exsk]
+         || you[0].skills [SK_GREAT_SWORDS]  > you[0].skills [exsk]
+       )
+     )
+  {
+    deg += random2(3);
+  }
+
+  /* Axes and Polearms */
+  if (
+       (exsk == SK_AXES || exsk == SK_POLEARMS)
+     &&
+       (    you[0].skills [SK_AXES]     > you[0].skills [exsk]
+         || you[0].skills [SK_POLEARMS] > you[0].skills [exsk]
+       )
+    )
+  {
+    deg += random2(3);
+  }
+
+  /* Polearms and Staves */
+  if (
+       (exsk == SK_POLEARMS || exsk == SK_STAVES)
+     &&
+       (    you[0].skills [SK_POLEARMS] > you[0].skills [exsk]
+         || you[0].skills [SK_STAVES]   > you[0].skills [exsk]
+       )
+    )
+  {
+    deg += random2(3);
+  }
+
+  /* Axes and Maces */
+  if (
+       (exsk == SK_AXES || exsk == SK_MACES_FLAILS)
+     &&
+       (    you[0].skills [SK_AXES]         > you[0].skills [exsk]
+         || you[0].skills [SK_MACES_FLAILS] > you[0].skills [exsk]
+       )
+    )
+  {
+    deg += random2(3);
+  }
 }
 
- if (exsk >= 25)
+ if (exsk >= SK_SPELLCASTING)
  {
   skill_change /= 2;
 
-// being good at elemental magic makes other elements harder to learn:
-  if (exsk >= 33 && exsk <= 36 && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk] || you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
+  // being good at elemental magic makes other elements harder to learn:
+  if (   exsk >= SK_FIRE_MAGIC && exsk <= SK_EARTH_MAGIC
+      && (   you[0].skills [SK_FIRE_MAGIC]  > you[0].skills [exsk]
+          || you[0].skills [SK_ICE_MAGIC]   > you[0].skills [exsk]
+          || you[0].skills [SK_AIR_MAGIC]   > you[0].skills [exsk]
+          || you[0].skills [SK_EARTH_MAGIC] > you[0].skills [exsk]
+         )
+     )
   {
 //   mpr("Bad element 1.");
    if (random2(3) == 0) return;
   }
 
-  if ((exsk == 33 || exsk == 34) && (you[0].skills [33] > you[0].skills [exsk] || you[0].skills [34] > you[0].skills [exsk]))
+  // some are direct opposites
+  if (   (exsk == SK_FIRE_MAGIC || exsk == SK_ICE_MAGIC)
+      && (   you[0].skills [SK_FIRE_MAGIC] > you[0].skills [exsk]
+          || you[0].skills [SK_ICE_MAGIC]  > you[0].skills [exsk]
+         )
+     )
   {
 //   mpr("Bad element 2.");
    if (random2(3) != 0) return; // of course, this is cumulative with the one above.
   }
-  if ((exsk == 35 || exsk == 36) && (you[0].skills [35] > you[0].skills [exsk] || you[0].skills [36] > you[0].skills [exsk]))
+
+  if (   (exsk == SK_AIR_MAGIC || exsk == SK_EARTH_MAGIC)
+      && (   you[0].skills [SK_AIR_MAGIC]   > you[0].skills [exsk]
+          || you[0].skills [SK_EARTH_MAGIC] > you[0].skills [exsk]
+         )
+     )
   {
 //   mpr("Bad element 3.");
    if (random2(3) != 0) return;
@@ -167,7 +218,7 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
  if (you[0].skill_points [exsk] > (skill_exp_needed(you[0].skills [exsk] + 2) * species_skills(exsk, you[0].species) / 100) && you[0].skills [exsk] < 27)
 //#endif
  {
-/*        if (exsk == 14) player_evasion(you) -= ev_mod();*/
+/*        if (exsk == SK_DODGING) player_evasion(you) -= ev_mod();*/
 
         you[0].skills [exsk] ++;
         strcpy(info, "Your ");
@@ -178,26 +229,23 @@ if (exsk < 8) // being good at some weapons makes others easier to learn:
         calc_hp();
         you[0].hp_ch = 1;
 
-/*        if (exsk == 13) increase_armour_skill();
-        if (exsk == 14) player_evasion(you) += ev_mod();*/
-        if (exsk == 14) you[0].evasion_ch = 1;
+        if (exsk == SK_DODGING) you[0].evasion_ch = 1;
 
-        if (exsk == 17 || exsk == 13 || exsk == 34 || exsk == 36)
+        if (   exsk == SK_SHIELDS   || exsk == SK_ARMOUR
+            || exsk == SK_ICE_MAGIC || exsk == SK_EARTH_MAGIC
+          )
         {
-/*         you[0].shield_class = get_shield_class();*/
          you[0].AC_ch = 1;
-        }
-        if (exsk == 25)
+        } /* ice and earth magic because this can change effects of the
+                        armour spells. */
+        if (exsk == SK_SPELLCASTING)
         {
          you[0].spell_levels += 2;
-//         if (you[0].clas == 2 || you[0].clas == 6) you[0].spell_levels -= 2;
-//         you[0].ep_max ++;
-//         you[0].ep ++;
          you[0].ep_ch = 1;
          calc_ep();
+         if (you[0].skills [exsk] == 1 && best_skill(SK_SPELLCASTING, SK_POISON_MAGIC, 99) == SK_SPELLCASTING)
+          mpr("You're starting to get the hang of this magic thing.");
         }
-/*        if (exsk == 27)
-         you[0].res_magic += 2;*/
 
         if (best_skill(0, 50, 99) != old_best_skill || old_best_skill == exsk)
         {

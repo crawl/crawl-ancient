@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "dot_h.h"
 #include "mutation.h"
@@ -165,17 +166,17 @@ if (random2(250) == 0)
 
 cards(i);
 
-you[0].inv_plus [you[0].equip [0]] --;
-if (you[0].inv_plus [you[0].equip [0]] == 0)
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] --;
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] == 0)
 {
  strcpy(info, "The deck of cards disappears in a puff of smoke.");
  mpr(info);
- unwield_item(you[0].equip [0]);
- you[0].inv_quant [you[0].equip [0]] --;
- if (you[0].inv_quant [you[0].equip [0]] == 0) // can this be false?
+ unwield_item(you[0].equip [EQ_WEAPON]);
+ you[0].inv_quant [you[0].equip [EQ_WEAPON]] --;
+ if (you[0].inv_quant [you[0].equip [EQ_WEAPON]] == 0) // can this be false?
  {
                 you[0].inv_no --;
-                you[0].equip [0] = -1;
+                you[0].equip [EQ_WEAPON] = -1;
                 strcpy(info, "You are now empty handed.");
                 mpr(info);
  }
@@ -206,7 +207,7 @@ break;
 case 1:
 mpr("You have drawn the Butterfly.");
 mpr("A brightly coloured insect flies from the card!");
-create_monster(66, 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_BUTTERFLY, 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 2:
 mpr("You have drawn the Wraith.");
@@ -309,12 +310,12 @@ mutate(100);
 break;
 case 13: // reaper
 strcpy(info, "Oh no! You have drawn the Death card!");
-if (you[0].duration [13] != 0) you_teleport(); /* heh heh heh */
-create_monster(83, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(83, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(83, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(83, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(83, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+if (you[0].duration [DUR_TELEPORT] != 0) you_teleport(); /* heh heh heh */
+create_monster(MONS_REAPER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_REAPER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_REAPER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_REAPER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_REAPER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 14: // lose mutations
 mpr("You have drawn Normalisation.");
@@ -327,7 +328,7 @@ delete_mutation(100);
 break;
 case 15: // soul eater
 mpr("You have drawn the Shadow.");
-create_monster(84, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_SOUL_EATER, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 16: // gate to abyss
 mpr("You have drawn the Gate!");
@@ -346,7 +347,7 @@ banished(96);
 break;
 case 17: // pet
 mpr("You have drawn the Crystal Statue.");
-create_monster(120, 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+create_monster(MONS_CRYSTAL_GOLEM, 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
 break;
 case 18: // acquirement
 mpr("You have drawn Acquisition!");
@@ -355,55 +356,55 @@ acquirement(250);
 break;
 case 19: // Haste
 mpr("You have drawn Haste.");
-potion_effect(2, 150);
+potion_effect(POT_SPEED, 150);
 break;
 case 20:
 strcpy(info, "On the card is a picture of a little demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(220 + random2(5), 21 + random2(4), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 21:
 strcpy(info, "On the card is a picture of a demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(225 + random2(5), 21 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_NEQOXEC + random2(5), 21 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 22:
 strcpy(info, "On the card is a picture of a huge demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(225 + random2(5), 20 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_NEQOXEC + random2(5), 20 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 23:
 strcpy(info, "On the card is a picture of a swarm of little demons.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 24:
 strcpy(info, "On the card is a picture of a huge shaggy yak.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(134, 25, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_DEATH_YAK, 25, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 25:
 strcpy(info, "On the card is a picture of a huge scaly devil.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(31, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_FIEND, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 26:
 strcpy(info, "On the card is a picture of a huge scaly dragon.");
@@ -411,29 +412,29 @@ mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
 if (random2(2) == 0)
- create_monster(29, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-  else create_monster(75, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ create_monster(MONS_DRAGON, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+  else create_monster(MONS_ICE_DRAGON, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 27:
 strcpy(info, "On the card is a picture of a statue.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(116 + random2(6), 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_CLAY_GOLEM + random2(6), 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 28:
 strcpy(info, "On the card is a picture of a very ugly thing.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(102, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_VERY_UGLY_THING, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 29:
 strcpy(info, "On the card is a picture of a very irritated-looking skeletal thing.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(37, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_LICH, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 30: // unseen horror
 if (player_see_invis() == 0)
@@ -447,7 +448,7 @@ if (player_see_invis() == 0)
  strcpy(info, "The picture comes to life!");
  mpr(info);
 }
-create_monster(46, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_UNSEEN_HORROR, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 31: // Blink
 mpr("You have drawn Blink.");
@@ -467,7 +468,7 @@ if (go_berserk() == 0) mpr("Nothing appears to happen.");
 break;
 case 35:
 mpr("You have drawn Levity.");
-potion_effect(7, 100);
+potion_effect(POT_LEVITATION, 100);
 break;
 case 36:
 mpr("You have drawn Venom.");
@@ -483,7 +484,7 @@ Xom_acts(1, 5 + random2(12), 1);
 break;
 case 38:
 mpr("You have drawn Slowness.");
-potion_effect(9, 100);
+potion_effect(POT_SLOWING, 100);
 break;
 case 39:
 mpr("You have drawn Decay.");
@@ -499,11 +500,11 @@ you[0].rotting += random2(5) + 4;
 break;
 case 40:
 mpr("You have drawn the Elixir of Health.");
-potion_effect(0, 100);
+potion_effect(POT_HEALING, 100);
 break;
 case 41:
 mpr("You have drawn the Symbol of Immediate Regeneration.");
-potion_effect(0, 100);
+potion_effect(POT_HEALING, 100);
 break;
 case 42:
 mpr("You have drawn the Symbol of Torment.");
@@ -519,7 +520,7 @@ if (grd [you[0].x_pos] [you[0].y_pos] == 67)
 break;
 case 44:
 mpr("You have drawn the Altar.");
-if (you[0].religion == 0)
+if (you[0].religion == GOD_NO_GOD)
 {
  mpr("Nothing appears to happen.");
  break;
@@ -548,6 +549,7 @@ if (you[0].is_undead == 2)
  break;
 }
 you[0].hunger = 500;
+food_change();
 break;
 case 46:
 mpr("You have drawn the Feast.");
@@ -557,6 +559,7 @@ if (you[0].is_undead == 2)
  break;
 }
 you[0].hunger = 12000;
+food_change();
 break;
 case 47:
 mpr("You have drawn Wild Magic.");
@@ -712,55 +715,55 @@ break;
 case 1:
 strcpy(info, "It turns into a brightly coloured butterfly!");
 mpr(info);
-create_monster(66, 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_BUTTERFLY, 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 2:
 strcpy(info, "On the card is a picture of a little demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(220 + random2(5), 21 + random2(4), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 3:
 strcpy(info, "On the card is a picture of a demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(225 + random2(5), 21 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_NEQOXEC + random2(5), 21 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 4:
 strcpy(info, "On the card is a picture of a huge demon.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(225 + random2(5), 20 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_NEQOXEC + random2(5), 20 + random2(3), 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 5:
 strcpy(info, "On the card is a picture of a swarm of little demons.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-create_monster(220 + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_WHITE_IMP + random2(5), 21 + random2(4), 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 6:
 strcpy(info, "On the card is a picture of a huge shaggy yak.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(134, 25, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_DEATH_YAK, 25, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 7:
 strcpy(info, "On the card is a picture of a huge scaly devil.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(31, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_FIEND, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 8:
 strcpy(info, "On the card is a picture of a huge scaly dragon.");
@@ -768,29 +771,29 @@ mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
 if (random2(2) == 0)
- create_monster(29, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
-  else create_monster(75, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+ create_monster(MONS_DRAGON, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+  else create_monster(MONS_ICE_DRAGON, 22, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 9:
 strcpy(info, "On the card is a picture of a statue.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(116 + random2(6), 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_CLAY_GOLEM + random2(6), 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 10:
 strcpy(info, "On the card is a picture of a very ugly thing.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(102, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_VERY_UGLY_THING, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 11:
 strcpy(info, "On the card is a picture of a very irritated-looking skeletal thing.");
 mpr(info);
 strcpy(info, "The picture comes to life!");
 mpr(info);
-create_monster(37, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_LICH, 0, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 case 12: // unseen horror
 if (player_see_invis() == 0)
@@ -804,22 +807,22 @@ if (player_see_invis() == 0)
  strcpy(info, "The picture comes to life!");
  mpr(info);
 }
-create_monster(46, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+create_monster(MONS_UNSEEN_HORROR, 21, 7, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 break;
 
 }
 
-you[0].inv_plus [you[0].equip [0]] --;
-if (you[0].inv_plus [you[0].equip [0]] == 0)
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] --;
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] == 0)
 {
  strcpy(info, "The deck of cards disappears in a puff of smoke.");
  mpr(info);
- unwield_item(you[0].equip [0]);
- you[0].inv_quant [you[0].equip [0]] --;
- if (you[0].inv_quant [you[0].equip [0]] == 0) // can this be false?
+ unwield_item(you[0].equip [EQ_WEAPON]);
+ you[0].inv_quant [you[0].equip [EQ_WEAPON]] --;
+ if (you[0].inv_quant [you[0].equip [EQ_WEAPON]] == 0) // can this be false?
  {
         you[0].inv_no --;
-                you[0].equip [0] = -1;
+                you[0].equip [EQ_WEAPON] = -1;
                 strcpy(info, "You are now empty handed.");
                 mpr(info);
  }

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "beam.h"
 #include "bang.h"
@@ -13,6 +14,7 @@
 #include "mstruct.h"
 #include "mstuff2.h"
 #include "player.h"
+#include "spells.h"
 #include "spells2.h"
 #include "stuff.h"
 #include "view.h"
@@ -32,6 +34,7 @@ void mons_trap(int i)
 {
 struct bolt beem [1];
 int damage_taken;
+int func_pass [10];
 
                         int tr;
 
@@ -40,11 +43,16 @@ int damage_taken;
                                 if (env[0].trap_x [tr] == menv [i].m_x && env[0].trap_y [tr] == menv [i].m_y) break;
                         }
 
+                if (env[0].trap_type [tr] < 4 || env[0].trap_type [tr] == 6 || env[0].trap_type [tr] == 7)
+                        {
+                if (mons_flies(menv [i].m_class) == 0) return; /* Flying monsters can avoid mechanical traps, but not magical ones */
+            }
+
                         if (mons_near(i) == 1 && grd [env[0].trap_x [tr]] [env[0].trap_y [tr]] == 78)
                         {
                          grd [env[0].trap_x [tr]] [env[0].trap_y [tr]] -= 3;
                          if (env[0].trap_type [tr] >= 4) grd [env[0].trap_x [tr]] [env[0].trap_y [tr]] ++;
-                         if (env[0].trap_type [tr] == 6) grd [env[0].trap_x [tr]] [env[0].trap_y [tr]] --;
+                         if (env[0].trap_type [tr] == 6 || env[0].trap_type [tr] == 7) grd [env[0].trap_x [tr]] [env[0].trap_y [tr]] --;
                         }
 
                         switch(env[0].trap_type [tr])
@@ -77,6 +85,15 @@ int damage_taken;
                         beem[0].colour = 0;
                         beem[0].type = 9;
                         break;
+
+                        case 7:
+                        strcpy(beem[0].beam_name, " bolt");
+                        beem[0].damage = 13;
+                        beem[0].colour = 1;
+                        beem[0].type = MI_BOLT;
+                        break;
+
+
 
    case 4:
    if (menv [i].m_class == 19 || menv [i].m_class == 56) return;
@@ -120,6 +137,39 @@ int damage_taken;
         menv [i].m_speed_inc = 1;
    }
    return;
+
+   case 8:
+   if (mons_near(i) == 1)
+   {
+         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
+     strcat(info, " enters a Zot trap!");
+     mpr(info);
+   } else mpr("You hear a distant \"Zot\".");
+   /* Zot traps are out to get *YOU*! They benefit hostile monsters and hurt friendly ones */
+   if (menv [i].m_beh == 7)
+   {
+    beem[0].thing_thrown = 2; /* prob unnecessary */
+    beem[0].colour = 0; /* default: slow it */
+    if (random2(4) == 0) beem[0].colour = 3; /* Or paralyse it. */
+    if (random2(4) == 0) beem[0].colour = 4; /* Or confuse it. */
+    mons_ench_f2(i, mons_near(i), func_pass, beem);
+    return;
+   }
+   /* Okay! Now, what nice thing can we do to the monster? */
+   beem[0].thing_thrown = 2; /* prob unnecessary */
+   beem[0].colour = 2; /* default: heal it */
+   if (random2(4) == 0) beem[0].colour = 1; /* Maybe we can haste it instead. */
+   if (random2(4) == 0) beem[0].colour = 5; /* Or even turn it invisible. */
+   if (random2(5) == 0 && mons_near(i) == 1) /* Or let it attack you with wild magic. */
+   {
+      mpr("The power of Zot is invoked against you.");
+      miscast_effect(10 + random2(15), random2(30) + 10, 75 + random2(100), 0);
+      return;
+   }
+   mons_ench_f2(i, mons_near(i), func_pass, beem);
+   return;
+
+
 
 
                         } // end of switch
@@ -207,8 +257,8 @@ switch(spell_cast)
 case 21: // vampire summoning
  sumcount2 = random2(4) + 1;
  for (sumcount = 0; sumcount < sumcount2; sumcount ++)
- if (random2(3) != 0) create_monster(1, 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
-    else create_monster(17, 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+ if (random2(3) != 0) create_monster(MONS_GIANT_BAT, 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+    else create_monster(MONS_RAT, 24, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
         return;
 
 
@@ -226,7 +276,7 @@ case 24: // summon anything appropriate for level
 case 25: // summon fake R
   sumcount2 = random2(2) + 1;
  for (sumcount = 0; sumcount < sumcount2; sumcount ++)
-                        create_monster(78, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+                        create_monster(MONS_FAKE_RAKSHASA, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
                         return;
 
 case 27: // summon demon
@@ -252,7 +302,7 @@ case 33: // summon lesser demon
     return;
 
 case 34: // summon LIGHTCYAN lesser demon
-        create_monster(222, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+        create_monster(MONS_UFETUBUS, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
     return;
 
 /*case 37: // summon any demon
@@ -261,7 +311,7 @@ case 34: // summon LIGHTCYAN lesser demon
 
 
 case 36: // Geryon
- create_monster(88, 23, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+ create_monster(MONS_BEAST, 23, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
  return;
 
 case 42: // summon undead around player

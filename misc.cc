@@ -12,6 +12,7 @@
 
 #include "direct.h"
 #include "externs.h"
+#include "enum.h"
 #include "files.h"
 #include "fight.h"
 #include "items.h"
@@ -26,6 +27,7 @@
 #include "player.h"
 #include "shopping.h"
 #include "skills.h"
+#include "spells.h"
 #include "spells1.h"
 #include "skills2.h"
 #include "spells3.h"
@@ -113,7 +115,7 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
                 if (mitm.iquant [o] == 0)
                 {
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 4;
+                        mitm.iclass [o] = OBJ_FOOD;
                         mitm.iplus [o] = mcls;
                         mitm.iplus2 [o] = 0;
                         mitm.itype [o] = 21;
@@ -143,7 +145,7 @@ void place_chunks(int mcls, unsigned char rot_status, unsigned char chx, unsigne
 
 }*/
 
-if ((mcls == 29 || mcls == 45 || mcls == 75 || mcls == 101 || mcls == 122 || mcls == 132 || mcls == 146 || mcls == 171) && random2(3) != 0)
+if ((mcls == MONS_DRAGON || mcls == MONS_TROLL || mcls == MONS_ICE_DRAGON || mcls == MONS_STEAM_DRAGON || mcls == MONS_MOTTLED_DRAGON || mcls == MONS_STORM_DRAGON || mcls == MONS_GOLDEN_DRAGON || mcls == MONS_SWAMP_DRAGON) && random2(3) != 0)
 {
 // this places skins of various creatures, which are classed as armour and can be enchanted to become special magical armours.
         for (o = 0; o < ITEMS; o++)
@@ -155,75 +157,75 @@ if ((mcls == 29 || mcls == 45 || mcls == 75 || mcls == 101 || mcls == 122 || mcl
           mitm.ilink [o] = 501;
           switch(mcls)
           {
-                case 29: // dragon scales
+                case MONS_DRAGON: // dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 15;
+                        mitm.itype [o] = ARM_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = GREEN;
                 break;
-                case 45: // troll hide
+                case MONS_TROLL: // troll hide
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 16;
+                        mitm.itype [o] = ARM_TROLL_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = BROWN;
                 break;
-                case 75: // ice dragon scales
+                case MONS_ICE_DRAGON: // ice dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 20;
+                        mitm.itype [o] = ARM_ICE_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = WHITE;
                 break;
-                case 101: // steam dragon scales
+                case MONS_STEAM_DRAGON: // steam dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 22;
+                        mitm.itype [o] = ARM_STEAM_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = LIGHTGREY;
                 break;
-                case 122: // mottled dragon scales
+                case MONS_MOTTLED_DRAGON: // mottled dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 24;
+                        mitm.itype [o] = ARM_MOTTLED_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = LIGHTMAGENTA;
                 break;
-                case 132: // storm dragon scales
+                case MONS_STORM_DRAGON: // storm dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 26;
+                        mitm.itype [o] = ARM_STORM_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = LIGHTBLUE;
                 break;
-                case 146: // golden dragon scales
+                case MONS_GOLDEN_DRAGON: // golden dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 28;
+                        mitm.itype [o] = ARM_GOLD_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = YELLOW;
                 break;
-                case 171: // swamp dragon scales
+                case MONS_SWAMP_DRAGON: // swamp dragon scales
                         mitm.iid [o] = 0;
-                        mitm.iclass [o] = 2;
+                        mitm.iclass [o] = OBJ_ARMOUR;
                         mitm.iplus [o] = 50;
                         mitm.iplus2 [o] = 0;
-                        mitm.itype [o] = 31;
+                        mitm.itype [o] = ARM_SWAMP_DRAGON_HIDE;
                         mitm.idam [o] = 0;
                         mitm.icol [o] = BROWN;
                 break;
@@ -259,21 +261,21 @@ for (srx = you[0].x_pos - 1; srx < you[0].x_pos + 2; srx ++)
  for (sry = you[0].y_pos - 1; sry < you[0].y_pos + 2; sry ++)
  {
   // don't exclude own square; may be levitating
-  if (grd [srx] [sry] == 5 && random2(17) <= you[0].skills [18] + 1) //) >= chance_found)
+  if (grd [srx] [sry] == 5 && random2(17) <= you[0].skills [SK_TRAPS_DOORS] + 1) //) >= chance_found)
   {
    grd [srx] [sry] = 3;
    strcpy(info, "You found a secret door!");
    mpr(info);
-   exercise(18, 1 + random2(2));
+   exercise(SK_TRAPS_DOORS, 1 + random2(2));
   }
-  if (grd [srx] [sry] == 78 && random2(17) <= you[0].skills [18] + 1)
+  if (grd [srx] [sry] == 78 && random2(17) <= you[0].skills [SK_TRAPS_DOORS] + 1)
   {
                         for (i = 0; i < NTRAPS; i ++)
                         {
                                 if (env[0].trap_x [i] == srx && env[0].trap_y [i] == sry) break;
                         }
-                        if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6) grd [srx] [sry] = 75;
-                        if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5) grd [srx] [sry] = 76;
+                        if (env[0].trap_type [i] < 4 || env[0].trap_type [i] == 6 || env[0].trap_type [i] == 7) grd [srx] [sry] = 75;
+                        if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5 || env[0].trap_type [i] == 8) grd [srx] [sry] = 76;
    strcpy(info, "You found a trap!");
    mpr(info);
   }
@@ -297,22 +299,20 @@ switch(env[0].cloud_type [cl] % 100)
         mpr(info);
         if (player_res_fire() <= 100)
         {
-                //strcat(info, "!");
-                //mpr(info);
-                hurted += ((random2(5) + random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
-    if (player_res_fire() < 100) hurted += ((random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
-  hurted -= random2(player_AC());
-  if (hurted <= 0) hurted = 0;
+                hurted += ((random2(10) + random2(10) + random2(5) + 10) * you[0].time_taken) / 10;
+                            if (player_res_fire() < 100) hurted += ((random2(10) + random2(5) + 3) * you[0].time_taken) / 10;
+                            hurted -= random2(player_AC());
+                            if (hurted <= 0) hurted = 0;
                 ouch(hurted, cl, 2);
         } else
         {
                 strcpy(info, "You resist.");
                 mpr(info);
-                hurted += ((random2(5) + random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
+                hurted += ((random2(10) + random2(10) + random2(5) + 10) * you[0].time_taken) / 10;
                 hurted /= 2 + (player_res_fire() - 100) * (player_res_fire() - 100);
                 ouch(hurted, cl, 2);
         }
-       scrolls_burn(7, 6);
+        scrolls_burn(7, 6);
         break;
 
    case 2:
@@ -320,11 +320,9 @@ switch(env[0].cloud_type [cl] % 100)
    strcpy(info, "You are engulfed in noxious fumes!");
    mpr(info);
    if (player_res_poison() != 0) break;
-//   ouch(random2(3) * (float) (you[0].time_taken / 10), cl, 2);
-                hurted += (random2(3) * you[0].time_taken) / 10;
-//  hurted -= random2(player_AC());
+   hurted += (random2(3) * you[0].time_taken) / 10;
    if (hurted <= 0) hurted = 0;
-                ouch((hurted * you[0].time_taken) / 10, cl, 2);
+   ouch((hurted * you[0].time_taken) / 10, cl, 2);
    if (random2(27) + 1 >= you[0].xl)
    {
      mpr("You choke on the stench!");
@@ -333,23 +331,20 @@ switch(env[0].cloud_type [cl] % 100)
    break;
 
         case 3:
-        strcpy(info, "You are engulfed in freezing vapours");
+        strcpy(info, "You are engulfed in freezing vapours!");
         mpr(info);
         if (player_res_cold() <= 100)
         {
-                strcat(info, "!");
-                mpr(info);
-//              ouch((random2(5) + random2(5) + random2(5) + 3) * (float) (you[0].time_taken / 10), cl, 2);
-                hurted += ((random2(5) + random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
-    if (player_res_cold() < 100) hurted += ((random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
-  hurted -= random2(player_AC());
-  if (hurted <= 0) hurted = 0;
+                hurted += ((random2(10) + random2(10) + random2(5) + 10) * you[0].time_taken) / 10;
+                            if (player_res_cold() < 100) hurted += ((random2(10) + random2(5) + 3) * you[0].time_taken) / 10;
+                            hurted -= random2(player_AC());
+                            if (hurted <= 0) hurted = 0;
                 ouch((hurted * you[0].time_taken) / 10, cl, 2);
         } else
         {
                 strcpy(info, "You resist.");
                 mpr(info);
-                hurted += ((random2(5) + random2(5) + random2(5) + 3) * you[0].time_taken) / 10;
+                hurted += ((random2(10) + random2(10) + random2(5) + 10) * you[0].time_taken) / 10;
                 hurted /= 2 + (player_res_cold() - 100) * (player_res_cold() - 100);
                 ouch(hurted, cl, 2);
         }
@@ -361,7 +356,7 @@ switch(env[0].cloud_type [cl] % 100)
    strcpy(info, "You are engulfed in poison gas!");
    mpr(info);
    if (player_res_poison() != 0) break;
-   ouch((random2(3) * you[0].time_taken) / 10, cl, 2);
+   ouch((random2(10) * you[0].time_taken) / 10, cl, 2);
    you[0].poison ++;
    break;
 
@@ -375,12 +370,12 @@ switch(env[0].cloud_type [cl] % 100)
    case 8:
    strcpy(info, "You are engulfed in a cloud of scalding steam!");
    mpr(info);
-   if (you[0].species == 26 && you[0].xl >= 6)
+   if (you[0].species == SP_PALE_DRACONIAN && you[0].xl >= 6)
    {
     mpr("It doesn't seem to affect you.");
     return;
    }
-   if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 23)
+   if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_STEAM_DRAGON_ARMOUR)
    {
     mpr("It doesn't seem to affect you.");
     return;
@@ -400,7 +395,7 @@ switch(env[0].cloud_type [cl] % 100)
    if (hurted <= 0) hurted = 0;
    you[0].hp -= hurted;
    ouch(hurted, cl, 2);
-   potion_effect(9, 5);
+   potion_effect(POT_SLOWING, 5);
    if (you[0].hp_max > 4)
    {
     you[0].base_hp -= random2(2);
@@ -499,6 +494,7 @@ if (you[0].where_are_you > 0 && you[0].where_are_you != 3 && you[0].where_are_yo
  you[0].where_are_you = 3;
  you[0].your_level = 27;
 }
+
 switch(stair_find)
 {
  case 130:
@@ -534,6 +530,7 @@ char stair_taken = stair_find;
 char moving_level = 1;
 char want_followers = 1;
 /*load(stair_taken, moving_level, level_saved, was_a_labyrinth, old_level, want_followers, just_made_new_lev);*/
+if (you[0].where_are_you == 3) you[0].your_level = 27;
 load(stair_taken, moving_level, 0, old_level, want_followers, 0, old_level_where);
 moving_level = 0;
 
@@ -627,7 +624,7 @@ if (stair_find == 98)
 }
 
 
-if (you[0].lev != 0 && wearing_amulet(42) == 0)
+if (you[0].lev != 0 && wearing_amulet(AMU_CONTROLLED_FLIGHT) == 0)
 {
         strcpy(info, "You're floating high up above the floor!");
         mpr(info);
@@ -638,7 +635,7 @@ if (stair_find == 117)
 {
  for (i = 0; i < 52; i ++)
  {
-  if (you[0].inv_class [i] == 13 && you[0].inv_type [i] == 14) goto out_of_rune;
+  if (you[0].inv_class [i] == OBJ_MISCELLANY && you[0].inv_type [i] == MISC_RUNE_OF_ZOT) goto out_of_rune;
  }
  mpr("You need a Rune to enter this staircase.");
  return;
@@ -779,7 +776,7 @@ more();
 if (grd [you[0].x_pos] [you[0].y_pos] == 97 || grd [you[0].x_pos] [you[0].y_pos] == 100)
 {
  leaving_abyss = 1; /* or pan */
- you[0].your_level --;
+// you[0].your_level --;
  strcpy(info, "You pass through the gate, and find yourself at the top of a staircase.");
  mpr(info);
  more();
@@ -792,8 +789,8 @@ int stair_taken = stair_find;
 //unsigned char save_old = 1;
 unsigned char moving_level = 1;
 unsigned char want_followers = 1;
-if (you[0].level_type == 1 || you[0].level_type == 2) stair_find = 81;
-if (you[0].level_type == 3) stair_find = 101;
+if (you[0].level_type == 1 || you[0].level_type == 2) stair_taken = 67; //81;
+if (you[0].level_type == 3) stair_taken = 101;
 
 if (remove_stairs == 1)
 {
@@ -947,38 +944,38 @@ void new_level(void)
  }
  else
  {
-// if (you[0].where_are_you != 3)
+ if (you[0].where_are_you != 3)
                 cprintf(temp_quant);
 
  switch(you[0].where_are_you)
  {
  case 0:
- cprintf(" of the Dungeon         ");
+ cprintf(" of the Dungeon           ");
  break;
  case 1:
   env[0].floor_colour = CYAN;
   env[0].rock_colour = CYAN;
-  cprintf(" of Dis              ");
+  cprintf(" of Dis                   ");
  break;
  case 2:
    env[0].floor_colour = DARKGREY;
    env[0].rock_colour = RED;
-   cprintf(" of Gehenna           ");
+   cprintf(" of Gehenna               ");
  break;
  case 3:
    env[0].floor_colour = LIGHTGREY;
    env[0].rock_colour = LIGHTGREY;
-   cprintf("the Vestibule of Hell          ");
+   cprintf("- the Vestibule of Hell            ");
  break;
  case 4:
    env[0].floor_colour = LIGHTBLUE;
    env[0].rock_colour = LIGHTCYAN;
-   cprintf(" of Cocytus                  ");
+   cprintf(" of Cocytus                   ");
  break;
  case 5:
    env[0].floor_colour = DARKGREY;
    env[0].rock_colour = DARKGREY;
-   cprintf(" of Tartarus              ");
+   cprintf(" of Tartarus                ");
  break;
  case 6:
    env[0].floor_colour = LIGHTRED;
@@ -1089,7 +1086,7 @@ int damage_taken = 0;
                                 mpr(info);
                                 return;
                         }
-                        if (you[0].equip [5] != -1) exercise(17, (random2(3)) / 2);
+                        if (you[0].equip [EQ_SHIELD] != -1) exercise(SK_SHIELDS, (random2(3)) / 2);
                         strcpy(info, "A");
                         strcat(info, beam[0].beam_name);
                         strcat(info, " shoots out and ");
@@ -1114,8 +1111,8 @@ int damage_taken = 0;
                                 mpr(info);
                         }
 
-                        if ((you[0].equip [6] == -1 || you[0].inv_type [you[0].equip [6]] < 2 || (you[0].inv_type [you[0].equip [6]] >= 22 && you[0].inv_type [you[0].equip [6]] <= 25) || you[0].inv_dam [you[0].equip [6]] / 30 == 4) && random2(2) == 0) /* && move_x != 0 || move_y != 0) */
-                         exercise(14, 1);
+                        if ((you[0].equip [EQ_BODY_ARMOUR] == -1 || you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < ARM_RING_MAIL || (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] >= ARM_STEAM_DRAGON_HIDE && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] <= ARM_MOTTLED_DRAGON_ARMOUR) || you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] / 30 == 4) && random2(2) == 0) /* && move_x != 0 || move_y != 0) */
+                         exercise(SK_DODGING, 1);
 
                         out_of_trap : beam[0].bx = you[0].x_pos;
                         beam[0].by = you[0].y_pos;
@@ -1144,12 +1141,12 @@ void itrap(struct bolt beam [1], int trapped)
                         {
                                 case 0: //dart
                                 beam[0].colour = 1; // class
-                                beam[0].damage = 3; // type
+                                beam[0].damage = MI_DART; // type
                                 break;
 
                                 case 1: // arrow
                                 beam[0].colour = 1;
-                                beam[0].damage = 1;
+                                beam[0].damage = MI_ARROW;
                                 break;
 
                                 case 2: //spear
@@ -1161,6 +1158,12 @@ void itrap(struct bolt beam [1], int trapped)
                                 beam[0].colour = 0;
                                 beam[0].damage = 9;
                                 break;
+
+                                case 7: // bolt
+                                beam[0].colour = 1;
+                                beam[0].damage = MI_BOLT;
+                                break;
+
 
                                 default:
                                 getch();
@@ -1202,11 +1205,11 @@ mpr(info);
 for (cull = 0; cull < ITEMS; cull ++)
 {
  if (mitm.iquant [cull] <= 0) continue;
- if (mitm.iclass [cull] == 14) destroy_item(cull);
- if (mitm.iclass [cull] == 1 && mitm.iquant [cull] < 3) destroy_item(cull);
- if (mitm.iclass [cull] == 4 && mitm.itype [cull] == 21) destroy_item(cull);
- if (mitm.iclass [cull] == 3 && mitm.iplus [cull] == 0) destroy_item(cull);
- if (mitm.iclass [cull] == 0 && mitm.iplus [cull] % 100 == 50 && random2(3) == 0) destroy_item(cull);
+ if (mitm.iclass [cull] == OBJ_CORPSES) destroy_item(cull);
+ if (mitm.iclass [cull] == OBJ_MISSILES && mitm.iquant [cull] < 3) destroy_item(cull);
+ if (mitm.iclass [cull] == OBJ_FOOD && mitm.itype [cull] == FOOD_CHUNK) destroy_item(cull);
+ if (mitm.iclass [cull] == OBJ_WANDS && mitm.iplus [cull] == 0) destroy_item(cull);
+ if (mitm.iclass [cull] == OBJ_WEAPONS && mitm.iplus [cull] % 100 == 50 && random2(3) == 0) destroy_item(cull);
 }
 
 } // end cull_items
@@ -1233,6 +1236,14 @@ switch (trt)
   strcpy(info, "A huge blade swings out and slices into you!");
   mpr(info);
   ouch(10 + random2(15) + random2(15) - random2(player_AC() + 1), 0, 10);
+ break;
+
+ case 8: /* Zot trap! */
+ if (trap_known == 1)
+ {
+  mpr("You enter the Zot trap.");
+ } else mpr("Oh no! You have blundered into a Zot trap!");
+ miscast_effect(10 + random2(15), random2(30) + 10, 75 + random2(100), 3);
  break;
 
 }
@@ -1308,14 +1319,14 @@ for (i = 0; i < NTRAPS; i ++)
  }
 }
 
-if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5)
+if (env[0].trap_type [i] == 4 || env[0].trap_type [i] == 5 || env[0].trap_type [i] == 8)
 {
         strcpy(info, "You can't disarm that trap.");
         mpr(info);
         return;
 }
 
-if (random2(you[0].skills [18] + 5) <= 3) // && you[0].clas != 3)
+if (random2(you[0].skills [SK_TRAPS_DOORS] + 5) <= 3) // && you[0].clas != 3)
 {
         strcpy(info, "You failed to disarm the trap.");
         mpr(info);
@@ -1324,7 +1335,7 @@ if (random2(you[0].skills [18] + 5) <= 3) // && you[0].clas != 3)
         {
           disa[0].move_x = 0; disa[0].move_y = 0;
         }*/
-        if (random2(2) == 0) exercise(18, 1);
+        if (random2(2) == 0) exercise(SK_TRAPS_DOORS, 1);
         return;
 }
 
@@ -1337,7 +1348,7 @@ struct bolt beam [1];
 beam[0].bx = you[0].x_pos + disa[0].move_x;
 beam[0].by = you[0].y_pos + disa[0].move_y;
 
-if (env[0].trap_type [i] <= 3)
+if (env[0].trap_type [i] <= 3 || env[0].trap_type [i] == 7)
 {
  for (j = 0; j < 20; j ++)
  {
@@ -1352,7 +1363,7 @@ env[0].trap_type [i] = 100;
 
 you[0].turnover = 1;
 
-exercise(18, 5 + random2(5));
+exercise(SK_TRAPS_DOORS, 5 + random2(5));
 
 }
 
@@ -1614,7 +1625,7 @@ return;
 char go_berserk(void)
 {
   if (you[0].berserker != 0 || you[0].slow != 0) return 0;
-  if (you[0].is_undead == 2 || you[0].species == 35) return 0;
+  if (you[0].is_undead == 2 || you[0].species == SP_GHOUL) return 0;
   strcpy(info, "A red film seems to cover your vision as you go berserk!");
   mpr(info);
   strcpy(info, "You feel yourself moving faster!");

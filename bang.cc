@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "fight.h"
 
 #include "bang.h"
@@ -91,6 +92,30 @@ void explosion1(struct bolt beam [1])
         else strcpy(info, "You hear an explosion.");
                 mpr(info);
         exsize = 0;
+        }
+
+        if (stricmp(beam[0].beam_name, "metal orb") == 0)
+        {
+        if (see_grid(beam[0].bx, beam[0].by) == 1 || (you[0].x_pos == beam[0].bx && you[0].y_pos == beam[0].by)) strcpy(info, "The orb explodes into a blast of deadly shrapnel!");
+        else strcpy(info, "You hear an explosion!");
+                mpr(info);
+        strcpy(beam[0].beam_name, "blast of shrapnel");
+                beam[0].type = '#';
+                beam[0].damage += 100; // it should already be set for this.
+                beam[0].flavour = 19; /* sets it from pure damage to shrapnel, which is absorbed extra by armour */
+        exsize = 0;
+        }
+
+        if (stricmp(beam[0].beam_name, "great blast of cold") == 0)
+        {
+        if (see_grid(beam[0].bx, beam[0].by) == 1 || (you[0].x_pos == beam[0].bx && you[0].y_pos == beam[0].by)) strcpy(info, "The blast explodes into a great storm of ice!");
+         else strcpy(info, "You hear a raging storm!");
+                mpr(info);
+        strcpy(beam[0].beam_name, "ice storm");
+                beam[0].type = '#';
+                beam[0].damage += 100; // it should already be set for this.
+        beam[0].colour = WHITE;
+        exsize = 1;
         }
 
 
@@ -334,9 +359,9 @@ void explosion(char ex_size, struct bolt beam [1])
                                         hurted -= random2(player_AC() + 1);
                                         hurted -= random2(player_AC() + 1);
                                 }
-                                if (you[0].equip [6] != -1)
-                                if (random() % 1000 <= mass(2, you[0].inv_type [you[0].equip [6]]) && random() % 4 == 0)
-                                exercise(13, 1);
+                                if (you[0].equip [EQ_BODY_ARMOUR] != -1)
+                                if (random() % 1000 <= mass(OBJ_ARMOUR, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]]) && random() % 4 == 0)
+                                exercise(SK_ARMOUR, 1);
 
                                 if (hurted <= 0) hurted = 0;
                                 strcat(info, "!");
@@ -377,7 +402,12 @@ void explosion(char ex_size, struct bolt beam [1])
                                         env[0].cloud_no--;
 
                                 }
-                        }
+                        } else
+                                if (stricmp(beam[0].beam_name, "ice storm") == 0)
+                                {
+                 place_cloud(3, beam[0].bx, beam[0].by, 2 + random2(3) + random2(3));
+                                }
+
 
 
                         int o = 0;
@@ -419,8 +449,8 @@ void explosion(char ex_size, struct bolt beam [1])
 
                                         if (menv [o].m_beh == 7)
                                         {
-                                if (beam[0].thing_thrown == 2 && hurted > 0) menv [o].m_beh = 1;
-                                        } else menv [o].m_beh = 1;
+                                if ((beam[0].thing_thrown == 3 || beam[0].thing_thrown == 1) && hurted > 0) menv [o].m_beh = 1;
+                                        } // else menv [o].m_beh = 1;
 
                                         if (menv [o].m_hp <= 0)
                                         {

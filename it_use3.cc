@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "it_use2.h"
 #include "item_use.h"
 #include "spells.h"
@@ -40,9 +41,12 @@ extern unsigned char wield_change; /* defined in output.cc */
 void special_wielded(void)
 {
 
+int old_plus;
+int old_plus2;
+
 switch(you[0].special_wield)
 {
-case 1:
+case SPWLD_SING:
 if (random2(20) == 0)
 {
  strcpy(info, "The Singing Sword ");
@@ -86,54 +90,63 @@ if (random2(20) == 0)
 break;
 
 
-case 3: // scythe of Curses
+case SPWLD_CURSE: // scythe of Curses
 if (random2(30) == 0) curse_an_item(0, 0);
 break;
 
-case 4: // mace of variability
-if (you[0].inv_plus [you[0].equip [0]] > 100) you[0].inv_plus [you[0].equip [0]] -= 100;
+case SPWLD_VARIABLE: // mace of variability
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] > 100) you[0].inv_plus [you[0].equip [EQ_WEAPON]] -= 100;
 if (random2(5) != 0) break;
-you[0].inv_plus [you[0].equip [0]] += random2(2);
-you[0].inv_plus [you[0].equip [0]] -= random2(2);
-you[0].inv_plus2 [you[0].equip [0]] += random2(2);
-you[0].inv_plus2 [you[0].equip [0]] -= random2(2);
-if (you[0].inv_plus [you[0].equip [0]] < 46) you[0].inv_plus [you[0].equip [0]] = 46;
-if (you[0].inv_plus [you[0].equip [0]] > 57) you[0].inv_plus [you[0].equip [0]] = 57;
-if (you[0].inv_plus2 [you[0].equip [0]] < 46) you[0].inv_plus2 [you[0].equip [0]] = 46;
-if (you[0].inv_plus2 [you[0].equip [0]] > 57) you[0].inv_plus2 [you[0].equip [0]] = 57;
-you[0].inv_col [you[0].equip [0]] = random2(15) + 1;
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] += random2(2);
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] -= random2(2);
+you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] += random2(2);
+you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] -= random2(2);
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] < 46) you[0].inv_plus [you[0].equip [EQ_WEAPON]] = 46;
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] > 57) you[0].inv_plus [you[0].equip [EQ_WEAPON]] = 57;
+if (you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] < 46) you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] = 46;
+if (you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] > 57) you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] = 57;
+you[0].inv_col [you[0].equip [EQ_WEAPON]] = random2(15) + 1;
+wield_change = 1;
 wield_change = 1;
 break;
 
 // 5 - glaive
 
-case 6: // mace of torment
+case SPWLD_TORMENT: // mace of torment
 if (random2(200) == 0) torment();
 break;
 
-case 7:
+case SPWLD_ZONGULDROK:
 if (random2(5) == 0) animate_dead(1 + random2(3), 1, MHITYOU, 1);
 break;
 
-case 8:
-you[0].inv_plus [you[0].equip [0]] = 47 + you[0].hp / 11;
-you[0].inv_plus2 [you[0].equip [0]] = 47 + you[0].hp / 11;
+case SPWLD_POWER:
+old_plus = you[0].inv_plus [you[0].equip [EQ_WEAPON]];
+old_plus2 = you[0].inv_plus2 [you[0].equip [EQ_WEAPON]];
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] = 47 + you[0].hp / 11;
+you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] = 47 + you[0].hp / 11;
+if (old_plus != you[0].inv_plus [you[0].equip [EQ_WEAPON]] || old_plus2 != you[0].inv_plus2 [you[0].equip [EQ_WEAPON]])
+  wield_change = 1;
 break;
 
-case 9:
+case SPWLD_WUCAD_MU:
+old_plus = you[0].inv_plus [you[0].equip [EQ_WEAPON]];
+old_plus2 = you[0].inv_plus2 [you[0].equip [EQ_WEAPON]];
 if (you[0].intel > 25)
 {
- you[0].inv_plus [you[0].equip [0]] = 72;
- you[0].inv_plus2 [you[0].equip [0]] = 63;
+ you[0].inv_plus [you[0].equip [EQ_WEAPON]] = 72;
+ you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] = 63;
 } else
 {
- you[0].inv_plus [you[0].equip [0]] = 47 + you[0].intel;
- you[0].inv_plus2 [you[0].equip [0]] = 50 + you[0].intel / 2;
+ you[0].inv_plus [you[0].equip [EQ_WEAPON]] = 47 + you[0].intel;
+ you[0].inv_plus2 [you[0].equip [EQ_WEAPON]] = 50 + you[0].intel / 2;
 }
+if (old_plus != you[0].inv_plus [you[0].equip [EQ_WEAPON]] || old_plus2 != you[0].inv_plus2 [you[0].equip [EQ_WEAPON]])
+  wield_change = 1;
 break;
 
-case 50: // shadow lamp
-if (random2(8) <= 0 + player_spec_death()) create_monster(63, 21, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+case SPWLD_SHADOW: // shadow lamp
+if (random2(8) <= 0 + player_spec_death()) create_monster(MONS_SHADOW, 21, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
 //naughty(5, 1);
 show_green = DARKGREY;
 break;
@@ -141,7 +154,7 @@ break;
 case 51: /* randart makes noises */
 if (random2(20) == 0)
 {
- in_name(you[0].equip [0], 4, str_pass);
+ in_name(you[0].equip [EQ_WEAPON], 4, str_pass);
  strcpy(info, str_pass);
  strcat(info, " lets out a weird humming sound.");
  mpr(info);
@@ -152,7 +165,7 @@ break;
 case 52: /* randart makes noises */
 if (random2(20) == 0)
 {
- in_name(you[0].equip [0], 4, str_pass);
+ in_name(you[0].equip [EQ_WEAPON], 4, str_pass);
  strcpy(info, str_pass);
  strcat(info, " chimes like a gong.");
  mpr(info);
@@ -190,7 +203,7 @@ void invoke_wielded(void)
  unsigned char spell_casted = random2(21);
  int count_x, count_y;
 
-if (you[0].equip [0] == -1)
+if (you[0].equip [EQ_WEAPON] == -1)
 {
  strcpy(info, "You aren't wielding anything!");
  mpr(info);
@@ -206,12 +219,12 @@ if (you[0].berserker != 0)
 
  you[0].turnover = 1;
 
-switch(you[0].inv_class [you[0].equip [0]])
+switch(you[0].inv_class [you[0].equip [EQ_WEAPON]])
 {
- case 0:
- switch(you[0].inv_dam [you[0].equip [0]])
+ case OBJ_WEAPONS:
+ switch(you[0].inv_dam [you[0].equip [EQ_WEAPON]])
  {
-  case 189: // staff of Dispater
+  case NWPN_STAFF_OF_DISPATER: // staff of Dispater
   if (you[0].deaths_door != 0 || you[0].hp <= 10 || you[0].ep <= 4) goto nothing_hap;
   strcpy(info, "You feel the staff feeding on your energy!");
   mpr(info);
@@ -221,41 +234,41 @@ switch(you[0].inv_class [you[0].equip [0]])
   if (you[0].ep <= 0) you[0].ep = 1;
   you[0].hp_ch = 1;
   you[0].ep_ch = 1;
-  your_spells(118, 100, 0); // power (2nd number) is meaningless
+  your_spells(SPELL_HELLFIRE, 100, 0); // power (2nd number) is meaningless
   break;
 
-  case 190: // sceptre of Asmodeus
+  case NWPN_SCEPTRE_OF_ASMODEUS: // sceptre of Asmodeus
   spell_casted = random2(21);
   if (spell_casted == 0) goto nothing_hap; // nothing happens
   if (spell_casted < 2) // summon devils, maybe a Fiend
   {
-   spell_casted = 80 + random2(10);
+   spell_casted = SPELL_SUMMON_ICE_BEAST + random2(10);
    if (random2(4) == 0)
    {
     strcpy(info, "\"Your arrogance condemns you, mortal!\"");
-    spell_casted = 31; /* Fiend! */
+    spell_casted = SPELL_RING_OF_FLAMES; /* Fiend! */
    } else strcpy(info, "The Sceptre summons one of its servants.");
     mpr(info);
     create_monster(spell_casted, 25, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
     break;
   }
-  spell_casted = 15; // firebolt
-  if (random2(3) == 0) spell_casted = 17; // lightning
-  if (random2(4) == 0) spell_casted = 53; // draining
-  if (random2(20) == 0) spell_casted = 118; // hellfire
+  spell_casted = SPELL_BOLT_OF_FIRE; // firebolt
+  if (random2(3) == 0) spell_casted = SPELL_LIGHTNING_BOLT; // lightning
+  if (random2(4) == 0) spell_casted = SPELL_BOLT_OF_DRAINING; // draining
+  if (random2(20) == 0) spell_casted = SPELL_HELLFIRE; // hellfire
   your_spells(spell_casted, 10, 0);
   break;
 
-  case 193: // staff of Olgreb
-  if (you[0].ep <= 5 || you[0].skills [25] <= random2(11)) goto nothing_hap;
+  case NWPN_STAFF_OF_OLGREB: // staff of Olgreb
+  if (you[0].ep <= 5 || you[0].skills [SK_SPELLCASTING] <= random2(11)) goto nothing_hap;
   you[0].ep -= 4;
   if (you[0].ep <= 0) you[0].ep = 0;
   you[0].ep_ch = 1;
-  your_spells(36, 100, 0); // toxic rad
-  your_spells(35, 100, 0); // venom bolt
+  your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 100, 0); // toxic rad
+  your_spells(SPELL_VENOM_BOLT, 100, 0); // venom bolt
   break;
 
-  case 195: // staff of Wucad Mu
+  case NWPN_STAFF_OF_WUCAD_MU: // staff of Wucad Mu
   if (you[0].ep == you[0].ep_max || random2(4) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
@@ -277,8 +290,8 @@ switch(you[0].inv_class [you[0].equip [0]])
  break;
 
 
- case 11:
- if (you[0].inv_type [you[0].equip [0]] == 27)
+ case OBJ_STAVES:
+ if (you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_CHANNELING)
  {
   if (you[0].ep == you[0].ep_max || random2(4) == 0)
   {
@@ -293,44 +306,44 @@ switch(you[0].inv_class [you[0].equip [0]])
   mpr(info);
   break;
  }
- staff_spell(you[0].equip [0]);
+ staff_spell(you[0].equip [EQ_WEAPON]);
  break;
 
- case 13: // misc
- switch(you[0].inv_type [you[0].equip [0]])
+ case OBJ_MISCELLANY: // misc
+ switch(you[0].inv_type [you[0].equip [EQ_WEAPON]])
  {
-  case 0: efreet_flask();
+  case MISC_BOTTLED_EFREET: efreet_flask();
   break;
-  case 1: ball_of_seeing();
+  case MISC_CRYSTAL_BALL_OF_SEEING: ball_of_seeing();
   break;
-  case 2:
+  case MISC_AIR_ELEMENTAL_FAN:
   if (random2(2) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
    mpr(info);
    break;
   }
-  summon_elemental(100, 125, 4);
+  summon_elemental(100, MONS_AIR_ELEMENTAL, 4);
   break;
-  case 3:
+  case MISC_LAMP_OF_FIRE:
   if (random2(2) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
    mpr(info);
    break;
   }
-  summon_elemental(100, 124, 4);
+  summon_elemental(100, MONS_FIRE_ELEMENTAL, 4);
   break;
-  case 4:
+  case MISC_STONE_OF_EARTH_ELEMENTALS:
   if (random2(2) == 0)
   {
    strcpy(info, "Nothing appears to happen.");
    mpr(info);
    break;
   }
-  summon_elemental(100, 123, 4);
+  summon_elemental(100, MONS_EARTH_ELEMENTAL, 4);
   break;
- case 6: // Horn of Geryon
+ case MISC_HORN_OF_GERYON: // Horn of Geryon
  if (you[0].where_are_you == 3)
  {
   strcpy(info, "You produce a weird and mournful sound.");
@@ -362,23 +375,23 @@ switch(you[0].inv_class [you[0].equip [0]])
  {
    strcpy(info, "You produce a hideous howling noise!");
    mpr(info);
-   create_monster(88, 23, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+   create_monster(MONS_BEAST, 23, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
  }
  break;
 
- case 7: // box of beasts
+ case MISC_BOX_OF_BEASTS: // box of beasts
  box_of_beasts();
  break;
 
- case 8: // deck of wonders
+ case MISC_DECK_OF_WONDERS: // deck of wonders
  deck_of_cards(0);
  break;
 
- case 9: // deck of summonings
+ case MISC_DECK_OF_SUMMONINGS: // deck of summonings
  deck_of_cards(1);
  break;
 
- case 10: // crystal ball of energy
+ case MISC_CRYSTAL_BALL_OF_ENERGY: // crystal ball of energy
  ball_of_energy();
  break;
 
@@ -386,19 +399,19 @@ switch(you[0].inv_class [you[0].equip [0]])
  ball_of_fixation();
  break;
 
- case 13: // disc of storms
+ case MISC_DISC_OF_STORMS: // disc of storms
  disc_of_storms();
  break;
 
- case 15: // deck of tricks
+ case MISC_DECK_OF_TRICKS: // deck of tricks
  deck_of_cards(2);
  break;
 
- case 16: // deck of power
+ case MISC_DECK_OF_POWER: // deck of power
  deck_of_cards(3);
  break;
 
- case 17: // card table
+ case MISC_PORTABLE_ALTAR_OF_NEMELEX: // card table
  if (you[0].where_are_you == 18)
  {
   mpr("Don't you think this level already has more than enough altars?");
@@ -411,9 +424,9 @@ switch(you[0].inv_class [you[0].equip [0]])
  }
  mpr("You unfold the altar and place it on the floor.");
  grd [you[0].x_pos] [you[0].y_pos] = 190;
- unwield_item(you[0].equip [0]);
- you[0].inv_quant [you[0].equip [0]] = 0;
- you[0].equip [0] = -1;
+ unwield_item(you[0].equip [EQ_WEAPON]);
+ you[0].inv_quant [you[0].equip [EQ_WEAPON]] = 0;
+ you[0].equip [EQ_WEAPON] = -1;
  you[0].inv_no --;
  break;
 
@@ -442,22 +455,22 @@ void efreet_flask(void)
 strcpy(info, "You open the flask, and a huge efreet comes out.");
 mpr(info);
 
-unwield_item(you[0].equip [0]);
-you[0].inv_quant [you[0].equip [0]] = 0;
-you[0].equip [0] = -1;
+unwield_item(you[0].equip [EQ_WEAPON]);
+you[0].inv_quant [you[0].equip [EQ_WEAPON]] = 0;
+you[0].equip [EQ_WEAPON] = -1;
 you[0].inv_no --;
 
 if (random2(5) != 0)
 {
   strcpy(info, "\"Thank you for releasing me!\"");
   mpr(info);
-  create_monster(68, 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+  create_monster(MONS_EFREET, 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   return;
 }
 
   strcpy(info, "It howls insanely!");
   mpr(info);
-  create_monster(68, 24, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
+  create_monster(MONS_EFREET, 24, 1, you[0].x_pos, you[0].y_pos, MHITYOU, 250);
 
 } // end efreet_flask
 
@@ -510,21 +523,21 @@ void disc_of_storms(void)
 
 you[0].turnover = 1;
 
-if ((random2(60) > 30 + you[0].skills [35] && random2(3) != 0) || you[0].attribute [1] != 0)
+if ((random2(60) > 30 + you[0].skills [SK_AIR_MAGIC] && random2(3) != 0) || you[0].attribute [ATTR_SPEC_AIR] != 0)
 {
  strcpy(info, "Nothing appears to happen.");
  mpr(info);
  return;
 }
 
-if (random2(60) > 30 + you[0].skills [35] && random2(3) != 0)
+if (random2(60) > 30 + you[0].skills [SK_AIR_MAGIC] && random2(3) != 0)
 {
  strcpy(info, "The disc glows for a moment, then fades.");
  mpr(info);
  return;
 }
 
-if (random2(60) > 30 + you[0].skills [35] && random2(3) != 0)
+if (random2(60) > 30 + you[0].skills [SK_AIR_MAGIC] && random2(3) != 0)
 {
  strcpy(info, "Little bolts of electricity crackle over the disc.");
  mpr(info);
@@ -570,7 +583,7 @@ do
 void staff_spell(char zap_device_2)
 {
 
-if (you[0].inv_plus [zap_device_2] == 64 || you[0].inv_type [zap_device_2] < 10 || you[0].inv_type [zap_device_2] >= 25)
+if (you[0].inv_plus [zap_device_2] == 64 || you[0].inv_type [zap_device_2] < STAFF_SMITING || you[0].inv_type [zap_device_2] >= STAFF_AIR)
 {
    strcpy(info, "That staff has no spells in it.");
    mpr(info);
@@ -608,7 +621,7 @@ if (learn_a_spell(zap_device_2, sc_read_2) != 1)
 
 
 
-specspell = which_spell_in_book(you[0].inv_type [you[0].equip [0]] + 40, sc_read_2 + 1);
+specspell = which_spell_in_book(you[0].inv_type [you[0].equip [EQ_WEAPON]] + 40, sc_read_2 + 1);
 
 if (you[0].ep < spell_value(specspell) || you[0].xl < spell_value(specspell))
 {
@@ -694,7 +707,7 @@ read_it:
 you[0].inv_ident [sc_read_2] = 3;
 you[0].turnover = 1;
 
-if (you[0].mutation [39] > 0 && random2(4) < you[0].mutation [39])
+if (you[0].mutation [MUT_BLURRY_VISION] > 0 && random2(4) < you[0].mutation [MUT_BLURRY_VISION])
 {
  mpr("The page is too blurry for you to read.");
  you[0].turnover = 1;
@@ -717,10 +730,10 @@ case 12:
         mpr(info);
         you[0].inv_quant [sc_read_2] = 0;
         you[0].inv_no --;
-        if (sc_read_2 == you[0].equip [0])
+        if (sc_read_2 == you[0].equip [EQ_WEAPON])
         {
            unwield_item(sc_read_2);
-           you[0].equip [0] = -1;
+           you[0].equip [EQ_WEAPON] = -1;
         }
            burden_change();
         }
@@ -768,7 +781,7 @@ strcpy(info, "A horrible Thing appears!");
 mpr(info);
 strcpy(info, "It doesn't look too friendly.");
 mpr(info);
-create_monster(23, 25, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+create_monster(MONS_LARGE_ABOMINATION, 25, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
 return;
 
 // next is 14
@@ -779,29 +792,29 @@ viewwindow(1);
 
 switch(random2(23))
 {
- case 0: spell_casted = 5; break;
+ case 0: spell_casted = SPELL_MAGIC_DART; break;
  case 16:
  case 17:
- case 1: spell_casted = 6; break; // fireball
+ case 1: spell_casted = SPELL_FIREBALL; break; // fireball
  case 21:
  case 18:
- case 2: spell_casted = 15; break;
+ case 2: spell_casted = SPELL_BOLT_OF_FIRE; break;
  case 22:
  case 19:
- case 3: spell_casted = 16; break;
+ case 3: spell_casted = SPELL_BOLT_OF_COLD; break;
  case 20:
- case 4: spell_casted = 17; break;
- case 5: spell_casted = 20; break;
- case 6: spell_casted = 26; break;
- case 7: spell_casted = 27; break;
- case 8: spell_casted = 30; break;
- case 9: spell_casted = 35; break;
- case 10: spell_casted = 53; break;
- case 11: spell_casted = 54; break;
- case 12: spell_casted = 55; break;
- case 13: spell_casted = 79; break;
- case 14: spell_casted = 114; break;
- case 15: spell_casted = 1; break;
+ case 4: spell_casted = SPELL_LIGHTNING_BOLT; break;
+ case 5: spell_casted = SPELL_POLYMORPH_OTHER; break;
+ case 6: spell_casted = SPELL_THROW_FLAME; break;
+ case 7: spell_casted = SPELL_THROW_FROST; break;
+ case 8: spell_casted = SPELL_MEPHITIC_CLOUD; break;
+ case 9: spell_casted = SPELL_VENOM_BOLT; break;
+ case 10: spell_casted = SPELL_BOLT_OF_DRAINING; break;
+ case 11: spell_casted = SPELL_LEHUDIBS_CRYSTAL_SPEAR; break;
+ case 12: spell_casted = SPELL_BOLT_OF_INACCURACY; break;
+ case 13: spell_casted = SPELL_STICKY_FLAME; break;
+ case 14: spell_casted = SPELL_CIGOTUVIS_DEGENERATION; break;
+ case 15: spell_casted = SPELL_TELEPORT_SELF; break;
 }
 
 // also summon demons (when they're finished)
@@ -863,10 +876,10 @@ if (random2(10) == 0)
         mpr(info);
         you[0].inv_quant [sc_read_2] = 0;
         you[0].inv_no --;
-        if (sc_read_2 == you[0].equip [0])
+        if (sc_read_2 == you[0].equip [EQ_WEAPON])
         {
          unwield_item(sc_read_2);
-         you[0].equip [0] = -1;
+         you[0].equip [EQ_WEAPON] = -1;
         }
         burden_change();
 } else
@@ -900,23 +913,23 @@ if (random2(10) == 0)
 {
  strcat(info, "but nothing happens.");
  mpr(info);
- you[0].inv_type [you[0].equip [0]] = 11;
+ you[0].inv_type [you[0].equip [EQ_WEAPON]] = MISC_EMPTY_EBONY_CASKET;
  return;
 }
 
 switch(random2(11))
 {
- case 0: beasty = 1; break; // bat
- case 1: beasty = 7; break; // hound
- case 2: beasty = 9; break; // jackal
- case 3: beasty = 17; break; // rat
- case 4: beasty = 34; break; // ice beast
- case 5: beasty = 44; break; // snake
- case 6: beasty = 50; break; // yak
- case 7: beasty = 66; break; // butterfly
- case 8: beasty = 73; break; // hell hound
- case 9: beasty = 128; break; // brown snake
- case 10: beasty = 129; break; // giant lizard
+ case 0: beasty = MONS_GIANT_BAT; break; // bat
+ case 1: beasty = MONS_HOUND; break; // hound
+ case 2: beasty = MONS_JACKAL; break; // jackal
+ case 3: beasty = MONS_RAT; break; // rat
+ case 4: beasty = MONS_ICE_BEAST; break; // ice beast
+ case 5: beasty = MONS_SNAKE; break; // snake
+ case 6: beasty = MONS_YAK; break; // yak
+ case 7: beasty = MONS_BUTTERFLY; break; // butterfly
+ case 8: beasty = MONS_HELL_HOUND; break; // hell hound
+ case 9: beasty = MONS_BROWN_SNAKE; break; // brown snake
+ case 10: beasty = MONS_GIANT_LIZARD; break; // giant lizard
 }
 
  create_monster(beasty, 21 + random2(4), 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);

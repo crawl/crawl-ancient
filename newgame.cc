@@ -26,9 +26,11 @@
 #include <sys/stat.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "itemname.h"
 #include "macro.h"
 #include "player.h"
+#include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
 #include "version.h"
@@ -77,7 +79,7 @@ for (i = 0; i < 50; i ++)
 }
 you[0].hunger = 6000;
 you[0].hunger_inc = 3;
-you[0].equip [0] = -1;
+you[0].equip [EQ_WEAPON] = -1;
 /*you[0].rate_regen = 6;*/
 you[0].xl = 1;
 you[0].speed = 10;
@@ -217,144 +219,144 @@ if (keyn == 0)
 }
 switch_start : switch(keyn)
 {
- case 'a': you[0].species = 1; // human
+ case 'a': you[0].species = SP_HUMAN; // human
  you[0].strength = 6;
  you[0].intel = 6;
  you[0].dex = 6;
  break;
- case 'b': you[0].species = 2; // elf
+ case 'b': you[0].species = SP_ELF; // elf
  you[0].strength = 5;
  you[0].intel = 8;
  you[0].dex = 8;
  break;
- case 'c': you[0].species = 3; // high-elf
+ case 'c': you[0].species = SP_HIGH_ELF; // high-elf
  you[0].strength = 5;
  you[0].intel = 9;
  you[0].dex = 8;
  break;
- case 'd': you[0].species = 4; // grey-elf
+ case 'd': you[0].species = SP_GREY_ELF; // grey-elf
  you[0].strength = 4;
  you[0].intel = 9;
  you[0].dex = 8;
  break;
- case 'e': you[0].species = 5; // deep elf
+ case 'e': you[0].species = SP_DEEP_ELF; // deep elf
  you[0].strength = 4;
  you[0].intel = 10;
  you[0].dex = 7;
  break;
- case 'f': you[0].species = 6; // sludge elf
+ case 'f': you[0].species = SP_SLUDGE_ELF; // sludge elf
  you[0].strength = 5;
  you[0].intel = 7;
  you[0].dex = 8;
  break;
- case 'g': you[0].species = 7; // hill dwarf
+ case 'g': you[0].species = SP_HILL_DWARF; // hill dwarf
  you[0].strength = 9;
  you[0].intel = 3;
  you[0].dex = 4;
  break;
- case 'h': you[0].species = 8; // mountain dwarf
+ case 'h': you[0].species = SP_MOUNTAIN_DWARF; // mountain dwarf
  you[0].strength = 9;
  you[0].intel = 4;
  you[0].dex = 5;
  break;
- case 'i': you[0].species = 9; // halfling
+ case 'i': you[0].species = SP_HALFLING; // halfling
  you[0].strength = 4;
  you[0].intel = 6;
  you[0].dex = 9;
  break;
  case 'j':
- case 'J': you[0].species = 10; // hill orc
+ case 'J': you[0].species = SP_HILL_ORC; // hill orc
  you[0].strength = 9;
  you[0].intel = 3;
  you[0].dex = 4;
  break;
  case 'K':
- case 'k': you[0].species = 11; // kobold
+ case 'k': you[0].species = SP_KOBOLD; // kobold
  you[0].strength = 4;
  you[0].intel = 4;
  you[0].dex = 6;
  break;
- case 'l': you[0].species = 12; // Mummy
+ case 'l': you[0].species = SP_MUMMY; // Mummy
  you[0].strength = 7;
  you[0].intel = 3;
  you[0].dex = 3;
  break;
  case 'm':
- case 'M': you[0].species = 13; // Naga
+ case 'M': you[0].species = SP_NAGA; // Naga
  you[0].strength = 8;
  you[0].intel = 6;
  you[0].dex = 4;
  break;
  case 'n':
- you[0].species = 14; // gnome
+ you[0].species = SP_GNOME; // gnome
  you[0].strength = 5;
  you[0].intel = 6;
  you[0].dex = 7;
  break;
  case 'o':
  case 'O':
- you[0].species = 15; // ogre
+ you[0].species = SP_OGRE; // ogre
  you[0].strength = 12;
  you[0].intel = 3;
  you[0].dex = 1;
  break;
  case 'p':
  case 'P':
- you[0].species = 16; // troll
+ you[0].species = SP_TROLL; // troll
  you[0].strength = 13;
  you[0].intel = 3;
  you[0].dex = 0;
  break;
  case 'Q':
  case 'q':
- you[0].species = 17; // ogre mage
+ you[0].species = SP_OGRE_MAGE; // ogre mage
  you[0].strength = 8;
  you[0].intel = 6;
  you[0].dex = 2;
  break;
  case 'r':
- case 'R': you[0].species = 18 + random2(9); // Draconian
+ case 'R': you[0].species = SP_RED_DRACONIAN + random2(9); // Draconian
  you[0].strength = 7;
  you[0].intel = 6;
  you[0].dex = 2;
  break;
  case 's':
- you[0].species = 30; // centaur
+ you[0].species = SP_CENTAUR; // centaur
  you[0].strength = 8;
  you[0].intel = 4;
  you[0].dex = 5;
  break;
  case 't':
- you[0].species = 31; // demigod - more is added to stats later
+ you[0].species = SP_DEMIGOD; // demigod - more is added to stats later
  you[0].strength = 7;
  you[0].intel = 7;
  you[0].dex = 7;
  break;
  case 'u':
- you[0].species = 32; // spriggan
+ you[0].species = SP_SPRIGGAN; // spriggan
  you[0].strength = 3;
  you[0].intel = 6;
  you[0].dex = 8;
  break;
  case 'v':
- you[0].species = 33; // minotaur
+ you[0].species = SP_MINOTAUR; // minotaur
  you[0].strength = 10;
  you[0].intel = 3;
  you[0].dex = 5;
  break;
- case 'w': you[0].species = 34; // demonspawn - more is added, like demigods
+ case 'w': you[0].species = SP_DEMONSPAWN; // demonspawn - more is added, like demigods
  you[0].strength = 4;
  you[0].intel = 4;
  you[0].dex = 4;
  break;
  case 'x':
- you[0].species = 35; // Ghoul
+ you[0].species = SP_GHOUL; // Ghoul
  you[0].strength = 7;
  you[0].intel = 1;
  you[0].dex = 2;
  break;
  case 'y':
- you[0].species = 36; // Kenku
+ you[0].species = SP_KENKU; // Kenku
  you[0].strength = 5;
  you[0].intel = 6;
  you[0].dex = 7;
@@ -423,38 +425,38 @@ for (i = 0; i < 30; i ++)
 // if (i == 25) i = 26;
  if (class_allowed(you[0].species, i) == 0) continue;
 
- if (i < 26) putch(i + 97); else putch(i + 39);
+ if (i < 26 ) putch(i + 97); else putch(i + 39);
  cprintf(" - ");
 
  switch(i)
  {
-  case 0: cprintf("fighter"); break;
-  case 1: cprintf("Wizard"); break;
-  case 2: cprintf("priest"); break;
-  case 3: cprintf("Thief"); break;
-  case 4: cprintf("Gladiator"); break;
-  case 5: cprintf("Necromancer"); break;
-  case 6: cprintf("Paladin"); break;
-  case 7: cprintf("assassin"); break;
-  case 8: cprintf("Berserker"); break;
-  case 9: cprintf("Ranger"); break;
-  case 10: cprintf("conjurer"); break;
-  case 11: cprintf("enchanter"); break;
-  case 12: cprintf("Fire Elementalist"); break;
-  case 13: cprintf("Ice Elementalist"); break;
-  case 14: cprintf("Summoner"); break;
-  case 15: cprintf("Air Elementalist"); break;
-  case 16: cprintf("Earth Elementalist"); break;
-  case 17: cprintf("Crusader"); break;
-  case 18: cprintf("Death knight"); break;
-  case 19: cprintf("Venom Mage"); break;
-  case 20: cprintf("Chaos Knight"); break;
-  case 21: cprintf("transmuter"); break;
-  case 22: cprintf("Healer"); break;
-  case 24: cprintf("Reaver"); break;
-  case 25: cprintf("stalker"); break;
-  case 26: cprintf("Monk"); break;
-  case 27: cprintf("warper"); break;
+  case JOB_FIGHTER: cprintf("fighter"); break;
+  case JOB_WIZARD: cprintf("Wizard"); break;
+  case JOB_PRIEST: cprintf("priest"); break;
+  case JOB_THIEF: cprintf("Thief"); break;
+  case JOB_GLADIATOR: cprintf("Gladiator"); break;
+  case JOB_NECROMANCER: cprintf("Necromancer"); break;
+  case JOB_PALADIN: cprintf("Paladin"); break;
+  case JOB_ASSASSIN: cprintf("assassin"); break;
+  case JOB_BERSERKER: cprintf("Berserker"); break;
+  case JOB_RANGER: cprintf("Ranger"); break;
+  case JOB_CONJURER: cprintf("conjurer"); break;
+  case JOB_ENCHANTER: cprintf("enchanter"); break;
+  case JOB_FIRE_ELEMENTALIST: cprintf("Fire Elementalist"); break;
+  case JOB_ICE_ELEMENTALIST: cprintf("Ice Elementalist"); break;
+  case JOB_SUMMONER: cprintf("Summoner"); break;
+  case JOB_AIR_ELEMENTALIST: cprintf("Air Elementalist"); break;
+  case JOB_EARTH_ELEMENTALIST: cprintf("Earth Elementalist"); break;
+  case JOB_CRUSADER: cprintf("Crusader"); break;
+  case JOB_DEATH_KNIGHT: cprintf("Death knight"); break;
+  case JOB_VENOM_MAGE: cprintf("Venom Mage"); break;
+  case JOB_CHAOS_KNIGHT: cprintf("Chaos Knight"); break;
+  case JOB_TRANSMUTER: cprintf("transmuter"); break;
+  case JOB_HEALER: cprintf("Healer"); break;
+  case JOB_REAVER: cprintf("Reaver"); break;
+  case JOB_STALKER: cprintf("stalker"); break;
+  case JOB_MONK: cprintf("Monk"); break;
+  case JOB_WARPER: cprintf("warper"); break;
  /* when adding more, also add to the range of the loop */
  }
  if (j % 2 == 1) cprintf(EOL); else gotoxy(40, wherey());
@@ -471,33 +473,33 @@ cprintf(EOL"What kind of character are you? ");
 query : keyn = getch();
 
 
-query5: if (keyn == 'a') you[0].clas = 0;
-        else if (keyn == 'b') you[0].clas = 1;
-  else if (keyn == 'c') you[0].clas = 2;
-  else if (keyn == 'd') you[0].clas = 3;
-  else if (keyn == 'e') you[0].clas = 4;
-  else if (keyn == 'f') you[0].clas = 5;
-  else if (keyn == 'g') you[0].clas = 6;
-  else if (keyn == 'h') you[0].clas = 7;
-  else if (keyn == 'i') you[0].clas = 8;
-  else if (keyn == 'j') you[0].clas = 9;
-  else if (keyn == 'k') you[0].clas = 10;
-  else if (keyn == 'l') you[0].clas = 11;
-  else if (keyn == 'm') you[0].clas = 12;
-  else if (keyn == 'n') you[0].clas = 13;
-  else if (keyn == 'o') you[0].clas = 14;
-  else if (keyn == 'p') you[0].clas = 15;
-  else if (keyn == 'q') you[0].clas = 16;
-  else if (keyn == 'r') you[0].clas = 17;
-  else if (keyn == 's') you[0].clas = 18;
-  else if (keyn == 't') you[0].clas = 19;
-  else if (keyn == 'u') you[0].clas = 20;
-  else if (keyn == 'v') you[0].clas = 21;
-  else if (keyn == 'w') you[0].clas = 22;
-  else if (keyn == 'y') you[0].clas = 24;
-  else if (keyn == 'z') you[0].clas = 25;
-  else if (keyn == 'A') you[0].clas = 26;
-  else if (keyn == 'B') you[0].clas = 27;
+query5: if (keyn == 'a') you[0].clas = JOB_FIGHTER;
+        else if (keyn == 'b') you[0].clas = JOB_WIZARD;
+  else if (keyn == 'c') you[0].clas = JOB_PRIEST;
+  else if (keyn == 'd') you[0].clas = JOB_THIEF;
+  else if (keyn == 'e') you[0].clas = JOB_GLADIATOR;
+  else if (keyn == 'f') you[0].clas = JOB_NECROMANCER;
+  else if (keyn == 'g') you[0].clas = JOB_PALADIN;
+  else if (keyn == 'h') you[0].clas = JOB_ASSASSIN;
+  else if (keyn == 'i') you[0].clas = JOB_BERSERKER;
+  else if (keyn == 'j') you[0].clas = JOB_RANGER;
+  else if (keyn == 'k') you[0].clas = JOB_CONJURER;
+  else if (keyn == 'l') you[0].clas = JOB_ENCHANTER;
+  else if (keyn == 'm') you[0].clas = JOB_FIRE_ELEMENTALIST;
+  else if (keyn == 'n') you[0].clas = JOB_ICE_ELEMENTALIST;
+  else if (keyn == 'o') you[0].clas = JOB_SUMMONER;
+  else if (keyn == 'p') you[0].clas = JOB_AIR_ELEMENTALIST;
+  else if (keyn == 'q') you[0].clas = JOB_EARTH_ELEMENTALIST;
+  else if (keyn == 'r') you[0].clas = JOB_CRUSADER;
+  else if (keyn == 's') you[0].clas = JOB_DEATH_KNIGHT;
+  else if (keyn == 't') you[0].clas = JOB_VENOM_MAGE;
+  else if (keyn == 'u') you[0].clas = JOB_CHAOS_KNIGHT;
+  else if (keyn == 'v') you[0].clas = JOB_TRANSMUTER;
+  else if (keyn == 'w') you[0].clas = JOB_HEALER;
+  else if (keyn == 'y') you[0].clas = JOB_REAVER;
+  else if (keyn == 'z') you[0].clas = JOB_STALKER;
+  else if (keyn == 'A') you[0].clas = JOB_MONK;
+  else if (keyn == 'B') you[0].clas = JOB_WARPER;
   else if (keyn == '?')
   {
    do
@@ -533,8 +535,8 @@ query5: if (keyn == 'a') you[0].clas = 0;
         for (i = 0; i < 52; i ++)
         {
                 you [0].inv_quant [i] = 0;
-                you [0].inv_class [i] = 0;
-                you [0].inv_type [i] = 0;
+                you [0].inv_class [i] = OBJ_WEAPONS;
+                you [0].inv_type [i] = WPN_CLUB;
                 you [0].inv_plus [i] = 0;
                 you [0].inv_plus2 [i] = 0;
                 you [0].inv_dam [i] = 0;
@@ -549,7 +551,7 @@ for (i = 0; i < 30; i ++)
 
 switch(you[0].clas)
 {
-case 0: // fighter
+case JOB_FIGHTER: // fighter
         strcpy(you[0].clasnam, "fighter");
         you[0].hp = 14; you[0].hp_max = 14;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -560,36 +562,36 @@ case 0: // fighter
  you[0].spell_levels = 0;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_SHORT_SWORD;
 
-/*  if (you[0].species == 11)
+/*  if (you[0].species == SP_KOBOLD)
   {
    you[0].inv_type [0] = 3; // kobolds just get daggers
-   you[0].skills [1] = 2;
+   you[0].skills [SK_SHORT_BLADES] = 2;
   } else  */
-  if (you[0].species == 15)
+  if (you[0].species == SP_OGRE)
   {
-   you[0].inv_type [0] = 0; // ogre
-   you[0].skills [5] = 1;
+   you[0].inv_type [0] = WPN_CLUB; // ogre
+   you[0].skills [SK_MACES_FLAILS] = 1;
   } else
-  if (you[0].species == 16)
+  if (you[0].species == SP_TROLL)
   {
 //   you[0].inv_type [0] = 0; // troll
-//   you[0].skills [0] ++;
+//   you[0].skills [SK_FIGHTING] ++;
   }
 /*    else
-  if (random2(4) == 0 | you[0].species == 7 | you[0].species == 8) // dwarves
+  if (random2(4) == 0 | you[0].species == SP_HILL_DWARF | you[0].species == SP_MOUNTAIN_DWARF) // dwarves
   {
-   you[0].inv_type [0] = 9;
-   you[0].skills [4] = 2;
+   you[0].inv_type [0] = WPN_HAND_AXE;
+   you[0].skills [SK_AXES] = 2;
   } else
   if (random2(4) == 0)
   {
-   you[0].inv_type [0] = 1;
-   you[0].skills [5] = 2;
+   you[0].inv_type [0] = WPN_MACE;
+   you[0].skills [SK_MACES_FLAILS] = 2;
   }
-   else you[0].skills [1] = 2;*/
+   else you[0].skills [SK_SHORT_BLADES] = 2;*/
         weap_skill = 2;
 
 
@@ -599,42 +601,42 @@ case 0: // fighter
         you[0].inv_col [0] = LIGHTCYAN;
 
 
-if (you[0].species == 15)
+if (you[0].species == SP_OGRE)
 {
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 0;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_CLUB;
         you[0].inv_plus [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = BROWN;
 
 }
 
-if (you[0].species == 16)
+if (you[0].species == SP_TROLL)
 {
         you[0].inv_quant [0] = 0;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 0;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_CLUB;
         you[0].inv_plus [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = BROWN;
 
 }
 
-if (you[0].species == 15 || you[0].species == 16 || (you[0].species >= 18 && you[0].species <= 29))
+if (you[0].species == SP_OGRE || you[0].species == SP_TROLL || (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN))
 {
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 30;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ANIMAL_SKIN;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = BROWN;
 
- if (you[0].species >= 18 && you[0].species <= 29)
+ if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN)
  {
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 8;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_SHIELD;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = LIGHTCYAN;
@@ -643,19 +645,19 @@ if (you[0].species == 15 || you[0].species == 16 || (you[0].species >= 18 && you
 
 }
 else
-if (you[0].species == 35 || you[0].species == 12)
+if (you[0].species == SP_GHOUL || you[0].species == SP_MUMMY)
 {
     you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = WHITE; /* grave shroud */
 
- if (you[0].species == 12)
+ if (you[0].species == SP_MUMMY)
  {
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
+        you[0].inv_class [2] = OBJ_ARMOUR;
         you[0].inv_type [2] = 8;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
@@ -664,11 +666,11 @@ if (you[0].species == 35 || you[0].species == 12)
 
 }
 else
-if (you[0].species == 11)
+if (you[0].species == SP_KOBOLD)
 {
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 1;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_LEATHER_ARMOUR;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = BROWN;
@@ -676,8 +678,8 @@ if (you[0].species == 11)
         you[0].evasion = 9;*/
 
   you[0].inv_quant [2] = random2(8) + random2(8) + 8;
-                you[0].inv_class [2] = 1;
-                you[0].inv_type [2] = 3; //wtype;
+                you[0].inv_class [2] = OBJ_MISSILES;
+                you[0].inv_type [2] = MI_DART; //wtype;
                 you[0].inv_plus [2] = 50;
                 you[0].inv_dam [2] = 0;
                 you[0].inv_col [2] = LIGHTCYAN;
@@ -685,15 +687,15 @@ if (you[0].species == 11)
 } else
 {
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 2;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_RING_MAIL;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = LIGHTCYAN;
 
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 8;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_SHIELD;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = LIGHTCYAN;
@@ -711,34 +713,34 @@ if (you[0].species == 11)
         you[0].strength += 6;
         you[0].dex += 4;
 
-        if (you[0].species != 16) you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
-if (you[0].species != 11 && you[0].species != 15 && you[0].species != 16 && you[0].species != 35) you[0].equip [5] = 2;
+        if (you[0].species != SP_TROLL) you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
+if (you[0].species != SP_KOBOLD && you[0].species != SP_OGRE && you[0].species != SP_TROLL && you[0].species != SP_GHOUL) you[0].equip [EQ_SHIELD] = 2;
         you[0].gp = random2(10);
 /* you[0].res_magic = 3;*/
 
 
- you[0].skills [0] = 3;
-if (you[0].species == 11)
+ you[0].skills [SK_FIGHTING] = 3;
+if (you[0].species == SP_KOBOLD)
 {
- you[0].skills [12] = 2;
- you[0].skills [14] = 1;
- you[0].skills [15] = 1;
- you[0].skills [16] = 1;
- you[0].skills [14 + random() % 3] ++;
+ you[0].skills [SK_THROWING] = 2;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_STEALTH] = 1;
+ you[0].skills [SK_STABBING] = 1;
+ you[0].skills [SK_DODGING + random() % 3] ++;
 } else
-if (you[0].species != 15 && you[0].species != 16)
+if (you[0].species != SP_OGRE && you[0].species != SP_TROLL)
 {
- if (you[0].species >= 18 && you[0].species <= 29) you[0].skills [14] = 2;
-  else you[0].skills [13] = 2;
- you[0].skills [17] = 1;
- you[0].skills [16 + random() % 2] ++;
- you[0].skills [12] = 1;
- you[0].skills [19] = 1;
-} else you[0].skills [0] += 2;
+ if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN) you[0].skills [SK_DODGING] = 2;
+  else you[0].skills [SK_ARMOUR] = 2;
+ you[0].skills [SK_SHIELDS] = 1;
+ you[0].skills [SK_STABBING + random() % 2] ++;
+ you[0].skills [SK_THROWING] = 1;
+ you[0].skills [SK_UNARMED_COMBAT] = 1;
+} else you[0].skills [SK_FIGHTING] += 2;
 break;
 
-case 1: // wizard
+case JOB_WIZARD: // wizard
         strcpy(you[0].clasnam, "Wizard");
         you[0].hp = 10; you[0].hp_max = 10;
         you[0].ep = 3; you[0].ep_max = 3;
@@ -749,8 +751,8 @@ case 1: // wizard
  you[0].spell_levels = 12;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 3; //damage = 6; //break;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_DAGGER; //damage = 6; //break;
 
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
@@ -759,8 +761,8 @@ case 1: // wizard
 
         // Robe
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 1 * 30;
  if (random2(3) != 0) you[0].inv_dam [1] = (4 + random2(2)) * 30;
@@ -781,15 +783,15 @@ case 1: // wizard
         you[0].dex += 4;
         you[0].intel += 6;
 
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
 
         you[0].gp = random2(10);
 
         // etra items being tested:
 
 
-        you[0].inv_class [2] = 10;
+        you[0].inv_class [2] = OBJ_BOOKS;
         you[0].inv_type [2] = random2(3);
 //      strcpy(you[0].inv_name [23], "wand of invisibility");
         you[0].inv_quant [2] = 1;
@@ -800,24 +802,24 @@ case 1: // wizard
 
 /* you[0].res_magic = 10;*/
 
-        you[0].skills [14] = 1;
-        you[0].skills [15] = 1;
-        you[0].skills [14 + random() % 2] ++;
+        you[0].skills [SK_DODGING] = 1;
+        you[0].skills [SK_STEALTH] = 1;
+        you[0].skills [SK_DODGING + random() % 2] ++;
 
-/*        if (you[0].skills [14] == 2) you[0].evasion ++;*/
+/*        if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
-        you[0].skills [25] = 2;
-        you[0].skills [26] = 1;
-        you[0].skills [27] = 1;
-        you[0].skills [25 + random() % 3] ++;
-        you[0].skills [28 + random() % 5] ++;
+        you[0].skills [SK_SPELLCASTING] = 2;
+        you[0].skills [SK_CONJURATIONS] = 1;
+        you[0].skills [SK_ENCHANTMENTS] = 1;
+        you[0].skills [SK_SPELLCASTING + random() % 3] ++;
+        you[0].skills [SK_SUMMONINGS + random() % 5] ++;
 
-        you[0].skills [1] = 1;
-        you[0].skills [7] = 1;
+        you[0].skills [SK_SHORT_BLADES] = 1;
+        you[0].skills [SK_STAVES] = 1;
 break;
 
 
-case 2: // priest
+case JOB_PRIEST: // priest
         strcpy(you[0].clasnam, "priest");
         you[0].piety = 45;
         you[0].hp = 12; you[0].hp_max = 12;
@@ -829,7 +831,7 @@ case 2: // priest
  you[0].spell_levels = 8;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
+        you[0].inv_class [0] = OBJ_WEAPONS;
         //switch(random2(6))
         //{
         //      case 0 : you[0].inv_type [0] = 1; damage = 6; break;
@@ -837,7 +839,7 @@ case 2: // priest
         //      case 2 : you[0].inv_type [0] = 4; damage = 7; break;
         //      case 3 : you[0].inv_type [0] = 9; damage = 7; break;
                 //case 4 :
- you[0].inv_type [0] = 1;
+ you[0].inv_type [0] = WPN_MACE;
                 //case 5 : you[0].inv_type [0] = 5; damage = 6; break;
         //}
 
@@ -850,8 +852,8 @@ case 2: // priest
 
         // Robe
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = WHITE;
@@ -859,8 +861,8 @@ case 2: // priest
 /*      you[0].AC = 1;
         you[0].evasion = 10;*/
 
-        you[0].inv_class [2] = 8;
-        you[0].inv_type [2] = 0;
+        you[0].inv_class [2] = OBJ_POTIONS;
+        you[0].inv_type [2] = POT_HEALING;
 //      strcpy(you[0].inv_name [23], "wand of invisibility");
         you[0].inv_quant [2] = 2 + random2(2);
         you[0].inv_plus [2] = 0;
@@ -881,20 +883,20 @@ case 2: // priest
         you[0].dex += 2;
         you[0].intel += 4;
 
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
 
         you[0].gp = random2(10);
 /* you[0].res_magic = 10;*/
 
- you[0].skills [0] = 2;
- you[0].skills [14] = 1;
- you[0].skills [17] = 1;
-// you[0].skills [12] = 2;
- you[0].skills [5] = 2;
- you[0].skills [7] = 1;
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_SHIELDS] = 1;
+// you[0].skills [SK_THROWING] = 2;
+ you[0].skills [SK_MACES_FLAILS] = 2;
+ you[0].skills [SK_STAVES] = 1;
 
- you[0].skills [38] = 4;
+ you[0].skills [SK_INVOCATIONS] = 4;
 
 clrscr();
 cprintf(EOL" Which God do you wish to serve?"EOL);
@@ -904,8 +906,8 @@ cprintf("b - Yredelemnul (for priests of death)"EOL);
 getkey : keyn = get_ch();
 switch(keyn)
 {
- case 'a': you[0].religion = 1; cprintf(EOL"Spread the light, my child..."); break;
- case 'b': you[0].religion = 4; you[0].inv_type [0] = 4; cprintf(EOL"Welcome..."); break;
+ case 'a': you[0].religion = GOD_ZIN; cprintf(EOL"Spread the light, my child..."); break;
+ case 'b': you[0].religion = GOD_YREDELEMNUL; you[0].inv_type [0] = WPN_MORNINGSTAR; cprintf(EOL"Welcome..."); break;
  default: goto getkey;
 }
 
@@ -914,7 +916,7 @@ break;
 
 
 
-case 3: // thief
+case JOB_THIEF: // thief
         strcpy(you[0].clasnam, "Thief");
         you[0].hp = 11; you[0].hp_max = 11;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -925,8 +927,8 @@ case 3: // thief
  you[0].spell_levels = 0;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 5;// damage = 6; //break;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_SHORT_SWORD;// damage = 6; //break;
 
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
@@ -935,23 +937,23 @@ case 3: // thief
 
 
   you[0].inv_quant [1] = random2(10) + random2(10) + 10;
-                you[0].inv_class [1] = 1;
-                you[0].inv_type [1] = 3; //wtype;
+                you[0].inv_class [1] = OBJ_MISSILES;
+                you[0].inv_type [1] = MI_DART; //wtype;
                 you[0].inv_plus [1] = 50;
                 you[0].inv_dam [1] = 0;
                 you[0].inv_col [1] = LIGHTCYAN;
 
         // Robe
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 0;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_ROBE;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = BROWN;
 
         you[0].inv_quant [3] = 1;
-        you[0].inv_class [3] = 2;
-        you[0].inv_type [3] = 9;
+        you[0].inv_class [3] = OBJ_ARMOUR;
+        you[0].inv_type [3] = ARM_CLOAK;
         you[0].inv_plus [3] = 50;
         you[0].inv_dam [3] = 0;
         you[0].inv_col [3] = DARKGREY;
@@ -967,31 +969,31 @@ case 3: // thief
         you[0].dex += 6;
         you[0].intel += 2;
 
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 2;
-        you[0].equip [1] = 3;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 2;
+        you[0].equip [EQ_CLOAK] = 3;
 
         you[0].gp = random2(10);
 /* you[0].res_magic = 3;*/
 
- you[0].skills [0] = 1;
- you[0].skills [1] = 2;
+ you[0].skills [SK_FIGHTING] = 1;
+ you[0].skills [SK_SHORT_BLADES] = 2;
 
- you[0].skills [14] = 2;
- you[0].skills [15] = 2;
- you[0].skills [16] = 1;
- you[0].skills [14 + random() % 3] ++;
+ you[0].skills [SK_DODGING] = 2;
+ you[0].skills [SK_STEALTH] = 2;
+ you[0].skills [SK_STABBING] = 1;
+ you[0].skills [SK_DODGING + random() % 3] ++;
 
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
- you[0].skills [12] = 1;
- you[0].skills [11] = 1;
+ you[0].skills [SK_THROWING] = 1;
+ you[0].skills [SK_DARTS] = 1;
 
- you[0].skills [18] = 2;
+ you[0].skills [SK_TRAPS_DOORS] = 2;
 
 break;
 
-case 4: // Gladiator
+case JOB_GLADIATOR: // Gladiator
         strcpy(you[0].clasnam, "Gladiator");
         you[0].hp = 15; you[0].hp_max = 15;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -1002,19 +1004,19 @@ case 4: // Gladiator
  you[0].spell_levels = 0;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_SHORT_SWORD;
 /*  if (random2(3) == 0)
   {
-   you[0].inv_type [0] = 2;
-   you[0].skills [5] = 3;
+   you[0].inv_type [0] = WPN_FLAIL;
+   you[0].skills [SK_MACES_FLAILS] = 3;
   } else
   if (random2(3) == 0)
   {
-   you[0].inv_type [0] = 4;
-   you[0].skills [5] = 3;
+   you[0].inv_type [0] = WPN_MORNINGSTAR;
+   you[0].skills [SK_MACES_FLAILS] = 3;
   }
-   else you[0].skills [1] = 3;*/
+   else you[0].skills [SK_SHORT_BLADES] = 3;*/
         choose_weapon();
     cprintf(EOL"A fine choice.");
         weap_skill = 3;
@@ -1025,18 +1027,18 @@ case 4: // Gladiator
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
-        if (you[0].species >= 18 && you[0].species <= 29)
+        if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN)
         {
          you[0].inv_quant [1] = 1;
-         you[0].inv_class [1] = 2;
-         you[0].inv_type [1] = 30;
+         you[0].inv_class [1] = OBJ_ARMOUR;
+         you[0].inv_type [1] = ARM_ANIMAL_SKIN;
          you[0].inv_plus [1] = 50;
          you[0].inv_dam [1] = 0;
          you[0].inv_col [1] = BROWN;
 
          you[0].inv_quant [2] = 1;
-         you[0].inv_class [2] = 2;
-         you[0].inv_type [2] = 8;
+         you[0].inv_class [2] = OBJ_ARMOUR;
+         you[0].inv_type [2] = ARM_SHIELD;
          you[0].inv_plus [2] = 50;
          you[0].inv_dam [2] = 0;
          you[0].inv_col [2] = LIGHTCYAN;
@@ -1044,15 +1046,15 @@ case 4: // Gladiator
         else
         {
          you[0].inv_quant [1] = 1;
-         you[0].inv_class [1] = 2;
-         you[0].inv_type [1] = 3;
+         you[0].inv_class [1] = OBJ_ARMOUR;
+         you[0].inv_type [1] = ARM_SCALE_MAIL;
          you[0].inv_plus [1] = 50;
          you[0].inv_dam [1] = 0;
          you[0].inv_col [1] = LIGHTCYAN;
 
          you[0].inv_quant [2] = 1;
-         you[0].inv_class [2] = 2;
-         you[0].inv_type [2] = 13;
+         you[0].inv_class [2] = OBJ_ARMOUR;
+         you[0].inv_type [2] = ARM_BUCKLER;
          you[0].inv_plus [2] = 50;
          you[0].inv_dam [2] = 0;
          you[0].inv_col [2] = LIGHTCYAN;
@@ -1061,22 +1063,22 @@ case 4: // Gladiator
         you[0].evasion = 9;*/
         you[0].strength += 7;
         you[0].dex += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
-        you[0].equip [5] = 2;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
+        you[0].equip [EQ_SHIELD] = 2;
         you[0].gp = random2(10);
 /* you[0].res_magic = 3;*/
 
- you[0].skills [0] = 3;
-if (you[0].species >= 18 && you[0].species <= 29) you[0].skills [14] = 3;
- else you[0].skills [13] = 3;
+ you[0].skills [SK_FIGHTING] = 3;
+if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN) you[0].skills [SK_DODGING] = 3;
+ else you[0].skills [SK_ARMOUR] = 3;
 /* you[0].evasion ++;*/
- you[0].skills [17] = 2;
+ you[0].skills [SK_SHIELDS] = 2;
 
 break;
 
 
-case 5: // Necromancer
+case JOB_NECROMANCER: // Necromancer
         strcpy(you[0].clasnam, "Necromancer");
         you[0].hp = 10; you[0].hp_max = 10;
         you[0].ep = 3; you[0].ep_max = 3;
@@ -1086,15 +1088,15 @@ case 5: // Necromancer
  you[0].speed = 10;*/
  you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 3;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_DAGGER;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = DARKGREY;
@@ -1102,35 +1104,35 @@ case 5: // Necromancer
         you[0].evasion = 10;*/
         you[0].dex += 4;
         you[0].intel += 6;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
-        you[0].inv_class [2] = 10;
+        you[0].inv_class [2] = OBJ_BOOKS;
 
-        you[0].inv_type [2] = 23;
+        you[0].inv_type [2] = BOOK_NECROMANCY;
         you[0].inv_quant [2] = 1;
         you[0].inv_plus [2] = 127;
         you[0].inv_dam [2] = 0;//1;
         you[0].inv_col [2] = DARKGREY;
 /* you[0].res_magic = 10;*/
 
-        you[0].skills [14] = 1;
-        you[0].skills [15] = 1;
-        you[0].skills [14 + random() % 2] ++;
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
+        you[0].skills [SK_DODGING] = 1;
+        you[0].skills [SK_STEALTH] = 1;
+        you[0].skills [SK_DODGING + random() % 2] ++;
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
-        you[0].skills [25] = 1;
-        you[0].skills [29] = 4;
-        you[0].skills [1] = 1;
-        you[0].skills [7] = 1;
+        you[0].skills [SK_SPELLCASTING] = 1;
+        you[0].skills [SK_NECROMANCY] = 4;
+        you[0].skills [SK_SHORT_BLADES] = 1;
+        you[0].skills [SK_STAVES] = 1;
 
 break;
 
 
 
-case 6: // paladin
+case JOB_PALADIN: // paladin
         strcpy(you[0].clasnam, "Paladin");
-        you[0].religion = 2;
+        you[0].religion = GOD_SHINING_ONE;
         you[0].piety = 28;
         you[0].hp = 14; you[0].hp_max = 14;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -1140,21 +1142,21 @@ case 6: // paladin
  you[0].speed = 10;*/
  you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = WHITE;
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 8;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_SHIELD;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = LIGHTCYAN;
@@ -1163,32 +1165,32 @@ case 6: // paladin
         you[0].strength += 6;
         you[0].dex += 2;
         you[0].intel += 2;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
- you[0].equip [5] = 2;
+ you[0].equip [EQ_SHIELD] = 2;
 
-        you[0].inv_class [3] = 8;
-        you[0].inv_type [3] = 0;
+        you[0].inv_class [3] = OBJ_POTIONS;
+        you[0].inv_type [3] = POT_HEALING;
         you[0].inv_quant [3] = 1;
         you[0].inv_plus [3] = 0;
         you[0].inv_dam [3] = 0;
         you[0].inv_col [3] = random2(15) + 1;
 
- you[0].skills [0] = 2;
- you[0].skills [13] = 1;
- you[0].skills [14] = 1;
- you[0].skills [13 + random() % 2] ++;
-/*  if (you[0].skills [14] == 2) you[0].evasion ++;*/
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_ARMOUR] = 1;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_ARMOUR + random() % 2] ++;
+/*  if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
- you[0].skills [17] = 1;
- you[0].skills [1] = 2;
- you[0].skills [2] = 1;
- you[0].skills [3] = 1;
- you[0].skills [38] = 1;
+ you[0].skills [SK_SHIELDS] = 1;
+ you[0].skills [SK_SHORT_BLADES] = 2;
+ you[0].skills [SK_LONG_SWORDS] = 1;
+ you[0].skills [SK_GREAT_SWORDS] = 1;
+ you[0].skills [SK_INVOCATIONS] = 1;
 break;
 
-case 7: // assassin
+case JOB_ASSASSIN: // assassin
         strcpy(you[0].clasnam, "assassin");
         you[0].hp = 12; you[0].hp_max = 12;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -1197,28 +1199,28 @@ case 7: // assassin
  you[0].thr_abil = 12;
  you[0].speed = 10;*/
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         you[0].inv_quant [1] = random2(10) + random2(10) + 10;
-                you[0].inv_class [1] = 1;
-                you[0].inv_type [1] = 3; //wtype;
+                you[0].inv_class [1] = OBJ_MISSILES;
+                you[0].inv_type [1] = MI_DART; //wtype;
                 you[0].inv_plus [1] = 50;
                 you[0].inv_dam [1] = 3;
                 you[0].inv_col [1] = LIGHTCYAN;
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 0;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_ROBE;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = DARKGREY;
 
         you[0].inv_quant [3] = 1;
-        you[0].inv_class [3] = 2;
-        you[0].inv_type [3] = 9;
+        you[0].inv_class [3] = OBJ_ARMOUR;
+        you[0].inv_type [3] = ARM_CLOAK;
         you[0].inv_plus [3] = 50;
         you[0].inv_dam [3] = 0;
         you[0].inv_col [3] = DARKGREY;
@@ -1228,30 +1230,30 @@ case 7: // assassin
         you[0].strength += 3;
         you[0].dex += 5;
         you[0].intel += 2;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 2;
-        you[0].equip [1] = 3;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 2;
+        you[0].equip [EQ_CLOAK] = 3;
         you[0].gp = random2(10);
 /* you[0].res_magic = 3;*/
 
- you[0].skills [0] = 2;
- you[0].skills [1] = 2;
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_SHORT_BLADES] = 2;
 
- you[0].skills [14] = 1;
- you[0].skills [15] = 2;
- you[0].skills [16] = 2;
- you[0].skills [14 + random() % 3] ++;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_STEALTH] = 2;
+ you[0].skills [SK_STABBING] = 2;
+ you[0].skills [SK_DODGING + random() % 3] ++;
 
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
- you[0].skills [12] = 1;
- you[0].skills [11] = 1;
+ you[0].skills [SK_THROWING] = 1;
+ you[0].skills [SK_DARTS] = 1;
 
 break;
 
-case 8: // Barbarian
+case JOB_BERSERKER: // Barbarian
         strcpy(you[0].clasnam, "Berserker");
-        you[0].religion = 10;
+        you[0].religion = GOD_TROG;
         you[0].piety = 35;
         you[0].hp = 15; you[0].hp_max = 15;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -1261,11 +1263,11 @@ case 8: // Barbarian
  you[0].speed = 10;*/
  you[0].spell_levels = 0;
 
- if (you[0].species == 15)
+ if (you[0].species == SP_OGRE)
  {
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 0;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_CLUB;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
@@ -1273,54 +1275,54 @@ case 8: // Barbarian
 
  }
 
- if (you[0].species == 16)
+ if (you[0].species == SP_TROLL)
  {
         you[0].inv_quant [0] = 0;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 0;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_CLUB;
         you[0].inv_plus [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = BROWN;
 
  }
 
- if (you[0].species == 15 || you[0].species == 16 || (you[0].species >= 18 && you[0].species <= 29))
+ if (you[0].species == SP_OGRE || you[0].species == SP_TROLL || (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN))
  {
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 30;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ANIMAL_SKIN;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = BROWN;
  } else
  {
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 9;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_HAND_AXE;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
 
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 0;
-        you[0].inv_type [1] = 11;
+        you[0].inv_class [1] = OBJ_WEAPONS;
+        you[0].inv_type [1] = WPN_SPEAR;
         you[0].inv_plus [1] = 50;
         you[0].inv_plus2 [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = LIGHTCYAN;
 
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 0;
-        you[0].inv_type [2] = 11;
+        you[0].inv_class [2] = OBJ_WEAPONS;
+        you[0].inv_type [2] = WPN_SPEAR;
         you[0].inv_plus [2] = 50;
         you[0].inv_plus2 [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = LIGHTCYAN;
 
         you[0].inv_quant [3] = 1;
-        you[0].inv_class [3] = 0;
-        you[0].inv_type [3] = 11;
+        you[0].inv_class [3] = OBJ_WEAPONS;
+        you[0].inv_type [3] = WPN_SPEAR;
         you[0].inv_plus [3] = 50;
         you[0].inv_plus2 [3] = 50;
         you[0].inv_dam [3] = 0;
@@ -1328,8 +1330,8 @@ case 8: // Barbarian
 
 
         you[0].inv_quant [4] = 1;
-        you[0].inv_class [4] = 2;
-        you[0].inv_type [4] = 1;
+        you[0].inv_class [4] = OBJ_ARMOUR;
+        you[0].inv_type [4] = ARM_LEATHER_ARMOUR;
         you[0].inv_plus [4] = 50;
         you[0].inv_dam [4] = 0;
         you[0].inv_col [4] = BROWN;
@@ -1341,42 +1343,42 @@ case 8: // Barbarian
         you[0].strength += 7;
         you[0].dex += 4;
         you[0].intel -= 1;
-        you[0].equip [0] = 0;
+        you[0].equip [EQ_WEAPON] = 0;
         you[0].gp = random2(10);
 /* you[0].res_magic = 5;*/
 
- you[0].skills [0] = 2;
+ you[0].skills [SK_FIGHTING] = 2;
 
-        if (you[0].species != 16)
+        if (you[0].species != SP_TROLL)
         {
-         you[0].equip [0] = 0;
-         you[0].equip [6] = 4;
+         you[0].equip [EQ_WEAPON] = 0;
+         you[0].equip [EQ_BODY_ARMOUR] = 4;
         } else
         {
-         you[0].equip [0] = -1;
-         you[0].equip [6] = 1;
+         you[0].equip [EQ_WEAPON] = -1;
+         you[0].equip [EQ_BODY_ARMOUR] = 1;
         }
 
-        if (you[0].species == 15)
+        if (you[0].species == SP_OGRE)
         {
-         you[0].equip [0] = 0;
-         you[0].equip [6] = 1;
+         you[0].equip [EQ_WEAPON] = 0;
+         you[0].equip [EQ_BODY_ARMOUR] = 1;
         }
 
 
-if (you[0].species != 15 && you[0].species != 16)
+if (you[0].species != SP_OGRE && you[0].species != SP_TROLL)
 {
- you[0].skills [13] = 2;
- you[0].skills [14] = 2;
- you[0].skills [12] = 2;
-} else you[0].skills [0] += 3;
+ you[0].skills [SK_ARMOUR] = 2;
+ you[0].skills [SK_DODGING] = 2;
+ you[0].skills [SK_THROWING] = 2;
+} else you[0].skills [SK_FIGHTING] += 3;
 
 /* you[0].evasion ++;*/
- you[0].skills [4] = 3;
- you[0].skills [6] = 1;
+ you[0].skills [SK_AXES] = 3;
+ you[0].skills [SK_POLEARMS] = 1;
 break;
 
-case 9: // Ranger
+case JOB_RANGER: // Ranger
         strcpy(you[0].clasnam, "Ranger");
         you[0].hp = 13; you[0].hp_max = 13;
         you[0].ep = 0; you[0].ep_max = 0;
@@ -1387,32 +1389,32 @@ case 9: // Ranger
  you[0].spell_levels = 4;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 3;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_DAGGER;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
 
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 0;
-        you[0].inv_type [1] = 14;
+        you[0].inv_class [1] = OBJ_WEAPONS;
+        you[0].inv_type [1] = WPN_BOW;
         you[0].inv_plus [1] = 50;
         you[0].inv_plus2 [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = BROWN;
 
         you[0].inv_quant [2] = 15 + random() % 5 + random() % 5 + random() % 5 + random() % 5 + random() % 5;
-        you[0].inv_class [2] = 1;
-        you[0].inv_type [2] = 1;
+        you[0].inv_class [2] = OBJ_MISSILES;
+        you[0].inv_type [2] = MI_ARROW;
         you[0].inv_plus [2] = 50;
         you[0].inv_plus2 [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = LIGHTCYAN;
 
         you[0].inv_quant [3] = 1;
-        you[0].inv_class [3] = 2;
-        you[0].inv_type [3] = 1;
+        you[0].inv_class [3] = OBJ_ARMOUR;
+        you[0].inv_type [3] = ARM_LEATHER_ARMOUR;
         you[0].inv_plus [3] = 50;
         you[0].inv_dam [3] = 0;
         you[0].inv_col [3] = BROWN;
@@ -1422,41 +1424,41 @@ case 9: // Ranger
         you[0].strength += 3;
         you[0].dex += 4;
         you[0].intel += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 3;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 3;
         you[0].gp = random2(10);
 /* you[0].res_magic = 4;*/
 
- you[0].skills [0] = 2;
- you[0].skills [14] = 1;
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
- you[0].skills [15] = 1;
- you[0].skills [16 + random() % 2] ++;
- you[0].skills [12] = 2;
- you[0].skills [9] = 2;
- you[0].skills [25] = 1;
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_DODGING] = 1;
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
+ you[0].skills [SK_STEALTH] = 1;
+ you[0].skills [SK_STABBING + random() % 2] ++;
+ you[0].skills [SK_THROWING] = 2;
+ you[0].skills [SK_BOWS] = 2;
+ you[0].skills [SK_SPELLCASTING] = 1;
 break;
 
-case 10: // Conjurer
-case 11: // Enchanter
-case 14: // Summoner
-case 12:
-case 13:
-case 15:
-case 16:
-case 19:
-case 21:
-case 27:
-    if (you[0].clas == 10) strcpy(you[0].clasnam, "conjurer");
-        if (you[0].clas == 11) strcpy(you[0].clasnam, "Enchanter");
-        if (you[0].clas == 12) strcpy(you[0].clasnam, "Fire Elementalist");
-        if (you[0].clas == 13) strcpy(you[0].clasnam, "Ice Elementalist");
-        if (you[0].clas == 14) strcpy(you[0].clasnam, "Summoner");
-        if (you[0].clas == 15) strcpy(you[0].clasnam, "Air Elementalist");
-        if (you[0].clas == 16) strcpy(you[0].clasnam, "Earth Elementalist");
-        if (you[0].clas == 19) strcpy(you[0].clasnam, "Venom Mage");
-        if (you[0].clas == 21) strcpy(you[0].clasnam, "transmuter");
-        if (you[0].clas == 27) strcpy(you[0].clasnam, "warper");
+case JOB_CONJURER: // Conjurer
+case JOB_ENCHANTER: // Enchanter
+case JOB_SUMMONER: // Summoner
+case JOB_FIRE_ELEMENTALIST:
+case JOB_ICE_ELEMENTALIST:
+case JOB_AIR_ELEMENTALIST:
+case JOB_EARTH_ELEMENTALIST:
+case JOB_VENOM_MAGE:
+case JOB_TRANSMUTER:
+case JOB_WARPER:
+    if (you[0].clas == JOB_CONJURER) strcpy(you[0].clasnam, "conjurer");
+        if (you[0].clas == JOB_ENCHANTER) strcpy(you[0].clasnam, "Enchanter");
+        if (you[0].clas == JOB_FIRE_ELEMENTALIST) strcpy(you[0].clasnam, "Fire Elementalist");
+        if (you[0].clas == JOB_ICE_ELEMENTALIST) strcpy(you[0].clasnam, "Ice Elementalist");
+        if (you[0].clas == JOB_SUMMONER) strcpy(you[0].clasnam, "Summoner");
+        if (you[0].clas == JOB_AIR_ELEMENTALIST) strcpy(you[0].clasnam, "Air Elementalist");
+        if (you[0].clas == JOB_EARTH_ELEMENTALIST) strcpy(you[0].clasnam, "Earth Elementalist");
+        if (you[0].clas == JOB_VENOM_MAGE) strcpy(you[0].clasnam, "Venom Mage");
+        if (you[0].clas == JOB_TRANSMUTER) strcpy(you[0].clasnam, "transmuter");
+        if (you[0].clas == JOB_WARPER) strcpy(you[0].clasnam, "warper");
 
         switch(random() % 8) /* get a random lvl 1 attack spell - later overwritten for most classes*/
         {
@@ -1478,85 +1480,85 @@ case 27:
  you[0].speed = 10;*/
  you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-                you[0].inv_type [0] = 3;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+                you[0].inv_type [0] = WPN_DAGGER;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
-        if (you[0].clas == 11) you[0].inv_plus [0] = 51;
-        if (you[0].clas == 11) you[0].inv_plus2 [0] = 51;
+        if (you[0].clas == JOB_ENCHANTER) you[0].inv_plus [0] = 51;
+        if (you[0].clas == JOB_ENCHANTER) you[0].inv_plus2 [0] = 51;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
 
 //      if (you[0].species == 17) you[0].inv_type [0] = 17;
 
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
-        if (you[0].clas == 11) you[0].inv_plus [1] = 51;
+        if (you[0].clas == JOB_ENCHANTER) you[0].inv_plus [1] = 51;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = random() % 15 + 1;
-        if (you[0].clas == 12) you[0].inv_col [1] = RED;
-        if (you[0].clas == 13) you[0].inv_col [1] = LIGHTCYAN;
-        if (you[0].clas == 15) you[0].inv_col [1] = LIGHTBLUE;
-        if (you[0].clas == 16) you[0].inv_col [1] = BROWN;
-        if (you[0].clas == 19) you[0].inv_col [1] = GREEN;
+        if (you[0].clas == JOB_FIRE_ELEMENTALIST) you[0].inv_col [1] = RED;
+        if (you[0].clas == JOB_ICE_ELEMENTALIST) you[0].inv_col [1] = LIGHTCYAN;
+        if (you[0].clas == JOB_AIR_ELEMENTALIST) you[0].inv_col [1] = LIGHTBLUE;
+        if (you[0].clas == JOB_EARTH_ELEMENTALIST) you[0].inv_col [1] = BROWN;
+        if (you[0].clas == JOB_VENOM_MAGE) you[0].inv_col [1] = GREEN;
 /*      you[0].AC = 1;
-        if (you[0].clas == 11) you[0].AC = 2;
+        if (you[0].clas == JOB_ENCHANTER) you[0].AC = 2;
         you[0].evasion = 10;*/
 //      you[0].strength = 6;
         you[0].dex += 4;
         you[0].intel += 6;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
-        you[0].inv_class [2] = 10;
+        you[0].inv_class [2] = OBJ_BOOKS;
 
 /*        you[0].res_magic = 10;*/
 
-        you[0].inv_type [2] = 3 + random2(2); // conj
+        you[0].inv_type [2] = BOOK_CONJURATIONS_I + random2(2); // conj
         you[0].inv_plus [2] = 127;
-        if (you[0].clas == 14)
+        if (you[0].clas == JOB_SUMMONER)
         {
-         you[0].inv_type [2] = 25; // summ
+         you[0].inv_type [2] = BOOK_SUMMONINGS; // summ
          you[0].inv_plus [2] = 127;
-         you[0].skills [28] = 4;
+         you[0].skills [SK_SUMMONINGS] = 4;
          // gets some darts - this class is very difficult to start off with
                 you[0].inv_quant [3] = random2(5) + random2(5) + 7;
-                you[0].inv_class [3] = 1;
-                you[0].inv_type [3] = 3; //wtype;
+                you[0].inv_class [3] = OBJ_MISSILES;
+                you[0].inv_type [3] = MI_DART; //wtype;
                 you[0].inv_plus [3] = 50;
                 you[0].inv_dam [3] = 0;
                 you[0].inv_col [3] = LIGHTCYAN;
         }
-        if (you[0].clas == 10)
+        if (you[0].clas == JOB_CONJURER)
         {
-         you[0].skills [26] = 4; // conjurer
+         you[0].skills [SK_CONJURATIONS] = 4; // conjurer
         }
-        if (you[0].clas == 11) // ench
+        if (you[0].clas == JOB_ENCHANTER) // ench
         {
 /*          you[0].res_magic = 12;*/
 
-         you[0].inv_type [2] = 26; // charms
+         you[0].inv_type [2] = BOOK_CHARMS; // charms
          you[0].inv_plus [2] = 127;
-         you[0].skills [27] = 4;
+         you[0].skills [SK_ENCHANTMENTS] = 4;
 
         you[0].inv_quant [3] = 1;
-        you[0].inv_class [3] = 3;
+        you[0].inv_class [3] = OBJ_WANDS;
         you[0].inv_dam [3] = 0;
         you[0].inv_col [3] = random() % 15 + 1;
         switch(random() % 4)
         {
-         case 0: you[0].inv_type [3] = 2;
+         case 0: you[0].inv_type [3] = WAND_SLOWING;
          you[0].inv_plus [3] = 7 + random() % 5;
          break;
-         case 1: you[0].inv_type [3] = 6;
+         case 1: you[0].inv_type [3] = WAND_PARALYSIS;
          you[0].inv_plus [3] = 5 + random() % 4;
          break;
-         case 2: you[0].inv_type [3] = 10;
+         case 2: you[0].inv_type [3] = WAND_INVISIBILITY;
          you[0].inv_plus [3] = 4 + random() % 4;
          break;
-         case 3: you[0].inv_type [3] = 6;
+         case 3: you[0].inv_type [3] = WAND_PARALYSIS;
          you[0].inv_plus [3] = 5 + random() % 4;
          break;
         }
@@ -1564,60 +1566,60 @@ case 27:
         } // end of enchanter
         switch(you[0].clas)
         {
-         case 12: // fire elementalist
-         you[0].inv_type [2] = 5;
+         case JOB_FIRE_ELEMENTALIST: // fire elementalist
+         you[0].inv_type [2] = BOOK_FLAMES;
          you[0].inv_plus [2] = 127;
-         you[0].skills [26] = 1; // conj
-//         you[0].skills [27] = 1; // ench
-         you[0].skills [33] = 3; // fire magic
-         you[0].spells [0] = 75;
+         you[0].skills [SK_CONJURATIONS] = 1; // conj
+//         you[0].skills [SK_ENCHANTMENTS] = 1; // ench
+         you[0].skills [SK_FIRE_MAGIC] = 3; // fire magic
+         you[0].spells [0] = SPELL_BURN;
          break;
 
-         case 13: // Ice elementalist
-         you[0].inv_type [2] = 6;
+         case JOB_ICE_ELEMENTALIST: // Ice elementalist
+         you[0].inv_type [2] = BOOK_FROST;
          you[0].inv_plus [2] = 127;
-         you[0].skills [26] = 1; // conj
-//         you[0].skills [27] = 1; // ench
-         you[0].skills [34] = 3; // ice magic
-         you[0].spells [0] = 76;
+         you[0].skills [SK_CONJURATIONS] = 1; // conj
+//         you[0].skills [SK_ENCHANTMENTS] = 1; // ench
+         you[0].skills [SK_ICE_MAGIC] = 3; // ice magic
+         you[0].spells [0] = SPELL_FREEZE;
          break;
 
-         case 15: // Air elementalist
-         you[0].inv_type [2] = 28;
+         case JOB_AIR_ELEMENTALIST: // Air elementalist
+         you[0].inv_type [2] = BOOK_AIR;
          you[0].inv_plus [2] = 127;
-         you[0].skills [26] = 1; // conj
-//         you[0].skills [27] = 1; // ench
-         you[0].skills [35] = 3; // air magic
-         you[0].spells [0] = 132;
+         you[0].skills [SK_CONJURATIONS] = 1; // conj
+//         you[0].skills [SK_ENCHANTMENTS] = 1; // ench
+         you[0].skills [SK_AIR_MAGIC] = 3; // air magic
+         you[0].spells [0] = SPELL_ARC;
          break;
 
-         case 16: // Earth elementalist
-         you[0].inv_type [2] = 39;
+         case JOB_EARTH_ELEMENTALIST: // Earth elementalist
+         you[0].inv_type [2] = BOOK_GEOMANCY;
          you[0].inv_plus [2] = 127;
-         you[0].skills [26] = 1; // conj
-//         you[0].skills [27] = 1; // ench
-         you[0].skills [36] = 3; // earth magic
-         you[0].spells [0] = 127;
+         you[0].skills [SK_CONJURATIONS] = 1; // conj
+//         you[0].skills [SK_ENCHANTMENTS] = 1; // ench
+         you[0].skills [SK_EARTH_MAGIC] = 3; // earth magic
+         you[0].spells [0] = SPELL_CRUSH;
          break;
 
-         case 19: // Venom Mage
-         you[0].inv_type [2] = 13;
+         case JOB_VENOM_MAGE: // Venom Mage
+         you[0].inv_type [2] = BOOK_POISONINGS;
          you[0].inv_plus [2] = 126;
-         you[0].skills [37] = 4; // Poison magic
-         you[0].spells [0] = 115;
+         you[0].skills [SK_POISON_MAGIC] = 4; // Poison magic
+         you[0].spells [0] = SPELL_STING;
          break;
 
-         case 21: // transmuter
-         you[0].inv_type [2] = 17;
+         case JOB_TRANSMUTER: // transmuter
+         you[0].inv_type [2] = BOOK_CHANGES;
          you[0].inv_plus [2] = 126;
-         you[0].skills [31] = 4; // transmigrations
-         you[0].spells [0] = 150;
+         you[0].skills [SK_TRANSMIGRATION] = 4; // transmigrations
+         you[0].spells [0] = SPELL_DISRUPT;
          break;
 
-         case 27: // warper
-         you[0].inv_type [2] = 11;
+         case JOB_WARPER: // warper
+         you[0].inv_type [2] = BOOK_SPATIAL_TRANSLOCATIONS;
          you[0].inv_plus [2] = 124;
-         you[0].skills [30] = 4; // translocations
+         you[0].skills [SK_TRANSLOCATIONS] = 4; // translocations
          break;
 
         }
@@ -1626,30 +1628,30 @@ case 27:
 //      you[0].inv_plus [2] = 124;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = random() % 15 + 1;
-        if (you[0].clas == 12) you[0].inv_col [2] = RED;
-        if (you[0].clas == 13) you[0].inv_col [2] = LIGHTCYAN;
-        if (you[0].clas == 19) you[0].inv_col [2] = GREEN;
+        if (you[0].clas == JOB_FIRE_ELEMENTALIST) you[0].inv_col [2] = RED;
+        if (you[0].clas == JOB_ICE_ELEMENTALIST) you[0].inv_col [2] = LIGHTCYAN;
+        if (you[0].clas == JOB_VENOM_MAGE) you[0].inv_col [2] = GREEN;
 /*  you[0].res_magic = 10;*/
 
-        you[0].skills [14] = 1;
-        you[0].skills [15] = 1;
-        you[0].skills [14 + random() % 2] ++;
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
+        you[0].skills [SK_DODGING] = 1;
+        you[0].skills [SK_STEALTH] = 1;
+        you[0].skills [SK_DODGING + random() % 2] ++;
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
-        you[0].skills [25] = 1;
-        you[0].skills [1] = 1;
-/*      if (you[0].species == 17)
+        you[0].skills [SK_SPELLCASTING] = 1;
+        you[0].skills [SK_SHORT_BLADES] = 1;
+/*      if (you[0].species == SP_OGRE_MAGE)
         {
-         you[0].skills [1] = 0;
-         you[0].skills [6] = 2;
+         you[0].skills [SK_SHORT_BLADES] = 0;
+         you[0].skills [SK_POLEARMS] = 2;
         }*/
-        you[0].skills [7] = 1;
+        you[0].skills [SK_STAVES] = 1;
 
 
 break;
 
 
-case 17: // Crusader
+case JOB_CRUSADER: // Crusader
         strcpy(you[0].clasnam, "Crusader");
 /*        you[0].piety = 75;*/
         you[0].hp = 13; you[0].hp_max = 13;
@@ -1660,8 +1662,8 @@ case 17: // Crusader
  you[0].speed = 10;*/
  you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
 
 //      if (you[0].species == 17) you[0].inv_type [0] = 17;
 
@@ -1673,15 +1675,15 @@ case 17: // Crusader
     cprintf(EOL"A fine choice.");
         weap_skill = 2;
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = 1 + random() % 15;
 
 
-        you[0].inv_class [2] = 10;
-        you[0].inv_type [2] = 20;
+        you[0].inv_class [2] = OBJ_BOOKS;
+        you[0].inv_type [2] = BOOK_WAR_CHANTS;
         you[0].inv_quant [2] = 1;
         you[0].inv_plus [2] = 127;
         you[0].inv_dam [2] = 0;
@@ -1692,20 +1694,20 @@ case 17: // Crusader
         you[0].strength += 4;
         you[0].dex += 3;
         you[0].intel += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
 
- you[0].skills [0] = 3;
- you[0].skills [13] = 1;
- you[0].skills [14] = 1;
- you[0].skills [15] = 1;
- you[0].skills [25] = 2;
- you[0].skills [27] = 2;
+ you[0].skills [SK_FIGHTING] = 3;
+ you[0].skills [SK_ARMOUR] = 1;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_STEALTH] = 1;
+ you[0].skills [SK_SPELLCASTING] = 2;
+ you[0].skills [SK_ENCHANTMENTS] = 2;
 break;
 
 
-case 18: // Death knight
+case JOB_DEATH_KNIGHT: // Death knight
         strcpy(you[0].clasnam, "Death Knight");
 /*        you[0].piety = 75;*/
         you[0].hp = 13; you[0].hp_max = 13;
@@ -1713,8 +1715,8 @@ case 18: // Death knight
         you[0].speed = 10;
         you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
@@ -1724,15 +1726,15 @@ case 18: // Death knight
         weap_skill = 2;
 
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = DARKGREY;
 
 
-        you[0].inv_class [2] = 10;
-        you[0].inv_type [2] = 23;
+        you[0].inv_class [2] = OBJ_BOOKS;
+        you[0].inv_type [2] = BOOK_NECROMANCY;
         you[0].inv_quant [2] = 1;
         you[0].inv_plus [2] = 127;
         you[0].inv_dam [2] = 0;
@@ -1743,51 +1745,59 @@ case 18: // Death knight
         you[0].strength += 4;
         you[0].dex += 3;
         you[0].intel += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
 
 
-clrscr();
-cprintf(EOL" From where do you draw your power?"EOL);
-cprintf("a - Necromantic magic"EOL);
-cprintf("b - the God Yredelemnul"EOL);
-
-getkey1 : keyn = get_ch();
-switch(keyn)
+if (you[0].species == SP_DEMIGOD)
 {
- case 'a': cprintf(EOL"Very well.");
-      you[0].skills [25] = 1;
-      you[0].skills [29] = 2;
-          you[0].spells [0] = 67;
-      break;
- case 'b':
-      you[0].religion = 4;
-          you[0].inv_plus [0] = 51;
-          you[0].inv_plus2 [0] = 51;
-      you[0].inv_quant [2] = 0;
-      you[0].skills [38] = 3;
-      you[0].piety = 28;
-      cprintf(EOL"Welcome...");
-      break;
- default: goto getkey1;
+       you[0].skills [SK_SPELLCASTING] = 1;
+       you[0].skills [SK_NECROMANCY] = 2;
+           you[0].spells [0] = SPELL_PAIN;
+}
+else
+{
+ clrscr();
+ cprintf(EOL" From where do you draw your power?"EOL);
+ cprintf("a - Necromantic magic"EOL);
+ cprintf("b - the God Yredelemnul"EOL);
+
+ getkey1 : keyn = get_ch();
+ switch(keyn)
+ {
+  case 'a': cprintf(EOL"Very well.");
+       you[0].skills [SK_SPELLCASTING] = 1;
+       you[0].skills [SK_NECROMANCY] = 2;
+           you[0].spells [0] = SPELL_PAIN;
+       break;
+  case 'b':
+       you[0].religion = GOD_YREDELEMNUL;
+           you[0].inv_plus [0] = 51;
+           you[0].inv_plus2 [0] = 51;
+       you[0].inv_quant [2] = 0;
+       you[0].skills [SK_INVOCATIONS] = 3;
+       you[0].piety = 28;
+       cprintf(EOL"Welcome...");
+       break;
+  default: goto getkey1;
+ }
+
 }
 
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_ARMOUR] = 1;
+ you[0].skills [SK_DODGING] = 1;
+/*  if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
-
- you[0].skills [0] = 2;
- you[0].skills [13] = 1;
- you[0].skills [14] = 1;
-/*  if (you[0].skills [14] == 2) you[0].evasion ++;*/
-
- you[0].skills [15] = 1;
-// you[0].skills [1] = 2;
- you[0].skills [16] = 1;
+ you[0].skills [SK_STEALTH] = 1;
+// you[0].skills [SK_SHORT_BLADES] = 2;
+ you[0].skills [SK_STABBING] = 1;
 
 
 break;
 
-case 20: // Chaos knight
+case JOB_CHAOS_KNIGHT: // Chaos knight
         strcpy(you[0].clasnam, "Knight of Chaos");
 /*        you[0].piety = 75;*/
         you[0].hp = 13; you[0].hp_max = 13;
@@ -1795,8 +1805,8 @@ case 20: // Chaos knight
         you[0].speed = 10;
         you[0].spell_levels = 4;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
         you[0].inv_plus [0] = 50 + random2(3);
         you[0].inv_plus2 [0] = 50 + random2(3);
         you[0].inv_dam [0] = 0;
@@ -1806,8 +1816,8 @@ case 20: // Chaos knight
         choose_weapon();
         weap_skill = 2;
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50 + random2(3);
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = random2(15) + 1;
@@ -1815,16 +1825,16 @@ case 20: // Chaos knight
         you[0].strength += 4;
         you[0].dex += 3;
         you[0].intel += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
 
- you[0].skills [0] = 3;
- you[0].skills [13] = 1;
- you[0].skills [14] = 1;
- you[0].skills [13 + random() % 2] ++;
+ you[0].skills [SK_FIGHTING] = 3;
+ you[0].skills [SK_ARMOUR] = 1;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_ARMOUR + random() % 2] ++;
 
- you[0].skills [16] = 1;
+ you[0].skills [SK_STABBING] = 1;
 
 clrscr();
 cprintf(EOL" Which God of Chaos do you wish to serve?"EOL);
@@ -1834,8 +1844,8 @@ cprintf("b - Makhleb the Destroyer"EOL);
 getkey2 : keyn = get_ch();
 switch(keyn)
 {
- case 'a': you[0].religion = 5; you[0].skills [0] ++; cprintf(EOL"A new plaything! Welcome..."); break;
- case 'b': you[0].religion = 8; you[0].skills [38] = 2; cprintf(EOL"Blood and souls for Makhleb!"); break;
+ case 'a': you[0].religion = GOD_XOM; you[0].skills [SK_FIGHTING] ++; cprintf(EOL"A new plaything! Welcome..."); break;
+ case 'b': you[0].religion = GOD_MAKHLEB; you[0].skills [SK_INVOCATIONS] = 2; cprintf(EOL"Blood and souls for Makhleb!"); break;
  default: goto getkey2;
 }
 
@@ -1845,7 +1855,7 @@ break;
 
 
 
-case 22: // Healer
+case JOB_HEALER: // Healer
         strcpy(you[0].clasnam, "Healer");
         you[0].piety = 45;
         you[0].hp = 15; you[0].hp_max = 15;
@@ -1853,8 +1863,8 @@ case 22: // Healer
         you[0].spell_levels = 8;
 
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 18;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_QUARTERSTAFF;
 
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
@@ -1864,21 +1874,21 @@ case 22: // Healer
 
         // Robe
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = WHITE;
 
-        you[0].inv_class [2] = 8;
-        you[0].inv_type [2] = 0;
+        you[0].inv_class [2] = OBJ_POTIONS;
+        you[0].inv_type [2] = POT_HEALING;
         you[0].inv_quant [2] = 2 + random2(2);
         you[0].inv_plus [2] = 0;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = random2(15) + 1; // hmmm...
 
-        you[0].inv_class [3] = 8;
-        you[0].inv_type [3] = 1;
+        you[0].inv_class [3] = OBJ_POTIONS;
+        you[0].inv_type [3] = POT_HEAL_WOUNDS;
         you[0].inv_quant [3] = 2 + random2(2);
         you[0].inv_plus [3] = 0;
         you[0].inv_dam [3] = 0;
@@ -1888,32 +1898,32 @@ case 22: // Healer
         you[0].dex += 2;
         you[0].intel += 4;
 
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
 
         you[0].gp = random2(100);
 
- you[0].skills [0] = 2;
- you[0].skills [14] = 1;
- you[0].skills [17] = 1;
- you[0].skills [12] = 2;
- you[0].skills [7] = 3;
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_SHIELDS] = 1;
+ you[0].skills [SK_THROWING] = 2;
+ you[0].skills [SK_STAVES] = 3;
 
- you[0].skills [38] = 2;
+ you[0].skills [SK_INVOCATIONS] = 2;
 
- you[0].religion = 12;
+ you[0].religion = GOD_ELYVILON;
 
 break;
 
 
-case 24: // Reaver
+case JOB_REAVER: // Reaver
         strcpy(you[0].clasnam, "Reaver");
         you[0].hp = 13; you[0].hp_max = 13;
         you[0].ep = 1; you[0].ep_max = 1;
         you[0].speed = 10;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 5;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_SHORT_SWORD;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
@@ -1923,15 +1933,15 @@ case 24: // Reaver
         weap_skill = 3;
 
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = RED;
 
 
-        you[0].inv_class [2] = 10;
-        you[0].inv_type [2] = 3 + random2(2);
+        you[0].inv_class [2] = OBJ_BOOKS;
+        you[0].inv_type [2] = BOOK_CONJURATIONS_I + random2(2);
         you[0].inv_quant [2] = 1;
         you[0].inv_plus [2] = 127;
         you[0].inv_dam [2] = 0;
@@ -1940,44 +1950,44 @@ case 24: // Reaver
         you[0].strength += 4;
         you[0].dex += 2;
         you[0].intel += 4;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
         you[0].gp = random2(10);
 
- you[0].skills [0] = 2;
- you[0].skills [13] = 1;
- you[0].skills [14] = 1;
+ you[0].skills [SK_FIGHTING] = 2;
+ you[0].skills [SK_ARMOUR] = 1;
+ you[0].skills [SK_DODGING] = 1;
 
- you[0].skills [25] = 1;
- you[0].skills [26] = 2;
- you[0].spells [0] = 5;
+ you[0].skills [SK_SPELLCASTING] = 1;
+ you[0].skills [SK_CONJURATIONS] = 2;
+ you[0].spells [0] = SPELL_MAGIC_DART;
 break;
 
-case 25: // stalker
+case JOB_STALKER: // stalker
         strcpy(you[0].clasnam, "stalker");
         you[0].hp = 11; you[0].hp_max = 11;
         you[0].ep = 1; you[0].ep_max = 1;
         you[0].inv_quant [0] = 1;
-        you[0].inv_class [0] = 0;
-        you[0].inv_type [0] = 3;
+        you[0].inv_class [0] = OBJ_WEAPONS;
+        you[0].inv_type [0] = WPN_DAGGER;
         you[0].inv_plus [0] = 50;
         you[0].inv_plus2 [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_col [0] = LIGHTCYAN;
         you[0].inv_quant [1] = 1;
-        you[0].inv_class [1] = 2;
-        you[0].inv_type [1] = 0;
+        you[0].inv_class [1] = OBJ_ARMOUR;
+        you[0].inv_type [1] = ARM_ROBE;
         you[0].inv_plus [1] = 50;
         you[0].inv_dam [1] = 0;
         you[0].inv_col [1] = GREEN;
         you[0].inv_quant [2] = 1;
-        you[0].inv_class [2] = 2;
-        you[0].inv_type [2] = 9;
+        you[0].inv_class [2] = OBJ_ARMOUR;
+        you[0].inv_type [2] = ARM_CLOAK;
         you[0].inv_plus [2] = 50;
         you[0].inv_dam [2] = 0;
         you[0].inv_col [2] = DARKGREY;
-        you[0].inv_class [3] = 10;
-        you[0].inv_type [3] = 13;
+        you[0].inv_class [3] = OBJ_BOOKS;
+        you[0].inv_type [3] = ARM_BUCKLER;
         you[0].inv_quant [3] = 1;
         you[0].inv_plus [3] = 126;
         you[0].inv_dam [3] = 0;
@@ -1987,37 +1997,37 @@ case 25: // stalker
         you[0].strength += 2;
         you[0].dex += 5;
         you[0].intel += 3;
-        you[0].equip [0] = 0;
-        you[0].equip [6] = 1;
-        you[0].equip [1] = 2;
+        you[0].equip [EQ_WEAPON] = 0;
+        you[0].equip [EQ_BODY_ARMOUR] = 1;
+        you[0].equip [EQ_CLOAK] = 2;
         you[0].gp = random2(10);
 
-        you[0].spells [0] = 115;
+        you[0].spells [0] = SPELL_STING;
 
 
- you[0].skills [0] = 1;
- you[0].skills [1] = 1;
+ you[0].skills [SK_FIGHTING] = 1;
+ you[0].skills [SK_SHORT_BLADES] = 1;
 
- you[0].skills [37] = 1;
+ you[0].skills [SK_POISON_MAGIC] = 1;
 
- you[0].skills [14] = 1;
- you[0].skills [15] = 2;
- you[0].skills [16] = 2;
- you[0].skills [14 + random() % 3] ++;
+ you[0].skills [SK_DODGING] = 1;
+ you[0].skills [SK_STEALTH] = 2;
+ you[0].skills [SK_STABBING] = 2;
+ you[0].skills [SK_DODGING + random() % 3] ++;
 
-/* if (you[0].skills [14] == 2) you[0].evasion ++;*/
+/* if (you[0].skills [SK_DODGING] == 2) you[0].evasion ++;*/
 
- you[0].skills [12] = 1;
- you[0].skills [11] = 1;
+ you[0].skills [SK_THROWING] = 1;
+ you[0].skills [SK_DARTS] = 1;
 
 break;
 
-case 26: // Monk
+case JOB_MONK: // Monk
         strcpy(you[0].clasnam, "Monk");
         you[0].hp = 13; you[0].hp_max = 13;
         you[0].ep = 0; you[0].ep_max = 0;
-        you[0].inv_class [0] = 2;
-        you[0].inv_type [0] = 0;
+        you[0].inv_class [0] = OBJ_ARMOUR;
+        you[0].inv_type [0] = ARM_ROBE;
         you[0].inv_plus [0] = 50;
         you[0].inv_dam [0] = 0;
         you[0].inv_quant [0] = 1;
@@ -2026,15 +2036,15 @@ case 26: // Monk
         you[0].strength += 3;
         you[0].dex += 5;
         you[0].intel += 2;
-        you[0].equip [0] = -1;
-        you[0].equip [6] = 0;
+        you[0].equip [EQ_WEAPON] = -1;
+        you[0].equip [EQ_BODY_ARMOUR] = 0;
         you[0].gp = 0;
 
- you[0].skills [0] = 3;
- you[0].skills [19] = 4;
+ you[0].skills [SK_FIGHTING] = 3;
+ you[0].skills [SK_UNARMED_COMBAT] = 4;
 
- you[0].skills [14] = 3;
- you[0].skills [15] = 2;
+ you[0].skills [SK_DODGING] = 3;
+ you[0].skills [SK_STEALTH] = 2;
 
 break;
 
@@ -2056,11 +2066,11 @@ Spellbook binary thing:
 /*you[0].mag_abil = 0;*/
 
 
-/*you[0].res_magic = 3 + you[0].skills [27] * 2;*/
+/*you[0].res_magic = 3 + you[0].skills [SK_ENCHANTMENTS] * 2;*/
 
 char points_left = 8;
 
-if (you[0].species == 31 || you[0].species == 34) points_left += 7; /* demigod */
+if (you[0].species == SP_DEMIGOD || you[0].species == SP_DEMONSPAWN) points_left += 7; /* demigod */
 
 //for (i = 0; i < 8; i ++)
       do
@@ -2090,52 +2100,52 @@ you[0].is_undead = 0;
 
 switch(you[0].species)
 {
-case 2: // elf
+case SP_ELF: // elf
 you[0].hp_max --;
 you[0].base_hp2 --;
 break;
-case 3: // high elf
+case SP_HIGH_ELF: // high elf
 you[0].hp_max --;
 you[0].base_hp2 --;
 break;
-case 4: // grey elf
+case SP_GREY_ELF: // grey elf
 you[0].hp_max --;
 you[0].base_hp2 --;
 you[0].ep_max ++;
 you[0].base_ep2 ++;
 break;
-case 5: // deep elf
+case SP_DEEP_ELF: // deep elf
 you[0].hp_max --;
 you[0].hp_max --;
 you[0].base_hp2 -= 2;
 you[0].ep_max ++;
 you[0].base_ep2 ++;
 break;
-case 7: // hill dwarf
+case SP_HILL_DWARF: // hill dwarf
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 break;
-case 8: // mountain dwarf
+case SP_MOUNTAIN_DWARF: // mountain dwarf
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 break;
-case 9: // halfling
+case SP_HALFLING: // halfling
 you[0].hp_max --;
 you[0].hp_max --;
 you[0].base_hp2 --;
 you[0].base_hp2 --;
 /*you[0].evasion ++;*/
 break;
-case 10: // hill orc
+case SP_HILL_ORC: // hill orc
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 break;
-case 11: // kobold
+case SP_KOBOLD: // kobold
 you[0].hp_max -= 2;
 you[0].base_hp2 -= 2;
 /*you[0].evasion ++;*/
 break;
-case 12: // mummy
+case SP_MUMMY: // mummy
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 /*you[0].res_cold ++;
@@ -2146,79 +2156,79 @@ you[0].is_undead = 2;
 /*you[0].sust_abil = 1;
 you[0].evasion --;*/
 break;
-case 13: // Naga
+case SP_NAGA: // Naga
 you[0].hp_max += 2;
 you[0].base_hp2 += 2;
 /*you[0].evasion -= 3;
 you[0].AC += 2;
 you[0].res_poison ++;
 you[0].see_invis ++;*/
-you[0].attribute [4] ++;
+you[0].attribute [ATTR_WALK_SLOWLY] ++;
 break;
-case 14: // Gnome
+case SP_GNOME: // Gnome
 you[0].hp_max --;
 you[0].hp_max --;
 you[0].base_hp2 --;
 you[0].base_hp2 --;
 /*you[0].AC ++;*/
 break;
-case 15: // Ogre
+case SP_OGRE: // Ogre
 you[0].hp_max += 3;
 you[0].base_hp2 += 3;
 you[0].hunger_inc += 1;
 break;
-case 16: // Troll
+case SP_TROLL: // Troll
 you[0].hp_max += 3;
 you[0].base_hp2 += 3;
 you[0].hunger_inc += 3;
 break;
-case 17: // Ogre-Mage
+case SP_OGRE_MAGE: // Ogre-Mage
 you[0].hp_max += 2;
 you[0].base_hp2 += 2;
 you[0].hunger_inc += 1;
 break;
-case 18: // Draconian
-case 19: // Draconian
-case 20: // Draconian
-case 21: // Draconian
-case 22: // Draconian
-case 23: // Draconian
-case 24: // Draconian
-case 25: // Draconian
-case 26: // Draconian
-case 27: // Draconian
-case 28: // Draconian
-case 29: // Draconian
+case SP_RED_DRACONIAN: // Draconian
+case SP_WHITE_DRACONIAN: // Draconian
+case SP_GREEN_DRACONIAN: // Draconian
+case SP_GOLDEN_DRACONIAN: // Draconian
+case SP_GREY_DRACONIAN: // Draconian
+case SP_BLACK_DRACONIAN: // Draconian
+case SP_PURPLE_DRACONIAN: // Draconian
+case SP_MOTTLED_DRACONIAN: // Draconian
+case SP_PALE_DRACONIAN: // Draconian
+case SP_UNK0_DRACONIAN: // Draconian
+case SP_UNK1_DRACONIAN: // Draconian
+case SP_UNK2_DRACONIAN: // Draconian
 you[0].hp_max += 1;
 you[0].base_hp2 += 1;
 break;
-case 30: // Centaur
+case SP_CENTAUR: // Centaur
 you[0].hp_max += 3;
 you[0].base_hp2 += 3;
 you[0].hunger_inc += 1;
 you[0].hunger_inc += 1;
 break;
-case 31: // Demigod
+case SP_DEMIGOD: // Demigod
 you[0].hp_max += 3;
 you[0].base_hp2 += 3;
 you[0].hunger_inc += 1;
 you[0].ep_max ++;
 you[0].base_ep2 ++;
 break;
-case 32: // spriggan
+case SP_SPRIGGAN: // spriggan
 you[0].hp_max -= 2;
 you[0].base_hp2 -= 2;
 break;
-case 33: // Minotaur
+case SP_MINOTAUR: // Minotaur
 you[0].hp_max += 2;
 you[0].base_hp2 += 2;
 break;
-case 35: // Ghoul
+case SP_GHOUL: // Ghoul
 you[0].hp_max += 2;
 you[0].base_hp2 += 2;
 you[0].is_undead = 1;
 break;
-case 36: // Kenku
+case SP_KENKU: // Kenku
 you[0].hp_max -= 2;
 you[0].base_hp2 -= 2;
 break;
@@ -2240,9 +2250,9 @@ if (you[0].is_undead == 0) // != 2)
   if (you[0].inv_quant [i] == 0)
   {
    you[0].inv_quant [i] = 1;
-   you[0].inv_class [i] = 4;
-   you[0].inv_type [i] = 1;
-   if (you[0].species == 10 || you[0].species == 11 || you[0].species == 15 || you[0].species == 16) you[0].inv_type [i] = 0;
+   you[0].inv_class [i] = OBJ_FOOD;
+   you[0].inv_type [i] = FOOD_BREAD_RATION;
+   if (you[0].species == SP_HILL_ORC || you[0].species == SP_KOBOLD || you[0].species == SP_OGRE || you[0].species == SP_TROLL) you[0].inv_type [i] = FOOD_MEAT_RATION;
    you[0].inv_col [i] = BROWN;
    you[0].inv_no ++;
    break;
@@ -2254,41 +2264,41 @@ for (i = 0; i < 52; i ++)
 {
  if (you[0].inv_quant [i] != 0)
  {
-  if (you[0].inv_class [i] == 10)
+  if (you[0].inv_class [i] == OBJ_BOOKS)
   {
    you[0].had_item [you[0].inv_type [i]] = 1;
-   if (you[0].inv_type [i] == 0 || you[0].inv_type [i] == 1 || you[0].inv_type [i] == 2)
+   if (you[0].inv_type [i] == BOOK_MINOR_MAGIC_I || you[0].inv_type [i] == BOOK_MINOR_MAGIC_II || you[0].inv_type [i] == BOOK_MINOR_MAGIC_III)
    {
-    you[0].had_item [0] = 1;
-    you[0].had_item [1] = 1;
-    you[0].had_item [2] = 1;
+    you[0].had_item [BOOK_MINOR_MAGIC_I] = 1;
+    you[0].had_item [BOOK_MINOR_MAGIC_II] = 1;
+    you[0].had_item [BOOK_MINOR_MAGIC_III] = 1;
    }
-   if (you[0].inv_type [i] == 3 || you[0].inv_type [i] == 4)
+   if (you[0].inv_type [i] == BOOK_CONJURATIONS_I || you[0].inv_type [i] == BOOK_CONJURATIONS_II)
    {
-    you[0].had_item [3] = 1;
-    you[0].had_item [4] = 1;
+    you[0].had_item [BOOK_CONJURATIONS_I] = 1;
+    you[0].had_item [BOOK_CONJURATIONS_II] = 1;
    }
   }
 
-  if (you[0].inv_class [i] <= 2) // || you[0].inv_class [i] == 2)
+  if (you[0].inv_class [i] <= OBJ_ARMOUR) // || you[0].inv_class [i] == 2)
   switch(you[0].species)
   {
-   case 2:
-   case 3:
-   case 4:
-   case 5:
-   case 6:
+   case SP_ELF:
+   case SP_HIGH_ELF:
+   case SP_GREY_ELF:
+   case SP_DEEP_ELF:
+   case SP_SLUDGE_ELF:
    you[0].inv_dam [i] += 120;
    break;
 
-   case 7:
-   case 8:
+   case SP_HILL_DWARF:
+   case SP_MOUNTAIN_DWARF:
    you[0].inv_dam [i] += 150;
    you[0].inv_col [i] = CYAN;
    break;
 
-   case 10:
-   if (you[0].inv_class [i] == 0) you[0].inv_dam [i] += 90;
+   case SP_HILL_ORC:
+   if (you[0].inv_class [i] == OBJ_WEAPONS) you[0].inv_dam [i] += 90;
      else you[0].inv_dam [i] += 180;
    break;
   }
@@ -2408,25 +2418,25 @@ for (i = 0; i < 50; i ++)
 
 for (i = 0; i < 52; i ++)
 {
-        if (you[0].inv_class [i] != 0)
+        if (you[0].inv_class [i] != OBJ_WEAPONS)
         {
                 set_id(you[0].inv_class [i], you[0].inv_type [i], 1);
         }
 }
 
 
-/*if (you[0].clas == 0) you [0].shield_class = 5;
-if (you[0].clas == 4) you [0].shield_class = 3;
-if (you[0].clas == 6) you [0].shield_class = 5;
+/*if (you[0].clas == JOB_FIGHTER) you [0].shield_class = 5;
+if (you[0].clas == JOB_GLADIATOR) you [0].shield_class = 3;
+if (you[0].clas == JOB_PALADIN) you [0].shield_class = 5;
 
-if (you[0].clas == 2 || you[0].clas == 6) you[0].spec_holy = 1;*/
+if (you[0].clas == JOB_PRIEST || you[0].clas == JOB_PALADIN) you[0].spec_holy = 1;*/
 
-if (you[0].clas == 1 || you[0].clas == 10) you[0].spells [0] = 5;
-if (you[0].clas == 5) you[0].spells [0] = 67;
-if (you[0].clas == 5) you[0].spells [1] = 70;
-if (you[0].clas == 12) you[0].spells [0] = 75;
-if (you[0].clas == 13) you[0].spells [0] = 76;
-if (you[0].clas == 14) you[0].spells [0] = 49;
+if (you[0].clas == JOB_WIZARD || you[0].clas == JOB_CONJURER) you[0].spells [0] = SPELL_MAGIC_DART;
+if (you[0].clas == JOB_NECROMANCER) you[0].spells [0] = SPELL_PAIN;
+if (you[0].clas == JOB_NECROMANCER) you[0].spells [1] = SPELL_ANIMATE_SKELETON;
+if (you[0].clas == JOB_FIRE_ELEMENTALIST) you[0].spells [0] = SPELL_BURN;
+if (you[0].clas == JOB_ICE_ELEMENTALIST) you[0].spells [0] = SPELL_FREEZE;
+if (you[0].clas == JOB_SUMMONER) you[0].spells [0] = SPELL_SUMMON_SMALL_MAMMAL;
 
 /*case 10: // Conjurer
 case 11: // Enchanter
@@ -2435,9 +2445,9 @@ case 13: // Ice Wizard
 case 14: // Summoner*/
 
 if (you[0].spells [0] != 210) you[0].spell_no = 1; else you[0].spell_no = 0;
-if (you[0].clas == 2 || you[0].clas == 6) set_id(8, 0, 1);
+if (you[0].clas == JOB_PRIEST || you[0].clas == JOB_PALADIN) set_id(OBJ_POTIONS, POT_HEALING, 1);
 
-you[0].spell_levels = you[0].skills [25] * 2 - (you[0].spells [0] != 210) - (you[0].spells [1] != 210);
+you[0].spell_levels = you[0].skills [SK_SPELLCASTING] * 2 - (you[0].spells [0] != 210) - (you[0].spells [1] != 210);
 
 
         char del_file [55];
@@ -2550,623 +2560,624 @@ char class_allowed(char speci, char clas)
 {
 switch(clas)
 {
-case 0: // fighter
+case JOB_FIGHTER: // fighter
 switch(speci)
 {
- case 17: return 0; // O-mage
- case 32: return 0; // spriggan
+ case SP_OGRE_MAGE: return 0; // O-mage
+ case SP_SPRIGGAN: return 0; // spriggan
 }
 return 1;
 
-case 1: // wizard
+case JOB_WIZARD: // wizard
 switch(speci)
 {
- case 10:
- case 9:
- case 7:
- case 11:
- case 12:
- case 14: // gnome
+ case SP_HILL_ORC:
+ case SP_HALFLING:
+ case SP_HILL_DWARF:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_GNOME: // gnome
 // case 8:
- case 15:
- case 16:
- case 32: // spriggan
- case 33: // minotaur
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_SPRIGGAN: // spriggan
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 2: // priest
+case JOB_PRIEST: // priest
 switch(speci)
 {
- case 9:
- case 11:
- case 12:
- case 13:
- case 14: // gnome
- case 15:
- case 16:
- case 17:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 32: /* spriggan */
- case 33: // minotaur
- case 34: // demonspawn
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_HALFLING:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_OGRE_MAGE:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_SPRIGGAN: /* spriggan */
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 3: // thief
+case JOB_THIEF: // thief
 switch(speci)
 {
- case 12:
- case 15:
- case 16:
- case 17:
- case 30: /* Centaur */
- case 32: // spriggan
- case 33: // minotaur
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_MUMMY:
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_OGRE_MAGE:
+ case SP_CENTAUR: /* Centaur */
+ case SP_SPRIGGAN: // spriggan
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 4: // glad
+case JOB_GLADIATOR: // glad
 switch(speci)
 {
- case 1:
- case 7:
- case 8:
- case 10:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30:
- case 31:
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_HILL_DWARF:
+ case SP_MOUNTAIN_DWARF:
+ case SP_HILL_ORC:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR:
+ case SP_DEMIGOD:
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 5: // necromancer
+case JOB_NECROMANCER: // necromancer
 switch(speci)
 {
- case 1:
- case 5:
- case 6:
- case 10:
- case 11:
- case 12:
- case 13:
- case 17: /* Ogre-mage */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 6: // Paladin
+case JOB_PALADIN: // Paladin
 switch(speci)
 {
- case 1:
- case 8:
+ case SP_HUMAN:
+ case SP_MOUNTAIN_DWARF:
  return 1;
 }
 return 0;
 
-case 7: // assassin
+case JOB_ASSASSIN: // assassin
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 4:
- case 5:
- case 6:
- case 10:
- case 12:
- case 13:
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_GREY_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 8: // berserker
+case JOB_BERSERKER: // berserker
 switch(speci)
 {
- case 1:
- case 7:
- case 10:
- case 15:
- case 16:
- case 30: /* Centaur */
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_HILL_DWARF:
+ case SP_HILL_ORC:
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_CENTAUR: /* Centaur */
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
  return 1;
 }
 return 0;
 
-case 9: // ranger
+case JOB_RANGER: // ranger
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 4:
- case 6:
- case 10:
- case 13:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_GREY_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_NAGA:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 10: // Conjurer
+case JOB_CONJURER: // Conjurer
 switch(speci)
 {
- case 11:
- case 12:
- case 9:
- case 14: // gnome
- case 15:
- case 16:
- case 30: /* Centaur */
- case 32: // spriggan
- case 33: // minotaur
- case 35: // Ghoul
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_HALFLING:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_CENTAUR: /* Centaur */
+ case SP_SPRIGGAN: // spriggan
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
  return 0;
 }
 return 1;
 
-case 11: // Enchanter
+case JOB_ENCHANTER: // Enchanter
 switch(speci)
 {
- case 10:
- case 11:
- case 12:
- case 14: // gnome
- case 15:
- case 16:
- case 33: // minotaur
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 12: // Fire elementalist
+case JOB_FIRE_ELEMENTALIST: // Fire elementalist
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 5:
- case 6:
- case 7:
- case 8:
- case 10:
- case 17: /* Ogre-mage */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_DWARF:
+ case SP_MOUNTAIN_DWARF:
+ case SP_HILL_ORC:
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 13: // Ice elementalist
+case JOB_ICE_ELEMENTALIST: // Ice elementalist
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 5:
- case 6:
- case 17: /* Ogre-mage */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
  return 1;
 }
 return 0;
 
-case 14: // Summoner
+case JOB_SUMMONER: // Summoner
 switch(speci)
 {
- case 9:
- case 8:
- case 7:
- case 12:
- case 14: // gnome
- case 15:
- case 16:
- case 30: /* Centaur */
- case 32: // spriggan
- case 33: // minotaur
- case 35: // Ghoul
+ case SP_HALFLING:
+ case SP_MOUNTAIN_DWARF:
+ case SP_HILL_DWARF:
+ case SP_MUMMY:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_CENTAUR: /* Centaur */
+ case SP_SPRIGGAN: // spriggan
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
  return 0;
 }
 return 1;
 
-case 15: // Air elementalist
+case JOB_AIR_ELEMENTALIST: // Air elementalist
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 4:
- case 5:
- case 6:
- case 17: /* Ogre-mage */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_GREY_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
 
-case 16: // Earth elementalist
+case JOB_EARTH_ELEMENTALIST: // Earth elementalist
 switch(speci)
 {
- case 1:
- case 5:
- case 6:
- case 7:
- case 8:
- case 10:
- case 14: // gnome
- case 17: /* Ogre-mage */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_DWARF:
+ case SP_MOUNTAIN_DWARF:
+ case SP_HILL_ORC:
+ case SP_GNOME: // gnome
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
  return 1;
 }
 return 0;
 
-case 17: // Crusader
+case JOB_CRUSADER: // Crusader
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 4:
- case 5:
- case 6:
- case 10:
- case 17:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_GREY_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_OGRE_MAGE:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
  return 1;
 }
 return 0;
 
-case 18: // Death knight
+case JOB_DEATH_KNIGHT: // Death knight
 switch(speci)
 {
- case 1:
- case 5:
- case 6:
- case 10:
- case 12:
- case 13:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 19: // tainter
+case JOB_VENOM_MAGE: // tainter
 switch(speci)
 {
- case 1:
- case 5:
- case 6:
- case 10:
- case 11:
- case 13:
- case 17: /* Ogre-mage */
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 31: /* Demigod */
- case 32: /* Spriggan */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_NAGA:
+ case SP_OGRE_MAGE: /* Ogre-mage */
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_SPRIGGAN: /* Spriggan */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 20: // chaos knight
+case JOB_CHAOS_KNIGHT: // chaos knight
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 5:
- case 6:
- case 10:
- case 11:
- case 13:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_NAGA:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
  return 1;
 }
 return 0;
 
-case 21: // transmuter
+case JOB_TRANSMUTER: // transmuter
 switch(speci)
 {
- case 10:
- case 9:
- case 7:
- case 11:
- case 12:
- case 14: // gnome
- case 15:
- case 16:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HILL_ORC:
+ case SP_HALFLING:
+ case SP_HILL_DWARF:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 22: // healer
+case JOB_HEALER: // healer
 switch(speci)
 {
- case 9:
- case 11:
- case 12:
- case 13:
- case 14: // gnome
- case 15:
- case 16:
- case 17:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 31: /* Demigod */
- case 32: // spriggan
- case 33: // minotaur
- case 34: // demonspawn
+ case SP_HALFLING:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_OGRE_MAGE:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_SPRIGGAN: // spriggan
+ case SP_MINOTAUR: // minotaur
+ case SP_DEMONSPAWN: // demonspawn
 
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
 
-case 24: // Reaver
+case JOB_REAVER: // Reaver
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 5:
- case 6:
- case 10:
- case 11:
- case 13:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 30: /* Centaur */
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_NAGA:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_CENTAUR: /* Centaur */
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 25: /* stalker */
+case JOB_STALKER: /* stalker */
 switch(speci)
 {
- case 1:
- case 2:
- case 3:
- case 4:
- case 5:
- case 6:
- case 10:
- case 11:
- case 13:
- case 31: /* Demigod */
- case 34: // demonspawn
+ case SP_HUMAN:
+ case SP_ELF:
+ case SP_HIGH_ELF:
+ case SP_GREY_ELF:
+ case SP_DEEP_ELF:
+ case SP_SLUDGE_ELF:
+ case SP_HILL_ORC:
+ case SP_KOBOLD:
+ case SP_NAGA:
+ case SP_DEMIGOD: /* Demigod */
+ case SP_DEMONSPAWN: // demonspawn
 
- case 36: // Kenku
+ case SP_KENKU: // Kenku
  return 1;
 }
 return 0;
 
-case 26: // Monk
+case JOB_MONK: // Monk
 switch(speci)
 {
- case 7:
- case 11:
- case 12:
- case 13:
- case 14:
- case 15:
- case 16:
- case 17:
- case 30:
- case 32: // spriggan
- case 35: // Ghoul
+ case SP_HILL_DWARF:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_NAGA:
+ case SP_GNOME:
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_OGRE_MAGE:
+ case SP_CENTAUR:
+ case SP_SPRIGGAN: // spriggan
+ case SP_GHOUL: // Ghoul
  return 0;
 }
 return 1;
 
 
-case 27: // warper
+case JOB_WARPER: // warper
 switch(speci)
 {
- case 10:
- case 9:
- case 7:
- case 11:
- case 12:
- case 14: // gnome
- case 15:
- case 16:
- case 18: /* Drac */
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: /* Draconians */
- case 33: // minotaur
- case 35: // Ghoul
- case 36: // Kenku
+ case SP_HILL_ORC:
+ case SP_HALFLING:
+ case SP_HILL_DWARF:
+ case SP_KOBOLD:
+ case SP_MUMMY:
+ case SP_GNOME: // gnome
+ case SP_OGRE:
+ case SP_TROLL:
+ case SP_RED_DRACONIAN: /* Drac */
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: /* Draconians */
+ case SP_MINOTAUR: // minotaur
+ case SP_GHOUL: // Ghoul
+ case SP_KENKU: // Kenku
  return 0;
 }
 return 1;
@@ -3232,22 +3243,22 @@ switch(you[0].clas)
  default: return;
 }*/
 
-if (you[0].clas == 20)
+if (you[0].clas == JOB_CHAOS_KNIGHT)
 {
  switch(random2(5))
  {
-  case 0: you[0].inv_type [0] = 5; return;
-  case 1: you[0].inv_type [0] = 2; return;
-  case 2: you[0].inv_type [0] = 4; return;
-  case 3: you[0].inv_type [0] = 9; return;
-  case 4: you[0].inv_type [0] = 11; return;
+  case 0: you[0].inv_type [0] = WPN_SHORT_SWORD; return;
+  case 1: you[0].inv_type [0] = WPN_FLAIL; return;
+  case 2: you[0].inv_type [0] = WPN_MORNINGSTAR; return;
+  case 3: you[0].inv_type [0] = WPN_HAND_AXE; return;
+  case 4: you[0].inv_type [0] = WPN_SPEAR; return;
  }
  return;
 }
 
 clrscr();
 cprintf(EOL" You have a choice of weapons:"EOL);
-if (you[0].clas == 4) goto glad_thing;
+if (you[0].clas == JOB_GLADIATOR) goto glad_thing;
 cprintf("a - short sword"EOL);
 cprintf("b - mace"EOL);
 cprintf("c - hand axe"EOL);
@@ -3256,10 +3267,10 @@ cprintf("d - spear"EOL);
 getkey : keyin = get_ch();
 switch(keyin)
 {
- case 'a': you[0].inv_type [0] = 5; return;
- case 'b': you[0].inv_type [0] = 1; return;
- case 'c': you[0].inv_type [0] = 9; return;
- case 'd': you[0].inv_type [0] = 11; return;
+ case 'a': you[0].inv_type [0] = WPN_SHORT_SWORD; return;
+ case 'b': you[0].inv_type [0] = WPN_MACE; return;
+ case 'c': you[0].inv_type [0] = WPN_HAND_AXE; return;
+ case 'd': you[0].inv_type [0] = WPN_SPEAR; return;
  default: goto getkey;
 }
 
@@ -3272,11 +3283,11 @@ cprintf("e - spear"EOL);
 getkey2 : keyin = get_ch();
 switch(keyin)
 {
- case 'a': you[0].inv_type [0] = 5; return;
- case 'b': you[0].inv_type [0] = 2; return;
- case 'c': you[0].inv_type [0] = 4; return;
- case 'd': you[0].inv_type [0] = 9; return;
- case 'e': you[0].inv_type [0] = 11; return;
+ case 'a': you[0].inv_type [0] = WPN_SHORT_SWORD; return;
+ case 'b': you[0].inv_type [0] = WPN_FLAIL; return;
+ case 'c': you[0].inv_type [0] = WPN_MORNINGSTAR; return;
+ case 'd': you[0].inv_type [0] = WPN_HAND_AXE; return;
+ case 'e': you[0].inv_type [0] = WPN_SPEAR; return;
  default: goto getkey2;
 }
 
@@ -3322,7 +3333,7 @@ you[0].max_dex = 0;
 you[0].xp = 0;
 you[0].xl = 1;
 you[0].gp = 0 ;
-you[0].clas = 0;
+you[0].clas = JOB_FIGHTER;
 you[0].speed = 10; // 0.75;
         you[0].burden = 0; // total weight of items carried.
  you[0].burden_state  = 0;
@@ -3353,7 +3364,7 @@ for (i = 0; i < 10; i ++)
  you[0].equip [i] = -1;
 }
 
-you[0].religion = 0;
+you[0].religion = GOD_NO_GOD;
 you[0].piety = 0;
 
 for (i = 0; i < 20; i ++)
@@ -3383,5 +3394,11 @@ for (ic = 0; ic < 50; ic ++)
 {
  you[0].had_item [ic] = 0;
 }
+
+for (ic = 0; ic < NO_UNRANDARTS; ic ++)
+{
+ set_unrandart_exist(ic, 0);
+}
+
 
 }

@@ -3,6 +3,7 @@
 #include <strings.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "beam.h"
 #include "direct.h"
 #include "files.h"
@@ -26,7 +27,7 @@ void torment(void)
 {
  int dmi = 0;
 
- if (you[0].is_undead != 0 || you[0].mutation [43] != 0)
+ if (you[0].is_undead != 0 || you[0].mutation [MUT_TORMENT_RESISTANCE] != 0)
  {
   strcpy(info, "You feel a surge of unholy energy.");
   mpr(info);
@@ -132,7 +133,7 @@ if (force_stat == 100) force_stat = random2(3);
   }
         switch(force_stat)
         {
-                case 0: strcpy(info, "You feel weakened.");
+                case STAT_STRENGTH: strcpy(info, "You feel weakened.");
                 mpr(info);
                 you[0].strength -= stat_loss;
                 if (you[0].strength < 3) you[0].strength = 3;
@@ -140,14 +141,14 @@ if (force_stat == 100) force_stat = random2(3);
                 burden_change();
                 break;
 
-                case 1: strcpy(info, "You feel clumsy.");
+                case STAT_DEXTERITY: strcpy(info, "You feel clumsy.");
                 mpr(info);
                 you[0].dex -= stat_loss;
                 if (you[0].dex < 3) you[0].dex = 3;
                 you[0].dex_ch = 1;
                 break;
 
-                case 2: strcpy(info, "You feel dopey.");
+                case STAT_INTELLIGENCE: strcpy(info, "You feel dopey.");
                 mpr(info);
                 you[0].intel -= stat_loss;
                 if (you[0].intel < 3) you[0].intel = 3;
@@ -170,28 +171,28 @@ int hurted = 0;
 
 switch(beam[0].type)
 {
- case 0: // hellfire
+ case DMNBM_HELLFIRE: // hellfire
  strcpy(info, "You are engulfed in a burst of hellfire!");
  mpr(info);
  hurted = random2(10) + random2(10) + 5;
  beam[0].flavour = 20; // lava, but it's hellfire anyway
  strcpy(beam[0].beam_name, "hellfire"); // for ouch
- check_your_resists(hurted, beam[0].flavour);
+ hurted = check_your_resists(hurted, beam[0].flavour);
  scrolls_burn(4, 6);
- ouch(hurted, 0, 3);
+ ouch(hurted, beam[0].beam_source, 3);
  you[0].hp_ch = 1;
  break;
 
- case 1: // smiting
+ case DMNBM_SMITING: // smiting
  strcpy(info, "Something smites you!");
  mpr(info);
  hurted = random2(6) + random2(6) + 7;
  strcpy(beam[0].beam_name, "smiting"); // for ouch
- ouch(hurted, 0, 3);
+ ouch(hurted, beam[0].beam_source, 3);
  you[0].hp_ch = 1;
  break;
 
- case 2: // brain feed
+ case DMNBM_BRAIN_FEED: // brain feed
       if (random2(3) == 0 && you[0].intel > 3 && player_sust_abil() == 0)
       {
         strcpy(info, "Something feeds on your intelligence!");
@@ -206,7 +207,7 @@ switch(beam[0].type)
              }
  break;
 
- case 3: // mutation
+ case DMNBM_MUTATION: // mutation
  if (mutate(100) == 0) mpr("You feel very strange for a moment.");
  break;
 
@@ -229,7 +230,7 @@ switch(beam[0].type)
 {
 
 
-  case 0:
+  case DMNBM_HELLFIRE:
   if (mons_near(menv [i].m_hit) == 1)
   {
                 strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
@@ -249,7 +250,7 @@ switch(beam[0].type)
   }
   break;
 
-  case 1:
+  case DMNBM_SMITING:
   if (mons_near(o) == 1)
   {
                 strcpy(info, monam (menv [o].m_sec, menv [o].m_class, menv [o].m_ench [2], 0));
@@ -268,7 +269,7 @@ switch(beam[0].type)
   break;
 
 
-  case 2: // brain feed - not implemented here (nor, probably, can be)
+  case DMNBM_BRAIN_FEED: // brain feed - not implemented here (nor, probably, can be)
                 break;
 
 } // end switch
@@ -300,9 +301,9 @@ switch(ru)
         break;
 
         case 2:
-        if (you[0].equip [0] != -1)
+        if (you[0].equip [EQ_WEAPON] != -1)
         {
-        in_name(you[0].equip [0], 4, str_pass);
+        in_name(you[0].equip [EQ_WEAPON], 4, str_pass);
         strcpy(info, str_pass);
         strcat(info, " glows ");
         weird_colours(random2(256), wc);
@@ -435,37 +436,37 @@ if (force_class == 250)
  {
   case 'a':
   case 'A':
-  class_wanted = 0;
+  class_wanted = OBJ_WEAPONS;
   break;
 
   case 'b':
   case 'B':
-  class_wanted = 2;
+  class_wanted = OBJ_ARMOUR;
   break;
 
   case 'c':
   case 'C':
-  class_wanted = 7;
+  class_wanted = OBJ_JEWELLERY;
   break;
 
   case 'd':
   case 'D':
-  class_wanted = 10;
+  class_wanted = OBJ_BOOKS;
   break;
 
   case 'e':
   case 'E':
-  class_wanted = 11;
+  class_wanted = OBJ_STAVES;
   break;
 
   case 'f':
   case 'F':
-  class_wanted = 13;
+  class_wanted = OBJ_MISCELLANY;
   break;
  }
 } else class_wanted = force_class;
 
-if (class_wanted > 2)
+if (class_wanted > OBJ_ARMOUR)
 {
 for (acqc = 0; acqc < 52; acqc ++)
 {
@@ -493,23 +494,23 @@ for (acqc = 0; acqc < 52; acqc ++)
 
 /*if (class_wanted == 10) // these are books which that class wouldn't want (or shouldn't get, anyway)
 {
-/ * if (you[0].clas == 5)
+/ * if (you[0].clas == JOB_NECROMANCER)
  {
   already_has [20] = 1; // holy books
   already_has [17] = 1;
   already_has [18] = 1;
  }
- if (you[0].clas == 12)
+ if (you[0].clas == JOB_FIRE_ELEMENTALIST)
  {
   already_has [6] = 1;
   already_has [9] = 1;
  }
- if (you[0].clas == 13)
+ if (you[0].clas == JOB_ICE_ELEMENTALIST)
  {
   already_has [5] = 1;
   already_has [8] = 1;
  }* /
- if (you[0].clas == 2 || you[0].clas == 6)
+ if (you[0].clas == JOB_PRIEST || you[0].clas == JOB_PALADIN)
  {
   already_has [15] = 1; // necromancy
   already_has [23] = 1;
@@ -523,11 +524,11 @@ do
  switch(class_wanted)
  {
 
-  case 7:
+  case OBJ_JEWELLERY:
   type_wanted = 250;
   break;
 
-  case 10:
+  case OBJ_BOOKS:
 
 // remember, put rarer books higher in the list
 
@@ -539,43 +540,43 @@ which_book :
  switch(glof)
  {
   default:
-  case 25: // spellcasting
+  case SK_SPELLCASTING: // spellcasting
   if (you[0].had_item [43] == 0) type_wanted = 43;
   if (you[0].had_item [42] == 0) type_wanted = 42;
   break;
 
-  case 37: // Poison Magic
+  case SK_POISON_MAGIC: // Poison Magic
   if (you[0].had_item [32] == 0) type_wanted = 32;
   if (you[0].had_item [13] == 0) type_wanted = 13;
   break;
 
-  case 36: // Earth
+  case SK_EARTH_MAGIC: // Earth
   if (you[0].had_item [40] == 0) type_wanted = 40;
   if (you[0].had_item [39] == 0) type_wanted = 39;
   break;
 
-  case 35: // Air
+  case SK_AIR_MAGIC: // Air
   if (you[0].had_item [29] == 0) type_wanted = 29;
   if (you[0].had_item [28] == 0) type_wanted = 28;
   break;
 
-  case 34: // Ice
+  case SK_ICE_MAGIC: // Ice
   if (you[0].had_item [9] == 0) type_wanted = 9;
   if (you[0].had_item [6] == 0) type_wanted = 6;
   break;
 
-  case 33: // fire
+  case SK_FIRE_MAGIC: // fire
   if (you[0].had_item [8] == 0) type_wanted = 8;
   if (you[0].had_item [5] == 0) type_wanted = 5;
   break;
 
-  case 28: // summ
+  case SK_SUMMONINGS: // summ
   if (you[0].had_item [27] == 0) type_wanted = 27;
   if (you[0].had_item [7] == 0) type_wanted = 7;
   if (you[0].had_item [25] == 0) type_wanted = 25;
   break;
 
-  case 27: // ench
+  case SK_ENCHANTMENTS: // ench
   if (you[0].had_item [12] == 0) type_wanted = 12;
   if (you[0].had_item [20] == 0) type_wanted = 20;
   if (you[0].had_item [36] == 0) type_wanted = 36;
@@ -583,24 +584,24 @@ which_book :
   if (you[0].had_item [26] == 0) type_wanted = 26;
   break;
 
-  case 26: // conj
+  case SK_CONJURATIONS: // conj
   if (you[0].had_item [33] == 0) type_wanted = 33;
   if (you[0].had_item [3] == 0) type_wanted = 3;
   break;
 
-  case 29: // necro
+  case SK_NECROMANCY: // necro
   if (you[0].had_item [24] == 0) type_wanted = 24;
   if (you[0].had_item [34] == 0) type_wanted = 34;
   if (you[0].had_item [15] == 0) type_wanted = 15;
   if (you[0].had_item [23] == 0) type_wanted = 23;
   break;
 
-  case 30: // translocations
+  case SK_TRANSLOCATIONS: // translocations
   if (you[0].had_item [11] == 0) type_wanted = 11;
   if (you[0].had_item [31] == 0) type_wanted = 31;
   break;
 
-  case 31: // transmutation
+  case SK_TRANSMIGRATION: // transmutation
   if (you[0].had_item [17] == 0) type_wanted = 17;
   if (you[0].had_item [18] == 0) type_wanted = 18;
   break;
@@ -635,12 +636,12 @@ if (type_wanted == 99)
 
   break;
 
-  case 11:
+  case OBJ_STAVES:
   type_wanted = random2(18);
-  if (class_wanted == 11 && type_wanted > 9 && random2(5) != 0) type_wanted = random2(10);
+  if (class_wanted == OBJ_STAVES && type_wanted > 9 && random2(5) != 0) type_wanted = random2(10);
   break;
 
-  case 13:
+  case OBJ_MISCELLANY:
   type_wanted = random2(6);
   break;
 
@@ -651,7 +652,7 @@ if (type_wanted == 99)
 
 } else
 {
- if (class_wanted == 0) type_wanted = 1 + random2(18); // weapons - no clubs
+ if (class_wanted == OBJ_WEAPONS) type_wanted = 250; // 1 + random2(18); // weapons - no clubs
   else type_wanted = 250; // always get random armour
 }
 
@@ -667,7 +668,7 @@ thing_created = /*items(you[0].unique_items, 1, you[0].item_description,
                 items(1, class_wanted, type_wanted, 1, 351, 250);
 
 
-if (you[0].species != 13) strcpy(info, "Something appears at your feet!");
+if (you[0].species != SP_NAGA) strcpy(info, "Something appears at your feet!");
  else strcpy(info, "Something appears before you!");
 mpr(info);
 
@@ -688,33 +689,33 @@ char recharge_wand(void)
 
 // note that the scroll of recharging also recharges weapons of electrocution; see the scroll function
 
-if (you[0].equip [0] == -1)
+if (you[0].equip [EQ_WEAPON] == -1)
 {
  return 0;
 }
 
-if (you[0].inv_class [you[0].equip [0]] != 3)
+if (you[0].inv_class [you[0].equip [EQ_WEAPON]] != OBJ_WANDS)
 {
  return 0; // not a wand
 }
 
 char charge_gain = 8;
 
-if (you[0].inv_type [you[0].equip [0]] == 7 || you[0].inv_type [you[0].equip [0]] == 8)
+if (you[0].inv_type [you[0].equip [EQ_WEAPON]] == WAND_FIRE || you[0].inv_type [you[0].equip [EQ_WEAPON]] == WAND_COLD)
  charge_gain = 5;
 
-if (you[0].inv_type [you[0].equip [0]] == 12 || you[0].inv_type [you[0].equip [0]] == 14 || you[0].inv_type [you[0].equip [0]] == 17)
+if (you[0].inv_type [you[0].equip [EQ_WEAPON]] == WAND_FIREBALL || you[0].inv_type [you[0].equip [EQ_WEAPON]] == WAND_LIGHTNING || you[0].inv_type [you[0].equip [EQ_WEAPON]] == WAND_DRAINING)
  charge_gain = 4;
 
-item_name(you[0].inv_plus2 [you[0].equip [0]], you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_quant [you[0].equip [0]], you[0].inv_ident [you[0].equip [0]], 4, str_pass);
+item_name(you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_quant [you[0].equip [EQ_WEAPON]], you[0].inv_ident [you[0].equip [EQ_WEAPON]], 4, str_pass);
 strcpy(info, str_pass);
 strcat(info, " glows for a moment.");
 mpr(info);
 
-you[0].inv_plus [you[0].equip [0]] += random2(charge_gain) + random2(charge_gain) + random2(charge_gain) + 1;
+you[0].inv_plus [you[0].equip [EQ_WEAPON]] += random2(charge_gain) + random2(charge_gain) + random2(charge_gain) + 1;
 
-if (you[0].inv_plus [you[0].equip [0]] > charge_gain * 3)
- you[0].inv_plus [you[0].equip [0]] = charge_gain * 3;
+if (you[0].inv_plus [you[0].equip [EQ_WEAPON]] > charge_gain * 3)
+ you[0].inv_plus [you[0].equip [EQ_WEAPON]] = charge_gain * 3;
 
 return 1;
 
@@ -782,7 +783,7 @@ int i = 0;
 for (i = 0; i < MNST; i ++)
 {
  if (menv [i].m_class == -1) continue;
- if (menv [i].m_beh != 7) continue;
+ if (menv [i].m_beh != BEH_ENSLAVED) continue;
  if (mons_near(i) == 0) continue;
  menv [i].m_hit = mons_targd;
  menv [i].m_targ_1_x = menv [mons_targd].m_x;

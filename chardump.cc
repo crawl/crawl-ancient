@@ -15,6 +15,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 #include "player.h"
 #include "religion.h"
 #include "itemname.h"
@@ -36,7 +37,7 @@ char dump_char(char show_prices, char fname [30])
 
         char dmp [400] [120]; // second is length of line
 
-        char lin = 0;
+        int lin = 0;
 
         int i = 0;
         int j = 0;
@@ -264,7 +265,7 @@ char dump_char(char show_prices, char fname [30])
         }
         lin ++;
 
-        if (you[0].religion != 0)
+        if (you[0].religion != GOD_NO_GOD)
         {
                 strcpy(dmp [lin], "You worship ");
                 strcat(dmp [lin], god_name(you[0].religion));
@@ -272,7 +273,7 @@ char dump_char(char show_prices, char fname [30])
                 lin ++;
                 strcpy(dmp [lin], god_name(you[0].religion));
 
-                if (you[0].religion != 5) /* Xom doesn't care */
+                if (you[0].religion != GOD_XOM) /* Xom doesn't care */
                 {
                         if (you[0].piety <= 5)
                         {
@@ -330,7 +331,7 @@ char dump_char(char show_prices, char fname [30])
         lin += 2;
 
 
-        switch(you[0].attribute [5])
+        switch(you[0].attribute [ATTR_TRANSFORMATION])
         {
                 case 1: strcpy(dmp [lin], "You are in spider-form."); lin += 2; break;
                 case 2: strcpy(dmp [lin], "Your hands are blades."); lin += 2; break;
@@ -450,11 +451,11 @@ char dump_char(char show_prices, char fname [30])
 
 
 
-                                        if (j == you[0].equip [0]) strcat(dmp [lin], " (weapon)");
-                                        if (j == you[0].equip [6] || j == you[0].equip [1] || j == you[0].equip [2] || j == you[0].equip [3] || j == you[0].equip [4] || j == you[0].equip [5]) strcat(dmp [lin], " (worn)");
-                                        if (j == you[0].equip [7]) strcat(dmp [lin], " (left hand)");
-                                        if (j == you[0].equip [8]) strcat(dmp [lin], " (right hand)");
-                                        if (j == you[0].equip [9]) strcat(dmp [lin], " (neck)");
+                                        if (j == you[0].equip [EQ_WEAPON]) strcat(dmp [lin], " (weapon)");
+                                        if (j == you[0].equip [EQ_BODY_ARMOUR] || j == you[0].equip [EQ_CLOAK] || j == you[0].equip [EQ_HELMET] || j == you[0].equip [EQ_GLOVES] || j == you[0].equip [EQ_BOOTS] || j == you[0].equip [EQ_SHIELD]) strcat(dmp [lin], " (worn)");
+                                        if (j == you[0].equip [EQ_LEFT_RING]) strcat(dmp [lin], " (left hand)");
+                                        if (j == you[0].equip [EQ_RIGHT_RING]) strcat(dmp [lin], " (right hand)");
+                                        if (j == you[0].equip [EQ_AMULET]) strcat(dmp [lin], " (neck)");
 
                                         if (show_prices == 1)
                                         {
@@ -551,8 +552,18 @@ char dump_char(char show_prices, char fname [30])
 
 finished_spells:
 
+/* Can't use how_mutated() here, as it doesn't count demonic powers */
 
-        if (how_mutated() > 0)
+int xy;
+int xz = 0;
+
+for (xy = 0; xy < 100; xy ++)
+{
+ if (you[0].mutation [xy] > 0) xz ++;
+}
+
+
+        if (xz > 0)
         {
 
                 strcpy(dmp [lin], "");

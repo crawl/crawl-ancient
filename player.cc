@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "itemname.h"
 #include "misc.h"
@@ -90,13 +91,13 @@ int player_teleport(void)
 {
  int tp = 0;
 /* rings */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 10) tp += 8;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 10) tp += 8;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_TELEPORTATION) tp += 8;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_TELEPORTATION) tp += 8;
 /* mutations */
- tp += you[0].mutation [22] * 3;
+ tp += you[0].mutation [MUT_TELEPORT] * 3;
 /* randart weapons only */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 >= 25)
-  tp += randart_wpn_properties(you[0].inv_class [you[0].equip [0]], you[0].inv_type [you[0].equip [0]], you[0].inv_dam [you[0].equip [0]], you[0].inv_plus [you[0].equip [0]], you[0].inv_plus2 [you[0].equip [0]], 0, 21);
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_WEAPONS && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 >= 25)
+  tp += randart_wpn_properties(you[0].inv_class [you[0].equip [EQ_WEAPON]], you[0].inv_type [you[0].equip [EQ_WEAPON]], you[0].inv_dam [you[0].equip [EQ_WEAPON]], you[0].inv_plus [you[0].equip [EQ_WEAPON]], you[0].inv_plus2 [you[0].equip [EQ_WEAPON]], 0, RAP_CAUSE_TELEPORTATION);
  return tp;
 }
 
@@ -105,18 +106,18 @@ int player_regen(void)
  int rr = you[0].hp_max / 3;
  if (rr > 20) rr = 20 + ((rr - 20) / 2);
 /* rings */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 0) rr += 40;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 0) rr += 40;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_REGENERATION) rr += 40;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_REGENERATION) rr += 40;
 /* spell */
- if (you[0].duration [4] != 0) rr += 100;
+ if (you[0].duration [DUR_REGENERATION] != 0) rr += 100;
 /* troll leather */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 19) rr += 30;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_TROLL_LEATHER_ARMOUR) rr += 30;
   else /* trolls gain no benefit from troll leather */
-   if (you[0].species == 16) rr += 40;
+   if (you[0].species == SP_TROLL) rr += 40;
 /* fast heal mutation */
- rr += you[0].mutation [15] * 20;
+ rr += you[0].mutation [MUT_REGENERATION] * 20;
 /* ghouls heal slowly */
- if (you[0].species == 35) rr /= 2;
+ if (you[0].species == SP_GHOUL) rr /= 2;
  return rr;
 }
 
@@ -127,42 +128,42 @@ int player_res_magic(void)
 
  switch(you[0].species)
  {
-  case 3: // high elf
-  case 4: // grey elf
-  case 6: // sludge elf
-  case 7: // hill dwarf
-  case 8: // mountain dwarf
+  case SP_HIGH_ELF: // high elf
+  case SP_GREY_ELF: // grey elf
+  case SP_SLUDGE_ELF: // sludge elf
+  case SP_HILL_DWARF: // hill dwarf
+  case SP_MOUNTAIN_DWARF: // mountain dwarf
   rm += you[0].xl;
   break;
-  case 13: // Naga
+  case SP_NAGA: // Naga
   rm += you[0].xl * 2;
   break;
-  case 24: // purple drac
-  case 14: // Gnome
-  case 5: // deep elf
+  case SP_PURPLE_DRACONIAN: // purple drac
+  case SP_GNOME: // Gnome
+  case SP_DEEP_ELF: // deep elf
   rm += you[0].xl * 3;
   break;
-  case 32: // Spriggan
+  case SP_SPRIGGAN: // Spriggan
   rm += you[0].xl * 4;
   break;
  }
 
 /* armour: (checks cloak & body armour only) */
- if (you[0].equip [1] != -1 && you[0].inv_dam [you[0].equip [1]] % 30 == 12) rm += 30;
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 12) rm += 30;
+ if (you[0].equip [EQ_CLOAK] != -1 && you[0].inv_dam [you[0].equip [EQ_CLOAK]] % 30 == SPARM_MAGIC_RESISTANCE) rm += 30;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_MAGIC_RESISTANCE) rm += 30;
 /* rings of magic resistance */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 20) rm += 40;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 20) rm += 40;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_PROTECTION_FROM_MAGIC) rm += 40;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_PROTECTION_FROM_MAGIC) rm += 40;
 /* randarts */
- rm += scan_randarts(11);
+ rm += scan_randarts(RAP_MAGIC);
 /* Enchantment skill */
- rm += you[0].skills [27] * 2;
+ rm += you[0].skills [SK_ENCHANTMENTS] * 2;
 /* Mutations */
- rm += you[0].mutation [23] * 30;
+ rm += you[0].mutation [MUT_MAGIC_RESISTANCE] * 30;
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 6: rm += 50; break; /* Lich */
+  case TRAN_LICH: rm += 50; break; /* Lich */
  }
  return rm;
 }
@@ -240,32 +241,32 @@ int player_res_fire(void)
 {
  int rf = 100;
 /* rings of fire resistance/fire */
- if (you[0].equip [7] != -1 && (you[0].inv_type [you[0].equip [7]] == 2 || you[0].inv_type [you[0].equip [7]] == 21)) rf ++;
- if (you[0].equip [8] != -1 && (you[0].inv_type [you[0].equip [8]] == 2 || you[0].inv_type [you[0].equip [8]] == 21)) rf ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && (you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_PROTECTION_FROM_FIRE || you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_FIRE)) rf ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && (you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_PROTECTION_FROM_FIRE || you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_FIRE)) rf ++;
 /* rings of ice */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 22) rf --;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 22) rf --;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_ICE) rf --;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_ICE) rf --;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 2) rf ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_FIRE) rf ++;
 /* armour: (checks body armour only) */
- if (you[0].equip [6] != -1 && (you[0].inv_dam [you[0].equip [6]] % 30 == 2 || you[0].inv_dam [you[0].equip [6]] % 30 == 15)) rf ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && (you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_FIRE_RESISTANCE || you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_RESISTANCE)) rf ++;
 /* DSMails */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 18) rf += 2;
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rf ++;
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 21) rf --;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_DRAGON_ARMOUR) rf += 2;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_ARMOUR) rf ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_ICE_DRAGON_ARMOUR) rf --;
 /* randart wpns */
- rf += scan_randarts(6);
+ rf += scan_randarts(RAP_FIRE);
 /* Mummies are highly flammable */
- if (you[0].species == 12) rf --;
+ if (you[0].species == SP_MUMMY) rf --;
 /* Mutations */
- rf += you[0].mutation [12];
+ rf += you[0].mutation [MUT_HEAT_RESISTANCE];
 /* Red drac */
- if (you[0].species == 18 && you[0].xl >= 18) rf ++;
+ if (you[0].species == SP_RED_DRACONIAN && you[0].xl >= 18) rf ++;
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 4: rf -= 1; break; /* Ice beast */
-  case 5: rf += 2; break; /* Dragon */
+  case TRAN_ICE_BEAST: rf -= 1; break; /* Ice beast */
+  case TRAN_DRAGON: rf += 2; break; /* Dragon */
  }
  return rf;
 }
@@ -274,33 +275,33 @@ int player_res_cold(void)
 {
  int rc = 100;
 /* rings of cold resistance/ice */
- if (you[0].equip [7] != -1 && (you[0].inv_type [you[0].equip [7]] == 4 || you[0].inv_type [you[0].equip [7]] == 22)) rc ++;
- if (you[0].equip [8] != -1 && (you[0].inv_type [you[0].equip [8]] == 4 || you[0].inv_type [you[0].equip [8]] == 22)) rc ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && (you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_PROTECTION_FROM_COLD || you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_ICE)) rc ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && (you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_PROTECTION_FROM_COLD || you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_ICE)) rc ++;
 /* rings of fire */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 21) rc --;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 21) rc --;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_FIRE) rc --;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_FIRE) rc --;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 3) rc ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_COLD) rc ++;
 /* armour: (checks body armour only) */
- if (you[0].equip [6] != -1 && (you[0].inv_dam [you[0].equip [6]] % 30 == 3 || you[0].inv_dam [you[0].equip [6]] % 30 == 15)) rc ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && (you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_COLD_RESISTANCE || you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_RESISTANCE)) rc ++;
 /* DSMails */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 21) rc += 2;
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rc ++;
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 18) rc --;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_ICE_DRAGON_ARMOUR) rc += 2;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_ARMOUR) rc ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_DRAGON_ARMOUR) rc --;
 /* Mummies & ghouls are cold resistant */
- if (you[0].species == 12 || you[0].species == 35) rc ++;
+ if (you[0].species == SP_MUMMY || you[0].species == SP_GHOUL) rc ++;
 /* randart wpns */
- rc += scan_randarts(7);
+ rc += scan_randarts(RAP_COLD);
 /* White drac */
- if (you[0].species == 19 && you[0].xl >= 18) rc ++;
+ if (you[0].species == SP_WHITE_DRACONIAN && you[0].xl >= 18) rc ++;
 /* Mutations */
- rc += you[0].mutation [13];
+ rc += you[0].mutation [MUT_COLD_RESISTANCE];
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 4: rc += 3; break; /* Ice beast */
-  case 5: rc --; break; /* Dragon */
-  case 6: rc ++; break; /* Lich */
+  case TRAN_ICE_BEAST: rc += 3; break; /* Ice beast */
+  case TRAN_DRAGON: rc --; break; /* Dragon */
+  case TRAN_LICH: rc ++; break; /* Lich */
  }
  return rc;
 }
@@ -309,31 +310,31 @@ int player_res_poison(void)
 {
  int rp = 0;
 /* rings of poison resistance */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 3) rp ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 3) rp ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_POISON_RESISTANCE) rp ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_POISON_RESISTANCE) rp ++;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 4) rp ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_POISON) rp ++;
 /* the staff of Olgreb: */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] == 193) rp ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_WEAPONS && you[0].inv_dam [you[0].equip [EQ_WEAPON]] == NWPN_STAFF_OF_OLGREB) rp ++;
 /* armour: (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 4) rp ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_POISON_RESISTANCE) rp ++;
 /* DSMails */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) rp ++; /* Gold */
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 32) rp ++; /* Swamp */
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_ARMOUR) rp ++; /* Gold */
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_SWAMP_DRAGON_ARMOUR) rp ++; /* Swamp */
 /* Mummies, Nagas and ghouls are poison resistant */
- if (you[0].species == 12 || you[0].species == 13 || you[0].species == 35) rp ++;
+ if (you[0].species == SP_MUMMY || you[0].species == SP_NAGA || you[0].species == SP_GHOUL) rp ++;
 /* spell of resist poison */
- if (you[0].duration [16] > 0) rp ++;
+ if (you[0].duration [DUR_RESIST_POISON] > 0) rp ++;
 /* randarts */
- rp += scan_randarts(9);
+ rp += scan_randarts(RAP_POISON);
 /* Mutations */
- rp += you[0].mutation [9];
+ rp += you[0].mutation [MUT_POISON_RESISTANCE];
 /* Green drac */
- if (you[0].species == 20 && you[0].xl >= 7) rp ++;
+ if (you[0].species == SP_GREEN_DRACONIAN && you[0].xl >= 7) rp ++;
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 6: rp ++; break; /* Lich */
+  case TRAN_LICH: rp ++; break; /* Lich */
  }
  return rp;
 }
@@ -342,16 +343,16 @@ int player_spec_death(void)
 {
  int sd = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 6) sd ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_DEATH) sd ++;
 /* Mummies */
- if (you[0].species == 12 && you[0].xl > 12) sd ++;
- if (you[0].species == 12 && you[0].xl > 26) sd ++;
+ if (you[0].species == SP_MUMMY && you[0].xl > 12) sd ++;
+ if (you[0].species == SP_MUMMY && you[0].xl > 26) sd ++;
 /* armour of the Archmagi (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) sd ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) sd ++;
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 6: sd ++; break; /* Lich */
+  case TRAN_LICH: sd ++; break; /* Lich */
  }
  return sd;
 }
@@ -359,7 +360,7 @@ int player_spec_death(void)
 int player_spec_holy(void)
 {
  return 0;
-/* if (you[0].clas == 2 || you[0].clas == 6) return 1;
+/* if (you[0].clas == JOB_PRIEST || you[0].clas == JOB_PALADIN) return 1;
  return 0;*/
 }
 
@@ -367,10 +368,10 @@ int player_spec_fire(void)
 {
  int sf = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 2) sf ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_FIRE) sf ++;
 /* rings of fire */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 21) sf ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 21) sf ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_FIRE) sf ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_FIRE) sf ++;
  return sf;
 }
 
@@ -378,10 +379,10 @@ int player_spec_cold(void)
 {
  int sc = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 3) sc ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_COLD) sc ++;
 /* rings of fire */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 22) sc ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 22) sc ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_ICE) sc ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_ICE) sc ++;
  return sc;
 }
 
@@ -389,7 +390,7 @@ int player_spec_earth(void)
 {
  int se = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 26) se ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_EARTH) se ++;
  return se;
 }
 
@@ -397,7 +398,7 @@ int player_spec_air(void)
 {
  int sa = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 25) sa ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_AIR) sa ++;
  return sa;
 }
 
@@ -405,9 +406,9 @@ int player_spec_conj(void)
 {
  int sc = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 7) sc ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_CONJURATION) sc ++;
 /* armour of the Archmagi (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) sc ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) sc ++;
  return sc;
 }
 
@@ -415,9 +416,9 @@ int player_spec_ench(void)
 {
  int se = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 8) se ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_ENCHANTMENT) se ++;
 /* armour of the Archmagi (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) se ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) se ++;
  return se;
 }
 
@@ -425,9 +426,9 @@ int player_spec_summ(void)
 {
  int ss = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 9) ss ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_SUMMONING_I) ss ++;
 /* armour of the Archmagi (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) ss ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) ss ++;
  return ss;
 }
 
@@ -435,9 +436,9 @@ int player_spec_poison(void)
 {
  int sp = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 4) sp ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_POISON) sp ++;
 /* the staff of Olgreb: */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] == 193) sp ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_WEAPONS && you[0].inv_dam [you[0].equip [EQ_WEAPON]] == NWPN_STAFF_OF_OLGREB) sp ++;
  return sp;
 }
 
@@ -447,7 +448,7 @@ int player_energy(void)
 {
  int pe = 0;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 5) pe ++;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_ENERGY) pe ++;
  return pe;
 }
 
@@ -455,22 +456,22 @@ int player_prot_life(void)
 {
  int pl = 0;
 /* rings of life resistance */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 19) pl ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 19) pl ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_LIFE_PROTECTION) pl ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_LIFE_PROTECTION) pl ++;
 /* armour: (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 16) pl ++;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_POSITIVE_ENERGY) pl ++;
 /* DSMails
- if (you[0].equip [6] != -1 && you[0].inv_type [you[0].equip [6]] == 29) pl ++;*/
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] == ARM_GOLD_DRAGON_ARMOUR) pl ++;*/
 /* Mummies are undead, as are ghouls */
- if (you[0].species == 12 || you[0].species == 35) pl ++;
+ if (you[0].species == SP_MUMMY || you[0].species == SP_GHOUL) pl ++;
 /* randart wpns */
- pl += scan_randarts(10);
+ pl += scan_randarts(RAP_NEGATIVE_ENERGY);
 /* demonic power */
- pl += you[0].mutation [44];
+ pl += you[0].mutation [MUT_NEGATIVE_ENERGY_RESISTANCE];
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 6: pl ++; break; /* Lich */
+  case TRAN_LICH: pl ++; break; /* Lich */
  }
  return pl;
 }
@@ -479,24 +480,24 @@ int player_fast_run(void)
 {
  int fr = 0;
 /* armour: (checks boots only) */
- if (you[0].equip [4] != -1 && you[0].inv_dam [you[0].equip [4]] % 30 == 1) fr ++;
- if (you[0].duration [9] != 0) fr ++;
+ if (you[0].equip [EQ_BOOTS] != -1 && you[0].inv_dam [you[0].equip [EQ_BOOTS]] % 30 == SPARM_RUNNING) fr ++;
+ if (you[0].duration [DUR_SWIFTNESS] != 0) fr ++;
 /* Mutations */
- if (you[0].mutation [24] > 0) fr ++;
+ if (you[0].mutation [MUT_FAST] > 0) fr ++;
 /* Centaurs & Spriggans */
- if (you[0].species == 30 || you[0].species == 32) fr ++;
+ if (you[0].species == SP_CENTAUR || you[0].species == SP_SPRIGGAN) fr ++;
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 0: break;
-  case 1: fr ++; break; /* spider */
+  case TRAN_NONE: break;
+  case TRAN_SPIDER: fr ++; break; /* spider */
  }
  return fr;
 }
 
 int player_speed(void)
 {
- if (you[0].attribute [5] == 3) return 15;
+ if (you[0].attribute [ATTR_TRANSFORMATION] == TRAN_STATUE) return 15;
  return 10;
 }
 
@@ -505,67 +506,67 @@ int player_AC(void)
  int AC = 0;
  int i;
 
- for (i = 1; i < 7; i ++)
+ for (i = EQ_CLOAK; i < EQ_LEFT_RING; i ++)
  {
   if (you[0].equip [i] == -1) continue;
-  if (i == 5) continue;
+  if (i == EQ_SHIELD) continue;
   if (you[0].inv_plus [you[0].equip [i]] > 130)
    AC += you[0].inv_plus [you[0].equip [i]] - 150;
     else AC += you[0].inv_plus [you[0].equip [i]] - 50;
-  if (i == 2 && you[0].inv_plus2 [you[0].equip [i]] >= 2) continue;
-  if (i == 4 && you[0].inv_plus2 [you[0].equip [i]] != 0) AC += 3; /* barding */
+  if (i == EQ_HELMET && you[0].inv_plus2 [you[0].equip [i]] >= 2) continue;
+  if (i == EQ_BOOTS && you[0].inv_plus2 [you[0].equip [i]] != 0) AC += 3; /* barding */
 
-  AC += property(2, you[0].inv_type [you[0].equip [i]], 0) * (15 + you[0].skills [13]) / 15;
-  if ((you[0].species == 13 || you[0].species == 30 || you[0].mutation [26] > 0) && i == 6) /* Nagas/Centaurs/the deformed don't fit into body armour very well */
+  AC += property(2, you[0].inv_type [you[0].equip [i]], 0) * (15 + you[0].skills [SK_ARMOUR]) / 15;
+  if ((you[0].species == SP_NAGA || you[0].species == SP_CENTAUR || you[0].mutation [MUT_DEFORMED] > 0) && i == EQ_BODY_ARMOUR) /* Nagas/Centaurs/the deformed don't fit into body armour very well */
   {
    AC -= property(2, you[0].inv_type [you[0].equip [i]], 0) / 2;
   }
  }
 
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 1)
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_PROTECTION)
  {
-  if (you[0].inv_plus [you[0].equip [8]] > 130) AC -= 100;
-  AC += you[0].inv_plus [you[0].equip [8]];
+  if (you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]] > 130) AC -= 100;
+  AC += you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]];
   AC -= 50;
  }
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 1)
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_PROTECTION)
  {
-  if (you[0].inv_plus [you[0].equip [7]] > 130) AC -= 100;
-  AC += you[0].inv_plus [you[0].equip [7]];
+  if (you[0].inv_plus [you[0].equip [EQ_LEFT_RING]] > 130) AC -= 100;
+  AC += you[0].inv_plus [you[0].equip [EQ_LEFT_RING]];
   AC -= 50;
  }
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 0 && you[0].inv_dam [you[0].equip [0]] % 30 == 7)
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_WEAPONS && you[0].inv_dam [you[0].equip [EQ_WEAPON]] % 30 == SPWPN_PROTECTION)
   AC += 5;
- if (you[0].equip [5] != -1 && you[0].inv_dam [you[0].equip [5]] % 30 == 13)
+ if (you[0].equip [EQ_SHIELD] != -1 && you[0].inv_dam [you[0].equip [EQ_SHIELD]] % 30 == SPARM_PROTECTION)
   AC += 3;
- AC += scan_randarts(1);
- if (you[0].species == 13) AC += you[0].xl / 3; /* naga */
- if (you[0].species == 22 && you[0].xl > 7) AC += (you[0].xl - 7) / 2; /* grey drac */
- if (you[0].species == 22 && you[0].xl >= 4) AC ++; /* grey drac */
- if (you[0].species >= 18 && you[0].species <= 29 && you[0].species != 22) AC += you[0].xl / 4; /* all dracs, exc grey */
- if (you[0].species == 15) AC ++; /* ogre */
- if (you[0].species == 16) AC += 3; /* troll */
- if (you[0].species == 30) AC += 3; /* centaur */
+ AC += scan_randarts(RAP_AC);
+ if (you[0].species == SP_NAGA) AC += you[0].xl / 3; /* naga */
+ if (you[0].species == SP_GREY_DRACONIAN && you[0].xl > 7) AC += (you[0].xl - 6) / 2; /* grey dracs have especially tough armour */
+ if (you[0].species == SP_GREY_DRACONIAN && you[0].xl >= 4) AC ++;
+ if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN && you[0].species != SP_GREY_DRACONIAN) AC += you[0].xl / 4;
+ if (you[0].species == SP_OGRE) AC ++; /* ogre */
+ if (you[0].species == SP_TROLL) AC += SP_HIGH_ELF; /* troll */
+ if (you[0].species == SP_CENTAUR) AC += 3; /* centaur */
 
- if (you[0].duration [1] > 0) AC += 4 + you[0].skills [34] / 3; // ice armour
- if (you[0].duration [11] > 0) AC += 5 + you[0].skills [36] / 2; // stonemail
+ if (you[0].duration [DUR_ICY_ARMOUR] > 0) AC += 4 + you[0].skills [SK_ICE_MAGIC] / 3; // ice armour
+ if (you[0].duration [DUR_STONEMAIL] > 0) AC += 5 + you[0].skills [SK_EARTH_MAGIC] / 2; // stonemail
 
 /* mutations */
- AC += you[0].mutation [0];
- if (you[0].mutation [4] > 0) AC += you[0].mutation [4] * 2 - 1;
- AC += you[0].mutation [5] * 3;
- AC += you[0].mutation [6];
- if (you[0].mutation [7] > 0) AC += you[0].mutation [7] + 1;
+ AC += you[0].mutation [MUT_TOUGH_SKIN];
+ if (you[0].mutation [MUT_GREEN_SCALES] > 0) AC += you[0].mutation [MUT_GREEN_SCALES] * 2 - 1;
+ AC += you[0].mutation [MUT_BLACK_SCALES] * 3;
+ AC += you[0].mutation [MUT_GREY_SCALES];
+ if (you[0].mutation [MUT_BONEY_PLATES] > 0) AC += you[0].mutation [MUT_BONEY_PLATES] + 1;
 
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 0: break;
-  case 1: AC += 2; break; /* spider */
-  case 3: AC += 20; break; /* statue */
-  case 4: AC += 2; break; /* Ice beast */
-  case 5: AC += 7; break; /* Dragon */
-  case 6: AC += 3; break; /* Lich */
+  case TRAN_NONE: break;
+  case TRAN_SPIDER: AC += 2; break; /* spider */
+  case TRAN_STATUE: AC += 20; break; /* statue */
+  case TRAN_ICE_BEAST: AC += 2; break; /* Ice beast */
+  case TRAN_DRAGON: AC += 7; break; /* Dragon */
+  case TRAN_LICH: AC += 3; break; /* Lich */
  }
 
  return AC;
@@ -574,38 +575,38 @@ int player_AC(void)
 int player_evasion(void)
 {
  int ev = 10;
- if (you[0].species == 30) ev = 7;
+ if (you[0].species == SP_CENTAUR) ev = 7;
  int ev_change = 0;
 
- ev_change = property(2, you[0].inv_type [you[0].equip [6]], 1);
- ev_change += you[0].skills [13] / 3;
- if (ev_change > property(2, you[0].inv_type [you[0].equip [6]], 1) / 3) ev_change = property(2, you[0].inv_type [you[0].equip [6]], 1) / 3;
+ ev_change = property(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]], 1);
+ ev_change += you[0].skills [SK_ARMOUR] / 3;
+ if (ev_change > property(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]], 1) / 3) ev_change = property(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]], 1) / 3;
  ev += ev_change; /* remember that it's negative */
 
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 11)
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_EVASION)
  {
-  if (you[0].inv_plus [you[0].equip [8]] > 130) ev -= 100;
-  ev += you[0].inv_plus [you[0].equip [8]];
+  if (you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]] > 130) ev -= 100;
+  ev += you[0].inv_plus [you[0].equip [EQ_RIGHT_RING]];
   ev -= 50;
  }
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 11)
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_EVASION)
  {
-  if (you[0].inv_plus [you[0].equip [7]] > 130) ev -= 100;
-  ev += you[0].inv_plus [you[0].equip [7]];
+  if (you[0].inv_plus [you[0].equip [EQ_LEFT_RING]] > 130) ev -= 100;
+  ev += you[0].inv_plus [you[0].equip [EQ_LEFT_RING]];
   ev -= 50;
  }
- if (you[0].duration [11] > 0) ev -= 2; // stonemail
+ if (you[0].duration [DUR_STONEMAIL] > 0) ev -= 2; // stonemail
 
 int emod = 0;
 
-if (you[0].equip [6] != -1)
+if (you[0].equip [EQ_BODY_ARMOUR] != -1)
 {
- if (you[0].inv_type [you[0].equip [6]] > 1 && you[0].inv_type [you[0].equip [6]] != 30 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25) && you[0].inv_dam [you[0].equip [6]] / 30 != 4) emod += (property(2, you[0].inv_type [you[0].equip [6]], 1) * 14) / 10;
+ if (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > ARM_LEATHER_ARMOUR && you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] != ARM_ANIMAL_SKIN && (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < ARM_STEAM_DRAGON_HIDE || you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > ARM_MOTTLED_DRAGON_ARMOUR) && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] / 30 != 4) emod += (property(2, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]], 1) * 14) / 10;
 /* meaning that the armour evasion modifier is often effectively applied
 twice, but not if you're wearing elven armour */
 }
 
-emod += you[0].skills [14] / 2; // is this too generous?
+emod += you[0].skills [SK_DODGING] / 2; // is this too generous?
 
 if (emod > 0) ev += emod;
 
@@ -616,17 +617,17 @@ mpr(info);
 #endif
 
  /* repulsion field */
- if (you[0].mutation [8] > 0) ev += you[0].mutation [8] * 2 - 1;
+ if (you[0].mutation [MUT_REPULSION_FIELD] > 0) ev += you[0].mutation [MUT_REPULSION_FIELD] * 2 - 1;
 
 /* transformations */
- switch(you[0].attribute [5])
+ switch(you[0].attribute [ATTR_TRANSFORMATION])
  {
-  case 0: break;
-  case 1: ev += 3; break; /* spider */
-  case 3: ev -= 5; break; /* statue */
-  case 5: ev -= 3; break; /* Dragon */
+  case TRAN_NONE: break;
+  case TRAN_SPIDER: ev += 3; break; /* spider */
+  case TRAN_STATUE: ev -= 5; break; /* statue */
+  case TRAN_DRAGON: ev -= 3; break; /* Dragon */
  }
- ev += scan_randarts(2);
+ ev += scan_randarts(RAP_EVASION);
  return ev;
 }
 
@@ -634,12 +635,12 @@ int player_mag_abil(void)
 {
  int ma = 0;
 /* rings of wizardry */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 16) ma += 3;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 16) ma += 3;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_WIZARDRY) ma += 3;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_WIZARDRY) ma += 3;
 /* Staves */
- if (you[0].equip [0] != -1 && you[0].inv_class [you[0].equip [0]] == 11 && you[0].inv_type [you[0].equip [0]] == 0) ma += 4;
+ if (you[0].equip [EQ_WEAPON] != -1 && you[0].inv_class [you[0].equip [EQ_WEAPON]] == OBJ_STAVES && you[0].inv_type [you[0].equip [EQ_WEAPON]] == STAFF_WIZARDRY) ma += 4;
 /* armour of the Archmagi (checks body armour only) */
- if (you[0].equip [6] != -1 && you[0].inv_dam [you[0].equip [6]] % 30 == 17) ma += 2;
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1 && you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) ma += 2;
  return ma;
 }
 
@@ -648,22 +649,22 @@ int player_shield_class(void)
 
  int base_shield = 0;
 
- if (you[0].equip [5] == -1) return 0;
+ if (you[0].equip [EQ_SHIELD] == -1) return 0;
 
- switch (you[0].inv_type [you[0].equip [5]])
+ switch (you[0].inv_type [you[0].equip [EQ_SHIELD]])
  {
-  case 13: base_shield += 3; break;
-  case 14: base_shield += 7; break;
-  case 8: base_shield += 5; break;
+  case ARM_BUCKLER: base_shield += 3; break;
+  case ARM_LARGE_SHIELD: base_shield += 7; break;
+  case ARM_SHIELD: base_shield += 5; break;
  }
 
- base_shield *= 10 + you[0].skills [17] / 2;
+ base_shield *= 10 + you[0].skills [SK_SHIELDS] / 2;
  base_shield /= 10;
 
-        if (you[0].inv_plus [you[0].equip [5]] > 130)
-                base_shield += you[0].inv_plus [you[0].equip [5]] - 150;
+        if (you[0].inv_plus [you[0].equip [EQ_SHIELD]] > 130)
+                base_shield += you[0].inv_plus [you[0].equip [EQ_SHIELD]] - 150;
          else
-        base_shield += you[0].inv_plus [you[0].equip [5]] - 50;
+        base_shield += you[0].inv_plus [you[0].equip [EQ_SHIELD]] - 50;
 
  return base_shield;
 
@@ -673,14 +674,14 @@ int player_see_invis(void)
 {
  int si = 0;
 /* rings of see invis */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 7) si ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 7) si ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == RING_SEE_INVISIBLE) si ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_SEE_INVISIBLE) si ++;
 /* armour: (checks head armour only) */
- if (you[0].equip [2] != -1 && you[0].inv_dam [you[0].equip [2]] % 30 == 5) si ++;
+ if (you[0].equip [EQ_HELMET] != -1 && you[0].inv_dam [you[0].equip [EQ_HELMET]] % 30 == SPARM_SEE_INVISIBLE) si ++;
 /* Nagas & Spriggans have good eyesight */
- if (you[0].species == 13 || you[0].species == 32) si ++;
+ if (you[0].species == SP_NAGA || you[0].species == SP_SPRIGGAN) si ++;
 /* randart wpns */
- si += scan_randarts(12);
+ si += scan_randarts(RAP_EYESIGHT);
  return si;
 }
 
@@ -688,10 +689,10 @@ int player_sust_abil(void)
 {
  int sa = 0;
 /* rings of sust abil */
- if (you[0].equip [7] != -1 && you[0].inv_type [you[0].equip [7]] == 12) sa ++;
- if (you[0].equip [8] != -1 && you[0].inv_type [you[0].equip [8]] == 12) sa ++;
+ if (you[0].equip [EQ_LEFT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_LEFT_RING]] == SPWPN_FROST) sa ++;
+ if (you[0].equip [EQ_RIGHT_RING] != -1 && you[0].inv_type [you[0].equip [EQ_RIGHT_RING]] == RING_SUSTAIN_ABILITIES) sa ++;
 /* Mummies have no way to restore stats, so only fair: */
- if (you[0].species == 12) sa ++;
+ if (you[0].species == SP_MUMMY) sa ++;
  return sa;
 }
 
@@ -710,7 +711,7 @@ int max_carried = 1000 + you[0].strength * 200;
 
 if (you[0].lev != 0) max_carried += 1000;
 
-if (you[0].duration [11] != 0) you[0].burden += 800; // stonemail
+if (you[0].duration [DUR_STONEMAIL] != 0) you[0].burden += 800; // stonemail
 
 for (bu = 0; bu < 52; bu ++)
 {
@@ -863,9 +864,9 @@ return;
 void gain_exp(unsigned int exp_gained)
 {
 
- if (you[0].equip [6] != -1)
+ if (you[0].equip [EQ_BODY_ARMOUR] != -1)
  {
-  if (you[0].inv_dam [you[0].equip [6]] % 30 == 17) return; // robe of archmagi
+  if (you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] % 30 == SPARM_ARCHMAGI) return; // robe of archmagi
  }
 
  if (you[0].xp + exp_gained > 8999999)
@@ -1230,7 +1231,7 @@ for (ski = 0; ski < 8; ski ++)
 
 add_skill(you, 0, 49, unapplied_points);
 
-for (ski = 0; ski < 50; ski ++)
+for (ski = SK_FIGHTING; ski < 50; ski ++)
 {
  exercise2(ski, 0, 1);
 }
@@ -1262,10 +1263,10 @@ if (you[0].xl > you[0].max_level)
 {
 switch(you[0].species)
 {
-case 1: // human
+case SP_HUMAN: // human
 if (you[0].xl % 5 == 0) increase_stats(random() % 3);
 break;
-case 2: // elf
+case SP_ELF: // elf
 if (you[0].xl % 3 != 0)
 {
  you[0].hp_max --;
@@ -1277,7 +1278,7 @@ if (you[0].xl % 3 == 0)
 }
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
 break;
-case 3: // high elf
+case SP_HIGH_ELF: // high elf
 if (you[0].xl % 3 != 0)
 {
  you[0].hp_max --;
@@ -1290,7 +1291,7 @@ if (you[0].xl % 2 == 0)
 //you[0].res_magic ++;
 if (you[0].xl % 3 == 0) increase_stats(1 + random() % 2);
 break;
-case 4: // grey elf
+case SP_GREY_ELF: // grey elf
 if (you[0].xl <= 13)
 {
  you[0].hp_max --;
@@ -1303,7 +1304,7 @@ if (you[0].xl % 3 != 0)
 //you[0].res_magic ++;
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
 break;
-case 5: // deep elf
+case SP_DEEP_ELF: // deep elf
 if (you[0].xl <= 16)
 {
  you[0].hp_max --;
@@ -1317,7 +1318,7 @@ if (you[0].xl % 3 == 0)
 you[0].base_ep2 ++;
 if (you[0].xl % 4 == 0) increase_stats(2);
 break;
-case 6: // sludge elf
+case SP_SLUDGE_ELF: // sludge elf
 if (you[0].xl % 3 != 0)
 {
  you[0].hp_max --;
@@ -1329,7 +1330,7 @@ if (you[0].xl % 3 == 0)
 }
 if (you[0].xl % 4 == 0) increase_stats(1 + random() % 2);
 break;
-case 7: // hill dwarf
+case SP_HILL_DWARF: // hill dwarf
 if (you[0].xl <= 13)
 {
  you[0].hp_max ++;
@@ -1346,7 +1347,7 @@ if (you[0].xl % 2 == 0)
 }
 if (you[0].xl % 4 == 0) increase_stats(0);
 break;
-case 8: // mountain dwarf
+case SP_MOUNTAIN_DWARF: // mountain dwarf
 if (you[0].xl <= 13)
 {
  you[0].hp_max ++;
@@ -1363,9 +1364,9 @@ if (you[0].xl % 3 == 0)
 }
 if (you[0].xl % 4 == 0) increase_stats(0);
 break;
-case 9: // halfling
+case SP_HALFLING: // halfling
 if (you[0].xl % 5 == 0) increase_stats(1); // note: falls through to kobold
-case 11: // kobold
+case SP_KOBOLD: // kobold
 if (you[0].xl <= 16)
 {
  you[0].hp_max --;
@@ -1376,7 +1377,7 @@ if (you[0].xl % 2 == 0)
  you[0].base_hp2 --;
 }
 break;
-case 10: // hill orc
+case SP_HILL_ORC: // hill orc
 if (you[0].xl <= 16)
 {
  you[0].hp_max ++;
@@ -1394,7 +1395,7 @@ if (you[0].xl % 3 == 0)
 if (you[0].xl % 5 == 0) increase_stats(0);
 break;
 // 11 (kobold) is with halfling
-case 12: // Mummy
+case SP_MUMMY: // Mummy
 if (you[0].xl == 13 || you[0].xl == 23)
 {
 /* you[0].spec_death ++;*/
@@ -1402,7 +1403,7 @@ if (you[0].xl == 13 || you[0].xl == 23)
  mpr(info);
 }
 break;
-case 13: // Naga
+case SP_NAGA: // Naga
 if (you[0].xl <= 13)
 {
  you[0].hp_max ++;
@@ -1420,7 +1421,7 @@ if (you[0].xl % 3 == 0)
  you[0].AC_ch = 1;
 }
 break;
-case 14: // Gnome
+case SP_GNOME: // Gnome
 if (you[0].xl <= 12)
 {
  you[0].hp_max --;
@@ -1434,8 +1435,8 @@ if (you[0].xl % 3 == 0)
 //you[0].res_magic += 3;
 if (you[0].xl % 4 == 0) increase_stats(1 + random2(2));
 break;
-case 15: // ogre
-case 16: // troll
+case SP_OGRE: // ogre
+case SP_TROLL: // troll
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 if (you[0].xl <= 13)
@@ -1454,7 +1455,7 @@ if (you[0].xl % 3 != 0)
 }
 if (you[0].xl % 3 == 0) increase_stats(0);
 break;
-case 17: // ogre-mage
+case SP_OGRE_MAGE: // ogre-mage
 you[0].hp_max ++;
 you[0].base_hp2 ++;
 if (you[0].xl <= 13)
@@ -1464,35 +1465,35 @@ if (you[0].xl <= 13)
 }
 if (you[0].xl % 5 == 0) increase_stats(random2(2) * 2);
 break;
-case 18:
-case 19:
-case 20:
-case 21:
+case SP_RED_DRACONIAN:
+case SP_WHITE_DRACONIAN:
+case SP_GREEN_DRACONIAN:
+case SP_GOLDEN_DRACONIAN:
 /* Grey is later */
-case 23:
-case 24:
-case 25:
-case 26:
-case 27:
-case 28:
-case 29: // Draconian
+case SP_BLACK_DRACONIAN:
+case SP_PURPLE_DRACONIAN:
+case SP_MOTTLED_DRACONIAN:
+case SP_PALE_DRACONIAN:
+case SP_UNK0_DRACONIAN:
+case SP_UNK1_DRACONIAN:
+case SP_UNK2_DRACONIAN: // Draconian
 if (you[0].xl == 7)
 {
  switch(you[0].species)
  {
-  case 18: mpr("Your scales start taking on a fiery red colour."); break;
-  case 19: mpr("Your scales start taking on an icy white colour."); break;
-  case 20: mpr("Your scales start taking on a green colour.");
+  case SP_RED_DRACONIAN: mpr("Your scales start taking on a fiery red colour."); break;
+  case SP_WHITE_DRACONIAN: mpr("Your scales start taking on an icy white colour."); break;
+  case SP_GREEN_DRACONIAN: mpr("Your scales start taking on a green colour.");
   mpr("You feel resistant to poison."); break;
-  case 21: mpr("Your scales start taking on a golden yellow colour."); break;
+  case SP_GOLDEN_DRACONIAN: mpr("Your scales start taking on a golden yellow colour."); break;
 
-  case 23: mpr("Your scales start turning black."); break;
-  case 24: mpr("Your scales start taking on a rich purple colour."); break;
-  case 25: mpr("Your scales start taking on a weird mottled pattern."); break;
-  case 26: mpr("Your scales start fading to a pale grey colour."); break;
-  case 27: mpr(""); break;
-  case 28: mpr(""); break;
-  case 29: mpr(""); break;
+  case SP_BLACK_DRACONIAN: mpr("Your scales start turning black."); break;
+  case SP_PURPLE_DRACONIAN: mpr("Your scales start taking on a rich purple colour."); break;
+  case SP_MOTTLED_DRACONIAN: mpr("Your scales start taking on a weird mottled pattern."); break;
+  case SP_PALE_DRACONIAN: mpr("Your scales start fading to a pale grey colour."); break;
+  case SP_UNK0_DRACONIAN: mpr(""); break;
+  case SP_UNK1_DRACONIAN: mpr(""); break;
+  case SP_UNK2_DRACONIAN: mpr(""); break;
  }
  more();
  char title [40];
@@ -1516,10 +1517,10 @@ if (you[0].xl == 18)
 {
  switch(you[0].species)
  {
-  case 18: mpr("You feel resistant to fire."); break;
-  case 19: mpr("You feel resistant to cold."); break;
-  case 23: mpr("You feel resistant to electrical energy.");
-  you[0].attribute [0] ++; break;
+  case SP_RED_DRACONIAN: mpr("You feel resistant to fire."); break;
+  case SP_WHITE_DRACONIAN: mpr("You feel resistant to cold."); break;
+  case SP_BLACK_DRACONIAN: mpr("You feel resistant to electrical energy.");
+  you[0].attribute [ATTR_RESIST_LIGHTNING] ++; break;
  }
 }
 
@@ -1536,7 +1537,7 @@ if (you[0].xl % 4 == 0) /* need to add to player_AC */
 //if (you[0].xl % 5 == 0) increase_stats(random2(3));
 break;
 
-case 22: /* grey drac */
+case SP_GREY_DRACONIAN: /* grey drac */
 if (you[0].xl == 7)
 {
  mpr("Your scales start turning grey.");
@@ -1576,7 +1577,7 @@ if (you[0].xl == 4 || (you[0].xl > 7 && you[0].xl % 2 == 0)) /* need to add to p
 if (you[0].xl > 7 && you[0].xl % 4 == 0) increase_stats(random2(2) * 2);
 break;
 
-case 30: // centaur
+case SP_CENTAUR: // centaur
 if (you[0].xl % 4 == 0) increase_stats(0 + random2(2) * 2); /* str or dex */
 if (you[0].xl <= 16)
 {
@@ -1594,7 +1595,7 @@ if (you[0].xl % 3 == 0)
 }
 break;
 
-case 31: // demigod
+case SP_DEMIGOD: // demigod
 if (you[0].xl % 3 == 0) increase_stats(random2(3));
 if (you[0].xl <= 16)
 {
@@ -1609,7 +1610,7 @@ if (you[0].xl % 2 == 0)
 if (you[0].xl % 3 != 0) you[0].base_ep2 ++;
 break;
 
-case 32: // spriggan
+case SP_SPRIGGAN: // spriggan
 if (you[0].xl <= 16)
 {
  you[0].hp_max --;
@@ -1623,7 +1624,7 @@ if (you[0].xl % 3 != 0)
 you[0].base_ep2 ++;
 if (you[0].xl % 5 == 0) increase_stats(1 + random2(2));
 break;
-case 33: // Minotaur
+case SP_MINOTAUR: // Minotaur
 if (you[0].xl <= 16)
 {
  you[0].hp_max ++;
@@ -1640,24 +1641,24 @@ if (you[0].xl % 2 == 0)
 }
 if (you[0].xl % 4 == 0) increase_stats(0 + random2(2) * 2); /* str or dex */
 break;
-case 34: // demonspawn
-if (you[0].attribute [8] == 0 && (you[0].xl == 4 || (you[0].xl < 4 && random2(3) == 0)))
+case SP_DEMONSPAWN: // demonspawn
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 0 && (you[0].xl == 4 || (you[0].xl < 4 && random2(3) == 0)))
  demonspawn();
-if (you[0].attribute [8] == 1 && you[0].xl > 4 && (you[0].xl == 9 || (you[0].xl < 9 && random2(3) == 0)))
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 1 && you[0].xl > 4 && (you[0].xl == 9 || (you[0].xl < 9 && random2(3) == 0)))
  demonspawn();
-if (you[0].attribute [8] == 2 && you[0].xl > 9 && (you[0].xl == 14 || (you[0].xl < 14 && random2(3) == 0)))
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 2 && you[0].xl > 9 && (you[0].xl == 14 || (you[0].xl < 14 && random2(3) == 0)))
  demonspawn();
-if (you[0].attribute [8] == 3 && you[0].xl > 14 && (you[0].xl == 19 || (you[0].xl < 19 && random2(3) == 0)))
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 3 && you[0].xl > 14 && (you[0].xl == 19 || (you[0].xl < 19 && random2(3) == 0)))
  demonspawn();
-if (you[0].attribute [8] == 4 && you[0].xl > 19 && (you[0].xl == 24 || (you[0].xl < 24 && random2(3) == 0)))
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 4 && you[0].xl > 19 && (you[0].xl == 24 || (you[0].xl < 24 && random2(3) == 0)))
  demonspawn();
-if (you[0].attribute [8] == 5 && you[0].xl == 27)
+if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 5 && you[0].xl == 27)
  demonspawn();
-/*if (you[0].attribute [8] == 6 && (you[0].xl == 8 || (you[0].xl < 8 && random2(3) == 0))
+/*if (you[0].attribute [ATTR_NUM_DEMONIC_POWERS] == 6 && (you[0].xl == 8 || (you[0].xl < 8 && random2(3) == 0))
  demonspawn();*/
 if (you[0].xl % 4 == 0) increase_stats(random2(3));
 break;
-case 35: // Ghoul
+case SP_GHOUL: // Ghoul
 if (you[0].xl <= 16)
 {
  you[0].hp_max ++;
@@ -1672,9 +1673,9 @@ if (you[0].xl % 3 == 0)
 {
  you[0].base_ep2 --;
 }
-if (you[0].xl % 5 == 0) increase_stats(0);
+if (you[0].xl % 5 == 0) increase_stats(STAT_STRENGTH);
 break;
-case 36: // Kenku
+case SP_KENKU: // Kenku
 if (you[0].xl <= 16)
 {
  you[0].hp_max --;
@@ -1713,7 +1714,7 @@ if (you[0].xl > 10 && you[0].xl % 2 == 0) you[0].rate_regen ++;
 
 you[0].hp_ch = 1; you[0].ep_ch = 1;
 
-if (you[0].religion == 5) Xom_acts(1, you[0].xl, 1);
+if (you[0].religion == GOD_XOM) Xom_acts(1, you[0].xl, 1);
 
 
 }
@@ -1728,21 +1729,21 @@ void increase_stats(char which_stat)
 
 switch(which_stat)
 {
- case 0:
+ case STAT_STRENGTH:
  you[0].strength ++;
  you[0].max_strength ++;
  you[0].strength_ch = 1;
  strcpy(info, "You feel stronger.");
  mpr(info);
  break;
- case 1:
+ case STAT_DEXTERITY:
  you[0].dex ++;
  you[0].max_dex ++;
  you[0].dex_ch = 1;
  strcpy(info, "You feel agile.");
  mpr(info);
  break;
- case 2:
+ case STAT_INTELLIGENCE:
  you[0].intel ++;
  you[0].max_intel ++;
  you[0].intel_ch = 1;
@@ -1756,29 +1757,29 @@ switch(which_stat)
 int check_stealth(void)
 {
 
-int stealth = 20 + you[0].skills [15] * 12;
+int stealth = 20 + you[0].skills [SK_STEALTH] * 12;
 
 if (you[0].burden_state == 2) stealth /= 2;
 if (you[0].burden_state == 5) stealth /= 5;
 
-if (you[0].equip [6] != -1)
+if (you[0].equip [EQ_BODY_ARMOUR] != -1)
 {
- if (you[0].inv_dam [you[0].equip [6]] / 30 != 4)
-  if (you[0].inv_type [you [0].equip [6]] > 1 && you[0].inv_type [you [0].equip [6]] != 30 && (you[0].inv_type [you[0].equip [6]] < 22 || you[0].inv_type [you[0].equip [6]] > 25)) stealth -= mass(2, you[0].inv_type [you[0].equip [6]]) / 10;
+ if (you[0].inv_dam [you[0].equip [EQ_BODY_ARMOUR]] / 30 != 4)
+  if (you[0].inv_type [you [0].equip [EQ_BODY_ARMOUR]] > ARM_LEATHER_ARMOUR && you[0].inv_type [you [0].equip [EQ_BODY_ARMOUR]] != ARM_ANIMAL_SKIN && (you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] < ARM_STEAM_DRAGON_HIDE || you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]] > ARM_MOTTLED_DRAGON_ARMOUR)) stealth -= mass(OBJ_ARMOUR, you[0].inv_type [you[0].equip [EQ_BODY_ARMOUR]]) / 10;
 /* reduces stealth if you're wearing heavy non-elven non-leather armour. Steam/mottled DSMs are okay. */
 }
 
-if (you[0].equip [4] != -1)
+if (you[0].equip [EQ_BOOTS] != -1)
 {
- if (you[0].inv_dam [you[0].equip [4]] % 30 == 14) stealth += 50; // boots of stealth
- if (you[0].inv_dam [you[0].equip [4]] / 30 == 4) stealth += 20; // elven
+ if (you[0].inv_dam [you[0].equip [EQ_BOOTS]] % 30 == SPARM_STEALTH) stealth += 50; // boots of stealth
+ if (you[0].inv_dam [you[0].equip [EQ_BOOTS]] / 30 == 4) stealth += 20; // elven
  /* boots */
 }
 
 
-if (you[0].equip [1] != -1)
+if (you[0].equip [EQ_CLOAK] != -1)
 {
- if (you[0].inv_dam [you[0].equip [1]] / 30 == 4) stealth += 20; // elven
+ if (you[0].inv_dam [you[0].equip [EQ_CLOAK]] / 30 == 4) stealth += 20; // elven
  /* cloaks */
 }
 
@@ -1823,17 +1824,17 @@ switch(keyin)
 {
 case 's':
 case 'S':
-increase_stats(0);
+increase_stats(STAT_STRENGTH);
 return;
 
 case 'i':
 case 'I':
-increase_stats(2);
+increase_stats(STAT_INTELLIGENCE);
 return;
 
 case 'd':
 case 'D':
-increase_stats(1);
+increase_stats(STAT_DEXTERITY);
 return;
 
 }
@@ -1854,81 +1855,81 @@ if (you[0].is_undead == 0)
   else strcpy(info, "You are undead.");
 mpr(info);
 
-switch(you[0].attribute [5])
+switch(you[0].attribute [ATTR_TRANSFORMATION])
 {
- case 1: mpr("You are in spider-form."); break;
- case 2: mpr("You have blades for hands."); break;
- case 3: mpr("You are a statue."); break;
- case 4: mpr("You are an ice creature."); break;
- case 5: mpr("You are in dragon-form."); break;
- case 6: mpr("You are in lich-form."); break;
+ case TRAN_SPIDER: mpr("You are in spider-form."); break;
+ case TRAN_BLADE_HANDS: mpr("You have blades for hands."); break;
+ case TRAN_STATUE: mpr("You are a statue."); break;
+ case TRAN_ICE_BEAST: mpr("You are an ice creature."); break;
+ case TRAN_DRAGON: mpr("You are in dragon-form."); break;
+ case TRAN_LICH: mpr("You are in lich-form."); break;
 }
 
-if (you[0].duration [0] != 0)
+if (you[0].duration [DUR_LIQUID_FLAMES] != 0)
 {
  strcpy(info, "You are covered in liquid flames.");
  mpr(info);
 }
-if (you[0].duration [1] != 0)
+if (you[0].duration [DUR_ICY_ARMOUR] != 0)
 {
  strcpy(info, "You are protected by an icy shield.");
  mpr(info);
 }
-if (you[0].duration [2] != 0)
+if (you[0].duration [DUR_REPEL_MISSILES] != 0)
 {
  strcpy(info, "You are protected from missiles.");
  mpr(info);
 }
 
-if (you[0].duration [3] != 0)
+if (you[0].duration [DUR_PRAYER] != 0)
 {
  strcpy(info, "You are praying."); // not yet implemented
  mpr(info);
 }
 
-if (you[0].duration [4] != 0)
+if (you[0].duration [DUR_REGENERATION] != 0)
 {
  strcpy(info, "You are regenerating.");
  mpr(info);
 }
 
-if (you[0].duration [9] != 0)
+if (you[0].duration [DUR_SWIFTNESS] != 0)
 {
  strcpy(info, "You can move swiftly.");
  mpr(info);
 }
 
-if (you[0].duration [10] != 0)
+if (you[0].duration [DUR_INSULATION] != 0)
 {
  strcpy(info, "You are insulated.");
  mpr(info);
 }
 
-if (you[0].duration [11] != 0)
+if (you[0].duration [DUR_STONEMAIL] != 0)
 {
  strcpy(info, "You are covered in scales of stone.");
  mpr(info);
 }
 
-if (you[0].duration [12] != 0)
+if (you[0].duration [DUR_CONTROLLED_FLIGHT] != 0)
 {
  strcpy(info, "You can control your flight.");
  mpr(info);
 }
 
-if (you[0].duration [13] != 0)
+if (you[0].duration [DUR_TELEPORT] != 0)
 {
  strcpy(info, "You are about to teleport.");
  mpr(info);
 }
 
-if (you[0].duration [14] != 0)
+if (you[0].duration [DUR_CONTROL_TELEPORT] != 0)
 {
  strcpy(info, "You can control teleportation.");
  mpr(info);
 }
 
-if (you[0].duration [19] != 0)
+if (you[0].duration [DUR_DEATH_CHANNEL] != 0)
 {
  strcpy(info, "You are channeling the dead.");
  mpr(info);
@@ -1997,6 +1998,20 @@ if (you[0].deaths_door != 0)
         mpr(info);
 }
 
+if (you[0].disease != 0)
+{
+ if (you[0].disease > 120) mpr("You are badly diseased."); else
+ if (you[0].disease > 40) mpr("You are diseased."); else
+  mpr("You are mildly diseased.");
+}
+
+if (you[0].mpower > 5)
+{
+ if (you[0].disease > 25) mpr("You are almost glowing with magical energy."); else
+ if (you[0].disease > 15) mpr("You are infused with magical energy."); else
+  mpr("You are mildly infused with magical energy.");
+}
+
 
 }
 
@@ -2038,48 +2053,48 @@ cprintf(print_it2);
 char *species_name(char speci)
 {
 
-if (you[0].species >= 18 && you[0].species <= 29 && you[0].xl < 7)
+if (you[0].species >= SP_RED_DRACONIAN && you[0].species <= SP_UNK2_DRACONIAN && you[0].xl < 7)
  return "Draconian"; /* Causes minor problems with ghosts, but nevermind */
 
 switch(speci)
 {
- case 1: return "Human";
- case 2: return "Elf";
- case 3: return "High Elf";
- case 4: return "Grey Elf";
- case 5: return "Deep Elf";
- case 6: return "Sludge Elf";
- case 7: return "Hill Dwarf";
- case 8: return "Mountain Dwarf";
- case 9: return "Halfling";
- case 10: return "Hill Orc";
- case 11: return "Kobold";
- case 12: return "Mummy";
- case 13: return "Naga";
- case 14: return "Gnome";
- case 15: return "Ogre";
- case 16: return "Troll";
- case 17: return "Ogre-Mage";
- case 18: return "Red Draconian"; /* Fire */
- case 19: return "White Draconian"; /* Cold */
- case 20: return "Green Draconian"; /* Poison */
- case 21: return "Yellow Draconian"; /* Acid */
- case 22: return "Grey Draconian"; /* Nothing */
- case 23: return "Black Draconian"; /* Elec */
- case 24: return "Purple Draconian"; /* Energy */
+ case SP_HUMAN: return "Human";
+ case SP_ELF: return "Elf";
+ case SP_HIGH_ELF: return "High Elf";
+ case SP_GREY_ELF: return "Grey Elf";
+ case SP_DEEP_ELF: return "Deep Elf";
+ case SP_SLUDGE_ELF: return "Sludge Elf";
+ case SP_HILL_DWARF: return "Hill Dwarf";
+ case SP_MOUNTAIN_DWARF: return "Mountain Dwarf";
+ case SP_HALFLING: return "Halfling";
+ case SP_HILL_ORC: return "Hill Orc";
+ case SP_KOBOLD: return "Kobold";
+ case SP_MUMMY: return "Mummy";
+ case SP_NAGA: return "Naga";
+ case SP_GNOME: return "Gnome";
+ case SP_OGRE: return "Ogre";
+ case SP_TROLL: return "Troll";
+ case SP_OGRE_MAGE: return "Ogre-Mage";
+ case SP_RED_DRACONIAN: return "Red Draconian"; /* Fire */
+ case SP_WHITE_DRACONIAN: return "White Draconian"; /* Cold */
+ case SP_GREEN_DRACONIAN: return "Green Draconian"; /* Poison */
+ case SP_GOLDEN_DRACONIAN: return "Yellow Draconian"; /* Acid */
+ case SP_GREY_DRACONIAN: return "Grey Draconian"; /* Nothing */
+ case SP_BLACK_DRACONIAN: return "Black Draconian"; /* Elec */
+ case SP_PURPLE_DRACONIAN: return "Purple Draconian"; /* Energy */
 
- case 25: return "Mottled Draconian"; /*  */
- case 26: return "Pale Draconian"; /*  */
- case 27: return "Draconian"; /*  */
- case 28: return "Draconian"; /*  */
- case 29: return "Draconian"; /*  */
- case 30: return "Centaur";
- case 31: return "Demigod";
- case 32: return "Spriggan";
- case 33: return "Minotaur";
- case 34: return "Demonspawn";
- case 35: return "Ghoul";
- case 36: return "Kenku";
+ case SP_MOTTLED_DRACONIAN: return "Mottled Draconian"; /*  */
+ case SP_PALE_DRACONIAN: return "Pale Draconian"; /*  */
+ case SP_UNK0_DRACONIAN: return "Draconian"; /*  */
+ case SP_UNK1_DRACONIAN: return "Draconian"; /*  */
+ case SP_UNK2_DRACONIAN: return "Draconian"; /*  */
+ case SP_CENTAUR: return "Centaur";
+ case SP_DEMIGOD: return "Demigod";
+ case SP_SPRIGGAN: return "Spriggan";
+ case SP_MINOTAUR: return "Minotaur";
+ case SP_DEMONSPAWN: return "Demonspawn";
+ case SP_GHOUL: return "Ghoul";
+ case SP_KENKU: return "Kenku";
 
 }
 
@@ -2089,16 +2104,17 @@ return "Yak";
 
 char wearing_amulet(char which_am)
 {
-
- if (which_am == 42 && (you[0].duration [12] != 0 || (you[0].species >= 18 && you[0].species <= 29) || you[0].attribute [5] == 5)) return 1; // controlled flight - duration [10] : flight spell in operation
- if (which_am == 37 && you[0].mutation [36] != 0) return 1;
- if (which_am == 39 || which_am == 41)
+ if (which_am == AMU_CONTROLLED_FLIGHT && (you[0].duration
+[DUR_CONTROLLED_FLIGHT] != 0 || (you[0].species >= SP_RED_DRACONIAN &&
+you[0].species <= SP_UNK2_DRACONIAN) || you[0].attribute [ATTR_TRANSFORMATION] == TRAN_DRAGON)) return 1; // controlled flight - duration [10] : flight spell in operation
+ if (which_am == AMU_CLARITY && you[0].mutation [MUT_CLARITY] != 0) return 1;
+ if (which_am == AMU_RESIST_CORROSION || which_am == AMU_CONSERVATION)
  {
-  if (you[0].equip [1] != -1 && you[0].inv_dam [you[0].equip [1]] % 30 == 18)
+  if (you[0].equip [EQ_CLOAK] != -1 && you[0].inv_dam [you[0].equip [EQ_CLOAK]] % 30 == SPARM_PRESERVATION)
      return 1;
  }
- if (you[0].equip [9] == -1) return 0;
- if (you[0].inv_type [you[0].equip [9]] == which_am) return 1;
+ if (you[0].equip [EQ_AMULET] == -1) return 0;
+ if (you[0].inv_type [you[0].equip [EQ_AMULET]] == which_am) return 1;
 
  return 0;
 
@@ -2109,42 +2125,42 @@ int species_exp_mod(char species)
 {
 switch(species)
 {
- case 1: return 10; // human
- case 2: return 12; // elf
- case 3: return 15; // h elf
- case 4: return 14; // g elf
- case 5: return 14; // d e
- case 6: return 12; // s e
- case 7: return 13; // h dw
- case 8: return 13; // m dw
- case 9: return 10; // 1/2ling
- case 10: return 10; // ho
- case 11: return 10; // kobold
- case 12: return 15; // mummy
- case 13: return 12; // naga
- case 14: return 11; // Gnome
- case 15: return 14; // ogre
- case 16: return 15; // troll
- case 17: return 15; // ogre mage
- case 18:
- case 19:
- case 20:
- case 21:
- case 22:
- case 23:
- case 24:
- case 25:
- case 26:
- case 27:
- case 28:
- case 29: return 14; // draconian
- case 30: return 14; // centaur
- case 31: return 16; // demigod
- case 32: return 13; // Spriggan
- case 33: return 14; // Minotaur
- case 34: return 15; // Demonspawn
- case 35: return 12; // Ghoul
- case 36: return 13; // Kenku
+ case SP_HUMAN: return 10; // human
+ case SP_ELF: return 12; // elf
+ case SP_HIGH_ELF: return 15; // h elf
+ case SP_GREY_ELF: return 14; // g elf
+ case SP_DEEP_ELF: return 14; // d e
+ case SP_SLUDGE_ELF: return 12; // s e
+ case SP_HILL_DWARF: return 13; // h dw
+ case SP_MOUNTAIN_DWARF: return 13; // m dw
+ case SP_HALFLING: return 10; // 1/2ling
+ case SP_HILL_ORC: return 10; // ho
+ case SP_KOBOLD: return 10; // kobold
+ case SP_MUMMY: return 15; // mummy
+ case SP_NAGA: return 12; // naga
+ case SP_GNOME: return 11; // Gnome
+ case SP_OGRE: return 14; // ogre
+ case SP_TROLL: return 15; // troll
+ case SP_OGRE_MAGE: return 15; // ogre mage
+ case SP_RED_DRACONIAN:
+ case SP_WHITE_DRACONIAN:
+ case SP_GREEN_DRACONIAN:
+ case SP_GOLDEN_DRACONIAN:
+ case SP_GREY_DRACONIAN:
+ case SP_BLACK_DRACONIAN:
+ case SP_PURPLE_DRACONIAN:
+ case SP_MOTTLED_DRACONIAN:
+ case SP_PALE_DRACONIAN:
+ case SP_UNK0_DRACONIAN:
+ case SP_UNK1_DRACONIAN:
+ case SP_UNK2_DRACONIAN: return 14; // draconian
+ case SP_CENTAUR: return 14; // centaur
+ case SP_DEMIGOD: return 16; // demigod
+ case SP_SPRIGGAN: return 13; // Spriggan
+ case SP_MINOTAUR: return 14; // Minotaur
+ case SP_DEMONSPAWN: return 15; // Demonspawn
+ case SP_GHOUL: return 12; // Ghoul
+ case SP_KENKU: return 13; // Kenku
  default: return 0;
 }
 
@@ -2203,10 +2219,10 @@ int to_hit = 0;
 int to_dam = 0;
 int i = 0;
 
-for (i = 7; i < 9; i ++)
+for (i = EQ_LEFT_RING; i < EQ_AMULET; i ++)
 {
  if (you[0].equip [i] == -1) continue;
- if (you[0].inv_type [you[0].equip [i]] != 6) continue;
+ if (you[0].inv_type [you[0].equip [i]] != RING_SLAYING) continue;
 
  int ghoggl = you[0].inv_plus [you[0].equip [i]] - 50;
  if (you[0].inv_plus [you[0].equip [i]] > 130) ghoggl -= 100;
@@ -2216,13 +2232,13 @@ for (i = 7; i < 9; i ++)
 
 if (which_affected == 0)
 {
-  to_hit += scan_randarts(26);
+  to_hit += scan_randarts(RAP_ACCURACY);
   return to_hit;
 }
 
 if (which_affected == 1)
 {
-  to_dam += scan_randarts(27);
+  to_dam += scan_randarts(RAP_DAMAGE);
   return to_dam;
 }
 
@@ -2240,20 +2256,20 @@ int i = 0;
 int retval = 0;
 
 //for (i = 0; i < 10; i ++)
-for (i = 0; i < 7; i ++)
+for (i = EQ_WEAPON; i < EQ_LEFT_RING; i ++)
 {
  if (you[0].equip [i] == -1) continue;
- if (i == 0 && you[0].inv_class [you[0].equip [i]] != 0) continue;
+ if (i == EQ_WEAPON && you[0].inv_class [you[0].equip [i]] != OBJ_WEAPONS) continue;
  if (you[0].inv_dam [you[0].equip [i]] % 30 < 25) continue; /* change for rings/amulets */
 
  retval += randart_wpn_properties(you[0].inv_class [you[0].equip [i]], you[0].inv_type [you[0].equip [i]], you[0].inv_dam [you[0].equip [i]], you[0].inv_plus [you[0].equip [i]], you[0].inv_plus2 [you[0].equip [i]], 0, which_property);
 
 }
 
-for (i = 7; i < 10; i ++) /* rings + amulets */
+for (i = EQ_LEFT_RING; i < 10; i ++) /* rings + amulets */
 {
  if (you[0].equip [i] == -1) continue;
- if (you[0].inv_dam [you[0].equip [i]] != 200) continue;
+ if (you[0].inv_dam [you[0].equip [i]] != 200 && you[0].inv_dam [you[0].equip [i]] != 201) continue;
  retval += randart_wpn_properties(you[0].inv_class [you[0].equip [i]], you[0].inv_type [you[0].equip [i]], you[0].inv_dam [you[0].equip [i]], you[0].inv_plus [you[0].equip [i]], you[0].inv_plus2 [you[0].equip [i]], 0, which_property);
 }
 

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "bang.h"
 #include "describe.h"
@@ -53,15 +54,15 @@ void lose_piety(char pgn);
 void pray(void)
 {
 
-unsigned char was_praying = you[0].duration [3];
+unsigned char was_praying = you[0].duration [DUR_PRAYER];
 
-if (you[0].religion != 0 && grd [you[0].x_pos] [you[0].y_pos] == 179 + you[0].religion)
+if (you[0].religion != GOD_NO_GOD && grd [you[0].x_pos] [you[0].y_pos] == 179 + you[0].religion)
 {
  altar_prayer();
 } else
 if (grd [you[0].x_pos] [you[0].y_pos] >= 180 && grd [you[0].x_pos] [you[0].y_pos] <= 199)
 {
- if (you[0].species == 31)
+ if (you[0].species == SP_DEMIGOD)
  {
   mpr("Sorry, a being of your status cannot worship here.");
   return; /* demigod */
@@ -71,14 +72,14 @@ if (grd [you[0].x_pos] [you[0].y_pos] >= 180 && grd [you[0].x_pos] [you[0].y_pos
 }
 
 
-if (you[0].religion == 0)
+if (you[0].religion == GOD_NO_GOD)
 {
  if (you[0].is_undead != 0) mpr("You spend a moment contemplating the meaning of death.");
   else mpr("You spend a moment contemplating the meaning of life.");
  return;
 }
 
-if (you[0].religion == 5)
+if (you[0].religion == GOD_XOM)
 {
 mpr("Xom ignores you.");
 return;
@@ -88,7 +89,7 @@ strcat(info, god_name(you[0].religion));
 strcat(info, ".");
 mpr(info);
 
-you[0].duration [3] = 9 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
+you[0].duration [DUR_PRAYER] = 9 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
 
 //if (you[0].clas == 2 || you[0].clas == 6) you[0].duration [3] = 4 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20 + random2(you[0].piety) / 20;
 
@@ -113,32 +114,32 @@ strcat(info, " is most pleased with you.");
 if (you[0].piety <= 100)
 {
 strcat(info, " is greatly pleased with you.");
-you[0].duration [3] *= 2;
+you[0].duration [DUR_PRAYER] *= 2;
 } else
 if (you[0].piety <= 130)
 {
 strcat(info, " is extremely pleased with you.");
-you[0].duration [3] *= 2;
+you[0].duration [DUR_PRAYER] *= 2;
 } else
 {
 strcat(info, " is exalted by your worship!");
-you[0].duration [3] *= 3;
+you[0].duration [DUR_PRAYER] *= 3;
 }
 
 /*if (you[0].piety <= 20)
 {
 strcpy(info, "You sense hostility.");
-you[0].duration [3] = 0;
+you[0].duration [DUR_PRAYER] = 0;
 } else
 if (you[0].piety <= 35)
 {
 strcat(info, " is most displeased with you.");
-you[0].duration [3] = 0;
+you[0].duration [DUR_PRAYER] = 0;
 } else
 if (you[0].piety <= 45)
 {
 strcat(info, " is displeased with you.");
-you[0].duration [3] = 0;
+you[0].duration [DUR_PRAYER] = 0;
 } else
 if (you[0].piety <= 65)
 {
@@ -155,16 +156,16 @@ strcat(info, " is most pleased with you.");
 if (you[0].piety <= 110)
 {
 strcat(info, " favours you.");
-you[0].duration [3] *= 2;
+you[0].duration [DUR_PRAYER] *= 2;
 } else
 if (you[0].piety <= 130)
 {
 strcat(info, " favours you greatly.");
-you[0].duration [3] *= 2;
+you[0].duration [DUR_PRAYER] *= 2;
 } else
 {
 strcat(info, " is exalted by your worship!");
-you[0].duration [3] *= 3;
+you[0].duration [DUR_PRAYER] *= 3;
 }
 */
 mpr(info);
@@ -182,112 +183,117 @@ if (was_praying == 0)
 Remember to check for water/lava
 */
 
- if (you[0].religion == 11 && random2(200) <= you[0].piety && (random2(3) == 0 || you[0].attribute [7] == 0) && you[0].attribute [6] == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
+ if (you[0].religion == GOD_NEMELEX_XOBEH && random2(200) <= you[0].piety && (random2(3) == 0 || you[0].attribute [ATTR_CARD_TABLE] == 0) && you[0].attribute [ATTR_CARD_COUNTDOWN] == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
  {
     int Nemelex = 0;
-    int gift_type = 15; /* deck of tricks */
-    if (you[0].attribute [7] == 0) /* portable altar */
+    int gift_type = MISC_DECK_OF_TRICKS; /* deck of tricks */
+    if (you[0].attribute [ATTR_CARD_TABLE] == 0) /* portable altar */
     {
-      Nemelex = items(1, 13, 17, 1, 1, 250);
-      you[0].attribute [7] = 1;
+      Nemelex = items(1, OBJ_MISCELLANY, MISC_PORTABLE_ALTAR_OF_NEMELEX, 1, 1, 250);
+      you[0].attribute [ATTR_CARD_TABLE] = 1;
     }
        else
          {
           if (random2(200) <= you[0].piety && random2(4) == 0)
-            gift_type = 5;
+            gift_type = MISC_LANTERN_OF_SHADOWS;
           if (random2(200) <= you[0].piety && random2(2) == 0)
-            gift_type = 6;
+            gift_type = MISC_HORN_OF_GERYON;
           if (random2(200) <= you[0].piety && random2(2) == 0)
-            gift_type = 16;
-          Nemelex = items(1, 13, gift_type, 1, 1, 250);
+            gift_type = MISC_DECK_OF_POWER;
+          Nemelex = items(1, OBJ_MISCELLANY, gift_type, 1, 1, 250);
          }
-    if (you[0].species != 13) mpr("Something appears at your feet!");
+    if (you[0].species != SP_NAGA) mpr("Something appears at your feet!");
      else mpr("Something appears before you!");
+    more();
     int what_was_theren = igrd [you[0].x_pos] [you[0].y_pos];
     mitm.ilink [Nemelex] = what_was_theren;
     igrd [you[0].x_pos] [you[0].y_pos] = Nemelex;
-    you[0].attribute [6] = 10;
+    you[0].attribute [ATTR_CARD_COUNTDOWN] = 10;
     lose_piety(5 + random2(5) + random2(5));
  }
 
- if ((you[0].religion == 7 || you[0].religion == 10) && you[0].piety > 130 && random2(you[0].piety) > 120 && random2(4) == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
+ if ((you[0].religion == GOD_OKAWARU || you[0].religion == GOD_TROG) && you[0].piety > 130 && random2(you[0].piety) > 120 && random2(4) == 0 && grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62)
  {
    strcpy(info, god_name(you[0].religion));
    strcat(info, " grants you a gift!");
    mpr(info);
-   if (you[0].religion == 10 || (you[0].religion == 7 && random2(2) == 0)) acquirement(0);
-     else acquirement(2);
+   more();
+   if (you[0].religion == GOD_TROG || (you[0].religion == GOD_OKAWARU && random2(2) == 0)) acquirement(OBJ_WEAPONS);
+     else acquirement(OBJ_ARMOUR);
    lose_piety(30 + random2(10) + random2(10));
  }
 
- if (you[0].religion == 4 && random2(you[0].piety) > 80 && random2(10) == 0)
+ if (you[0].religion == GOD_YREDELEMNUL && random2(you[0].piety) > 80 && random2(10) == 0)
  {
    strcpy(info, god_name(you[0].religion));
    strcat(info, " grants you an undead servant!");
    mpr(info);
-   int und_serv = 48; /* wraith */
-   if (random2(7) == 0) und_serv = 38;
-   if (random2(7) == 0) und_serv = 47;
-   if (random2(10) == 0) und_serv = 137;
-   if (random2(10) == 0) und_serv = 156;
-   if (random2(7) == 0) und_serv = 372;
-   if (random2(9) == 0) und_serv = 399;
-   if (random2(7) == 0) und_serv = 130;
-   if (random2(7) == 0) und_serv = 60;
+   more();
+   int und_serv = MONS_WRAITH; /* wraith */
+   if (random2(7) == 0) und_serv = MONS_MUMMY;
+   if (random2(7) == 0) und_serv = MONS_VAMPIRE;
+   if (random2(10) == 0) und_serv = MONS_FLAYED_GHOST;
+   if (random2(10) == 0) und_serv = MONS_GHOUL;
+   if (random2(7) == 0) und_serv = MONS_ROTTING_HULK;
+   if (random2(9) == 0) und_serv = MONS_SKELETAL_WARRIOR;
+   if (random2(7) == 0) und_serv = MONS_SPECTRAL_WARRIOR;
+   if (random2(7) == 0) und_serv = MONS_WIGHT;
    create_monster(und_serv, 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   lose_piety(5 + random2(5) + random2(5));
+   lose_piety(4 + random2(4) + random2(4));
  }
 
 
- if ((you[0].religion == 3 || you[0].religion == 9 || you[0].religion == 6) && you[0].piety > 160 && random2(you[0].piety) > 100)
+ if ((you[0].religion == GOD_KIKUBAAQUDGHA || you[0].religion == GOD_SIF_MUNA || you[0].religion == GOD_VEHUMET) && you[0].piety > 160 && random2(you[0].piety) > 100)
  {
-  int gift = 0;
-  if (you[0].religion == 3)
+  int gift = BOOK_MINOR_MAGIC_I;
+  if (you[0].religion == GOD_KIKUBAAQUDGHA)
   {
-   if (you[0].had_item [24] == 0) gift = 24; // Kiku - gives death books
-   if (you[0].had_item [34] == 0) gift = 34;
-   if (you[0].had_item [15] == 0) gift = 15;
-   if (you[0].had_item [23] == 0) gift = 23;
+   if (you[0].had_item [BOOK_NECRONOMICON] == 0) gift = BOOK_NECRONOMICON; // Kiku - gives death books
+   if (you[0].had_item [BOOK_UNLIFE] == 0) gift = BOOK_UNLIFE;
+   if (you[0].had_item [BOOK_DEATH] == 0) gift = BOOK_DEATH;
+   if (you[0].had_item [BOOK_NECROMANCY] == 0) gift = BOOK_NECROMANCY;
   }
 
-  if (you[0].religion == 9) gift = 250; // Sif Muna - gives any
+  if (you[0].religion == GOD_SIF_MUNA) gift = 250; // Sif Muna - gives any
 
-  if (you[0].religion == 6) // Vehumet - gives conj/summ. Gives bks first for whichever skill is higher
+  if (you[0].religion == GOD_VEHUMET) // Vehumet - gives conj/summ. Gives bks first for whichever skill is higher
   {
-   if (you[0].skills [26] < you[0].skills [28])
+   if (you[0].skills [SK_CONJURATIONS] < you[0].skills [SK_SUMMONINGS])
    {
-    if (you[0].had_item [33] == 0) gift = 33; // conj bks
-    if (you[0].had_item [3] == 0) gift = 3;
+    if (you[0].had_item [BOOK_ANNIHILATIONS] == 0) gift = BOOK_ANNIHILATIONS; // conj bks
+    if (you[0].had_item [BOOK_CONJURATIONS_I] == 0) gift = BOOK_CONJURATIONS_I;
    }
-   if (you[0].had_item [27] == 0) gift = 27; // summoning bks
-   if (you[0].had_item [7] == 0) gift = 7;
-   if (you[0].had_item [25] == 0) gift = 25;
-   if (you[0].skills [26] >= you[0].skills [28])
+   if (you[0].had_item [BOOK_DEMONOLOGY] == 0) gift = BOOK_DEMONOLOGY; // summoning bks
+   if (you[0].had_item [BOOK_INVOCATIONS] == 0) gift = BOOK_INVOCATIONS;
+   if (you[0].had_item [BOOK_SUMMONINGS] == 0) gift = BOOK_SUMMONINGS;
+   if (you[0].skills [SK_CONJURATIONS] >= you[0].skills [SK_SUMMONINGS])
    {
-    if (you[0].had_item [33] == 0) gift = 33; // conj bks again
-    if (you[0].had_item [3] == 0) gift = 3;
+    if (you[0].had_item [BOOK_ANNIHILATIONS] == 0) gift = BOOK_ANNIHILATIONS; // conj bks again
+    if (you[0].had_item [BOOK_CONJURATIONS_I] == 0) gift = BOOK_CONJURATIONS_I;
    }
   }
 
-  if (gift != 0 && (grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62))
+  if (gift != BOOK_MINOR_MAGIC_I && (grd [you[0].x_pos] [you[0].y_pos] != 61 && grd [you[0].x_pos] [you[0].y_pos] != 62))
   { /* shouldn't give you something if it's just going to fall in a pool */
    strcpy(info, god_name(you[0].religion));
    strcat(info, " grants you a gift!");
    mpr(info);
+   more();
    if (gift == 250)
    {
-    acquirement(10);
+    acquirement(OBJ_BOOKS);
    } else
    {
-    int thing_created = items(1, 10, gift, 1, 1, 250);
-    if (you[0].species != 13) mpr("Something appears at your feet!");
+    int thing_created = items(1, OBJ_BOOKS, gift, 1, 1, 250);
+    if (you[0].species != SP_NAGA) mpr("Something appears at your feet!");
      else mpr("Something appears before you!");
+    more();
     int what_was_there = igrd [you[0].x_pos] [you[0].y_pos];
     mitm.ilink [thing_created] = what_was_there;
     igrd [you[0].x_pos] [you[0].y_pos] = thing_created;
    }
    lose_piety(40 + random2(10) + random2(10));
-   if (you[0].religion == 6) lose_piety(10 + random2(10)); /* Vehumet gives books less readily */
+   if (you[0].religion == GOD_VEHUMET) lose_piety(10 + random2(10)); /* Vehumet gives books less readily */
   }
  }
 }
@@ -461,11 +467,11 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
   }
   if (random2(4) != 0)
   {
-   create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(3) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(4) == 0) create_monster(225 + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(3) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
-   if (random2(4) == 0) create_monster(80 + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   create_monster(MONS_NEQOXEC + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(3) == 0) create_monster(MONS_NEQOXEC + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(4) == 0) create_monster(MONS_NEQOXEC + random2(5), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(3) == 0) create_monster(MONS_HELLION + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   if (random2(4) == 0) create_monster(MONS_HELLION + random2(10), 22, 1, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
   } else dancing_weapon(100, 1); /* nasty, but fun */
   return;
  }
@@ -502,13 +508,13 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
   }
   switch(random2(7))
   {
-   case 0: potion_effect(0, 150); break;
-   case 1: potion_effect(1, 150); break;
-   case 2: potion_effect(2, 150); break;
-   case 3: potion_effect(3, 150); break;
-   case 4: potion_effect(12, 150); break;
-   case 5: if (random2(6) == 0) potion_effect(17, 150); else potion_effect(21, 150); break;
-   case 6: potion_effect(21, 150); break;
+   case 0: potion_effect(POT_HEALING, 150); break;
+   case 1: potion_effect(POT_HEAL_WOUNDS, 150); break;
+   case 2: potion_effect(POT_SPEED, 150); break;
+   case 3: potion_effect(POT_MIGHT, 150); break;
+   case 4: potion_effect(POT_INVISIBILITY, 150); break;
+   case 5: if (random2(6) == 0) potion_effect(POT_EXPERIENCE, 150); else potion_effect(POT_BERSERK_RAGE, 150); break;
+   case 6: potion_effect(POT_BERSERK_RAGE, 150); break;
   }
   return;
  }
@@ -520,11 +526,11 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
    case 1: mpr("Xom grants you some temporary aid."); break;
    case 2: mpr("Xom opens a gate."); break;
   }
-   create_monster(225 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   create_monster(225 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   if (random2(you[0].xl) >= 8) create_monster(225 + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   if (random2(you[0].xl) >= 8) create_monster(80 + random2(10), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   if (random2(you[0].xl) >= 8) create_monster(80 + random2(10), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   create_monster(MONS_NEQOXEC + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   create_monster(MONS_NEQOXEC + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   if (random2(you[0].xl) >= 8) create_monster(MONS_NEQOXEC + random2(5), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   if (random2(you[0].xl) >= 8) create_monster(MONS_HELLION + random2(10), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   if (random2(you[0].xl) >= 8) create_monster(MONS_HELLION + random2(10), 22, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
   return;
  }
  if (random2(sever) <= 3)
@@ -541,7 +547,7 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
    return;
   }
   int thing_created = items(1, 250, 250, 1, you[0].xl * 3, 250);
-  if (you[0].species != 13) mpr("Something appears at your feet!");
+  if (you[0].species != SP_NAGA) mpr("Something appears at your feet!");
    else mpr("Something appears before you!");
   int what_was_there = igrd [you[0].x_pos] [you[0].y_pos];
   mitm.ilink [thing_created] = what_was_there;
@@ -556,8 +562,8 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
    case 1: mpr("Xom grants you a demonic servitor."); break;
    case 2: mpr("Xom opens a gate."); break;
   }
-  if (random2(you[0].xl) <= 5) create_monster(220 + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
-   else create_monster(225 + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+  if (random2(you[0].xl) <= 5) create_monster(MONS_WHITE_IMP + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
+   else create_monster(MONS_NEQOXEC + random2(5), 0, 7, you[0].x_pos, you[0].y_pos, you[0].pet_target, 250);
   return;
  }
  if (random2(sever) <= 4)
@@ -569,7 +575,7 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
    case 2: mpr("Xom grants you an implement of death."); break;
    case 3: mpr("Xom smiles on you."); break;
   }
-  acquirement(0);
+  acquirement(OBJ_WEAPONS);
   return;
  }
  if (random2(sever) <= 5 && you[0].is_undead == 0)
@@ -590,7 +596,7 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
  }
  if (random2(sever) <= 2)
  {
-  you[0].attribute [0] ++;
+  you[0].attribute [ATTR_RESIST_LIGHTNING] ++;
   mpr("Xom hurls a blast of lightning!");
   beam[0].beam_source = MNG;
   beam[0].type = 43;
@@ -602,7 +608,7 @@ okay_try_again : if (niceness == 0 || random2(3) == 0) /* bad things */
   beam[0].colour = LIGHTCYAN;
   beam[0].thing_thrown = 1; /* your explosion */
   explosion(1, beam);
-  you[0].attribute [0] --;
+  you[0].attribute [ATTR_RESIST_LIGHTNING] --;
   return;
  }
 
@@ -640,22 +646,22 @@ Thing_done:
 void done_good(char thing_done, int pgain)
 {
 
-if (you[0].religion == 0) return;
+if (you[0].religion == GOD_NO_GOD) return;
 
 switch(thing_done)
 {
  case 1: /* killed a living monster in god's name */
  switch(you[0].religion)
  {
-  case 12: mpr("Elyvilon did not appreciate that!");
+  case GOD_ELYVILON: mpr("Elyvilon did not appreciate that!");
   naughty(3, 10);
   break;
-  case 3:
-  case 4:
-  case 6:
-  case 7:
-  case 8:
-  case 10:
+  case GOD_KIKUBAAQUDGHA:
+  case GOD_YREDELEMNUL:
+  case GOD_VEHUMET:
+  case GOD_OKAWARU:
+  case GOD_MAKHLEB:
+  case GOD_TROG:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your kill.");
   mpr(info);
@@ -667,10 +673,10 @@ switch(thing_done)
  case 2: /* killed an undead in god's name */
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
-  case 6:
-  case 8:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_VEHUMET:
+  case GOD_MAKHLEB:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your kill.");
   mpr(info);
@@ -682,10 +688,10 @@ switch(thing_done)
  case 3: /* killed a demon in god's name */
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
-  case 6:
-  case 8:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_VEHUMET:
+  case GOD_MAKHLEB:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your kill.");
   mpr(info);
@@ -704,9 +710,9 @@ switch(thing_done)
   strcat(info, " accepts your kill with pleasure!");
   gain_piety(random2(2) + 1);
   break;*/
-  case 1:
-  case 2:
-  case 12:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_ELYVILON:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " did not appreciate that!");
   mpr(info);
@@ -719,18 +725,18 @@ switch(thing_done)
  case 6: /* Note - pgain is you[0].xl, maybe */
  switch(you[0].religion)
  {
-  case 3:
-  case 7:
-  case 8:
-  case 10:
+  case GOD_KIKUBAAQUDGHA:
+  case GOD_OKAWARU:
+  case GOD_MAKHLEB:
+  case GOD_TROG:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your offering.");
   mpr(info);
   if (random2(pgain + 10) > 5) gain_piety(1);
   break;
-  case 1:
-  case 2:
-  case 12:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_ELYVILON:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " did not appreciate that!");
   mpr(info);
@@ -739,7 +745,7 @@ switch(thing_done)
  }
  break;
 
- case 7:
+ case GOD_OKAWARU:
  strcpy(info, god_name(you[0].religion));
  strcat(info, " is pleased with your offering.");
  mpr(info);
@@ -749,9 +755,9 @@ switch(thing_done)
  case 9: /* undead slaves killed a living monster */
  switch(you[0].religion)
  {
-  case 3:
-  case 4:
-  case 6:
+  case GOD_KIKUBAAQUDGHA:
+  case GOD_YREDELEMNUL:
+  case GOD_VEHUMET:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your slave's kill.");
   mpr(info);
@@ -763,7 +769,8 @@ switch(thing_done)
  case 10: /* servants killed any monster */
  switch(you[0].religion)
  {
-  case 6:
+  case GOD_VEHUMET:
+  case GOD_MAKHLEB:
   strcpy(info, god_name(you[0].religion));
   strcat(info, " accepts your collateral kill.");
   mpr(info);
@@ -775,7 +782,7 @@ switch(thing_done)
  case 11: /* cards */
  switch(you[0].religion)
  {
-  case 11:
+  case GOD_NEMELEX_XOBEH:
   gain_piety(pgain);
   break;
  }
@@ -803,29 +810,29 @@ if (you[0].piety >= 30 && old_piety < 30)
 {
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
   mpr("You can now repel the undead.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can now recall your undead servants at will.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can now animate corpses.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("You can gain power by killing in Vehumet's name, or by your servants' kills.");
   break;
-  case 7:
+  case GOD_OKAWARU:
   mpr("You can now give your body great, if temporary, strength.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can now gain power by killing in Makhleb's name.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can now go berserk at will.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You now have minor healing powers.");
   break;
  }
@@ -835,34 +842,34 @@ if (you[0].piety >= 50 && old_piety < 50)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can now call upon Zin for minor healing.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can now smite your foes.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You now have some protection from the side-effects of necromantic magic.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can now recall your undead slaves.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("Your destructive magics cast in Vehumet's name will rarely fail.");
   break;
-  case 7:
+  case GOD_OKAWARU:
   mpr("You can now call upon Okawaru for minor healing.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can now call on Makhleb's destructive powers.");
   break;
-  case 9:
+  case GOD_SIF_MUNA:
   mpr("You can now forget spells at will.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can now give your body great, if temporary, strength.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You now have the power to cure poison, disease and decay.");
   break;
  }
@@ -872,25 +879,25 @@ if (you[0].piety >= 75 && old_piety < 75)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can now call a plague of pestilential beasts upon your enemies!");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can now dispel the undead.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can now permanently enslave the undead.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can now animate whole legions of the undead.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("During prayer you are protected from summoned creatures.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can now summon a lesser servant of Makhleb.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You now have more powerful healing abilities.");
   break;
  }
@@ -900,28 +907,28 @@ if (you[0].piety >= 100 && old_piety < 100)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can now speak a Holy Word.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can now hurl bolts of divine anger.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can now drain life from all living things around you.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("You can channel ambient magical energy for your own uses.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can now call on the greater of Makhleb's destructive powers.");
   break;
-  case 9:
+  case GOD_SIF_MUNA:
   mpr("You now have some protection from the side-effects of magic.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can now haste yourself.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You have gained the power of Restoration.");
   break;
  }
@@ -931,25 +938,25 @@ if (you[0].piety >= 120 && old_piety < 120)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can now summon a guardian angel.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can now summon a divine warrior!");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can now summon an emissary of Death!"); /* ie a reaper */
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can now control the undead.");
   break;
-  case 7:
+  case GOD_OKAWARU:
   mpr("You can now haste yourself.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can now summon a greater servant of Makhleb.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You now have incredible healing powers.");
   break;
  }
@@ -983,9 +990,9 @@ switch(type_naughty)
  case 4:
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
-  case 12:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_ELYVILON:
   piety_loss = naughtiness;
   break;
  }
@@ -994,7 +1001,7 @@ switch(type_naughty)
  case 3:
  switch(you[0].religion)
  {
-  case 12:
+  case GOD_ELYVILON:
   piety_loss = naughtiness;
   break;
  }
@@ -1004,10 +1011,10 @@ switch(type_naughty)
  case 6:
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
-  case 12:
-  case 7:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_ELYVILON:
+  case GOD_OKAWARU:
   piety_loss = naughtiness;
   break;
  }
@@ -1016,9 +1023,9 @@ switch(type_naughty)
  case 7: /* butchering in the name of */
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
-  case 12:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
+  case GOD_ELYVILON:
   piety_loss = naughtiness;
   break;
  }
@@ -1027,7 +1034,7 @@ switch(type_naughty)
  case 8: /* stabbing */
  switch(you[0].religion)
  {
-  case 2:
+  case GOD_SHINING_ONE:
   piety_loss = naughtiness;
   break;
  }
@@ -1036,7 +1043,7 @@ switch(type_naughty)
  case 9: /* spellcasting */
  switch(you[0].religion)
  {
-  case 10:
+  case GOD_TROG:
   piety_loss = naughtiness;
   break;
  }
@@ -1075,22 +1082,22 @@ if (you[0].piety < 120 && old_piety >= 120)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can no longer summon a guardian angel.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can no longer summon a divine warrior.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can no longer summon an emissary of Death."); /* ie a reaper */
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can no longer control the undead.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can no longer summon a greater servant of Makhleb.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You no longer have incredible healing powers.");
   break;
  }
@@ -1100,28 +1107,28 @@ if (you[0].piety < 100 && old_piety >= 100)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can no longer speak a Holy Word.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can no longer hurl bolts of divine anger.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can no longer drain life.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("You have lost your channelling abilities.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can no longer call on Makhleb's greater destructive powers.");
   break;
-  case 9:
+  case GOD_SIF_MUNA:
   mpr("You no longer have special protection from the side-effects of magic.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can no longer haste yourself.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You have lost the power of Restoration.");
   break;
  }
@@ -1132,25 +1139,25 @@ if (you[0].piety < 75 && old_piety >= 75)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can no longer call a plague.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can no longer dispel the undead.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can no longer permanently enslave the undead.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can no longer animate legions of the dead.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("You feel vulnerable.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can no longer summon any servants of Makhleb.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You lose your powerful healing abilities.");
   break;
  }
@@ -1161,31 +1168,31 @@ if (you[0].piety < 50 && old_piety >= 50)
 {
  switch(you[0].religion)
  {
-  case 1:
+  case GOD_ZIN:
   mpr("You can no longer call upon Zin for minor healing.");
   break;
-  case 2:
+  case GOD_SHINING_ONE:
   mpr("You can no longer smite your foes.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You no longer have any special protection from miscast necromancy.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can no longer recall your undead slaves.");
   break;
-  case 6:
+  case GOD_VEHUMET:
   mpr("You feel fallible.");
   break;
-  case 8:
+  case GOD_MAKHLEB:
   mpr("You can no longer call on Makhleb's destructive powers.");
   break;
-  case 9:
+  case GOD_SIF_MUNA:
   mpr("You can no longer forget spells at will.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can no longer give your body strength.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You have lost the power of Purification.");
   break;
  }
@@ -1196,24 +1203,24 @@ if (you[0].piety < 30 && old_piety >= 30)
 {
  switch(you[0].religion)
  {
-  case 1:
-  case 2:
+  case GOD_ZIN:
+  case GOD_SHINING_ONE:
   mpr("You can no longer repel the undead.");
   break;
-  case 3:
+  case GOD_KIKUBAAQUDGHA:
   mpr("You can no longer recall your undead servants at will.");
   break;
-  case 4:
+  case GOD_YREDELEMNUL:
   mpr("You can no longer animate corpses.");
   break;
-  case 6:
-  case 8:
+  case GOD_VEHUMET:
+  case GOD_MAKHLEB:
   mpr("You can no longer gain power from your kills.");
   break;
-  case 10:
+  case GOD_TROG:
   mpr("You can no longer go berserk at will.");
   break;
-  case 12:
+  case GOD_ELYVILON:
   mpr("You have lost your minor healing powers.");
   break;
  }
@@ -1229,29 +1236,29 @@ void excommunication(void)
 {
  mpr("You have lost your religion!");
  more();
- if (you[0].religion == 5) Xom_acts(0, you[0].xl * 2, 1);
- if (you[0].religion == 3 || you[0].religion == 4)
+ if (you[0].religion == GOD_XOM) Xom_acts(0, you[0].xl * 2, 1);
+ if (you[0].religion == GOD_KIKUBAAQUDGHA || you[0].religion == GOD_YREDELEMNUL)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
   miscast_effect(16, 5 + you[0].xl, random2(30) + random2(30) + random2(30), 100);
  }
- if (you[0].religion == 6 || you[0].religion == 8)
+ if (you[0].religion == GOD_VEHUMET || you[0].religion == GOD_MAKHLEB)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
   miscast_effect(11 + (random2(2) * 7), 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
  }
- if (you[0].religion == 10)
+ if (you[0].religion == GOD_TROG)
  {
   strcpy(info, god_name(you[0].religion));
   strcat(info, " does not appreciate desertion!");
   mpr(info);
   miscast_effect(13, 8 + you[0].xl, random2(40) + random2(30) + random2(30), 100);
  } /* Trog uses fire wild magic - is this right? */
- you[0].religion = 0;
+ you[0].religion = GOD_NO_GOD;
  you[0].piety = 0;
 }
 
@@ -1273,7 +1280,7 @@ for (i = 0; i < 4; i ++)
  }
 }
 
- if (igrd [you[0].x_pos] [you[0].y_pos] == 501 || you[0].religion == 2 || you[0].religion == 5)
+ if (igrd [you[0].x_pos] [you[0].y_pos] == 501 || you[0].religion == GOD_SHINING_ONE || you[0].religion == GOD_XOM)
  {
   mpr("You kneel at the altar and pray.");
   return;
@@ -1289,20 +1296,20 @@ if (random2(1000) == 0) break;
 j = mitm.ilink [i];
 switch(you[0].religion)
 {
- case 1:
- case 7:
- case 8:
- case 11:
+ case GOD_ZIN:
+ case GOD_OKAWARU:
+ case GOD_MAKHLEB:
+ case GOD_NEMELEX_XOBEH:
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
  mpr(info);
- if (mitm.iclass [i] == 14 || random2(item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id)) >= 50)
+ if (mitm.iclass [i] == OBJ_CORPSES || random2(item_value(mitm.iclass [i], mitm.itype [i], mitm.idam [i], mitm.iplus [i], mitm.iplus2 [i], mitm.iquant [i], 3, subst_id)) >= 50)
      gain_piety(1);
  destroy_item(i);
  break;
 
- case 9:
+ case GOD_SIF_MUNA:
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
@@ -1312,9 +1319,9 @@ switch(you[0].religion)
  destroy_item(i);
  break;
 
- case 3:
- case 10:
- if (mitm.iclass [i] != 14) break;
+ case GOD_KIKUBAAQUDGHA:
+ case GOD_TROG:
+ if (mitm.iclass [i] != OBJ_CORPSES) break;
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
@@ -1323,8 +1330,8 @@ switch(you[0].religion)
  destroy_item(i);
  break;
 
- case 12:
- if (mitm.iclass [i] != 0 && mitm.iclass [i] != 1) break;
+ case GOD_ELYVILON:
+ if (mitm.iclass [i] != OBJ_WEAPONS && mitm.iclass [i] != OBJ_MISSILES) break;
  it_name(i, 0, str_pass);
  strcpy(info, str_pass);
  strcat(info, sacrifice [you[0].religion - 1]);
@@ -1351,7 +1358,7 @@ mpr(info);
 
 more();
 
-if ((you[0].is_undead != 0 || you[0].species == 34) && (which_god == 1 || which_god == 2 || which_god == 12))
+if ((you[0].is_undead != 0 || you[0].species == SP_DEMONSPAWN) && (which_god == GOD_ZIN || which_god == GOD_SHINING_ONE || which_god == GOD_ELYVILON))
 {
  strcpy(info, god_name(which_god));
  strcat(info, " does not accept worship from those such as you!");
@@ -1369,7 +1376,7 @@ mpr("Are you sure?");
 keyi = get_ch();
 if (keyi != 'Y' && keyi != 'y') return;
 
-if (you[0].religion != 0) excommunication();
+if (you[0].religion != GOD_NO_GOD) excommunication();
 
 strcpy(info, god_name(which_god));
 strcat(info, " welcomes you!");

@@ -8,6 +8,7 @@
 
 #include "direct.h"
 #include "externs.h"
+#include "enum.h"
 #include "itemname.h"
 #include "player.h"
 #include "shopping.h"
@@ -102,7 +103,7 @@ void create_spec_object(void)
 
         int thing_created = items(1, class_wanted, type_wanted, 1, you[0].your_level, 250);
 
-        if (you[0].species != 13) strcpy(info, "Something appears at your feet!");
+        if (you[0].species != SP_NAGA) strcpy(info, "Something appears at your feet!");
         else strcpy(info, "Something appears before you!");
         mpr(info);
 
@@ -144,7 +145,7 @@ void create_spec_object2(void)
 
         mitm.idam [thing_created] = dam_wanted;
 
-        if (you[0].species != 13) strcpy(info, "Something appears at your feet!");
+        if (you[0].species != SP_NAGA) strcpy(info, "Something appears at your feet!");
         else strcpy(info, "Something appears before you!");
         mpr(info);
 

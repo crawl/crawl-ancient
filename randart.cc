@@ -5,9 +5,13 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 
+#include "randart.h"
 #include "itemname.h"
 #include "stuff.h"
+
+#define RA_PROPERTIES 30
 
 /*
 The initial generation of a randart is very simple - it occurs
@@ -606,7 +610,51 @@ char *rand_armour_names[] = {
 // Sarcophagus
 };
 
+/* Remember: disallow unrandart creation in abyss/pan */
+
+
+/* The following unrandart bits were taken from $pellbinder's mstruct code
+(see mstruct.h & mstruct.cc) and modified (LH). They're in randart.cc and
+not randart.h because they're only used in this code module. */
+#define PACKED __attribute__ ((packed))
+typedef char MYCHAR; // used for flags and the like
+typedef unsigned char MYUCHAR; // used for flags and the like
+typedef short MYSHORT; // used for flags and the like
+typedef int MYINT; // used for flags and the like
+
+//extern int unranddatasize;
+//extern struct unrandart_entry {
+int unranddatasize;
+
+struct unrandart_entry {
+
+        char *name/*[32]*/PACKED; // true name of unrandart (max 31 chars)
+        char *unid_name/*[32]*/PACKED; // un-id'd name of unrandart (max 31 chars)
+        unsigned char ura_cl PACKED; // class of ura
+        unsigned char ura_ty PACKED; // type of ura
+        unsigned char ura_pl PACKED; // plus of ura
+        unsigned char ura_pl2 PACKED; // plus2 of ura
+        unsigned char ura_col PACKED; // colour of ura
+        short prpty [RA_PROPERTIES] PACKED;
+        char *spec_descrip1/*[32]*/PACKED; // A special description which is added to the 'V' command output (max 31 chars)
+        char *spec_descrip2/*[32]*/PACKED; // A special description which is added to the 'V' command output (max 31 chars)
+        char *spec_descrip3/*[32]*/PACKED; // A special description which is added to the 'V' command output (max 31 chars)
+};// unranddata[];
+
+
+
+struct unrandart_entry unranddata[]={
+#include "unrand.h"
+};
+
+#define sura seekunrandart(aclass, atype, aplus, aplus2)
+
+struct unrandart_entry *seekunrandart(unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2);
+
 char *art_n;
+
+char unrandart_exist [NO_UNRANDARTS];
+void set_unrandart_exist(int whun, char is_exist);
 
 void standard_name_weap(unsigned char item_typ, char glog [80]);
 void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char glorg [80]);
@@ -614,138 +662,156 @@ void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char
 int random4(unsigned int randmax);
 
 
+
+void set_unrandart_exist(int whun, char is_exist)
+{
+ unrandart_exist [whun] = is_exist;
+}
+
+char does_unrandart_exist(int whun)
+{
+ return unrandart_exist [whun];
+}
+
+
 int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char acol, char prop)
 {
 
+if ((aclass == OBJ_JEWELLERY && adam == 201) || (aclass != OBJ_JEWELLERY && adam == 25))
+{
+ struct unrandart_entry *search_unrandarts = sura;
+ return search_unrandarts->prpty [prop];
+}
+
 long globby = aclass * adam + acol + atype * (aplus % 100) + aplus2 * 100;
 long randstore = random();
-char proprt [30];
+char proprt [RA_PROPERTIES];
 int i = 0;
-int power_level = (aplus - 50) / 3 + (aplus2 - 50) / 3;
+int power_level = ((aplus % 100) - 50) / 3 + (aplus2 - 50) / 3;
 
 srandom(globby);
 
-if (aclass == 2) power_level = (aplus - 50) / 2 + 4;
+if (aclass == OBJ_ARMOUR) power_level = ((aplus % 100) - 50) / 2 + 2;
 
-if (aclass == 7) power_level = 1 + random4(4) + random4(4);
+if (aclass == OBJ_JEWELLERY) power_level = 1 + random4(3) + random4(2);
 
 if (power_level < 0) power_level = 0;
 
-for (i = 0; i < 30; i ++)
+for (i = 0; i < RA_PROPERTIES; i ++)
 {
  proprt [i] = 0;
 }
 
-if (aclass == 0) /* Only weapons get brands, of course */
+if (aclass == OBJ_WEAPONS) /* Only weapons get brands, of course */
 {
- proprt [0] = 1 + random4(15); /* brand */
- if (random4(6) == 0) proprt [0] = 1 + random4(2);
- if (random4(6) == 0) proprt [0] = 5 + random4(4);
- if (random4(6) == 0) proprt [0] = 10;
- if (proprt [0] == 11 || proprt [0] == 12) proprt [0] = 0; /* missile wpns */
- if (proprt [0] == 7) proprt [0] = 0; /* no protection */
- if (proprt [0] == 14 && atype != 1) proprt [0] = 0; /* Only maces get disruption */
+ proprt [RAP_BRAND] = SPWPN_FLAMING + random4(15); /* brand */
+ if (random4(6) == 0) proprt [RAP_BRAND] = SPWPN_FLAMING + random4(2);
+ if (random4(6) == 0) proprt [RAP_BRAND] = SPWPN_ORC_SLAYING + random4(4);
+ if (random4(6) == 0) proprt [RAP_BRAND] = SPWPN_VORPAL;
+ if (proprt [RAP_BRAND] == SPWPN_FLAME || proprt [RAP_BRAND] == SPWPN_FROST) proprt [RAP_BRAND] = 0; /* missile wpns */
+ if (proprt [RAP_BRAND] == SPWPN_PROTECTION) proprt [RAP_BRAND] = 0; /* no protection */
+ if (proprt [RAP_BRAND] == SPWPN_DISRUPTION && atype != WPN_MACE) proprt [RAP_BRAND] = SPWPN_NORMAL; /* Only maces get disruption */
 
- if (atype >= 13 && atype <= 16)
+ if (atype >= WPN_SLING && atype <= WPN_HAND_CROSSBOW)
  {
-  if (random4(3) == 0) proprt [0] = 11 + random4(2); else proprt [0] = 0;
+  if (random4(3) == 0) proprt [RAP_BRAND] = SPWPN_FLAME + random4(2); else proprt [RAP_BRAND] = SPWPN_NORMAL;
  }
 
- if (atype == 32 || atype == 33)
+ if (atype == WPN_DEMON_BLADE || atype == WPN_DEMON_WHIP)
  {
   switch(random4(9))
   {
-   case 0: proprt [0] = 8; break;
-   case 1: proprt [0] = 1; break;
-   case 2: proprt [0] = 2; break;
-   case 3: proprt [0] = 4; break;
-   case 4: proprt [0] = 13; break;
-   case 5: proprt [0] = 15; break;
-   case 6: proprt [0] = 6; break;
+   case 0: proprt [RAP_BRAND] = SPWPN_DRAINING; break;
+   case 1: proprt [RAP_BRAND] = SPWPN_FLAMING; break;
+   case 2: proprt [RAP_BRAND] = SPWPN_FREEZING; break;
+   case 3: proprt [RAP_BRAND] = SPWPN_ELECTROCUTION; break;
+   case 4: proprt [RAP_BRAND] = SPWPN_VAMPIRICISM; break;
+   case 5: proprt [RAP_BRAND] = SPWPN_PAIN; break;
+   case 6: proprt [RAP_BRAND] = SPWPN_VENOM; break;
    default: power_level -= 2;
   }
   power_level += 2;
- } else if (random4(2) == 0) proprt [0] = 0; else power_level ++;
+ } else if (random4(3) == 0) proprt [RAP_BRAND] = SPWPN_NORMAL; else power_level ++;
 }
 
 if (random4(5) == 0) goto skip_mods;
 
-if (random4(4 + power_level) == 0 && aclass != 2) /* AC mod - not for armours */
+if (random4(4 + power_level) == 0 && aclass != OBJ_ARMOUR) /* AC mod - not for armours */
 {
- proprt [1] = 1 + random4(3) + random4(3) + random4(3);
+ proprt [RAP_AC] = 1 + random4(3) + random4(3) + random4(3);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [1] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_AC] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
 if (random4(4 + power_level) == 0) /* ev mod */
 {
- proprt [2] = 1 + random4(3) + random4(3) + random4(3);
+ proprt [RAP_EVASION] = 1 + random4(3) + random4(3) + random4(3);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [2] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_EVASION] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
 if (random4(4 + power_level) == 0) /* str mod */
 {
- proprt [3] = 1 + random4(3) + random4(2);
+ proprt [RAP_STRENGTH] = 1 + random4(3) + random4(2);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [3] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_STRENGTH] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
 if (random4(4 + power_level) == 0) /* int mod */
 {
- proprt [4] = 1 + random4(3) + random4(2);
+ proprt [RAP_INTELLIGENCE] = 1 + random4(3) + random4(2);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [4] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_INTELLIGENCE] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
 if (random4(4 + power_level) == 0) /* dex mod */
 {
- proprt [5] = 1 + random4(3) + random4(2);
+ proprt [RAP_DEXTERITY] = 1 + random4(3) + random4(2);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [5] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_DEXTERITY] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
-skip_mods : if (random4(15) < power_level || aclass == 0) goto skip_combat;
+skip_mods : if (random4(15) < power_level || aclass == OBJ_WEAPONS) goto skip_combat;
 /* Weapons can't get these */
 
 if (random4(4 + power_level) == 0) /* to-hit */
 {
- proprt [26] = 1 + random4(3) + random4(2);
+ proprt [RAP_ACCURACY] = 1 + random4(3) + random4(2);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [26] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_ACCURACY] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
 
 if (random4(4 + power_level) == 0) /* to-dam */
 {
- proprt [27] = 1 + random4(3) + random4(2);
+ proprt [RAP_DAMAGE] = 1 + random4(3) + random4(2);
  power_level ++;
  if (random4(4) == 0)
  {
-  proprt [27] -= 1 + random4(3) + random4(3) + random4(3);
+  proprt [RAP_DAMAGE] -= 1 + random4(3) + random4(3) + random4(3);
   power_level --;
  }
 }
@@ -753,124 +819,99 @@ if (random4(4 + power_level) == 0) /* to-dam */
 skip_combat : if (random4(12) < power_level) goto finished_powers;
 
 /* res_fire */
-if (random4(4 + power_level) == 0 && (aclass != 7 || (atype != 2 && atype != 21 && atype != 22)) && (aclass != 2 || (atype != 18 && atype != 21 && atype != 29)))
+if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_FIRE && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
 {
- proprt [6] = 1;
- if (random4(5) == 0) proprt [6] += 1;
+ proprt [RAP_FIRE] = 1;
+ if (random4(5) == 0) proprt [RAP_FIRE] += 1;
  power_level ++;
 }
 
 /* res_cold */
-if (random4(4 + power_level) == 0 && (aclass != 7 || (atype != 4 && atype != 21 && atype != 22)) && (aclass != 2 || (atype != 18 && atype != 21 && atype != 29)))
+if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_COLD && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
 {
- proprt [7] = 1;
- if (random4(5) == 0) proprt [7] += 1;
+ proprt [RAP_COLD] = 1;
+ if (random4(5) == 0) proprt [RAP_COLD] += 1;
  power_level ++;
 }
 
 if (random4(12) < power_level || power_level > 7) goto finished_powers;
 
 /* res_elec */
-if (random4(4 + power_level) == 0 && (aclass != 2 || atype != 27))
+if (random4(4 + power_level) == 0 && (aclass != OBJ_ARMOUR || atype != ARM_STORM_DRAGON_ARMOUR))
 {
- proprt [8] = 1;
+ proprt [RAP_ELECTRICITY] = 1;
  power_level ++;
 }
 /* res_poison */
-if (random4(5 + power_level) == 0 && (aclass != 7 || atype != 3) && (aclass != 2 || atype != 29 || atype != 32))
+if (random4(5 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_POISON_RESISTANCE) && (aclass != OBJ_ARMOUR || atype != ARM_GOLD_DRAGON_ARMOUR || atype != ARM_SWAMP_DRAGON_ARMOUR))
 {
- proprt [9] = 1;
+ proprt [RAP_POISON] = 1;
  power_level ++;
 }
 
 /* prot_life - no necromantic brands on weapons allowed */
-if (random4(4 + power_level) == 0  && (aclass != 7 || atype != 10) && proprt [0] != 8 && proprt [0] != 13 && proprt [0] != 15)
+if (random4(4 + power_level) == 0  && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION) && proprt [RAP_BRAND] != SPWPN_DRAINING && proprt [RAP_BRAND] != SPWPN_VAMPIRICISM && proprt [RAP_BRAND] != SPWPN_PAIN)
 {
- proprt [10] = 1;
+ proprt [RAP_NEGATIVE_ENERGY] = 1;
  power_level ++;
 }
 
-if (random4(4 + power_level) == 0 && (aclass != 7 || atype != 20)) /* res magic */
+if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC)) /* res magic */
 {
- proprt [11] = 20 + random4(100);
+ proprt [RAP_MAGIC] = 20 + random4(100);
  power_level ++;
 }
 
 /* see_invis */
-if (random4(4 + power_level) == 0 && (aclass != 7 || atype != 8))
+if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
 {
- proprt [12] = 1;
+ proprt [RAP_EYESIGHT] = 1;
  power_level ++;
 }
 
 if (random4(12) < power_level || power_level > 10) goto finished_powers;
 
 /* turn invis */
-if (random4(10) == 0 && (aclass != 7 || atype != 8))
+if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
 {
- proprt [13] = 1;
+ proprt [RAP_INVISIBLE] = 1;
  power_level ++;
 }
 
-if (random4(10) == 0 && (aclass != 7 || atype != 18)) /* levitate */
+if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_LEVITATION)) /* levitate */
 {
- proprt [14] = 1;
+ proprt [RAP_LEVITATE] = 1;
  power_level ++;
 }
 
 if (random4(10) == 0) /* blink */
 {
- proprt [15] = 1;
+ proprt [RAP_BLINK] = 1;
  power_level ++;
 }
 
-if (random4(10) == 0 && (aclass != 7 || atype != 10)) /* teleport */
+if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION)) /* teleport */
 {
- proprt [16] = 1;
+ proprt [RAP_CAN_TELEPORT] = 1;
  power_level ++;
 }
 
-if (random4(10) == 0 && (aclass != 7 || atype != 35)) /* go berserk */
+if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != AMU_RAGE)) /* go berserk */
 {
- proprt [17] = 1;
+ proprt [RAP_BERSERK] = 1;
  power_level ++;
 }
 
 if (random4(10) == 0) /* sense surr */
 {
- proprt [18] = 1;
+ proprt [RAP_MAPPING] = 1;
  power_level ++;
 }
 
 
-
-/*switch(prop)
-{
-case 0: / * Brand * /
-return brand;
-
-case 1: / * AC mod * /
-if (random4(5) == 0) return 1 + random4(3) + random4(3) + random4(3);
-return 0;
-
-case 2: / * str mod * /
-if (random4(6) == 0) return 1 + random4(3) + random4(3);
-return 0;
-case 3: / * int mod * /
-if (random4(6) == 0) return 1 + random4(3) + random4(3);
-return 0;
-case 4: / * dex mod * /
-if (random4(6) == 0) return 1 + random4(3) + random4(3);
-return 0;
-
-Silly, this doesn't work!
-
-}
-*/
-
 finished_powers :
 
-if (aclass == 2) power_level -= 4; /* Armours get less powers, and are also less likely to be cursed that wpns */
+if (aclass == OBJ_ARMOUR) power_level -= 4; /* Armours get less powers, and are also less likely to be cursed that wpns */
 
 if (random4(17) >= power_level || power_level < 2) goto finished_curses;
 
@@ -878,41 +919,43 @@ switch(random4(9))
 {
 case 0: /* makes noise */
 if (aclass != 0) break;
-proprt [19] = 1;
+proprt [RAP_NOISES] = 1 + random4(4);
 break;
 case 1: /* no magic */
-proprt [20] = 1;
+proprt [RAP_PREVENT_SPELLCASTING] = 1;
 break;
 case 2: /* random teleport */
-if (aclass != 0) break;
-proprt [21] = 5 + random4(15);
+if (aclass != OBJ_WEAPONS) break;
+proprt [RAP_CAUSE_TELEPORTATION] = 5 + random4(15);
 break;
 case 3: /* no teleport - doesn't affect some instantaneous teleports */
-if (aclass == 7 && atype == 10) break; /* already is a ring of tport */
-if (aclass == 7 && atype == 23) break; /* already is a ring of tport ctrl */
-proprt [15] = 0;
-proprt [16] = 0;
-proprt [22] = 1;
+if (aclass == OBJ_JEWELLERY && atype == RING_TELEPORTATION) break; /* already is a ring of tport */
+if (aclass == OBJ_JEWELLERY && atype == RING_TELEPORT_CONTROL) break; /* already is a ring of tport ctrl */
+proprt [RAP_BLINK] = 0;
+proprt [RAP_CAN_TELEPORT] = 0;
+proprt [RAP_PREVENT_TELEPORTATION] = 1;
 break;
 case 4: /* berserk on attack */
-if (aclass != 0) break;
-proprt [23] = 1 + random4(8);
+if (aclass != OBJ_WEAPONS) break;
+proprt [RAP_ANGRY] = 1 + random4(8);
 break;
 case 5: /* susceptible to fire */
-if (aclass == 7 && (atype == 2 || atype == 21 || atype == 22)) break; /* already does this or something */
-proprt [6] = -1;
+if (aclass == OBJ_JEWELLERY && (atype == RING_PROTECTION_FROM_FIRE || atype == RING_FIRE || atype == RING_ICE)) break; /* already does this or something */
+if (aclass == OBJ_ARMOUR && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR || atype == ARM_GOLD_DRAGON_ARMOUR)) break;
+proprt [RAP_FIRE] = -1;
 break;
 case 6: /* susceptible to cold */
-if (aclass == 7 && (atype == 4 || atype == 21 || atype == 22)) break; /* already does this or something */
-proprt [7] = -1;
+if (aclass == OBJ_JEWELLERY && (atype == RING_PROTECTION_FROM_COLD || atype == RING_FIRE || atype == RING_ICE)) break; /* already does this or something */
+if (aclass == OBJ_ARMOUR && (atype == ARM_DRAGON_ARMOUR || atype == ARM_ICE_DRAGON_ARMOUR || atype == ARM_GOLD_DRAGON_ARMOUR)) break;
+proprt [RAP_COLD] = -1;
 break;
 case 7: /* speed metabolism */
-if (aclass == 7 && atype == 9) break; /* already is a ring of hunger */
-if (aclass == 7 && atype == 13) break; /* already is a ring of sustenance */
-proprt [24] = 1 + random4(3);
+if (aclass == OBJ_JEWELLERY && atype == RING_HUNGER) break; /* already is a ring of hunger */
+if (aclass == OBJ_JEWELLERY && atype == RING_SUSTENANCE) break; /* already is a ring of sustenance */
+proprt [RAP_METABOLISM] = 1 + random4(3);
 break;
 case 8: /* emits mutagenic radiation - increases mpower */
-proprt [25] = 2 + random4(4); /* property is chance (1 in ...) of increasing mpower */
+proprt [RAP_MUTAGENIC] = 2 + random4(4); /* property is chance (1 in ...) of increasing mpower */
 break;
 }
 /*
@@ -932,6 +975,13 @@ return proprt [prop];
 
 char *randart_name(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev)
 {
+
+if (adam == 25)
+{
+ struct unrandart_entry *search_unrandarts = sura;
+ if (ident_lev == 0) return search_unrandarts->unid_name;
+  else return search_unrandarts->name;
+}
 
 
 free(art_n);
@@ -1019,6 +1069,13 @@ return art_n;
 char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev)
 {
 
+if (adam == 25)
+{
+ struct unrandart_entry *search_unrandarts = sura;
+ if (ident_lev == 0) return search_unrandarts->unid_name;
+  else return search_unrandarts->name;
+}
+
 
 free(art_n);
 art_n = (char *)malloc(sizeof(char) * 80);
@@ -1104,6 +1161,13 @@ return art_n;
 char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char adam, unsigned char aplus, unsigned char aplus2, unsigned char ident_lev)
 {
 
+if (adam == 201)
+{
+ struct unrandart_entry *search_unrandarts = sura;
+ if (ident_lev == 0) return search_unrandarts->unid_name;
+  else return search_unrandarts->name;
+}
+
 char st_p [80];
 
 free(art_n);
@@ -1145,20 +1209,20 @@ if (ident_lev == 0)
   case 19: strcat(art_n, "steaming "); break;
   case 20: strcat(art_n, "shiny "); break;
  }
- if (atype < 35) strcat(art_n, "ring"); else strcat(art_n, "amulet");
+ if (atype < AMU_RAGE) strcat(art_n, "ring"); else strcat(art_n, "amulet");
  srandom(randstore);
  return art_n;
 }
 
 if (random4(5) == 0)
 {
- if (atype < 35) strcat(art_n, "ring"); else strcat(art_n, "amulet");
+ if (atype < AMU_RAGE) strcat(art_n, "ring"); else strcat(art_n, "amulet");
  strcat(art_n, rand_armour_names [random4(71)]);
 }
  else
 {
  make_name(random4(250), random4(250), random4(250), 3, st_p);
- if (atype < 35) strcat(art_n, "ring"); else strcat(art_n, "amulet");
+ if (atype < AMU_RAGE) strcat(art_n, "ring"); else strcat(art_n, "amulet");
  if (random4(3) == 0)
   {
    strcat(art_n, " of ");
@@ -1179,6 +1243,83 @@ return art_n;
 }
 
 
+struct unrandart_entry *seekunrandart(unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2)
+{
+
+int x = 0;
+
+        while(x < NO_UNRANDARTS)
+    {
+                if (unranddata [x].ura_cl == aclass && unranddata [x].ura_ty == atype && unranddata [x].ura_pl % 100 == aplus % 100 && unranddata [x].ura_pl2 == aplus2)
+        {
+          return &unranddata [x];
+        }
+                x++;
+        }
+        return seekunrandart(250, 250, 250, 250); /* Should *never* happen */
+
+}
+
+int find_okay_unrandart(unsigned char aclass)
+{
+ int x = 0;
+ char ura_index [NO_UNRANDARTS];
+ for (x = 0; x < NO_UNRANDARTS; x ++)
+ {
+   ura_index [x] = 0;
+ }
+ int counter = 0;
+
+ x = 0;
+
+        while(x < NO_UNRANDARTS)
+    {
+                if (unranddata [x].ura_cl == aclass && does_unrandart_exist(x) == 0)
+        {
+         ura_index [counter] = x;
+         counter ++;
+        }
+                x++;
+        }
+
+ if (counter == 0) return -1;
+
+ int y = ura_index [random4(counter)];
+
+/* output_value("Found randart no: ", y); */
+
+ return y;
+}
+
+void make_item_unrandart(int x, int ura_item)
+{
+
+ mitm.iclass [ura_item] = unranddata [x].ura_cl;
+ mitm.itype [ura_item] = unranddata [x].ura_ty;
+ mitm.iplus [ura_item] = unranddata [x].ura_pl;
+ mitm.iplus2 [ura_item] = unranddata [x].ura_pl2;
+ mitm.icol [ura_item] = unranddata [x].ura_col;
+ mitm.idam [ura_item] = 25;
+ if (mitm.iclass [ura_item] == OBJ_JEWELLERY) mitm.idam [ura_item] = 201;
+ set_unrandart_exist(x, 1);
+
+}
+
+char *unrandart_descrip(char which_descrip, unsigned char aclass, unsigned char atype, unsigned char aplus, unsigned char aplus2)
+{
+ switch(which_descrip)
+ {
+  case 0: return sura->spec_descrip1;
+  case 1: return sura->spec_descrip2;
+  case 2: return sura->spec_descrip3;
+ }
+
+ return "Unknown.";
+
+/* Eventually it would be great to have randomly generated descriptions for
+randarts. */
+
+}
 
 
 void standard_name_weap(unsigned char item_typ, char glorg [80])
@@ -1188,41 +1329,40 @@ strcpy(glorg, "");
 
         switch(item_typ)
         {
-        case 0: strcat(glorg , "club"); break;
-        case 1: strcat(glorg , "mace"); break;
-        case 2: strcat(glorg , "flail"); break;
-        case 3: strcat(glorg , "dagger"); break;
-        case 4: strcat(glorg , "morningstar"); break;
-        case 5: strcat(glorg , "short sword"); break;
-        case 6: strcat(glorg , "long sword"); break;
-        case 7: strcat(glorg , "great sword"); break;
-        case 8: strcat(glorg , "scimitar"); break;
-        case 9: strcat(glorg , "hand axe"); break;
-        case 10: strcat(glorg , "battleaxe"); break;
-        case 11: strcat(glorg , "spear"); break;
-        case 12: strcat(glorg , "halberd"); break;
-        case 13: strcat(glorg , "sling"); break;
-        case 14: strcat(glorg , "bow"); break;
-        case 15: strcat(glorg , "crossbow"); break;
-        case 16: strcat(glorg , "hand crossbow"); break;
-        case 17: strcat(glorg , "glaive"); break;
-        case 18: strcat(glorg , "quarterstaff"); break;
-        case 19: strcat(glorg , "scythe"); break;
-        case 20: strcat(glorg , "giant club"); break;
-        case 21: strcat(glorg , "giant spiked club"); break;
-
-        case 22: strcat(glorg , "eveningstar"); break;
-        case 23: strcat(glorg , "quick blade"); break;
-        case 24: strcat(glorg , "katana"); break;
-        case 25: strcat(glorg , "executioner's axe"); break;
-        case 26: strcat(glorg , "double sword"); break;
-        case 27: strcat(glorg , "triple sword"); break;
-        case 28: strcat(glorg , "hammer"); break;
-        case 29: strcat(glorg , "ancus"); break;
-        case 30: strcat(glorg , "whip"); break;
-        case 31: strcat(glorg , "sabre"); break;
-        case 32: strcat(glorg , "demon blade"); break;
-        case 33: strcat(glorg , "demon whip"); break;
+        case WPN_CLUB: strcat(glorg , "club"); break;
+        case WPN_MACE: strcat(glorg , "mace"); break;
+        case WPN_FLAIL: strcat(glorg , "flail"); break;
+        case WPN_DAGGER: strcat(glorg , "dagger"); break;
+        case WPN_MORNINGSTAR: strcat(glorg , "morningstar"); break;
+        case WPN_SHORT_SWORD: strcat(glorg , "short sword"); break;
+        case WPN_LONG_SWORD: strcat(glorg , "long sword"); break;
+        case WPN_GREAT_SWORD: strcat(glorg , "great sword"); break;
+        case WPN_SCIMITAR: strcat(glorg , "scimitar"); break;
+        case WPN_HAND_AXE: strcat(glorg , "hand axe"); break;
+        case WPN_BATTLEAXE: strcat(glorg , "battleaxe"); break;
+        case WPN_SPEAR: strcat(glorg , "spear"); break;
+        case WPN_HALBERD: strcat(glorg , "halberd"); break;
+        case WPN_SLING: strcat(glorg , "sling"); break;
+        case WPN_BOW: strcat(glorg , "bow"); break;
+        case WPN_CROSSBOW: strcat(glorg , "crossbow"); break;
+    case WPN_HAND_CROSSBOW: strcat(glorg , "hand crossbow"); break;
+    case WPN_GLAIVE: strcat(glorg , "glaive"); break;
+        case WPN_QUARTERSTAFF: strcat(glorg , "quarterstaff"); break;
+    case WPN_SCYTHE: strcat(glorg , "scythe"); break;
+        case WPN_GIANT_CLUB: strcat(glorg , "giant club"); break;
+        case WPN_GIANT_SPIKED_CLUB: strcat(glorg , "giant spiked club"); break;
+        case WPN_EVENINGSTAR: strcat(glorg , "eveningstar"); break;
+        case WPN_QUICK_BLADE: strcat(glorg , "quick blade"); break;
+        case WPN_KATANA: strcat(glorg , "katana"); break;
+        case WPN_EXECUTIONERS_AXE: strcat(glorg , "executioner's axe"); break;
+        case WPN_DOUBLE_SWORD: strcat(glorg , "double sword"); break;
+        case WPN_TRIPLE_SWORD: strcat(glorg , "triple sword"); break;
+        case WPN_HAMMER: strcat(glorg , "hammer"); break;
+        case WPN_ANCUS: strcat(glorg , "ancus"); break;
+        case WPN_WHIP: strcat(glorg , "whip"); break;
+        case WPN_SABRE: strcat(glorg , "sabre"); break;
+        case WPN_DEMON_BLADE: strcat(glorg , "demon blade"); break;
+        case WPN_DEMON_WHIP: strcat(glorg , "demon whip"); break;
         case 34: strcat(glorg , ""); break;
         case 35: strcat(glorg , ""); break;
         case 36: strcat(glorg , ""); break;
@@ -1240,49 +1380,49 @@ void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char
 
  switch(item_typ)
  {
-        case 0: strcat(glorg , "robe"); break;
-        case 1: strcat(glorg , "leather armour"); break;
-        case 2: strcat(glorg , "ring mail"); break;
-        case 3: strcat(glorg , "scale mail"); break;
-        case 4: strcat(glorg , "chain mail"); break;
-        case 5: strcat(glorg , "splint mail"); break;
-        case 6: strcat(glorg , "banded mail"); break;
-        case 7: strcat(glorg , "plate mail"); break;
-        case 8: strcat(glorg , "shield"); break;
-        case 9: strcat(glorg , "cloak"); break;
+        case ARM_ROBE: strcat(glorg , "robe"); break;
+        case ARM_LEATHER_ARMOUR: strcat(glorg , "leather armour"); break;
+        case ARM_RING_MAIL: strcat(glorg , "ring mail"); break;
+        case ARM_SCALE_MAIL: strcat(glorg , "scale mail"); break;
+        case ARM_CHAIN_MAIL: strcat(glorg , "chain mail"); break;
+        case ARM_SPLINT_MAIL: strcat(glorg , "splint mail"); break;
+        case ARM_BANDED_MAIL: strcat(glorg , "banded mail"); break;
+        case ARM_PLATE_MAIL: strcat(glorg , "plate mail"); break;
+        case ARM_SHIELD: strcat(glorg , "shield"); break;
+        case ARM_CLOAK: strcat(glorg , "cloak"); break;
         break;
-        case 10:
+        case ARM_HELMET:
         if (item_plus2 == 0) strcat(glorg , "helmet");
         if (item_plus2 == 1) strcat(glorg , "helm");
         if (item_plus2 == 2) strcat(glorg , "cap");
         if (item_plus2 == 3) strcat(glorg , "wizard's hat");
         break;
-        case 11: strcat(glorg , "gloves");
+        case ARM_GLOVES: strcat(glorg , "gloves");
         break;
-        case 12: if (item_plus2 == 0) strcat(glorg, "boots");
+        case ARM_BOOTS: if (item_plus2 == 0) strcat(glorg, "boots");
                  if (item_plus2 == 1) strcat(glorg, "naga barding");
                  if (item_plus2 == 2) strcat(glorg, "centaur barding");
         break;
-        case 13: strcat(glorg , "buckler"); break;
-        case 14: strcat(glorg , "large shield"); break;
-    case 15: strcat(glorg , "dragon hide"); break;
-    case 16: strcat(glorg , "troll hide"); break;
-    case 17: strcat(glorg , "crystal plate mail"); break;
-    case 18: strcat(glorg , "dragon armour"); break;
-    case 19: strcat(glorg , "troll leather armour"); break;
-    case 20: strcat(glorg , "ice dragon hide"); break;
-    case 21: strcat(glorg , "ice dragon armour"); break;
-    case 22: strcat(glorg , "steam dragon hide"); break;
-    case 23: strcat(glorg , "steam dragon armour"); break;
-    case 24: strcat(glorg , "mottled dragon hide"); break;
-    case 25: strcat(glorg , "mottled dragon armour"); break;
-    case 26: strcat(glorg , "storm dragon hide"); break;
-    case 27: strcat(glorg , "storm dragon armour"); break;
-    case 28: strcat(glorg , "gold dragon hide"); break;
-    case 29: strcat(glorg , "gold dragon armour"); break;
-    case 30: strcat(glorg , "animal skin"); break;
-    case 31: strcat(glorg , "swamp dragon hide"); break;
-    case 32: strcat(glorg , "swamp dragon armour"); break;
+        case ARM_BUCKLER: strcat(glorg , "buckler"); break;
+        case ARM_LARGE_SHIELD: strcat(glorg , "large shield"); break;
+    case ARM_DRAGON_HIDE: strcat(glorg , "dragon hide"); break;
+    case ARM_TROLL_HIDE: strcat(glorg , "troll hide"); break;
+    case ARM_CRYSTAL_PLATE_MAIL: strcat(glorg , "crystal plate mail"); break;
+    case ARM_DRAGON_ARMOUR: strcat(glorg , "dragon armour"); break;
+    case ARM_TROLL_LEATHER_ARMOUR: strcat(glorg , "troll leather armour"); break;
+    case ARM_ICE_DRAGON_HIDE: strcat(glorg , "ice dragon hide"); break;
+    case ARM_ICE_DRAGON_ARMOUR: strcat(glorg , "ice dragon armour"); break;
+    case ARM_STEAM_DRAGON_HIDE: strcat(glorg , "steam dragon hide"); break;
+    case ARM_STEAM_DRAGON_ARMOUR: strcat(glorg , "steam dragon armour"); break;
+    case ARM_MOTTLED_DRAGON_HIDE: strcat(glorg , "mottled dragon hide"); break;
+    case ARM_MOTTLED_DRAGON_ARMOUR: strcat(glorg , "mottled dragon armour"); break;
+    case ARM_STORM_DRAGON_HIDE: strcat(glorg , "storm dragon hide"); break;
+    case ARM_STORM_DRAGON_ARMOUR: strcat(glorg , "storm dragon armour"); break;
+    case ARM_GOLD_DRAGON_HIDE: strcat(glorg , "gold dragon hide"); break;
+    case ARM_GOLD_DRAGON_ARMOUR: strcat(glorg , "gold dragon armour"); break;
+    case ARM_ANIMAL_SKIN: strcat(glorg , "animal skin"); break;
+    case ARM_SWAMP_DRAGON_HIDE: strcat(glorg , "swamp dragon hide"); break;
+    case ARM_SWAMP_DRAGON_ARMOUR: strcat(glorg , "swamp dragon armour"); break;
  }
 
 }

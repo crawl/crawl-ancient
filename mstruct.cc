@@ -4,12 +4,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "config.h"
+
 #include "defines.h"
 //#include "estruct.h"
 //#include "colours.h"
 #include "mstruct.h"
 #include <ctype.h>
 #include "externs.h"
+#include "enum.h"
 #include "player.h"
 
 char mcolour [1000];

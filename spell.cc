@@ -5,6 +5,7 @@
 #include "beam.h"
 #include "effects.h"
 #include "externs.h"
+#include "enum.h"
 #include "fight.h"
 #include "items.h"
 #include "monplace.h"
@@ -111,7 +112,7 @@ you[0].ep_ch = 1;
 if (player_energy() == 0 && you[0].is_undead < 2)
 {
  spellh = spell_hunger(spell_value(you[0].spells [spc2]), you[0].spells [spc2]);
- spellh -= you[0].intel * you[0].skills [25];
+ spellh -= you[0].intel * you[0].skills [SK_SPELLCASTING];
  if (spellh < 1) spellh = 1;
  you[0].hunger -= spellh;
  you[0].hung_ch = 1;
@@ -184,7 +185,7 @@ int spfl = random2(33) + random2(34) + random2(35);
  if (spfl < spell_fail(spc2))
  {
   mpr("You miscast the spell.");
-  if (you[0].religion == 9 && you[0].piety >= 100 && random2(150) <= you[0].piety)
+  if (you[0].religion == GOD_SIF_MUNA && you[0].piety >= 100 && random2(150) <= you[0].piety)
   {
    mpr("Nothing appears to happen.");
    return 0;
@@ -195,12 +196,12 @@ int spfl = random2(33) + random2(34) + random2(35);
    sptype = 11 + random2(13);
   } while (spell_type(spc2, sptype) == 0);
   miscast_effect(sptype, spell_value(spc2), spell_fail(spc2) - spfl, 100);
-  if (you[0].religion == 5 && random2(75) < spell_value(spc2)) Xom_acts(random2(2), spell_value(spc2), 0);
+  if (you[0].religion == GOD_XOM && random2(75) < spell_value(spc2)) Xom_acts(random2(2), spell_value(spc2), 0);
   return 0;
  }
 }
 
-if (you[0].species == 12 && spell_type(spc2, 17) == 1)
+if (you[0].species == SP_MUMMY && spell_type(spc2, 17) == 1)
 {
   strcpy(info, "You can't use this type of magic!");
   mpr(info);
@@ -214,7 +215,7 @@ if (spc2 == 62 || spc2 == 82 || spc2 == 119 || spc2 == 120 || spc2 == 121 || spc
 
 if (spell_type(spc2, 16) == 1) naughty(1, 10 + spell_value(spc2));
 
-if (you[0].religion == 9 && you[0].piety < 200) /* Sif Muna */
+if (you[0].religion == GOD_SIF_MUNA && you[0].piety < 200) /* Sif Muna */
 {
  if (random2(12) <= spell_value(spc2)) gain_piety(1);
 }
@@ -233,7 +234,7 @@ switch(spc2)
 
         case 5:
  if (spell_direction(spd, beam) == -1) return 1;
- zapping(4, powc, beam);
+ zapping(ZAP_MAGIC_DARTS, powc, beam);
  return 1; // magic missile
 
         case 6:
@@ -249,20 +250,20 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(11, powc, beam);
+   zapping(ZAP_DIGGING, powc, beam);
    return 1; // dig
 
    case 15: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(7, powc, beam);
+   zapping(ZAP_FIRE, powc, beam);
    return 1; // fire bolt
 
    case 16: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(8, powc, beam);
+   zapping(ZAP_COLD, powc, beam);
    return 1; // frost bolt
 
 
    case 17: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(14, powc, beam);
+   zapping(ZAP_LIGHTNING, powc, beam);
    return 1; // lightning bolt
 
 
@@ -273,36 +274,36 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(15, powc, beam);
+   zapping(ZAP_POLYMORPH_OTHER, powc, beam);
    return 1; // polymorph
 
    case 21: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(2, powc, beam);
+   zapping(ZAP_SLOWING, powc, beam);
    return 1; // you[0].slow
 
    case 22: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(3, powc, beam);
+   zapping(ZAP_HASTING, powc, beam);
    return 1; // you[0].haste
 
    case 23: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(6, powc, beam);
+   zapping(ZAP_PARALYSIS, powc, beam);
    return 1; // paralyze
 
    case 24: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(9, powc, beam);
+   zapping(ZAP_CONFUSION, powc, beam);
    return 1; // confuse
 
    case 25: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(10, powc, beam);
+   zapping(ZAP_INVISIBILITY, powc, beam);
    return 1; // you[0].invis
 
 
    case 26: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(0, powc, beam);
+   zapping(ZAP_FLAME, powc, beam);
    return 1; // throw flame
 
    case 27: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(1, powc, beam);
+   zapping(ZAP_FROST, powc, beam);
    return 1; // throw frost
 
    case 28:
@@ -334,7 +335,7 @@ switch(spc2)
    return 1;
 
    case 35: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(16, powc, beam);
+   zapping(ZAP_VENOM_BOLT, powc, beam);
    return 1; // venom bolt
 
    case 36: cast_toxic_radiance();
@@ -347,7 +348,7 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(13, powc, beam);
+   zapping(ZAP_TELEPORTATION, powc, beam);
    break; // teleport creature (I think)
 
    case 38:
@@ -408,19 +409,19 @@ switch(spc2)
    break;
 
    case 52: // levitation
-   potion_effect(7, 40);
+   potion_effect(POT_LEVITATION, 40);
    break;
 
    case 53:  if (spell_direction(spd, beam) == -1) return 1;
-   zapping(17, powc, beam);
+   zapping(ZAP_NEGATIVE_ENERGY, powc, beam);
    return 1; // bolt of draining
 
    case 54: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(18, powc, beam);
+   zapping(ZAP_CRYSTAL_SPEAR, powc, beam);
    return 1; // spray of metal
 
    case 55: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(19, powc, beam);
+   zapping(ZAP_BEAM_OF_ENERGY, powc, beam);
    return 1; // bolt of inaccuracy
 
    case 56: // you[0].poison cloud
@@ -445,7 +446,7 @@ switch(spc2)
 
    case 60: // Mystic blast
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(20, powc, beam);
+   zapping(ZAP_ORB_OF_ENERGY, powc, beam);
    return 1;
 
    case 61: // Swarm
@@ -463,7 +464,7 @@ switch(spc2)
    return 1;
 
    case 63: if (spell_direction(spd, beam) == -1) return 1;
-   zapping(21, powc, beam);
+   zapping(ZAP_ENSLAVEMENT, powc, beam);
    return 1; // enslavement
 
    case 64: // magic mapping
@@ -491,7 +492,7 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(5, powc, beam);
+   zapping(ZAP_HEALING, powc, beam);
    return 1;
 
    case 66: // Animate Dead
@@ -503,7 +504,7 @@ switch(spc2)
    case 67: if (spell_direction(spd, beam) == -1) return 1;
    if (you[0].hp > 1) you[0].hp --;
    you[0].hp_ch = 1;
-   zapping(22, powc, beam);
+   zapping(ZAP_AGONY_I, powc, beam);
    return 1; // Pain
 
    case 68:
@@ -554,7 +555,7 @@ switch(spc2)
 
    case 79: // sticky flame
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(23, powc, beam);
+   zapping(ZAP_STICKY_FLAME, powc, beam);
    return 1;
 
    case 80: // ice beast
@@ -581,7 +582,7 @@ switch(spc2)
 
    case 85: // dispel undead
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(24, powc, beam);
+   zapping(ZAP_DISPEL_UNDEAD, powc, beam);
    return 1;
 
    case 86: // guardian
@@ -590,12 +591,12 @@ switch(spc2)
 
    case 88: // Thunderbolt
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(14, powc, beam);
+   zapping(ZAP_LIGHTNING, powc, beam);
    return 1;
 
    case 89: // flame of cleansing
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(25, powc, beam);
+   zapping(ZAP_CLEANSING_FLAME, powc, beam);
    return 1;
 
 
@@ -630,7 +631,7 @@ switch(spc2)
     mpr(info);
     return 1;
    }*/
-   zapping(27, powc, beam);
+   zapping(ZAP_BANISHMENT, powc, beam);
    return 1;
 
    case 114: // degeneration
@@ -641,12 +642,12 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(28, powc, beam);
+   zapping(ZAP_DEGENERATION, powc, beam);
    return 1;
 
    case 115: // sting
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(29, powc, beam);
+   zapping(ZAP_STING, powc, beam);
    return 1;
 
    case 116: // sublimation
@@ -659,7 +660,7 @@ switch(spc2)
 
    case 118: // hellfire - should only be available from staff of Dispater & Sceptre of Asmodeus
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(30, powc, beam);
+   zapping(ZAP_HELLFIRE, powc, beam);
    return 1;
 
    case 119: // summon demon
@@ -728,19 +729,18 @@ switch(spc2)
    }
    return 1;
 
-   case 127: // pebble
-   if (spell_direction(spd, beam) == -1) return 1;
-   zapping(32, powc, beam);
+   case SPELL_CRUSH: // crush
+   burn_freeze(powc, 0);
    return 1;
 
    case 128: // bolt of iron
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(31, powc, beam);
+   zapping(ZAP_IRON_BOLT, powc, beam);
    return 1;
 
    case 129: // stone arrow
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(33, powc, beam);
+   zapping(ZAP_STONE_ARROW, powc, beam);
    return 1;
 
    case 130: // entomb
@@ -754,7 +754,7 @@ switch(spc2)
 
    case 132: // shock
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(34, powc, beam);
+   zapping(ZAP_ELECTRICITY, powc, beam);
    return 1;
 
    case 133: // swiftness
@@ -771,7 +771,7 @@ switch(spc2)
 
    case 136: // orb of electrocution
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(35, powc, beam);
+   zapping(ZAP_ORB_OF_ELECTRICITY, powc, beam);
    return 1;
 
    case 137: // detect creatures
@@ -820,7 +820,7 @@ switch(spc2)
 
    case 145: // debug
    if (spell_direction(spd, beam) == -1) return 1;
-   zapping(37, powc, beam);
+   zapping(ZAP_DEBUGGING_RAY, powc, beam);
    return 1;
 
    case 146: // recall
@@ -837,7 +837,7 @@ switch(spc2)
     mpr("Why would you want to do that?");
     return 1;
    }
-   zapping(44, powc, beam);
+   zapping(ZAP_AGONY_II, powc, beam);
    return 1; // Agony
 
    case 149: // spider form
@@ -850,7 +850,7 @@ switch(spc2)
     mpr("Why would you want to do that?");
     return 1;
    }
-   zapping(45, powc, beam);
+   zapping(ZAP_DISRUPTION, powc, beam);
    return 1; // Disrupt
 
    case 151: if (spell_direction(spd, beam) == -1) return 1;
@@ -860,7 +860,7 @@ switch(spc2)
     mpr(info);
     return 1;
    }
-   zapping(46, powc, beam);
+   zapping(ZAP_DISINTEGRATION, powc, beam);
    return 1; // Disintegrate
 
    case 152: // blade hands
@@ -889,7 +889,7 @@ switch(spc2)
    return 1;
 
    case 158: // Symbol of Torment
-   if (you[0].is_undead != 0 || you[0].mutation [43] != 0)
+   if (you[0].is_undead != 0 || you[0].mutation [MUT_TORMENT_RESISTANCE] != 0)
    {
     mpr("This spell will not function for one who is immune to its effects.");
     return 1;
@@ -901,7 +901,33 @@ switch(spc2)
    deflection(powc);
    return 1;
 
+   case SPELL_ORB_OF_FRAGMENTATION:
+   if (spell_direction(spd, beam) == -1) return 1;
+   zapping(ZAP_ORB_OF_FRAGMENTATION, powc, beam);
+   return 1;
 
+   case SPELL_ICE_BOLT:
+   if (spell_direction(spd, beam) == -1) return 1;
+   zapping(ZAP_ICE_BOLT, powc, beam);
+   return 1;
+
+   case SPELL_ARC: /* electric version of burn/freeze/crush */
+   burn_freeze(powc, 5);
+   return 1;
+
+   case SPELL_AIRSTRIKE:
+   airstrike(powc);
+   return 1;
+
+   case SPELL_ICE_STORM:
+   if (spell_direction(spd, beam) == -1) return 1;
+   zapping(ZAP_ICE_STORM, powc, beam);
+   return 1;
+
+   case SPELL_SHADOW_CREATURES:
+   mpr("Wisps of shadow whirl around you...");
+   create_monster(250, 24, 7, you[0].x_pos, you[0].y_pos, MHITNOT, 250);
+   return 1;
 
 /*
    case 158: // Cross
@@ -1094,138 +1120,138 @@ if (spellsy != 0)
 {
 if (spell_type(spell_ex, 11) == 1)
 {
- exercise(26, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_CONJURATIONS, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 12) == 1)
 {
- exercise(27, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_ENCHANTMENTS, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 15) == 1)
 {
- exercise(31, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_TRANSMIGRATION, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 16) == 1)
 {
- exercise(29, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_NECROMANCY, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 18) == 1)
 {
- exercise(28, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_SUMMONINGS, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 19) == 1)
 {
- exercise(32, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_DIVINATIONS, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 20) == 1)
 {
- exercise(30, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_TRANSLOCATIONS, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 21) == 1)
 {
- exercise(37, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_POISON_MAGIC, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 22) == 1)
 {
- exercise(36, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_EARTH_MAGIC, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 23) == 1)
 {
- exercise(35, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_AIR_MAGIC, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 13) == 1)
 {
- exercise(33, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_FIRE_MAGIC, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 if (spell_type(spell_ex, 14) == 1)
 {
- exercise(34, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
+ exercise(SK_ICE_MAGIC, (random2(spell_value(spell_ex) + 1)) / spellsy + random2(5) != 0); // + 1);
 }
 
 } // end if spellsy != 0
 
 
-// exercise(26, random2((spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2) / 10 / spellsy + 1);
+// exercise(SK_CONJURATIONS, random2((spell_value(spell_ex)) * (10 + spell_value(spell_ex) * 2) / 10 / spellsy + 1);
 /*if (spellsy != 0)
 {
 if (spell_type(spell_ex, 11) == 1)
 {
- exercise(26, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_CONJURATIONS, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 12) == 1)
 {
- exercise(27, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_ENCHANTMENTS, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 15) == 1)
 {
- exercise(31, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_TRANSMIGRATION, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 16) == 1)
 {
- exercise(29, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_NECROMANCY, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 18) == 1)
 {
- exercise(28, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_SUMMONINGS, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 19) == 1)
 {
- exercise(32, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_DIVINATIONS, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 20) == 1)
 {
- exercise(30, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_TRANSLOCATIONS, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 21) == 1)
 {
- exercise(37, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_POISON_MAGIC, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 22) == 1)
 {
- exercise(36, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_EARTH_MAGIC, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 23) == 1)
 {
- exercise(35, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_AIR_MAGIC, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 13) == 1)
 {
- exercise(33, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_FIRE_MAGIC, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 if (spell_type(spell_ex, 14) == 1)
 {
- exercise(34, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
+ exercise(SK_ICE_MAGIC, (spell_value(spell_ex)) * (15 + spell_value(spell_ex)) / 15 / spellsy); // + 1);
 }
 
 } // end if spellsy != 0
 */
-/*if (you[0].skills [25] > 0)
+/*if (you[0].skills [SK_SPELLCASTING] > 0)
 {
  if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
- } else if (spc == 1) exercise(25, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
+  if (spc == 1) exercise(SK_SPELLCASTING, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
+ } else if (spc == 1) exercise(SK_SPELLCASTING, (random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
 } else
  if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
- } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
+  if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / spellsy); // + 1);
+ } else if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex)) * (10 + spell_value(spell_ex))) / 10 / 1); // + 1);
 */
 
-//if (you[0].skills [25] > 0)
+//if (you[0].skills [SK_SPELLCASTING] > 0)
 //{
 
 
 //if (spellsy != 0)
 //{
-if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex) + 1)) + random2(3) == 0); // + 1);
-//} else if (spc == 1) exercise(25, random2(spell_value(spell_ex))); // + 1);
+if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex) + 1)) + random2(3) == 0); // + 1);
+//} else if (spc == 1) exercise(SK_SPELLCASTING, random2(spell_value(spell_ex))); // + 1);
 
 /*
 3.02 was:
 if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex) + 1) / spellsy)); // + 1);
- } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)))); // + 1);
+  if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex) + 1) / spellsy)); // + 1);
+ } else if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex)))); // + 1);
 */
 
 
@@ -1240,8 +1266,8 @@ if (spellsy != 0)
 /* else
  if (spellsy != 0)
  {
-  if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex)) / spellsy); // + 1);
- } else if (spc == 1) exercise(25, random2(random2(spell_value(spell_ex))); // + 1);
+  if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex)) / spellsy); // + 1);
+ } else if (spc == 1) exercise(SK_SPELLCASTING, random2(random2(spell_value(spell_ex))); // + 1);
 */
 //random2(spell_value(spell_ex) * 10 + spell_value(spell_ex) * 2) / 10);
 

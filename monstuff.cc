@@ -8,6 +8,7 @@
 #endif
 
 #include "externs.h"
+#include "enum.h"
 
 #include "beam.h"
 #include "fight.h"
@@ -57,26 +58,26 @@ for (cu = 0; cu < 52; cu++)
 
   cu1 = you[0].inv_class [cu];
 
-  if (cu1 == 0 || cu1 == 2)
+/*  if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR)
   {
-   if (you[0].inv_dam [cu] % 30 >= 25) continue; /* no randarts */
-  }
+   if (you[0].inv_dam [cu] % 30 >= 25) continue; / * no randarts * /
+  }*/
 
-  if (cu1 == 7)
+  if (cu1 == OBJ_JEWELLERY)
   {
    if (you[0].inv_dam [cu] == 200) continue; /* no randarts */
   }
 
-  if (cu1 == 0 || cu1 == 2 || cu1 == 7)
+  if (cu1 == OBJ_WEAPONS || cu1 == OBJ_ARMOUR || cu1 == OBJ_JEWELLERY)
   {
    if (you[0].inv_plus [cu] >= 130) continue;
    possib [cu2] = cu;
    cu2++;
   }
 
-  if (cu1 == 8 && which == 1)
+  if (cu1 == OBJ_POTIONS && which == 1)
   {
-    if (you[0].inv_type [cu] == 15) continue;
+    if (you[0].inv_type [cu] == POT_DECAY) continue;
     possib [cu2] = cu;
     cu2++;
   }
@@ -91,10 +92,10 @@ if (cu2 == 0) return 0;
            } while (possib [cu3] == 100);
 
 
-if (you[0].inv_class [possib [cu3]] == 8)
+if (you[0].inv_class [possib [cu3]] == OBJ_POTIONS)
 {
 
-  you[0].inv_type [possib [cu3]] = 15; /* don't change you[0].inv_dam (just for fun) */
+  you[0].inv_type [possib [cu3]] = POT_DECAY; /* don't change you[0].inv_dam (just for fun) */
   return 1;
   /* problem: changes large piles of potions */
 }
@@ -111,7 +112,7 @@ void monster_blink(int mn)
 
 /* I can't be bothered writing an intelligent function, so I'll make it ugly: */
 
-if (menv [mn].m_class == 19 || menv [mn].m_class == 56) return; /* Do not let this happen! */
+if (menv [mn].m_class == MONS_TUNNELING_WORM || menv [mn].m_class == MONS_WORM_TAIL) return; /* Do not let this happen! */
 
 int passed [2];
 
@@ -198,7 +199,7 @@ void print_wounds(int wounded)
 
 if (menv[wounded].m_class == -1) return;
 
-if (menv[wounded].m_class == 25 || menv[wounded].m_class == 51 || menv[wounded].m_class == 107 || menv[wounded].m_class == 108 || menv[wounded].m_class == 43 || menv[wounded].m_class == 78)
+if (menv[wounded].m_class == MONS_SMALL_ZOMBIE || menv[wounded].m_class == MONS_BIG_ZOMBIE || menv[wounded].m_class == MONS_SMALL_SKELETON || menv[wounded].m_class == MONS_LARGE_SKELETON || menv[wounded].m_class == MONS_RAKSHASA || menv[wounded].m_class == MONS_FAKE_RAKSHASA)
         return;
 
 if (menv[wounded].m_ench [2] == 6 && player_see_invis() == 0) return;
@@ -256,9 +257,9 @@ mpr(info);
 
 int wounded_damaged(int wound_class)
 {
- if (mons_holiness(wound_class) == 1) return 1;
- if (wound_class >= 116 && wound_class <= 121) return 1;
- if (wound_class == 5 || wound_class == 49 || wound_class == 41 || wound_class == 21 || wound_class == 23 || wound_class == 144 || wound_class == 244)
+ if (mons_holiness(wound_class) == MH_UNDEAD) return 1;
+ if (wound_class >= MONS_CLAY_GOLEM && wound_class <= MONS_TOENAIL_GOLEM) return 1;
+ if (wound_class == MONS_FUNGUS || wound_class == MONS_SMALL_ABOMINATION || wound_class == MONS_PLANT || wound_class == MONS_FIRE_VORTEX || wound_class == MONS_LARGE_ABOMINATION || wound_class == MONS_DANCING_WEAPON || wound_class == MONS_SPATIAL_VORTEX)
    return 1; // 'damaged'
 
  return 0; // 'wounded'
@@ -290,14 +291,14 @@ for (i = 0; i < MNST; i++)
 
 if (menv [i].m_class != -1) no_mons ++;
 
-if (menv [i].m_class != -1 && menv [i].m_class != 56)
+if (menv [i].m_class != -1 && menv [i].m_class != MONS_WORM_TAIL)
 {
 
 monc ++;
 
 if (menv [i].m_hp > menv [i].m_hp_max) menv [i].m_hp = menv [i].m_hp_max;
 
-if (menv [i].m_class == 32 && menv [i].m_hp < 1)
+if (menv [i].m_class == MONS_GIANT_SPORE && menv [i].m_hp < 1)
 {
         for (j = 0; j < 3; j++)
                 {
@@ -326,7 +327,7 @@ while (menv [i].m_speed_inc >= 80) /* The continues & breaks are WRT this. */
 if (menv [i].m_class != -1 && menv [i].m_hp <= 0)
 {
         monster_die(i, 5, 0);
-        if (menv [i].m_class != 32) continue;
+        if (menv [i].m_class != MONS_GIANT_SPORE) continue;
 }
 
 menv [i].m_speed_inc -= 10;
@@ -347,20 +348,20 @@ if (env[0].cgrid [menv [i].m_x] [menv [i].m_y] != CNG)
 
 
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) != 1 && menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y)
-        menv [i].m_beh = 2;
+        menv [i].m_beh = BEH_WANDER;
 
-if (menv [i].m_class == 98) menv [i].m_ench [1] = 38;
-if (menv [i].m_class == 99) menv [i].m_ench [1] = 39; /* otherwise are potential problems with summonings */
+if (menv [i].m_class == MONS_GLOWING_SHAPESHIFTER) menv [i].m_ench [1] = 38;
+if (menv [i].m_class == MONS_SHAPESHIFTER) menv [i].m_ench [1] = 39; /* otherwise are potential problems with summonings */
 
 switch (menv [i].m_beh)
 {
-case 0:
+case BEH_SLEEP:
 menv [i].m_targ_1_x = menv [i].m_x;
 menv [i].m_targ_1_y = menv [i].m_y;
 break;
 
-case 100:
-case 1: // chasing YOU
+case BEH_CHASING_II:
+case BEH_CHASING_I: // chasing YOU
 if ((mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0 || (grd [you[0].x_pos] [you[0].y_pos] == 65 && you[0].lev == 0))) || (mons_near(i) == 0 && menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y))
 {
         menv [i].m_targ_1_x = you[0].x_pos;
@@ -368,36 +369,36 @@ if ((mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class)
 }
 break;
 
-case 2: if ((menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y) || random2(20) == 0)
+case BEH_WANDER: if ((menv [i].m_targ_1_x == menv [i].m_x && menv [i].m_targ_1_y == menv [i].m_y) || random2(20) == 0)
 {
         menv [i].m_targ_1_x = random2(80);
         menv [i].m_targ_1_y = random2(70);
 }
 break; // wandering
 
-case 3: // fleeing
+case BEH_FLEE: // fleeing
 if (mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) > 0))
 {
         menv [i].m_targ_1_x = you[0].x_pos;
         menv [i].m_targ_1_y = you[0].y_pos;
 }
-if (menv [i].m_hp > (menv [i].m_hp_max / 2)) menv [i].m_beh = 1;
+if (menv [i].m_hp > (menv [i].m_hp_max / 2)) menv [i].m_beh = BEH_CHASING_I;
 /* change the '= 1' to whatever monster used to be doing */
 break;
 
 /* 4 is used by confusion */
 
-case 6: // attacking other monster
+case BEH_FIGHT: // attacking other monster
      if (menv [i].m_hit == MHITNOT)
      {
-       menv [i].m_beh = 2; // ?
+       menv [i].m_beh = BEH_WANDER; // ?
        break;
      }
      menv [i].m_targ_1_x = menv [menv [i].m_hit].m_x;
      menv [i].m_targ_1_y = menv [menv [i].m_hit].m_y;
 break;
 
-case 7: // friendly
+case BEH_ENSLAVED: // friendly
 /*To be nice (although not strictly accurate) they
   should follow you even when they can't see you. */
 if (you[0].pet_target != MHITNOT)
@@ -408,7 +409,7 @@ if (you[0].pet_target != MHITNOT)
  }
 }
 
-if (menv [i].m_hit == i || menv [menv [i].m_hit].m_beh == 7) menv [i].m_hit = MHITNOT;
+if (menv [i].m_hit == i || menv [menv [i].m_hit].m_beh == BEH_ENSLAVED) menv [i].m_hit = MHITNOT;
 /* I don't know why I have to do that. */
 
 if (menv [i].m_hit != MHITNOT && ((mons_near(i) == 1 && mons_near(menv [i].m_hit) == 1) || distance(menv [i].m_x, menv [menv [i].m_hit].m_x, menv [i].m_y, menv [menv [i].m_hit].m_y) == 1))
@@ -476,10 +477,10 @@ switch (menv [i].m_ench [p])
         break;
 
         case 4: // fear
-        menv [i].m_beh = 3;
+        menv [i].m_beh = BEH_FLEE;
         if (random2 (150) <= menv [i].m_HD + 10)
         {
-        menv [i].m_beh = 1; // reset to monster's original behaviour
+        menv [i].m_beh = BEH_CHASING_I; // reset to monster's original behaviour
         menv [i].m_ench [p] = 0;
         if (menv [i].m_ench [0] == 0 && menv [i].m_ench [1] == 0 && menv [i].m_ench [2] == 0)
                         menv [i].m_ench_1 = 0;
@@ -488,11 +489,11 @@ switch (menv [i].m_ench [p])
 
 
         case 5: // confusion
-        menv [i].m_beh = 4;
+        menv [i].m_beh = BEH_CONFUSED;
         if (random2 (80) < menv [i].m_HD + 10)
         {
-  if (menv [i].m_class == 66 || menv [i].m_class == 21 || menv [i].m_class == 244 || menv [i].m_class == 141) continue; // butterfly, fire vortex
-                menv [i].m_beh = 1;
+  if (menv [i].m_class == MONS_BUTTERFLY || menv [i].m_class == MONS_FIRE_VORTEX || menv [i].m_class == MONS_SPATIAL_VORTEX || menv [i].m_class == MONS_VAPOUR) continue; // butterfly, fire vortex
+                menv [i].m_beh = BEH_CHASING_I;
                 menv [i].m_ench [p] = 0;
                 if (menv [i].m_ench [0] == 0 && menv [i].m_ench [1] == 0 && menv [i].m_ench [2] == 0)
                 menv [i].m_ench_1 = 0;
@@ -600,9 +601,9 @@ switch (menv [i].m_ench [p])
    break;
 
  case 30: // charm monster
-        if (menv [i].m_beh != 7 || random2 (500) <= menv [i].m_HD + 10)
+        if (menv [i].m_beh != BEH_ENSLAVED || random2 (500) <= menv [i].m_HD + 10)
         {
-        menv [i].m_beh = 1; // reset to monster's original behaviour
+        menv [i].m_beh = BEH_CHASING_I; // reset to monster's original behaviour
         menv [i].m_ench [p] = 0;
         if (menv [i].m_ench [0] == 0 && menv [i].m_ench [1] == 0 && menv [i].m_ench [2] == 0)
                         menv [i].m_ench_1 = 0;
@@ -610,10 +611,10 @@ switch (menv [i].m_ench [p])
  break;
 
  case 38: // monster is a glowing shapeshifter. This ench never runs out.
- if (random2(4) == 0 || menv [i].m_class == 98) monster_polymorph(i, 250, 0);
+ if (random2(4) == 0 || menv [i].m_class == MONS_GLOWING_SHAPESHIFTER) monster_polymorph(i, 250, 0);
  break;
  case 39: // monster is a shapeshifter. This ench never runs out.
- if (random2(15) == 0 || menv [i].m_class == 99) monster_polymorph(i, 250, 0);
+ if (random2(15) == 0 || menv [i].m_class == MONS_SHAPESHIFTER) monster_polymorph(i, 250, 0);
  break;
 
  case 40:
@@ -634,20 +635,20 @@ switch (menv [i].m_ench [p])
 } // end of if
 
 /* regenerate */
-if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 || menv [i].m_class == 8 || menv [i].m_class == 45 || menv [i].m_class == 76 || menv [i].m_class == 135 || menv [i].m_class == 160 || menv [i].m_class == 234 || menv [i].m_class == 221 || menv [i].m_class == 227 || menv [i].m_class == 292 || menv [i].m_class == 168)) menv [i].m_hp ++;
+if (menv [i].m_hp < menv [i].m_hp_max && (random2(25) == 0 || menv [i].m_class == MONS_IMP || menv [i].m_class == MONS_TROLL || menv [i].m_class == MONS_SLIME_CREATURE || menv [i].m_class == MONS_ROCK_TROLL || menv [i].m_class == MONS_IRON_TROLL || menv [i].m_class == MONS_CACODEMON || menv [i].m_class == MONS_LEMURE || menv [i].m_class == MONS_HELLWING || menv [i].m_class == MONS_ANITA || menv [i].m_class == MONS_DEEP_TROLL)) menv [i].m_hp ++;
 
 
 if (menv [i].m_speed >= 100) continue;
 
-if (menv [i].m_class == 25 || menv [i].m_class == 51 || menv [i].m_class == 107 || menv [i].m_class == 108) menv [i].m_hp_max = menv [i].m_hp;
+if (menv [i].m_class == MONS_SMALL_ZOMBIE || menv [i].m_class == MONS_BIG_ZOMBIE || menv [i].m_class == MONS_SMALL_SKELETON || menv [i].m_class == MONS_LARGE_SKELETON) menv [i].m_hp_max = menv [i].m_hp;
 
 
-if (igrd [menv [i].m_x] [menv [i].m_y] != 501 && (gmon_use [menv [i].m_class] == 3 || menv [i].m_class == 35 || menv [i].m_class == 13 || menv [i].m_class == 156))
+if (igrd [menv [i].m_x] [menv [i].m_y] != 501 && (gmon_use [menv [i].m_class] == 3 || menv [i].m_class == MONS_JELLY || menv [i].m_class == MONS_NECROPHAGE || menv [i].m_class == MONS_GHOUL))
 {
         mons_pickup(i);
 }
 
-if (menv [i].m_beh == 3) // fleeing
+if (menv [i].m_beh == BEH_FLEE) // fleeing
 {
 if (menv [i].m_targ_1_x < menv [i].m_x) mmov_x = 1; else mmov_x = 0;
 if (menv [i].m_targ_1_x > menv [i].m_x) mmov_x = -1;
@@ -664,14 +665,14 @@ if (menv [i].m_targ_1_y > menv [i].m_y) mmov_y = -1;
 if (mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] != MNG && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] != i)
 {
  int mnt = mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y];
- if (menv [i].m_beh == 7 && menv [mnt].m_beh != 7) menv [i].m_hit = mnt;
- if (menv [i].m_beh != 7 && menv [mnt].m_beh == 7) menv [i].m_hit = mnt;
+ if (menv [i].m_beh == BEH_ENSLAVED && menv [mnt].m_beh != BEH_ENSLAVED) menv [i].m_hit = mnt;
+ if (menv [i].m_beh != BEH_ENSLAVED && menv [mnt].m_beh == BEH_ENSLAVED) menv [i].m_hit = mnt;
 }
 
 
 brkk = 0;
 
-if (menv [i].m_beh == 4) /* confused */
+if (menv [i].m_beh == BEH_CONFUSED) /* confused */
 {
         mmov_x = random2(3) - 1;
         mmov_y = random2(3) - 1;
@@ -688,7 +689,7 @@ if (menv [i].m_beh == 4) /* confused */
 if (brkk == 1) continue;
 
 /* for monsters who use spec abils even when next to you */
-if (mons_near(i) == 1 && menv [i].m_beh != 0)
+if (mons_near(i) == 1 && menv [i].m_beh != BEH_SLEEP)
 {
 
 if (mons_flag(menv [i].m_class,M_SPEAKS) && random2(5) == 0)
@@ -700,12 +701,12 @@ if (mons_flag(menv [i].m_class,M_SPEAKS) && random2(5) == 0)
 switch(menv [i].m_class)
 {
 
-case 244:
-case 378: /* Killer Klown */
+case MONS_SPATIAL_VORTEX:
+case MONS_KILLER_KLOWN: /* Killer Klown */
 menv [i].m_sec = random2(15) + 1;
 break;
 
-case 59:
+case MONS_GIANT_EYEBALL:
 if (random2(2) == 0 && (menv [i].m_ench [2] != 6 || player_see_invis() != 0))
 {
   mpr("The giant eyeball stares at you.");
@@ -713,7 +714,7 @@ if (random2(2) == 0 && (menv [i].m_ench [2] != 6 || player_see_invis() != 0))
 }
 break;
 
-case 65:
+case MONS_EYE_OF_DRAINING:
 if (random2(2) == 0 && (menv [i].m_ench [2] != 6 || player_see_invis() != 0))
 {
   mpr("The eye of draining stares at you.");
@@ -755,7 +756,7 @@ if (grd [menv [i].m_x] [menv [i].m_y] == 65 || grd [menv [i].m_x] [menv [i].m_y]
 }
 break;
 
-case 125: // air elemental
+case MONS_AIR_ELEMENTAL: // air elemental
  if (random2(5) == 0)
  {
   menv [i].m_ench [2] = 6;
@@ -763,7 +764,7 @@ case 125: // air elemental
  }
 break;
 
-case 401: /* random demon */
+case MONS_PANDEMONIUM_DEMON: /* random demon */
 if (ghost.ghs [13] == 1) menv [i].m_sec = random2(15) + 1;
 break;
 
@@ -782,18 +783,18 @@ break;
 
 
 
-if (((menv [i].m_beh == 1 || menv [i].m_beh == 3) && mons_near(i) == 1) || ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit != MHITNOT));
+if (((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) || ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit != MHITNOT));
 {
 
-if ((menv [i].m_beh == 1 || menv [i].m_beh == 3) && mons_near(i) == 1) you[0].pet_target = i;
+if ((menv [i].m_beh == BEH_CHASING_I || menv [i].m_beh == BEH_FLEE) && mons_near(i) == 1) you[0].pet_target = i;
 
-if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && (menv [i].m_hit == MHITNOT || menv [i].m_hit == MHITYOU))
+if ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && (menv [i].m_hit == MHITNOT || menv [i].m_hit == MHITYOU))
 {
  goto end_switch;
 // break;
 }
 
-if (menv [i].m_beh == 6 || menv [i].m_beh == 7)
+if (menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED)
 {
         beem[0].trac_targ = menv [i].m_hit;
         if (menv [i].m_hit == MHITNOT)
@@ -812,14 +813,14 @@ if (menv [i].m_beh == 6 || menv [i].m_beh == 7)
         beem[0].trac_targ_y = you[0].y_pos;
 }
 
-if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0 && menv [i].m_class != 234) goto end_switch; //continue;
+if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0 && menv [i].m_class != MONS_CACODEMON) goto end_switch; //continue;
 
 
 switch(menv [i].m_class)
 {
 
 case MLAVA2:
-if (menv [i].m_beh == 4) break;
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
 if (random2(2) == 0 || menv [i].m_sec == 1 || menv [i].m_ench [2] == 6) break;
 // viewwindow was here.
@@ -854,7 +855,7 @@ beem[0].aim_down = 1;
 break;
 
 case MWATER2:
-if (menv [i].m_beh == 4) break;
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
 if (menv [i].m_sec == 1 || menv [i].m_ench [2] == 6) break;
 if (show [menv [i].m_x - you[0].x_pos + 6] [menv [i].m_y - you[0].y_pos + 6] != 0)
@@ -886,8 +887,8 @@ viewwindow(1);
 }
 break;
 
-case 61:
-if (menv [i].m_beh == 4) break;
+case MONS_OKLOB_PLANT:
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
 if (random2(3) == 0) // o plant
 {
@@ -895,10 +896,10 @@ if (random2(3) == 0) // o plant
 }
 break;
 
-case 245: // Pit Fiend
+case MONS_PIT_FIEND: // Pit Fiend
 if (random2(3) == 0) break;
-case 31:
-if (menv [i].m_beh == 4) break;
+case MONS_FIEND:
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (random2(4) == 0) // fiend!
 {
         switch(random2(4))
@@ -911,7 +912,7 @@ if (random2(4) == 0) // fiend!
                 case 2:
                 case 3:
   tracer_f(i, beem);
-  if (menv [i].m_beh == 7 && (beem[0].tracer == 1 || beem[0].tracer == 2)) break;
+  if (menv [i].m_beh == BEH_ENSLAVED && (beem[0].tracer == 1 || beem[0].tracer == 2)) break;
                 if (beem[0].tracer != 0) /* || (beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)) */
                 {
    if (menv [i].m_ench [2] != 6)
@@ -933,10 +934,10 @@ if (random2(4) == 0) // fiend!
 break;
 
 
-case 8: // imp
-case 15: // phantom
-case 140:
-case 180: // blink frog
+case MONS_IMP: // imp
+case MONS_PHANTOM: // phantom
+case MONS_INSUBSTANTIAL_WISP:
+case MONS_BLINK_FROG: // blink frog
 if (random2(7) == 0) // phantom
 {
    if (mons_near(i) == 1)
@@ -960,9 +961,9 @@ break;
 
 
 
-case 12:
+case MONS_MANTICORE:
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
-if (menv [i].m_beh == 4) break;
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (menv [i].m_inv [1] != 501) // manticore
 {
                 hand_used = menv [i].m_inv [1];
@@ -982,24 +983,25 @@ break;
 
 
 // dragon breath weapon:
-case 29:
-case 73: // hellhound
-case 75:
-case 148: // lindworm
-case 164: // firedrake
-case 306:// Xtahua
-if (menv [i].m_beh == 4) break;
+case MONS_DRAGON:
+case MONS_HELL_HOUND: // hellhound
+case MONS_ICE_DRAGON:
+case MONS_LINDWORM: // lindworm
+case MONS_FIREDRAKE: // firedrake
+case MONS_XTAHUA:// Xtahua
+if (menv [i].m_beh == BEH_CONFUSED) break;
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) break;
-if ((menv [i].m_class != 73 && random2(13) < 3) || random2(10) == 0)
+if ((menv [i].m_class != MONS_HELL_HOUND && random2(13) < 3) || random2(10) == 0)
 {
-if (menv [i].m_beh == 6 || menv [i].m_beh == 7)
+if (menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED)
 {
  beem[0].trac_targ = menv [i].m_hit;
  tracer_f(i, beem);
 
  if (beem[0].tracer == 0) break;
  if (menv [i].m_beh == 7 && (beem[0].tracer == 1 || beem[0].tracer == 2)) break;
- if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) break;
+ if (menv [i].m_beh == 7 && beem[0].tracer == 4) break;
+ if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != BEH_ENSLAVED) break;
 
 // if (beem[0].trac_hit_mons == 0) break;
 }
@@ -1015,7 +1017,7 @@ break;
 
 
 
-if (menv [i].m_inv [4] != 501 && random2(3) == 0 && menv [i].m_beh != 0)
+if (menv [i].m_inv [4] != 501 && random2(3) == 0 && menv [i].m_beh != BEH_SLEEP)
 {
  switch(mitm.itype [menv [i].m_inv [4]])
  {
@@ -1060,13 +1062,13 @@ if (menv [i].m_inv [4] != 501 && random2(3) == 0 && menv [i].m_beh != 0)
 
 
 
-out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_beh != 4 && menv [i].m_beh != 0)
+out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_beh != BEH_CONFUSED && menv [i].m_beh != BEH_SLEEP)
 {
  switch(mitm.itype [menv [i].m_inv [6]])
  {
   case 1:
   if (menv [i].m_ench [0] == 40 || menv [i].m_ench [1] == 40 || menv [i].m_ench [2] == 40) goto out_of_scroll;
-  if (menv [i].m_beh != 3) goto out_of_scroll;
+  if (menv [i].m_beh != BEH_FLEE) goto out_of_scroll;
   if (mons_near(i) != 0)
   {
    strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
@@ -1077,7 +1079,7 @@ out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_b
   break;
 
   case 14:
-  if (menv [i].m_beh != 3) goto out_of_scroll;
+  if (menv [i].m_beh != BEH_FLEE) goto out_of_scroll;
   if (mons_near(i) != 0)
   {
    strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
@@ -1098,7 +1100,7 @@ out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_b
    strcat(info, " reads a scroll.");
    mpr(info);
   }
-  create_monster(23, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
+  create_monster(MONS_LARGE_ABOMINATION, 21, menv [i].m_beh, menv [i].m_x, menv [i].m_y, menv [i].m_hit, 250);
   break;
 
   default: goto out_of_scroll;
@@ -1110,7 +1112,7 @@ out_of_potion : if (menv [i].m_inv [6] != 501 && random2(3) == 0 && menv [i].m_b
 
 }
 
-out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_beh != 0)
+out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_beh != BEH_SLEEP)
 {
  if (mitm.iplus [menv [i].m_inv [5]] > 0)
  {
@@ -1119,29 +1121,29 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_b
 */
    switch(mitm.itype [menv [i].m_inv [5]])
    {
-     case 3: // hasting
+     case WAND_HASTING: // hasting
      if (menv [i].m_ench [0] == 2 || menv [i].m_ench [1] == 2 || menv [i].m_ench [2] == 2) goto out_of_zap;
      beem[0].target_x = menv [i].m_x;
      beem[0].target_y = menv [i].m_y;
      break;
 
-     case 5: // healing
+     case WAND_HEALING: // healing
      if (menv [i].m_hp > menv [i].m_hp_max / 2) goto out_of_zap;
      beem[0].target_x = menv [i].m_x;
      beem[0].target_y = menv [i].m_y;
      break;
 
-     case 10: // invis
+     case WAND_INVISIBILITY: // invis
      if (menv [i].m_ench [2] == 6) goto out_of_zap;
      beem[0].target_x = menv [i].m_x;
      beem[0].target_y = menv [i].m_y;
      break;
 
-     case 12: // fireball - too risky
-     case 11: // digging - I must do this sometime
+     case WAND_FIREBALL: // fireball - too risky
+     case WAND_DIGGING: // digging - I must do this sometime
      goto out_of_zap;
 
-     case 13: // teleport
+     case WAND_TELEPORTATION: // teleport
      if (menv [i].m_hp > menv [i].m_hp_max / 2) goto out_of_zap;
      if (menv [i].m_ench [0] == 40 || menv [i].m_ench [1] == 40 || menv [i].m_ench [2] == 40) goto out_of_zap;
      beem[0].target_x = menv [i].m_x;
@@ -1152,15 +1154,16 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_b
      default:
      switch(menv [i].m_beh)
      {
-      case 100:
-      case 0:
+      case BEH_CHASING_II:
+      case BEH_SLEEP:
       if (mons_near(i) == 0) goto out_of_zap;
       default:
-      if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto out_of_zap;
+      if ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit == MHITNOT) goto out_of_zap;
       tracer_f(i, beem);
       if (beem[0].tracer == 0) goto out_of_zap;
-      if (menv [i].m_beh == 7 && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto out_of_zap;
-      if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto out_of_zap;
+      if (menv [i].m_beh == BEH_ENSLAVED && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto out_of_zap;
+      if (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer_mons == 4) goto end_throw;
+      if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != BEH_ENSLAVED) goto out_of_zap;
 
 /*      if (beem[0].tracer == 0 && beem[0].tracer_mons != 3) goto out_of_zap;
       if (beem[0].tracer_mons == 1) goto out_of_zap;*/
@@ -1183,29 +1186,29 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_b
 
    switch(mitm.itype [menv [i].m_inv [5]])
    {
-    case 0: mzap = 1; break; // flame
-    case 1: mzap = 2; break; // frost
-    case 2: mzap = 4; break; // slow
-    case 3: mzap = 5; break; // haste
-    case 4: mzap = 0; break; // mag dart
-    case 5: mzap = 13; break; // healing
-    case 6: mzap = 3; break; // paralysis
-    case 7: mzap = 8; break; // fire
-    case 8: mzap = 9; break; // cold
-    case 9: mzap = 6; break; // confusion
-    case 10: mzap = 11; break; // invisibility
-    case 11: goto out_of_zap;
-    case 12: goto out_of_zap;
+    case WAND_FLAME: mzap = 1; break; // flame
+    case WAND_FROST: mzap = 2; break; // frost
+    case WAND_SLOWING: mzap = 4; break; // slow
+    case WAND_HASTING: mzap = 5; break; // haste
+    case WAND_MAGIC_DARTS: mzap = 0; break; // mag dart
+    case WAND_HEALING: mzap = 13; break; // healing
+    case WAND_PARALYSIS: mzap = 3; break; // paralysis
+    case WAND_FIRE: mzap = 8; break; // fire
+    case WAND_COLD: mzap = 9; break; // cold
+    case WAND_CONFUSION: mzap = 6; break; // confusion
+    case WAND_INVISIBILITY: mzap = 11; break; // invisibility
+    case WAND_DIGGING: goto out_of_zap;
+    case WAND_FIREBALL: goto out_of_zap;
 //    case 11: mzap = 11; break; // digging
 //    case 12: mzap = 11; break; // fireball
-    case 13: mzap = 15; break; // teleportation
-    case 14: mzap = 10; break; // lightning
-    case 15: goto out_of_zap;
-    case 16: goto out_of_zap;
+    case WAND_TELEPORTATION: mzap = 15; break; // teleportation
+    case WAND_LIGHTNING: mzap = 10; break; // lightning
+    case WAND_POLYMORPH_OTHER: goto out_of_zap;
+    case WAND_ENSLAVEMENT: goto out_of_zap;
 //    case 15: mzap = 10; break; // lightning
 //    case 16: mzap = 10; break; // lightning
-    case 17: mzap = 19; break; // negative energy
-    case 18: goto out_of_zap;
+    case WAND_DRAINING: mzap = 19; break; // negative energy
+    case WAND_RANDOM_EFFECTS: goto out_of_zap;
 //    case 18: random effects
 
    }
@@ -1281,10 +1284,10 @@ out_of_scroll : if (menv [i].m_inv [5] != 501 && random2(2) == 0 && menv [i].m_b
 /* Don't put stuff here, because of the jump to that label. */
 
 /* SPELLCASTER MOVED HERE */
-out_of_zap: if (mons_flag(menv [i].m_class,M_SPELLCASTER) && menv [i].m_beh != 0)
+out_of_zap: if (mons_flag(menv [i].m_class,M_SPELLCASTER) && menv [i].m_beh != BEH_SLEEP)
 {
 spell_cast = 100;
-if (menv [i].m_class == 80)
+if (menv [i].m_class == MONS_HELLION)
  switch(random2(3))
  {
         case 0: menv [i].m_sec = RED; break;
@@ -1292,16 +1295,16 @@ if (menv [i].m_class == 80)
         case 2: menv [i].m_sec = YELLOW; break;
  }
 
-if (menv [i].m_beh == 4 && menv [i].m_class != 141) goto end_switch; /* vapours cast spells even if confused */
+if (menv [i].m_beh == BEH_CONFUSED && menv [i].m_class != MONS_VAPOUR) goto end_switch; /* vapours cast spells even if confused */
 
 if (you[0].invis != 0 && mons_see_invis(menv [i].m_class) == 0) goto end_switch;
 
 if (random2(200) > 50 + menv[i].m_HD) goto end_switch;
-if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto end_switch;
+if ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit == MHITNOT) goto end_switch;
 
 msecc = menv [i].m_sec;
-if (menv [i].m_class == 80) msecc = 30; // burning devil
-if (menv [i].m_class == 401)
+if (menv [i].m_class == MONS_HELLION) msecc = 30; // burning devil
+if (menv [i].m_class == MONS_PANDEMONIUM_DEMON)
 {
  msecc = 119;
  if (ghost.ghs [9] == 0) goto end_switch; // random demon
@@ -1342,7 +1345,7 @@ for (ifx = 0; ifx < 6; ifx ++)
  mpr(info);
 }*/
 
-if (func_pass_2 [4] == 18 && mons_near(i) == 0 && menv [i].m_beh == 1)// && trac_targ == MHITYOU)// && distance(you[0].x_pos, menv [i].m_x, you[0].y_pos, menv [i].m_y) < 40)
+if (func_pass_2 [4] == 18 && mons_near(i) == 0 && menv [i].m_beh == BEH_CHASING_I)// && trac_targ == MHITYOU)// && distance(you[0].x_pos, menv [i].m_x, you[0].y_pos, menv [i].m_y) < 40)
 {
         spell_cast = 18; // This is EVIL!
         goto casted;
@@ -1350,54 +1353,61 @@ if (func_pass_2 [4] == 18 && mons_near(i) == 0 && menv [i].m_beh == 1)// && trac
 
 if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0) goto end_switch;
 
+/*
+Used by monsters in "planning" which spell to cast. Fires off a "tracer"
+which tells the monster what it'll hit if it breathes/casts etc.
+
+   tracer = 0 = run out of range or hits a wall
+   tracer = 1 = hits you in range
+   tracer = 2 = hits friendly monster
+   tracer = 3 = hits hostile monster
+
+   tracer_mons = 1 = hits monster specified in trac_targ
+
+   tracer_hit_mons now holds value of mons_see_invis of attacking monster.
+   If it's 0, won't register invis monsters or you
+
+   Note: only the missile() function is used for tracers. The tracer code
+     in beam() is obsolete and useless.
+*/
+
+
 tracer_f(i, beem);
 
 if (beem[0].tracer == 0) goto end_switch;
-if (menv [i].m_beh == 7 && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto end_switch;
-if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto end_switch;
+if (menv [i].m_beh == BEH_ENSLAVED && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto end_switch;
+//if (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer_mons == 1) goto end_switch;
+if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != BEH_ENSLAVED) goto end_switch;
 
 
 if (func_pass_2 [4] == 18) func_pass_2 [4] = 100;
 
 //if (menv [i].m_beh == 7 && beem[0].trac_hit_tamed == 1) goto end_switch;
 
-if (menv [i].m_beh != 3) /* == 3 is fear, I think */
+if (menv [i].m_beh != BEH_FLEE) /* == 3 is fear, I think */
 {
 // if (beem[0].tracer_mons == 0 && beem[0].tracer == 1 || ((beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)))
 // if (beem[0].tracer == 1 && beem[0].tracer == 1 || ((beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)))
- if ((menv [i].m_beh != 7 && (beem[0].tracer == 1 || beem[0].tracer == 2 || beem[0].tracer_mons == 1)) || (menv [i].m_beh == 7 && beem[0].tracer == 3))
+ if ((menv [i].m_beh != BEH_ENSLAVED && (beem[0].tracer == 1 || beem[0].tracer == 2 || beem[0].tracer_mons == 1)) || (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer == 3))
  {
         spell_cast = func_pass_2 [random2(5)];
         if (spell_cast == 100) spell_cast = func_pass_2 [random2(5)];
         if (spell_cast == 100) spell_cast = func_pass_2 [random2(5)];
   goto casted;
  }
-// if (beem[0].tracer_mons == 1 && beem[0].trac_targ == MHITYOU || random2(10) == 0)
-// if (beem[0].tracer == 1 && beem[0].trac_targ == MHITYOU || random2(10) == 0)
-// {
-//  if (random2(2) == 0 || (menv [i].m_ench_1 == 1)) goto end_switch;
-//  if (random2(2) == 0 || (menv [i].m_ench [0] != 0 && menv [i].m_ench [1] != 0 && menv [i].m_ench [2] != 0)) goto end_switch;
+
+ if (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer_mons == 4)
+ {
+  spell_cast = func_pass_2 [2];
+  goto casted;
+ }
   if (random2(2) == 0) goto end_switch;
   spell_cast = func_pass_2 [2];
   goto casted;
-/* If no clear shot at anything, casts self-ench */
-// }
-/* if ((beem[0].tracer == 1 && (beem[0].tracer_mons != 1)) || (beem[0].trac_targ != MHITYOU))
- {
-        switch(random2(4))
-        {
-    case 0: spell_cast = func_pass_2 [0];
-    if (beem[0].tracer_mons == 2) beem[0].aim_down = 1;
-    break;
-                        case 1: spell_cast = func_pass_2 [1]; break;
-    case 2: spell_cast = func_pass_2 [3]; break;
-    case 3: spell_cast = func_pass_2 [4]; break;
-        }
- }*/
 } // end if
  else
  {
-  if (random2(3) == 0) goto end_switch;
+  if (random2(5) == 0) goto end_switch;
         spell_cast = func_pass_2 [5];
  }
 
@@ -1406,19 +1416,9 @@ casted : if (spell_cast == 100) goto end_switch;
 if (mons_near(i) == 1)
 {
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
-if (menv [i].m_class != 69) /* brain worm */
-/*if (spell_cast == 33 || spell_cast == 34)
-{
- strcat(info, " ");
- mpr(info);
-} else
-if (spell_cast == 27)
-{
+if (menv [i].m_class != MONS_BRAIN_WORM) /* brain worm */
 
- strcat(info, " opens a gate!");
- mpr(info);
-} else*/
-if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 132 || menv [i].m_class == 146 || menv [i].m_class == 165 || menv [i].m_class == 171 || menv [i].m_class == 172 || menv [i].m_class == 394 || menv [i].m_class == 395 || menv [i].m_class == 397 || menv [i].m_class == 398) /* steam, mottled, storm and golden dragons, etc */
+if (menv [i].m_class == MONS_STEAM_DRAGON || menv [i].m_class == MONS_MOTTLED_DRAGON || menv [i].m_class == MONS_STORM_DRAGON || menv [i].m_class == MONS_GOLDEN_DRAGON || menv [i].m_class == MONS_SHADOW_DRAGON || menv [i].m_class == MONS_SWAMP_DRAGON || menv [i].m_class == MONS_SWAMP_DRAKE || menv [i].m_class == MONS_HELL_HOG || menv [i].m_class == MONS_SERPENT_OF_HELL || menv [i].m_class == MONS_QUICKSILVER_DRAGON || menv [i].m_class == MONS_IRON_DRAGON) /* steam, mottled, storm and golden dragons, etc */
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1427,7 +1427,7 @@ if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 13
                         }
  } else
 
- if (menv [i].m_class == 79 || menv [i].m_class == 364 || menv [i].m_class == 385) // great orb of eyes etc
+ if (menv [i].m_class == MONS_GREAT_ORB_OF_EYES || menv [i].m_class == MONS_SHINING_EYE || menv [i].m_class == MONS_EYE_OF_DEVASTATION) // great orb of eyes etc
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1435,12 +1435,12 @@ if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 13
                 mpr(info);
                         }
  } else
- if (menv [i].m_class == 141) // vapour
+ if (menv [i].m_class == MONS_VAPOUR) // vapour
  {
   menv [i].m_ench [2] = 6;
  }
  else
- if (menv [i].m_class == 70) // giant orange brain
+ if (menv [i].m_class == MONS_GIANT_ORANGE_BRAIN) // giant orange brain
  {
   if (menv [i].m_ench [2] != 6)
                         {
@@ -1448,27 +1448,27 @@ if (menv [i].m_class == 101 || menv [i].m_class == 122 || menv [i].m_class == 13
                 mpr(info);
                         }
  } else
- if (menv [i].m_class == 340)
+ if (menv [i].m_class == MONS_GERYON)
  {
    strcat(info, " winds a great silver horn.");
    mpr(info);
  } else
- if (menv [i].m_class == 161 || menv [i].m_class == 261)
+ if (menv [i].m_class == MONS_NAGA || menv [i].m_class == MONS_NAGA_WARRIOR)
  {
    strcat(info, " spits poison.");
    mpr(info);
  } else
- if ((menv [i].m_class >= 80 && menv [i].m_class <= 90) || menv [i].m_class == 68 || (menv [i].m_class >= 220 && menv [i].m_class <= 234))
+ if ((menv [i].m_class >= MONS_HELLION && menv [i].m_class <= 90) || menv [i].m_class == MONS_EFREET || (menv [i].m_class >= MONS_WHITE_IMP && menv [i].m_class <= MONS_CACODEMON))
         {
                 strcat(info, " gestures.");
                 mpr(info);
         } else
-         if (menv [i].m_class == 380 || menv [i].m_class == 379)
+         if (menv [i].m_class == MONS_DORGI || menv [i].m_class == MONS_GUARDIAN_ROBOT)
          {
                 strcat(info, " fires!");
                 mpr(info);
          } else
-         if (menv [i].m_class == 381) /* Sword */
+         if (menv [i].m_class == MONS_SWORD) /* Sword */
          {
                 strcat(info, " burns!");
                 mpr(info);
@@ -1489,7 +1489,7 @@ mpr(info);
 */
 
 } // end of if mons_near
- else if (menv [i].m_class == 340)
+ else if (menv [i].m_class == MONS_GERYON)
         {
          strcpy(info, "You hear a weird and mournful sound.");
          mpr(info); // Geryon
@@ -1520,9 +1520,9 @@ if (spell_cast == 16)
 
 /* note: are 'goto end_switch's in the spellcaster bit. */
 
-end_switch : if (gmon_use [menv [i].m_class] > 0 && menv [i].m_inv [1] != 501 && menv [i].m_class != 30 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0) && menv [i].m_beh != 4 && menv [i].m_beh != 0) // 2-h ogre
+end_switch : if (gmon_use [menv [i].m_class] > 0 && menv [i].m_inv [1] != 501 && menv [i].m_class != MONS_TWO_HEADED_OGRE && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0) && menv [i].m_beh != BEH_CONFUSED && menv [i].m_beh != BEH_SLEEP) // 2-h ogre
 {
-if ((menv [i].m_beh == 6 || menv [i].m_beh == 7) && menv [i].m_hit == MHITNOT) goto end_throw;
+if ((menv [i].m_beh == BEH_FIGHT || menv [i].m_beh == BEH_ENSLAVED) && menv [i].m_hit == MHITNOT) goto end_throw;
 
 hand_used = menv [i].m_inv [1];
 if (random2(10) < 8)
@@ -1533,10 +1533,11 @@ if (random2(10) < 8)
   if (beem[0].trac_targ == MHITYOU && mons_near(i) == 0) goto end_throw;
   tracer_f(i, beem);
   if (beem[0].tracer == 0) goto end_throw;
-  if (menv [i].m_beh == 7 && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto end_throw;
-  if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != 7) goto end_throw;
+  if (menv [i].m_beh == BEH_ENSLAVED && (beem[0].tracer == 1 || beem[0].tracer == 2)) goto end_throw;
+  if (beem[0].tracer == 3 && beem[0].tracer_mons == 0 && menv [i].m_beh != BEH_ENSLAVED) goto end_throw;
 
-  if (menv [i].m_beh == 7 && beem[0].tracer == 1 && beem[0].tracer_mons != 1) goto end_throw;
+  if (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer == 1 && beem[0].tracer_mons != 1) goto end_throw;
+  if (menv [i].m_beh == BEH_ENSLAVED && beem[0].tracer_mons == 4) goto end_throw;
 
                 if (beem[0].tracer != 0 || (beem[0].trac_targ != MHITYOU && beem[0].trac_hit_mons != 0)) // doesn't need to worry about you[0].haste
                 {
@@ -1561,11 +1562,11 @@ if (random2(10) < 8)
 
 
 
-end_throw : if ((menv [i].m_beh == 7 || menv [i].m_beh == 6) && (mmov_x != 0 || mmov_y != 0) && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] != MNG)
+end_throw : if ((menv [i].m_beh == BEH_ENSLAVED || menv [i].m_beh == BEH_FIGHT) && (mmov_x != 0 || mmov_y != 0) && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] != MNG)
 {
                         if (monsters_fight(i, mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y]) == 1)
    {
-    if (menv [i].m_class == 1 || menv [i].m_class == 46 || menv [i].m_class == 169) menv [i].m_speed_inc -= menv [i].m_speed;
+    if (menv [i].m_class == MONS_GIANT_BAT || menv [i].m_class == MONS_UNSEEN_HORROR || menv [i].m_class == MONS_GIANT_BLOWFLY) menv [i].m_speed_inc -= menv [i].m_speed;
                   mmov_x = 0; mmov_y = 0;
                         brkk = 1;
                         break;
@@ -1583,20 +1584,20 @@ if (menv [i].m_x + mmov_x == you[0].x_pos && menv [i].m_y + mmov_y == you[0].y_p
 
 mmov_x = menv [i].m_inv [0];
 
-if ((menv [i].m_class == 1 || menv [i].m_class == 46 || menv [i].m_class == 169) && bat == 0) monster_attack(i);
+if ((menv [i].m_class == MONS_GIANT_BAT || menv [i].m_class == MONS_UNSEEN_HORROR || menv [i].m_class == MONS_GIANT_BLOWFLY) && bat == 0) monster_attack(i);
 
-if ((menv [i].m_class == 1 || menv [i].m_class == 46 || menv [i].m_class == 169) && menv [i].m_beh != 7) // giant bat
+if ((menv [i].m_class == MONS_GIANT_BAT || menv [i].m_class == MONS_UNSEEN_HORROR || menv [i].m_class == MONS_GIANT_BLOWFLY) && menv [i].m_beh != BEH_ENSLAVED) // giant bat
 {
-        menv [i].m_beh = 2;
+        menv [i].m_beh = BEH_WANDER;
         bat = 1;
 }
 
 
 
-if (menv [i].m_class != 1 && menv [i].m_class != 46 && menv [i].m_class != 169) monster_attack(i);
+if (menv [i].m_class != MONS_GIANT_BAT && menv [i].m_class != MONS_UNSEEN_HORROR && menv [i].m_class != MONS_GIANT_BLOWFLY) monster_attack(i);
 
 
-if (menv [i].m_class == 32 && menv [i].m_hp < 1)
+if (menv [i].m_class == MONS_GIANT_SPORE && menv [i].m_hp < 1)
 {
         for (j = 0; j < 3; j++)
                 {
@@ -1618,12 +1619,12 @@ mmov_x = 0; mmov_y = 0; continue; //break;
 
 
 
-if (menv [i].m_class == -1 || menv [i].m_class == 61 || menv[i].m_class == 361 || (menv[i].m_class >= 388 && menv[i].m_class <= 393)) continue;
+if (menv [i].m_class == -1 || menv [i].m_class == MONS_OKLOB_PLANT || menv[i].m_class == MONS_CURSE_SKULL || (menv[i].m_class >= MONS_CURSE_TOE && menv[i].m_class <= MONS_POTION_MIMIC)) continue;
                          // o plant
 monster_move(i);
 
 
-if (menv [i].m_beh == 1)//: // chasing YOU
+if (menv [i].m_beh == BEH_CHASING_I)//: // chasing YOU
 if (mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) != 0))// && random2 (6) != 0))
 {
         menv [i].m_targ_1_x = you[0].x_pos;
@@ -1631,14 +1632,14 @@ if (mons_near(i) == 1 && (you[0].invis == 0 || mons_see_invis(menv [i].m_class) 
 }
 
 /* Tame monsters can't become afraid, because fear overwrites tameness */
-if (menv [i].m_hp <= (menv [i].m_hp_max / 4 - 1) && mons_intel(menv [i].m_class) > 1 && menv [i].m_beh != 7) menv [i].m_beh = 3;
+if (menv [i].m_hp <= (menv [i].m_hp_max / 4 - 1) && mons_intel(menv [i].m_class) > 1 && menv [i].m_beh != BEH_ENSLAVED) menv [i].m_beh = BEH_FLEE;
 
 
 
 }
 endbat : bat = 0;
 
-if (menv [i].m_beh == 6 && random2(3) != 0) menv [i].m_beh = 1; // I think?
+if (menv [i].m_beh == BEH_FIGHT && random2(3) != 0) menv [i].m_beh = BEH_CHASING_I; // I think?
 
 } // end of if (mons_class != -1)
 
@@ -1652,7 +1653,7 @@ if (menv [i].m_beh == 6 && random2(3) != 0) menv [i].m_beh = 1; // I think?
 void mons_pickup(int i)
 {
 
-if (menv [i].m_class == 35 || menv [i].m_class == 275 || menv [i].m_class == 278 || menv [i].m_class == 279) /* Jelly! */
+if (menv [i].m_class == MONS_JELLY || menv [i].m_class == MONS_OOZE || menv [i].m_class == MONS_ACID_BLOB || menv [i].m_class == MONS_ROYAL_JELLY) /* Jelly! */
 {
 
    int hps_gained;
@@ -1662,10 +1663,10 @@ if (menv [i].m_class == 35 || menv [i].m_class == 275 || menv [i].m_class == 278
 
    if (quant_eated > mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]]) quant_eated = mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]];
 
-   if (mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]] == 0 && mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] > 180)
+   if (mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]] == OBJ_WEAPONS && mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] > 180)
      return; /* unique items */
 
-   if (mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]] == 1 && (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 0 || mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 5))
+   if (mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]] == OBJ_MISSILES && (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == MI_STONE || mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == MI_LARGE_ROCK))
    {
      /* shouldn't eat stone things.
       - but what about stone wands & rings? */
@@ -1718,19 +1719,19 @@ if (menv [i].m_hp >= 50)
 
 switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 {
-        case 0:
+        case OBJ_WEAPONS:
         if (menv [i].m_inv [0] != 501)
                 return;
  if (mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] > 180) return;
  if (mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]] % 30 >= 25) return;
- if ((mons_charclass(menv [i].m_class) == 36 || mons_charclass(menv [i].m_class) == 6) && property(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]], mitm.itype[igrd [menv [i].m_x] [menv [i].m_y]], 1) <= 0) return;
+ if ((mons_charclass(menv [i].m_class) == MONS_KOBOLD || mons_charclass(menv [i].m_class) == MONS_GOBLIN) && property(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]], mitm.itype[igrd [menv [i].m_x] [menv [i].m_y]], 1) <= 0) return;
  // wimpy monsters (Kob, gob) shouldn't pick up halberds etc
- if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 20 || mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 21) return;
+ if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == WPN_GIANT_CLUB || mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == WPN_GIANT_SPIKED_CLUB) return;
  // Nobody picks up giant clubs
         menv [i].m_inv [0] = igrd [menv [i].m_x] [menv [i].m_y];
         igrd [menv [i].m_x] [menv [i].m_y] = mitm.ilink [igrd [menv [i].m_x] [menv [i].m_y]];
  mitm.ilink [menv [i].m_inv [0]] = 501;
- if (mitm.idam [menv [i].m_inv [0]] % 30 == 7) menv [i].m_AC += 3;
+ if (mitm.idam [menv [i].m_inv [0]] % 30 == SPWPN_PROTECTION) menv [i].m_AC += 3;
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
  strcat(info, " picks up ");
  it_name(menv [i].m_inv [0], 3, str_pass);
@@ -1740,7 +1741,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 /*      mmov_x = 0; mmov_y = 0;*/
         break;
 
-        case 1:
+        case OBJ_MISSILES:
         if (menv [i].m_inv [1] != 501 && mitm.itype [menv [i].m_inv [1]] == mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.iplus [menv [i].m_inv [1]] == mitm.iplus [igrd [menv [i].m_x] [menv [i].m_y]] && mitm.idam [menv [i].m_inv [1]] == mitm.idam [igrd [menv [i].m_x] [menv [i].m_y]])
     /* Removed check for item_plus2 - probably irrelevant */
         {
@@ -1756,7 +1757,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
             mitm.ilink [menv [i].m_inv [0]] = 501;
                 return;
         }
-    if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == 5) return;
+    if (mitm.itype [igrd [menv [i].m_x] [menv [i].m_y]] == MI_LARGE_ROCK) return;
     // Nobody bothers to pick up rocks if they don't already have some.
         if (menv [i].m_inv [0] != 501 || mitm.iquant [igrd [menv [i].m_x] [menv [i].m_y]] == 1)
                 return;
@@ -1772,7 +1773,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 /*      mmov_x = 0; mmov_y = 0;*/
         break;
 
-        case 3:
+        case OBJ_WANDS:
         if (menv [i].m_inv [5] != 501)
                 return;
         menv [i].m_inv [5] = igrd [menv [i].m_x] [menv [i].m_y];
@@ -1787,7 +1788,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 /*      mmov_x = 0; mmov_y = 0;*/
         break;
 
-        case 6:
+        case OBJ_SCROLLS:
         if (menv [i].m_inv [6] != 501)
                 return;
         menv [i].m_inv [6] = igrd [menv [i].m_x] [menv [i].m_y];
@@ -1802,7 +1803,7 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 /*      mmov_x = 0; mmov_y = 0;*/
         break;
 
-        case 8:
+        case OBJ_POTIONS:
         if (menv [i].m_inv [4] != 501)
                 return;
         menv [i].m_inv [4] = igrd [menv [i].m_x] [menv [i].m_y];
@@ -1819,14 +1820,14 @@ switch(mitm.iclass [igrd [menv [i].m_x] [menv [i].m_y]])
 
 
 
- case 14: if (menv [i].m_class != 13 && menv [i].m_class != 156) return;
+ case OBJ_CORPSES: if (menv [i].m_class != MONS_NECROPHAGE && menv [i].m_class != MONS_GHOUL) return;
  menv [i].m_hp += random2(mons_weight(mitm.iplus [igrd [menv [i].m_x] [menv [i].m_y]])) / 100 + 1;
  if (menv [i].m_hp > 77) menv [i].m_hp = 77;
  if (menv [i].m_hp > menv [i].m_hp_max) menv [i].m_hp_max = menv [i].m_hp;
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
  strcat(info, " eats ");
- it_name(menv [i].m_inv [0], 1, str_pass);
-        strcat(info, str_pass);
+ it_name(igrd [menv [i].m_x] [menv [i].m_y], 1, str_pass);
+ strcat(info, str_pass);
  strcat(info, ".");
  if (mons_near(i)) mpr(info);
  destroy_item(igrd [menv [i].m_x] [menv [i].m_y]);
@@ -1851,7 +1852,7 @@ int count_x, count_y, vacated_x, vacated_y;
 
 
 int okmove = 65;
-if (random2(3) == 0 || menv [i].m_class == 124) okmove = 66; /* effectively slows down monster movement across water. Fire elementals can't cross */
+if (random2(3) == 0 || menv [i].m_class == MONS_FIRE_ELEMENTAL) okmove = 66; /* effectively slows down monster movement across water. Fire elementals can't cross */
 if (mons_flies(menv [i].m_class) > 0 || menv [i].m_class >= MLAVA0) okmove = MINMOVE;
 
 for (count_x = 0; count_x < 3; count_x ++)
@@ -1859,7 +1860,7 @@ for (count_x = 0; count_x < 3; count_x ++)
  for (count_y = 0; count_y < 3; count_y ++)
  {
   good_move [count_x] [count_y] = 1;
-  if (menv [i].m_class == 19 || menv [i].m_class == 246)
+  if (menv [i].m_class == MONS_TUNNELING_WORM || menv [i].m_class == MONS_BORING_BEETLE)
   {
    if (grd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1] == 1 && menv [i].m_x + count_x - 1 > 7 && menv [i].m_x + count_x - 1 < 72 && menv [i].m_y + count_y - 1 > 7 && menv [i].m_y + count_y - 1 < 62)
     goto tunnel;
@@ -1871,7 +1872,7 @@ for (count_x = 0; count_x < 3; count_x ++)
   }
   tunnel : if (mgrd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1] != MNG)
   {
-    if (!(menv [mgrd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1]].m_beh == 7 || menv [i].m_beh == 7 && menv [mgrd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1]].m_beh != menv [i].m_beh))
+    if (!(menv [mgrd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1]].m_beh == BEH_ENSLAVED || menv [i].m_beh == BEH_ENSLAVED && menv [mgrd [menv [i].m_x + count_x - 1] [menv [i].m_y + count_y - 1]].m_beh != menv [i].m_beh))
     {
      good_move [count_x] [count_y] = 0;
      continue;
@@ -1924,7 +1925,7 @@ for (count_x = 0; count_x < 3; count_x ++)
 /* some monsters opening doors: change the gmon_use == 1 to gmon_use > 0 maybe? */
         if (grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 3 || grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 5)
    {
-      if (menv [i].m_class == 25 || menv [i].m_class == 51 || menv [i].m_class == 107 || menv [i].m_class == 108 || menv [i].m_class == 367)
+      if (menv [i].m_class == MONS_SMALL_ZOMBIE || menv [i].m_class == MONS_BIG_ZOMBIE || menv [i].m_class == MONS_SMALL_SKELETON || menv [i].m_class == MONS_LARGE_SKELETON || menv [i].m_class == MONS_SPECTRAL_THING)
       {
         if (gmon_use [menv [i].m_sec] > 0)
         {
@@ -1938,7 +1939,7 @@ for (count_x = 0; count_x < 3; count_x ++)
                    return;
             }
 
-      if (menv [i].m_class == 35)
+      if (menv [i].m_class == MONS_JELLY)
       {
          grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] = 67;
          strcpy(info, "You hear a slurping sound.");
@@ -1962,7 +1963,7 @@ if (good_move [mmov_x + 1] [mmov_y + 1] == 0)
         /* some monsters opening doors */
         if (gmon_use [menv [i].m_class] > 0 && (grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 3 || grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 5))
         {
-   if (menv [i].m_class == 25 || menv [i].m_class == 51 || menv [i].m_class == 107 || menv [i].m_class == 108 || menv [i].m_class == 367)
+   if (menv [i].m_class == MONS_SMALL_ZOMBIE || menv [i].m_class == MONS_BIG_ZOMBIE || menv [i].m_class == MONS_SMALL_SKELETON || menv [i].m_class == MONS_LARGE_SKELETON || menv [i].m_class == MONS_SPECTRAL_THING)
    {
      if (gmon_use [menv [i].m_sec] > 0)
      {
@@ -2120,7 +2121,7 @@ if (good_move [mmov_x + 1] [mmov_y + 1] == 1)
 
 
 /* maybe: (makes worms stupid, though) */
-if ((menv [i].m_class == 19 || menv [i].m_class == 246) && mmov_x != 0 && mmov_y != 0)
+if ((menv [i].m_class == MONS_TUNNELING_WORM || menv [i].m_class == MONS_BORING_BEETLE) && mmov_x != 0 && mmov_y != 0)
 {
         if (random2(2) == 0) mmov_x = 0; else mmov_y = 0;
         if (grd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == 1 && menv [i].m_x + mmov_x > 6 && menv [i].m_x + mmov_x < 73 && menv [i].m_y + mmov_y > 6 && menv [i].m_y + mmov_y < 63)
@@ -2158,19 +2159,19 @@ if (grik >= okmove && mgrd [menv [i].m_x + mmov_x] [menv [i].m_y + mmov_y] == MN
   mmov_y = 0;
  }
 
- if (menv [i].m_class == 67 && see_grid(menv [i].m_x + mmov_x, menv [i].m_y + mmov_y) == 1)
+ if (menv [i].m_class == MONS_WANDERING_MUSHROOM && see_grid(menv [i].m_x + mmov_x, menv [i].m_y + mmov_y) == 1)
  {
   mmov_x = 0;
   mmov_y = 0;
  }
 
-if (menv [i].m_class == 68 || menv [i].m_class == 124) place_cloud(101, menv [i].m_x, menv [i].m_y, 2 + random2(4));
+if (menv [i].m_class == MONS_EFREET || menv [i].m_class == MONS_FIRE_ELEMENTAL) place_cloud(101, menv [i].m_x, menv [i].m_y, 2 + random2(4));
 
  /* this appears to be the real one: */
         menv [i].m_x += mmov_x;
         menv [i].m_y += mmov_y;
 
-        if (menv [i].m_class == 19 && mgrd [vacated_x] [vacated_y] == MNG && (mmov_x != 0 || mmov_y != 0)) //(mmov_x != 0 || mmov_y != 0)) // worm
+        if (menv [i].m_class == MONS_TUNNELING_WORM && mgrd [vacated_x] [vacated_y] == MNG && (mmov_x != 0 || mmov_y != 0)) //(mmov_x != 0 || mmov_y != 0)) // worm
         {
                 char vac_x_2 = vacated_x; //menv [i].m_x;
                 char vac_y_2 = vacated_y; //menv [i].m_y;
@@ -2179,12 +2180,12 @@ if (menv [i].m_class == 68 || menv [i].m_class == 124) place_cloud(101, menv [i]
 
                 i++;
 
-                if (menv [i].m_class != 56)
+                if (menv [i].m_class != MONS_WORM_TAIL)
                 {
                         goto out_of_worm;
                 }
 
-                while(menv [i].m_class == 56)
+                while(menv [i].m_class == MONS_WORM_TAIL)
                 {
    mgrd [menv [i].m_x] [menv [i].m_y] = MNG;
 
@@ -2220,8 +2221,8 @@ if (menv [i].m_class == 68 || menv [i].m_class == 124) place_cloud(101, menv [i]
 /* monsters stepping on traps: */
 if (grd [menv [i].m_x] [menv [i].m_y] > 74 && grd [menv [i].m_x] [menv [i].m_y] < 79 && (mmov_x != 0 || mmov_y != 0))
 {
-if (mons_flies(menv [i].m_class) == 0) mons_trap(i);
-
+//if (mons_flies(menv [i].m_class) == 0)
+mons_trap(i);
 } /* end of if monster steps on trap */
 
 
@@ -2273,7 +2274,7 @@ int wc = env[0].cgrid [menv [i].m_x] [menv [i].m_y];
 int hurted = 0;
 struct bolt beam [1];
 
-if (menv [i].m_class >= 389 && menv [i].m_class <= 393)
+if (menv [i].m_class >= MONS_GOLD_MIMIC && menv [i].m_class <= MONS_POTION_MIMIC)
 {
   mimic_alert(i);
   return;
@@ -2287,12 +2288,12 @@ switch(env[0].cloud_type [wc] % 100)
    break;
 
         case 1: // fire
-  if (menv [i].m_class == 21 || menv [i].m_class == 68 || menv [i].m_class == 124) break; // fire vortex, efreet, and fire elemental
+  if (menv [i].m_class == MONS_FIRE_VORTEX || menv [i].m_class == MONS_EFREET || menv [i].m_class == MONS_FIRE_ELEMENTAL) break; // fire vortex, efreet, and fire elemental
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0)); //gmon_name [menv [i].m_class]);
         strcat(info, " is engulfed in flame!");
-        if (mons_near(i) == 1 && menv [i].m_class != 68) mpr(info); // efreet
+        if (mons_near(i) == 1 && menv [i].m_class != MONS_EFREET) mpr(info); // efreet
    if (mons_res_fire(menv [i].m_class) > 0) break;
-        hurted += ((random2(5) + random2(5) + random2(5) + 3) * 10) / menv [i].m_speed;
+        hurted += ((random2(8) + random2(5) + random2(5) + 6) * 10) / menv [i].m_speed;
  if (mons_res_fire(menv [i].m_class) < 0 && !(menv [i].m_inv [2] != 501 && mitm.idam [menv [i].m_inv [2]] % 30 == 2)) hurted += (random2(15) * 10) / menv [i].m_speed;
  // remember that the above is in addition to the other you[0].damage.
  hurted -= random2(menv [i].m_AC + 1);
@@ -2339,7 +2340,7 @@ switch(env[0].cloud_type [wc] % 100)
         strcat(info, " is engulfed in freezing vapours!");
  if (mons_near(i) == 1) mpr(info);
    if (mons_res_cold(menv [i].m_class) > 0) break;
-        hurted += ((random2(5) + random2(5) + random2(5) + 3) * 10) / menv [i].m_speed;
+        hurted += ((random2(8) + random2(5) + random2(5) + 6) * 10) / menv [i].m_speed;
  if (mons_res_cold(menv [i].m_class) < 0 && !(menv [i].m_inv [2] != 501 && mitm.idam [menv [i].m_inv [2]] % 30 == 3)) hurted += (random2(15) * 10) / menv [i].m_speed;
  // remember that the above is in addition to the other damage.
  hurted -= random2(menv [i].m_AC + 1);
@@ -2364,7 +2365,7 @@ switch(env[0].cloud_type [wc] % 100)
    if (env[0].cloud_type [wc] >= 100) poison_monster(i, 1); // something else
                                                                 else poison_monster(i, 0);
 
-   hurted += (random2(3) * 10) / menv [i].m_speed;
+   hurted += (random2(8) * 10) / menv [i].m_speed;
    if (mons_res_poison(menv [i].m_class) < 0) hurted += (random2(4) * 10) / menv [i].m_speed;
    if (hurted <= 0) hurted = 0;
    menv [i].m_hp -= hurted;
@@ -2377,10 +2378,10 @@ switch(env[0].cloud_type [wc] % 100)
 // 5,6,7 are harmless smoke
 
   case 8: // steam - I couldn't be bothered doing this for armour of res fire
-  if (menv [i].m_class == 101) break;
+  if (menv [i].m_class == MONS_STEAM_DRAGON) break;
         strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0)); //gmon_name [mons_class [i]]);
         strcat(info, " is engulfed in steam!");
-        if (mons_near(i) == 1 && menv [i].m_class != 68) mpr(info); // efreet
+        if (mons_near(i) == 1 && menv [i].m_class != MONS_EFREET) mpr(info); // efreet
    if (mons_res_fire(menv [i].m_class) > 0 || (menv [i].m_inv [2] != 501 && mitm.idam [menv [i].m_inv [2]] % 30 == 2)) break;
         hurted += (random2(6) * 10) / menv [i].m_speed;
  if (mons_res_fire(menv [i].m_class) < 0 && !(menv [i].m_inv [2] != 501 && mitm.idam [menv [i].m_inv [2]] % 30 == 2)) hurted += (random2(6) * 10) / menv [i].m_speed;
@@ -2428,13 +2429,13 @@ switch(env[0].cloud_type [wc] % 100)
 char mons_speaks(int i)
 {
 
-if (menv [i].m_beh == 3) return 0;
+if (menv [i].m_beh == BEH_FLEE) return 0;
 
 strcpy(info, monam (menv [i].m_sec, menv [i].m_class, menv [i].m_ench [2], 0));
 
 switch(menv [i].m_class)
 {
- case 380: // dorgi
+ case MONS_DORGI: // dorgi
  switch(random2(10))
  {
   case 0: strcat(info, " screams \"HALT!\""); break;
@@ -2451,7 +2452,7 @@ switch(menv [i].m_class)
  mpr(info);
  break;
 
- case 378: // Killer Klown
+ case MONS_KILLER_KLOWN: // Killer Klown
  switch(random2(10))
  {
   case 0: strcat(info, " giggles crazily."); break;

@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "externs.h"
+#include "enum.h"
 #include "itemname.h"
 #include "player.h"
 #include "ouch.h"
@@ -174,18 +175,31 @@ char temp_quant [15];
         {
          gotoxy(40,13);
          cprintf("                                       ");
-         if (you[0].equip [0] != -1)
+         if (you[0].equip [EQ_WEAPON] != -1)
           {
             gotoxy(40,13);
-            textcolor(you[0].inv_col [you[0].equip [0]]);
-            if (you[0].equip [0] <= 25) putch(you[0].equip [0] + 97);
-                else putch(you[0].equip [0] + 39);
+            textcolor(you[0].inv_col [you[0].equip [EQ_WEAPON]]);
+            if (you[0].equip [EQ_WEAPON] <= 25) putch(you[0].equip [EQ_WEAPON] + 97);
+                else putch(you[0].equip [EQ_WEAPON] + 39);
                 cprintf(" - ");
-                in_name(you[0].equip [0], 3, str_pass);
+                in_name(you[0].equip [EQ_WEAPON], 3, str_pass);
                 str_pass [35] = 0;
                 cprintf(str_pass);
             textcolor(LIGHTGREY);
-          }
+      } else
+      {
+       gotoxy(40,13);
+       if (you[0].attribute [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
+       {
+            textcolor(RED);
+                cprintf("Blade Hands");
+            textcolor(LIGHTGREY);
+       } else
+       {
+            textcolor(LIGHTGREY);
+                cprintf("Empty hands");
+       }
+      }
          wield_change = 0;
         }
 

@@ -14,3 +14,4 @@ void create_noise2(void);
 void recall(char type_recalled);
 void portal(void);
 void cast_death_channel(int pow);
+void airstrike(int pow);

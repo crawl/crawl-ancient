@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "externs.h"
+#include "enum.h"
 
 #include "view.h"
 #include "itemname.h"
@@ -483,6 +484,8 @@ switch(grd [you[0].x_pos + xps - 17] [you[0].y_pos + yps - 9])
    case 4: mpr("A teleportation trap."); break;
    case 5: mpr("An amnesia trap."); break;
    case 6: mpr("A blade trap."); break;
+   case 7: mpr("A bolt trap."); break;
+   case 8: mpr("A Zot trap."); break;
    default: mpr("An undefined trap. Huh?"); break;
   }
   break;
