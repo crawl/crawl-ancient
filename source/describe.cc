@@ -407,8 +407,7 @@ static void randart_descpr(string & description, int item_class,
     if (randart_wpn_properties( item_class, item_type, item_dam, item_plus,
                                 item_plus2, 0, RAP_MUTAGENIC ) != 0)
     {
-        description +=
-            "$It emits mutagenic radiations, which may remain in your system for quite some time. ";
+        description += "$It emits mutagenic radiations.";
     }
 
     if (old_length != description.length())
@@ -1030,7 +1029,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
             break;
         }
 
-        description += "$Damage rating: ";
+        description += "$$Damage rating: ";
         append_value(description,
                      property(OBJ_WEAPONS, item_type, PWPN_DAMAGE), false);
 
@@ -1038,11 +1037,12 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
         append_value(description, property(OBJ_WEAPONS, item_type, PWPN_HIT),
                      true);
 
-        description += "$Speed multiplier (x10): ";
+        description += "$Attack delay: ";
         append_value(description,
-                     property(OBJ_WEAPONS, item_type, PWPN_SPEED), true);
-        description += "$";
+                     property(OBJ_WEAPONS, item_type, PWPN_SPEED) * 10, false);
+        description += "%";
     }
+    description += "$$";
 
     if (item_dam % 30 < SPWPN_RANDART_I)
     {
@@ -1164,7 +1164,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
         else if (verbose == 0)
             spec_ench = SPWPN_NORMAL;
 
-        // don't bother printing this generic info if not a randart
+        // special weapon descrip
         if (spec_ench != SPWPN_NORMAL && item_id > 1)
         {
             switch (spec_ench)
@@ -1244,6 +1244,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
                 description += "It can be invoked to extend its reach. ";
                 break;
             }
+            description += "$";
         }
 
         // randart properties or more mundane +/- enchantments
@@ -1254,38 +1255,35 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
                 randart_descpr(description, item_class, item_type, item_plus,
                     item_plus2, item_dam);
             }
-            else
+
+            if (item_plus >= 100 && item_id > 0)
             {
-                if (item_plus >= 100 && item_id > 0)
+                description += "$It has a curse placed upon it.$";
+                item_plus -= 100;
+            }
+
+            if (verbose == 1 && item_id > 2)
+            {
+                if (item_plus < 50)
                 {
-                    description += "It has a curse placed upon it. ";
-                    item_plus -= 100;
+                    description += "It has been damaged to be less accurate.$";
+                }
+                else if (item_plus > 50)
+                {
+                    description += "It has been ";
+                    print_ench(description, item_plus);
+                    description += "to be more accurate.$";
                 }
 
-                if (verbose == 1 && item_id > 2
-                    && !(item_class == 0 && item_dam % 30 >= 25))
+                if (item_plus2 < 50)
                 {
-                    if (item_plus < 50)
-                    {
-                        description += "It has been damaged to be less accurate. ";
-                    }
-                    else if (item_plus > 50)
-                    {
-                        description += "It has been ";
-                        print_ench(description, item_plus);
-                        description += "to be more accurate. ";
-                    }
-
-                    if (item_plus2 < 50)
-                    {
-                        description += "It has been damaged to cause less damage. ";
-                    }
-                    else if (item_plus2 > 50)
-                    {
-                        description += "It has been ";
-                        print_ench(description, item_plus2);
-                        description += "to inflict greater damage. ";
-                    }
+                    description += "It has been damaged to cause less damage.$";
+                }
+                else if (item_plus2 > 50)
+                {
+                    description += "It has been ";
+                    print_ench(description, item_plus2);
+                    description += "to inflict greater damage.$";
                 }
             }
         }
@@ -1724,14 +1722,14 @@ static string describe_armour(int item_class, int item_type, int item_plus,
             description += "It increases the dexterity of its wearer. ";
             break;
         case SPARM_INTELLIGENCE:
-            description += "It makes you more cleverer. ";
+            description += "It makes you more clever. ";
             break;
         case SPARM_PONDEROUSNESS:
-            description += "It is highly cumbersome. ";
+            description += "It is very cumbersome. ";
             break;
         case SPARM_LEVITATION:
             description += "It can be activated to allow its wearer to "
-                "float above the ground and " "remain so indefinitely. ";
+                "float above the ground and remain so indefinitely. ";
             break;
         case SPARM_MAGIC_RESISTANCE:
             description += "It increases its wearer's resistance "
@@ -5796,7 +5794,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_JESSICA:
-        description += "An evil apprentice wizard.";
+        description += "An evil apprentice sorceress.";
         break;
 
     case MONS_SIGMUND:
@@ -5808,7 +5806,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_PSYCHE:
-        description += "A fair-haired mage.";
+        description += "A fair-haired magess.";
         break;
 
     case MONS_DONALD:
@@ -5898,7 +5896,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_EROLCHA:
-        description = "An especially cunning ogre mage.";
+        description = "An especially cunning ogre magess.";
         break;
 
     case MONS_URUG:

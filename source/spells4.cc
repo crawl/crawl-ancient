@@ -2613,7 +2613,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     int debris = 0;
     int i, hurted;
     bool explode = false;
-    char *what = 0;
+    char *what = NULL;
 
     // This is unbelievably powerful (power can get quite large):
     // hurted = (random2(pow) + random2(pow) + random2(pow) + random2(pow)) / 2;
@@ -2686,7 +2686,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
         case MONS_WOOD_GOLEM:
             explode = false;
-            //FIXME: simple_monster_message(monster, " shudders violently!");
+            simple_monster_message(&menv[i], " shudders violently!");
             player_hurt_monster(i, 1 + random2(hurted));
             break;
 
@@ -2715,7 +2715,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
         case MONS_CRYSTAL_GOLEM:
             explode = true;
-            blast.ex_size = true;
+            blast.ex_size = 2;
             strcpy(blast.beam_name, "blast of crystal shards");
             blast.colour = WHITE;
             blast.damage = hurted;
@@ -2745,15 +2745,15 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         what = "wall";
         // fall-through
     case DNGN_ORCISH_IDOL:
-        if (what == 0)
+        if (what == NULL)
             what = "stone idol";
         // fall-through
     case DNGN_GRANITE_STATUE:   // normal rock -- big explosion
-        if (what == 0)
+        if (what == NULL)
             what = "statue";
 
         explode = true;
-        blast.ex_size = (i == DNGN_ORCISH_IDOL || i == DNGN_GRANITE_STATUE);
+        blast.ex_size = (i == DNGN_ORCISH_IDOL || i == DNGN_GRANITE_STATUE)?2:1;
         strcpy(blast.beam_name, "blast of rock fragments");
         blast.colour = BROWN;        // FIXME: colour of actual wall?
         blast.damage = hurted;
@@ -2781,7 +2781,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         blast.colour = CYAN;
         // fallthru
     case DNGN_SILVER_STATUE:    //jmf: statue not destroyed
-        if (what == 0)
+        if (what == NULL)
         {
             what = "silver statue";
             blast.colour = WHITE;
@@ -2803,14 +2803,14 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         }
         // fallthru
     case DNGN_ORANGE_CRYSTAL_STATUE:
-        if (what == 0)
+        if (what == NULL)
             what = "crystal statue";
 
         if (blast.colour == 0)
             blast.colour = LIGHTRED; //jmf: == orange, right?
 
         explode = true;
-        blast.ex_size = true;
+        blast.ex_size = 2;
         strcpy(blast.beam_name, "blast of crystal shards");
         blast.damage = (hurted * 3) / 2;
         blast.flavour = BEAM_FRAG;

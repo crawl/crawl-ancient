@@ -24,7 +24,7 @@ characteristics:
      o  Occasional bonus points added to some abilities
      o  The amount of hit points you get each level
      o  The amount of magic points you get each level
-     o  Your inital equipment
+     o  Your initial equipment
      o  Your rate of level advancement
      o  Your rate of skill advancement
      o  Various special abilities and powers
@@ -76,7 +76,7 @@ Elves:
   same attributes as common elves in most respects, but their strengths and
   weaknesses tend to be more pronounced.
 
-  Grey elves also advance slowly, but not as slowly as high elves. They excell
+  Grey elves also advance slowly, but not as slowly as high elves. They excel
   at using short and long swords and bows, but are poor at other fighting
   skills. They are excellent at all forms of magic except for necromancy.
 
@@ -350,7 +350,7 @@ Merfolk:
   as a material component.  The legendary water magic of the merfolk
   was lost in ancient times, but some of that affinity still remains.
   The instability of their own morphogenic matrix has made them very
-  accompished transmuters, but most other magics seem foreign to them.
+  accomplished transmuters, but most other magics seem foreign to them.
 
 Note:
 
@@ -511,7 +511,7 @@ Magicians:
 Wanderers:
 
   Wanderers are people who have not learned a specific trade.  Instead,
-  they've traveled around become a "Jack-of-all-trades, master of none".
+  they've travelled around become a "Jack-of-all-trades, master of none".
   They start the game with a large assortment of skills and maybe some
   small items they picked up along the way, but other than that they're
   pretty much on their own.  Non-human wanderers might not even know which

@@ -1029,9 +1029,10 @@ const char *mons_pronoun(int mon_type, int variant)
             case MONS_AGNES:
             case MONS_MAUD:
             case MONS_LOUISE:
-            case MONS_FRANCIS:
+            case MONS_FRANCES:
             case MONS_MARGERY:
             case MONS_EROLCHA:
+            case MONS_ERICA:
                 gender = 2;
                 break;
             default:

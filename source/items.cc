@@ -1055,60 +1055,85 @@ void drop(void)
 //---------------------------------------------------------------
 void update_corpses(double elapsedTime)
 {
-    ASSERT(elapsedTime >= 0.0);
+    int cx,cy;
 
-    if (elapsedTime > 0.0)
+    if (elapsedTime <= 0.0)
+        return;
+
+    const int rot_time = (int) (elapsedTime / 20.0);
+
+    for (int c = 0; c < MAX_ITEMS; c++)
     {
-        const int rot_time = (int) (elapsedTime / 20.0);
+        if (mitm.quantity[c] < 1)
+            continue;
 
-        for (int c = 0; c < MAX_ITEMS; c++)
+        if (mitm.base_type[c] != OBJ_CORPSES
+            && mitm.base_type[c] != OBJ_FOOD)
         {
-            if (mitm.quantity[c] < 1)
-                continue;
+            continue;
+        }
 
-            if (mitm.base_type[c] != OBJ_CORPSES
-                && mitm.base_type[c] != OBJ_FOOD)
+        if (mitm.base_type[c] == OBJ_CORPSES
+            && mitm.sub_type[c] > CORPSE_SKELETON)
+        {
+            continue;
+        }
+
+        if (mitm.base_type[c] == OBJ_FOOD
+            && mitm.sub_type[c] != FOOD_CHUNK)
+        {
+            continue;
+        }
+
+        if (rot_time >= mitm.special[c])
+        {
+            if (mitm.base_type[c] == OBJ_FOOD)
             {
-                continue;
+                destroy_item(c);
             }
-
-            if (mitm.base_type[c] == OBJ_CORPSES
-                && mitm.sub_type[c] > CORPSE_SKELETON)
+            else
             {
-                continue;
-            }
-
-            if (mitm.base_type[c] == OBJ_FOOD
-                && mitm.sub_type[c] != FOOD_CHUNK)
-            {
-                continue;
-            }
-
-            if (rot_time >= mitm.special[c])
-            {
-                if (mitm.base_type[c] == OBJ_FOOD)
+                if (mitm.sub_type[c] == CORPSE_SKELETON
+                    || !mons_skeleton(mitm.pluses[c]))
                 {
                     destroy_item(c);
                 }
                 else
                 {
-                    if (mitm.sub_type[c] == CORPSE_SKELETON
-                        || !mons_skeleton(mitm.pluses[c]))
-                    {
-                        destroy_item(c);
-                    }
-                    else
-                    {
-                        mitm.sub_type[c] = CORPSE_SKELETON;
-                        mitm.special[c] = 200;
-                        mitm.colour[c] = LIGHTGREY;
-                    }
+                    mitm.sub_type[c] = CORPSE_SKELETON;
+                    mitm.special[c] = 200;
+                    mitm.colour[c] = LIGHTGREY;
                 }
             }
-            else
+        }
+        else
+        {
+            ASSERT(rot_time < 256);
+            mitm.special[c] -= rot_time;
+        }
+    }
+
+    int fountain_checks = (int)(elapsedTime / 1000.0);
+    if (random2(1000) < (int)(elapsedTime) % 1000)
+        fountain_checks += 1;
+
+    // dry fountains may start flowing again
+    if (fountain_checks > 0)
+    {
+        for(cx=0; cx<GXM; cx++)
+        {
+            for(cy=0; cy<GYM; cy++)
             {
-                ASSERT(rot_time < 256);
-                mitm.special[c] -= rot_time;
+                if (grd[cx][cy] > DNGN_SPARKLING_FOUNTAIN
+                 && grd[cx][cy] < DNGN_PERMADRY_FOUNTAIN)
+                {
+                    for(int i=0; i<fountain_checks; i++)
+                    {
+                        if (one_chance_in(100))
+                            if (grd[cx][cy] > DNGN_SPARKLING_FOUNTAIN)
+                                grd[cx][cy]--;
+                    }
+                }
             }
         }
     }

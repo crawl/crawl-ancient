@@ -106,4 +106,11 @@ void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
     unsigned char *color);
 
 
+// last updated 02apr2001 (gdl)
+/* ***********************************************************************
+ * called from: view monstuff
+ * *********************************************************************** */
+bool check_awaken(int mons_aw);
+
+
 #endif

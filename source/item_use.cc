@@ -1739,10 +1739,17 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     strcat(info, ".");
     mpr(info);
 
+    // threw what we were wielding?
     if (you.equip[EQ_WEAPON] == throw_2)
-        unwield_item(throw_2);
+    {
+        wield_change = true;
 
-    // ensure we're firing a missile
+        // was it the last of a stacked something?
+        if (you.inv_quantity[throw_2] == 1)
+            unwield_item(throw_2);
+    }
+
+    // ensure we're firing a 'missile'-type beam
     pbolt.isBeam = false;
     pbolt.isTracer = false;
 
@@ -1750,13 +1757,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     you.inv_quantity[throw_2]--;
 
-    if (you.inv_quantity[throw_2] == 0)
+    if (you.inv_quantity[throw_2] == 0 && you.equip[EQ_WEAPON] == throw_2)
     {
-        if (you.equip[EQ_WEAPON] == throw_2)
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are now empty-handed.");
-        }
+        you.equip[EQ_WEAPON] = -1;
+        mpr("You are now empty-handed.");
     }
 
     burden_change();

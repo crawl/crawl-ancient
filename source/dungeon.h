@@ -19,7 +19,7 @@
 /* ***********************************************************************
  * called from: files
  * *********************************************************************** */
-int builder(unsigned int lev_numb, char level_type);
+void builder(int level_number, char level_type);
 
 
 // last updated 12may2000 {dlb}
@@ -27,20 +27,20 @@ int builder(unsigned int lev_numb, char level_type);
  * called from: abyss - debug - dungeon - effects - religion - spells4
  * *********************************************************************** */
 int items(unsigned char allow_uniques, unsigned char force_class,
-          unsigned char force_type, int force_place, int many_many,
+          unsigned char force_type, int force_place, int item_power,
           int force_spec);
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************
  * called from: dungeon monplace
  * *********************************************************************** */
-void give_item(int mid);
+void give_item(int mid, int level_number);
 
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************
  * called from: dungeon monplace
  * *********************************************************************** */
-void define_zombie(int mid, char not_zombsize, int ztype, int cs);
+void define_zombie(int mid, int ztype, int cs);
 
 #endif

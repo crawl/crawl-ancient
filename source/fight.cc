@@ -542,11 +542,15 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
     mpr(info);
 #endif
 
+    // stab if defender is slow OR sleeping
+    // OR ((fleeing/confused/not paying attention) and successful stab)
+
     if (defender->speed_increment <= 40
+        || defender->behavior == BEH_SLEEP
         || ((defender->behavior == BEH_FLEE
-            || mons_has_ench(defender, ENCH_CONFUSION))
-                && random2(200) <= you.skills[SK_STABBING] + you.dex)
-        || defender->behavior == BEH_SLEEP)
+            || mons_has_ench(defender, ENCH_CONFUSION)
+            || defender->foe != MHITYOU)
+                && random2(200) <= you.skills[SK_STABBING] + you.dex))
     {
         switch (defender->behavior)
         {
@@ -4436,7 +4440,7 @@ static void monster_drop_ething(struct monsters *monster)
 {
     /* drop weapons & missiles last (ie on top) so others pick up */
     int loopy;                  // loop variable {dlb}
-    bool splashes = false;
+    bool dropped = false;
 
     if (grd[monster->x][monster->y] == DNGN_LAVA
         || grd[monster->x][monster->y] == DNGN_DEEP_WATER)
@@ -4446,14 +4450,17 @@ static void monster_drop_ething(struct monsters *monster)
             if (monster->inv[loopy] != NON_ITEM)
             {
                 destroy_item(monster->inv[loopy]);
-                splashes = true;
+                dropped = true;
             }
         }
 
-        // I don't think things dropped into lava "splash" {dlb}
-        if (splashes)
-            mpr("You hear a splashing sound.");
-
+        if (dropped)
+        {
+            if (grd[monster->x][monster->y] == DNGN_LAVA)
+                mpr("You hear a hissing sound.");
+            else
+                mpr("You hear a splashing sound.");
+        }
         return;
     }
 

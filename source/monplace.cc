@@ -35,7 +35,7 @@
 static int band_member(int band, int power);
 static int choose_band( int mon_type, int power, int &band_size );
 static int place_monster_aux(int mon_type, char behavior, int target,
-    int px, int py, unsigned char extra, bool first_band_member);
+    int px, int py, int power, unsigned char extra, bool first_band_member);
 
 bool place_monster(int &id, int mon_type, int power, char behavior,
     int target, bool summoned, int px, int py, bool allow_bands,
@@ -227,7 +227,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
         } // end while.. place first monster
     }
 
-    id = place_monster_aux(mon_type, behavior, target, px, py, extra, true);
+    id = place_monster_aux(mon_type, behavior, target, px, py, power, extra, true);
 
     // now, forget about banding if the first placement failed,  or there's too
     // many monsters already
@@ -236,14 +236,14 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
 
     // (5) for each band monster, loop call to place_monster_aux().
     for(i=1; i<band_size; i++)
-        place_monster_aux(band_monsters[i], behavior, target, px, py, extra, false);
+        place_monster_aux(band_monsters[i], behavior, target, px, py, power, extra, false);
 
     // return id of first monster placed
     return id;
 }
 
 static int place_monster_aux(int mon_type, char behavior, int target,
-    int px, int py, unsigned char extra, bool first_band_member)
+    int px, int py, int power, unsigned char extra, bool first_band_member)
 {
     int id, i;
     char grid_wanted;
@@ -323,7 +323,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
         || mon_type == MONS_SKELETON_LARGE
         || mon_type == MONS_SPECTRAL_THING)
     {
-        define_zombie( id, 3, extra, ((extra == 250) ? 250 : mon_type ) );
+        define_zombie( id, extra, mon_type );
     }
     else
         define_monster(id);
@@ -360,11 +360,11 @@ static int place_monster_aux(int mon_type, char behavior, int target,
 
     if (mons_itemuse(mon_type) > 0
         || (mon_type == MONS_DANCING_WEAPON && extra != 1))
-        give_item(id);
+        give_item(id, power);
 
     if (mon_type == MONS_TWO_HEADED_OGRE
         || mon_type == MONS_EROLCHA)
-        give_item(id);
+        give_item(id, power);
 
     // give manticores 8 to 16 spike volleys.
     // they're not spellcasters so this doesn't screw anything up.
@@ -1027,12 +1027,13 @@ bool empty_surrounds(int emx, int emy, unsigned char spc_wanted,
             if (grd[tx][ty] == spc_wanted)
                 success = true;
 
-            // second chance - those seeking ground can stand anywhere {dlb}:
-            if (!success && spc_wanted == DNGN_FLOOR
-                && grd[tx][ty] >= DNGN_SHALLOW_WATER)
-            {
+            // those seeking ground can stand in shallow water or better
+            if (spc_wanted == DNGN_FLOOR && grd[tx][ty] >= DNGN_SHALLOW_WATER)
                 success = true;
-            }
+
+            // water monsters can be created in shallow as well as deep water
+            if (spc_wanted == DNGN_DEEP_WATER && grd[tx][ty] == DNGN_SHALLOW_WATER)
+                success = true;
 
             if (success)
             {

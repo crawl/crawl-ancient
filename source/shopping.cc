@@ -35,40 +35,6 @@
 #include "macro.h"
 #endif
 
-/*
-   struct item_struct
-   {
-   unsigned char base_type [MAX_ITEMS];
-   unsigned char sub_type [MAX_ITEMS];
-   unsigned char pluses [MAX_ITEMS]; // +, charges, remaining food value
-   unsigned char pluses2 [MAX_ITEMS];
-   unsigned char special [MAX_ITEMS]; // damage
-   unsigned int quantity [MAX_ITEMS]; // multiple items
-   unsigned char x [MAX_ITEMS]; //  x-location
-   unsigned char y [MAX_ITEMS]; //  y-location
-   unsigned char colour [MAX_ITEMS];
-   unsigned char id [MAX_ITEMS];
-
-   unsigned int link [MAX_ITEMS];
-
-   };
-
-   //struct item_struct it [1];
-
-   struct shop_struct
-   {
-
-   unsigned char keeper_name [5] [3];
-   unsigned char shop_x [5];
-   unsigned char shop_y [5];
-   unsigned char shop_greed [5];
-   unsigned char shop_type [5];
-   unsigned char shop_level [5];
-
-   };
-
- */
-
 char in_a_shop(char shoppy, char id[4][50]);
 char more3(void);
 void purchase(int item_got);
@@ -127,7 +93,7 @@ char in_a_shop(char shoppy, char id[4][50])
     clrscr();
     itty = igrd[0][5 + shoppy];
 
-    if (igrd[0][5 + shoppy] == NON_ITEM)
+    if (itty == NON_ITEM)
     {
       empty_shop:
         shop_print("I'm sorry, my shop is empty now.", 20);
@@ -294,6 +260,8 @@ char in_a_shop(char shoppy, char id[4][50])
 
     mitm.quantity[shop_items[ft]] = 0;
 
+    // ARGH!!  This only works because items happen to be generated with
+    // consecutive IDs during dungeon generation.  Blech!
     if (ft == 0)
         igrd[0][5 + shoppy] = mitm.link[shop_items[ft]];
     else

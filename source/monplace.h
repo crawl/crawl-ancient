@@ -17,7 +17,7 @@
 
 // last updated 13mar2001 {gdl}
 /* ***********************************************************************
- * called from: acr - lev-pand - monplace
+ * called from: acr - lev-pand - monplace - dungeon
  *
  * Usage:
  * mon_type     WANDERING_MONSTER, RANDOM_MONSTER, or monster type

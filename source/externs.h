@@ -424,5 +424,4 @@ struct scorefile_entry {
     char wiz_mode;
 };
 
-
 #endif // EXTERNS_H

@@ -57,7 +57,6 @@ unsigned char show_green;
 extern int stealth;             // defined in acr.cc
 extern FixedVector < char, 10 > visible;        // defined in acr.cc
 
-bool check_awaken(int mons_aw);
 char colour_code_map(unsigned char map_value);
 unsigned char (*mapch) (unsigned char);
 unsigned char (*mapch2) (unsigned char);
@@ -159,10 +158,6 @@ void get_ibm_symbol(unsigned int object, unsigned char *ch,
             visible[2] = 2;
 
         visible[0] = 2;
-        break;
-
-    case DNGN_STATUE_35:
-        *ch = '#';
         break;
 
     case DNGN_LAVA:
@@ -2510,10 +2505,6 @@ void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
             visible[2] = 2;
 
         visible[0] = 2;
-        break;
-
-    case DNGN_STATUE_35:
-        *ch = '#';
         break;
 
     case DNGN_LAVA:

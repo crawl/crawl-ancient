@@ -561,7 +561,6 @@ void invoke_wielded(void)
 
                 for (count_x = 0; count_x < GXM; count_x++)
                 {
-                    // was "count_y < 80" but that is WRONG {dlb}
                     for (count_y = 0; count_y < GYM; count_y++)
                     {
                         if (grd[count_x][count_y] == DNGN_STONE_ARCH)

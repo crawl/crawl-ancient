@@ -1,9 +1,17 @@
-.TH crawl 6 "26 April 1999"
+.TH crawl 6 "02 April 2001"
 .IX crawl
 .SH NAME
 crawl - play the roguelike game of crawl
 .SH SYNOPSIS
 .BR crawl
+[-scores [N]]
+[-name <string>]
+[-race <letter>]
+[-class <letter>]
+[-pizza <string>]
+[-plain]
+[-dir <path>]
+[-rc <file>]
 .SH DESCRIPTION
 Crawl is a fun game in the grand tradition of games like Rogue, Hack, and
 Moria. Your objective is to travel deep into a subterranean cave complex and
@@ -16,6 +24,33 @@ least part (although it will probably confuse you somewhat), otherwise you
 should probably just dive into the game and use the '?' command to give a list
 of keys to use.
 .PP
+.SH OPTIONS
+.TP
+\fB-scores\fR [N]
+show highscore list [first N entries]
+.TP
+\fB-name\fR <string>
+set character name
+.TP
+\fB-race\fR <letter>
+preselect race
+.TP
+\fB-class\fR <letter>
+preselect class
+.TP
+\fB-pizza\fR <string>
+crawl pizza
+.TP
+\fB-plain\fR
+don't use IBM extended characters (needed when playing in a xterm)
+.TP
+\fB-dir\fR <path>
+crawl directory
+.TP
+\fB-rc\fR <file>
+init file name
+.PP
+.SH THE GAME
 .IP "CHARACTER SPECIES"
 .PP
 You have a number of different character races to choose from. This affects
@@ -24,7 +59,7 @@ Your choice of classes;
 Your initial attributes (strength etc);
 Occasional extra points added to some abilities;
 The amount of hit points and magic you get as you increase in level;
-Your inital equipment;
+Your initial equipment;
 Your rate of level advancement;
 Your rate of skill advancement.
 .PP
@@ -174,7 +209,7 @@ they need to.
 are like ogres, but even nastier. They can rip creatures apart with
 their claws, and regenerate very quickly from even the most terrible wounds.
 They learn very slowly indeed - even more slowly than high elves - and need a
-great amound of food to survive.
+great amount of food to survive.
 .PP
 .I Ogre-mages
 are a separate race of ogres who are unique among the beefier
@@ -987,23 +1022,27 @@ fight on your behalf (you gain 1/2 the normal experience points for any kills
 they make). You can command your allies using the '!' key, which lets you
 either shout to attract them or tell them who to attack.
 .PP
-.IP FILES
-.IP "/opt/crawl/lib/bone*"
+.SH ENVIRONMENT VARIABLES
+.IP CRAWL_NAME
+Default name for your character.
+.IP CRAWL_PIZZA
+Your favourite pizza topping.
+.IP CRAWL_DIR
+The directory where your macros and character dumps are stored.
+.IP CRAWL_RC
+A pointer to the file containing your default settings.
+.PP
+.SH FILES
+.IP "/usr/lib/games/crawl/bone*"
 The bones files.
-.IP "/opt/crawl/lib/score"
+.IP "/usr/lib/games/crawl/score"
 The high score list.
-.IP "./macro.txt"
+.IP "$CRAWL_DIR/macro.txt"
 The macro resource file.
-.IP "./morgue.txt"
+.IP "$CRAWL_DIR/morgue.txt"
 A character dump of your last death.
-
-.SH "ENVIRONMENT VARIABLES"
-.IP "CRAWL_NAME"
-Sets the name of your character, so you don't have to enter it each
-time you play.
-
-.SH "SEE ALSO"
-crawlspoil(6)
+.IP "$CRAWL_RC, $CRAWL_DIR/init.txt, $HOME/.crawlrc"
+Default settings.
 
 .SH BUGS
 Lots.

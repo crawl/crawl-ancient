@@ -223,32 +223,10 @@ static void pick_random_species_and_class( void )
     you.char_class = job;
 }
 
-bool new_game(void)
+static bool check_saved_game(void)
 {
-    int i, j;                   // loop variables {dlb}
-
     FILE *handle;
     char char_fil[kFileNameSize];
-
-    //jmf: NEW ASSERTS: we ought to do a *lot* of these
-    ASSERT(NUM_SPELLS < SPELL_NO_SPELL);
-    ASSERT(NUM_DURATIONS > DUR_LAST_DUR);
-
-    init_player();
-
-    you.exp_available = 25;     // now why is this all the way up here? {dlb}
-
-    textcolor(LIGHTGREY);
-
-    // copy name into you.your_name if set from environment --
-    // note that you.your_name could already be set from init.txt
-    // this, clearly, will overwrite such information {dlb}
-    if (SysEnv.crawl_name)
-        strncpy(you.your_name, SysEnv.crawl_name, kNameLen);
-
-    openingScreen();
-
-    enterPlayerName(true);
 
 #ifdef LOAD_UNPACKAGE_CMD
     // Create the file name base
@@ -306,12 +284,46 @@ bool new_game(void)
 
     if (handle != NULL)
     {
-        cprintf(EOL "Welcome back, ");
-        cprintf(you.your_name);
-        cprintf("!");
         fclose(handle);
+        return true;
+    }
+    return false;
+}
 
-        return false;
+bool new_game(void)
+{
+    int i, j;                   // loop variables {dlb}
+
+    //jmf: NEW ASSERTS: we ought to do a *lot* of these
+    ASSERT(NUM_SPELLS < SPELL_NO_SPELL);
+    ASSERT(NUM_DURATIONS > DUR_LAST_DUR);
+
+    init_player();
+
+    you.exp_available = 25;     // now why is this all the way up here? {dlb}
+
+    textcolor(LIGHTGREY);
+
+    // copy name into you.your_name if set from environment --
+    // note that you.your_name could already be set from init.txt
+    // this, clearly, will overwrite such information {dlb}
+    if (SysEnv.crawl_name)
+        strncpy(you.your_name, SysEnv.crawl_name, kNameLen);
+
+    openingScreen();
+
+    enterPlayerName(true);
+
+    if (you.your_name[0] != '\0')
+    {
+        if (check_saved_game())
+        {
+            cprintf(EOL "Welcome back, ");
+            cprintf(you.your_name);
+            cprintf("!");
+
+            return false;
+        }
     }
 
     if (Options.random_pick)
@@ -344,6 +356,20 @@ bool new_game(void)
         cprintf(info);
 
         enterPlayerName(false);
+
+        if (check_saved_game())
+        {
+            cprintf(EOL "Do you really want to overwrite your old game?");
+            char c = getch();
+            if (!(c == 'Y' || c == 'y'))
+            {
+                cprintf(EOL EOL "Welcome back, ");
+                cprintf(you.your_name);
+                cprintf("!");
+
+                return false;
+            }
+        }
     }
 
 
@@ -2219,7 +2245,7 @@ bool verifyPlayerName(void)
     }
 
     // quick check for LPTx -- thank you,  Mr. Tanksley!   ;-)
-    if (strncmpi(you.your_name, "LPT", 3) == 0)
+    if (strnicmp(you.your_name, "LPT", 3) == 0)
     {
         switch (william_tanksley_asked_for_this)
         {
@@ -3290,7 +3316,11 @@ void give_items_skills()
             //you.skills[SK_UNARMED_COMBAT] = 1;
         }
         else
+        {
             you.skills[SK_FIGHTING] += 2;
+            // BWR sez Ogres & Trolls should probably start w/ Dodge 2 -- GDL
+            you.skills[SK_DODGING] = 2;
+        }
         break;
 
     case JOB_WIZARD:
@@ -3953,22 +3983,6 @@ void give_items_skills()
         you.inv_type[2] = give_first_conjuration_book();
         you.inv_plus[2] = 0;    // = 127
 
-#if 0                           // moved to switch, below
-        if (you.char_class == JOB_SUMMONER)
-        {
-            you.inv_type[2] = BOOK_SUMMONINGS;
-            you.inv_plus[2] = 0;
-            you.skills[SK_SUMMONINGS] = 4;
-            // gets some darts - this class is difficult to start off with
-            you.inv_quantity[3] = random2avg(9, 2) + 7;
-            you.inv_class[3] = OBJ_MISSILES;
-            you.inv_type[3] = MI_DART;
-            you.inv_plus[3] = 50;
-            you.inv_dam[3] = 0;
-            you.inv_colour[3] = LIGHTCYAN;
-        }
-#endif // 0
-
         switch (you.char_class)
         {
         case JOB_SUMMONER:
@@ -3992,41 +4006,12 @@ void give_items_skills()
             you.inv_type[2] = BOOK_CHARMS;
             you.inv_plus[2] = 0;
             you.skills[SK_ENCHANTMENTS] = 4;
-
-// replacing wand with darts
-#if 0
-            you.inv_quantity[3] = 1;
-            you.inv_class[3] = OBJ_WANDS;
-            you.inv_dam[3] = 0;
-            you.inv_colour[3] = random_colour();
-            switch (random2(4))
-            {
-            case 0:
-                you.inv_type[3] = WAND_SLOWING;
-                you.inv_plus[3] = 7 + random2(5);
-                break;
-            case 1:
-                you.inv_type[3] = WAND_PARALYSIS;
-                you.inv_plus[3] = 5 + random2(4);
-                break;
-            case 2:
-                you.inv_type[3] = WAND_INVISIBILITY;
-                you.inv_plus[3] = 4 + random2(4);
-                break;
-            case 3:
-                you.inv_type[3] = WAND_PARALYSIS;
-                you.inv_plus[3] = 5 + random2(4);
-                break;
-            }
-            you.inv_plus2[3] = 0;
-#else
             you.inv_quantity[3] = random2avg(15, 2) + 7;
             you.inv_class[3] = OBJ_MISSILES;
             you.inv_type[3] = MI_DART;
             you.inv_plus[3] = 51;
             you.inv_dam[3] = 0;
             you.inv_colour[3] = LIGHTCYAN;
-#endif
             break;
 
         case JOB_FIRE_ELEMENTALIST:

@@ -2367,8 +2367,8 @@ static bool initialise(void)
     {
         mitm.base_type[i] = 0;
         mitm.sub_type[i] = 0;
-        mitm.x[i] = 1;
-        mitm.y[i] = 1;
+        mitm.x[i] = 0;
+        mitm.y[i] = 0;
         mitm.quantity[i] = 0;
         mitm.special[i] = 0;
         mitm.pluses[i] = 0;

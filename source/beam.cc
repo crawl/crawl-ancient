@@ -25,6 +25,9 @@
 #include <dos.h>
 #include <conio.h>
 #endif
+#ifdef WIZARD
+#include <stdio.h>
+#endif
 
 #include "externs.h"
 
@@ -153,6 +156,8 @@ void beam(struct bolt &pbolt, int inv_number)
     pbolt.aimedAtFeet = false;
     pbolt.msgGenerated = false;
     pbolt.isExplosion = false;
+    roundY = false;
+    roundX = false;
 
     // first, calculate beam step
     dx = pbolt.target_x - pbolt.source_x;
@@ -164,8 +169,6 @@ void beam(struct bolt &pbolt, int inv_number)
         pbolt.aimedAtFeet = true;
         stepx = 0;
         stepy = 0;
-        roundY = false;
-        roundX = false;
         tx = pbolt.source_x;
         ty = pbolt.source_y;
     }
@@ -383,8 +386,21 @@ void beam(struct bolt &pbolt, int inv_number)
     // leave an object, if applicable
     beam_drop_object(pbolt, inv_number, tx, ty);
 
-    // check for explosion
+    // check for explosion.  NOTE that for tracers, we have to make a copy
+    // of target co'ords and then reset after calling this -- tracers should
+    // never change any non-tracers fields in the beam structure. -- GDL
+    int ox, oy;
+    if (pbolt.isTracer)
+    {
+        ox = pbolt.target_x;
+        oy = pbolt.target_y;
+    }
     beam_explodes(pbolt, tx, ty);
+    if (pbolt.isTracer)
+    {
+        pbolt.target_x = ox;
+        pbolt.target_y = oy;
+    }
 
     // canned msg for enchantments that affected no-one
     if (pbolt.beam_name[0] == '0' && pbolt.colour != BROWN)
@@ -916,9 +932,9 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         if (mons_add_ench(monster, ENCH_INVIS))
         {
             if (player_see_invis())
-                simple_monster_message(monster, "flickers for a moment.");
+                simple_monster_message(monster, " flickers for a moment.");
             else
-                simple_monster_message(monster, "flickers and vanishes!");
+                simple_monster_message(monster, " flickers and vanishes!");
 
             pbolt.obviousEffect = true;
         }
@@ -991,14 +1007,14 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
         // get credit for the kill if the monster dies from poison.  This
         // really isn't that abusable -- GDL.
         if (fromPlayer || yourPoison)
-            currentStrength += ENCH_YOUR_POISON_I;
+            currentPoison = ENCH_YOUR_POISON_I + currentStrength;
         else
-            currentStrength += ENCH_POISON_I;
+            currentPoison = ENCH_POISON_I + currentStrength;
 
-        // actually do poison
-        if (mons_add_ench(monster, currentStrength))
+        // actually do the poisoning
+        if (mons_add_ench(monster, currentPoison))
             simple_monster_message(monster, (currentStrength == 0)?
-                " looks rather ill." : " looks rather more sickly.");
+                " looks ill." : " looks even sicker.");
     }
 
     // finally, take care of deity preferences
@@ -1199,7 +1215,8 @@ static void beam_explodes(struct bolt &beam, int x, int y)
     int cloud_type;
 
     // this will be the last thing this beam does.. set target_x
-    // and target_y to hold explosion co'ords
+    // and target_y to hold explosion co'ords.
+
     beam.target_x = x;
     beam.target_y = y;
 
@@ -1282,12 +1299,6 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
             if (you.inv_class[inv_number] != OBJ_MISSILES
                 || !one_chance_in((you.inv_type[inv_number] == MI_STONE) ? 3 : 2))
                 item_place(inv_number, x, y, 1);
-
-        if (inv_number == you.equip[EQ_WEAPON])
-        {
-            you.equip[EQ_WEAPON] = -1;
-            mpr("You are empty-handed.");
-        }
     }
 
     if (MON_KILL(beam.thrower) // monster threw it.
@@ -2879,8 +2890,13 @@ static void explosion_map(struct bolt &beam, int x, int y,
     //    specifically,  we're blocked by WALLS.  Not
     //    statues, idols, etc.
     int dngn_feat = grd[beam.target_x + x][beam.target_y + y];
+
+    // special case: explosion originates from rock/statue
+    // (e.g. Lee's rapid deconstruction) - in this case, ignore
+    // solid cells at the center of the explosion.
     if (dngn_feat < DNGN_GREEN_CRYSTAL_WALL || dngn_feat == DNGN_WAX_WALL)
-        return;
+        if (!(x==0 && y==0))
+            return;
 
     // hmm, I think we're ok
     explode_map[x+9][y+9] = true;
@@ -2891,9 +2907,9 @@ static void explosion_map(struct bolt &beam, int x, int y,
     {
         if (i+1 != dir)
         {
-            int cadd = 7;
+            int cadd = 5;
             if (x * spreadx[i] < 0 || y * spready[i] < 0)
-                cadd = 22;
+                cadd = 17;
             explosion_map(beam, x + spreadx[i], y + spready[i],
                 count + cadd, opdir[i], r);
         }

@@ -569,7 +569,6 @@ void up_stairs(void)
     bool moving_level = true;
     bool want_followers = true;
 
-/*load(stair_taken, moving_level, level_saved, was_a_labyrinth, old_level, want_followers, just_made_new_lev); */
     if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
         you.your_level = you.hell_exit;
 
@@ -591,32 +590,6 @@ void up_stairs(void)
         mpr("You climb upwards.");
 
     save_game(false);
-
-    int count_x, count_y;
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if (mgrd[count_x][count_y] != NON_MONSTER
-                && (menv[mgrd[count_x][count_y]].type == -1
-                    || menv[mgrd[count_x][count_y]].x != count_x
-                    || menv[mgrd[count_x][count_y]].y != count_y))
-            {
-                /* This is one of the worst things I've ever done */
-                mgrd[count_x][count_y] = NON_MONSTER;
-            }
-
-            if (grd[count_x][count_y] >= DNGN_BLUE_FOUNTAIN
-                && grd[count_x][count_y] < DNGN_PERMADRY_FOUNTAIN
-                && (grd[count_x][count_y] % 2))
-            {
-                /* sometimes dry fountains will start flowing again */
-                if (one_chance_in(3))
-                    grd[count_x][count_y]--;
-            }
-        }
-    }
 }                               // end up_stairs()
 
 void down_stairs(bool remove_stairs, int old_level)
@@ -900,25 +873,6 @@ void down_stairs(bool remove_stairs, int old_level)
 
     moving_level = false;
 
-/*
-    if ( you.your_level > 39 )
-    {
-        for (i = 0; i < GXM; i++)
-          for (j = 0; j < GYM; j++)
-            if ( grd[i][j] >= DNGN_STONE_STAIRS_UP_I && grd[i][j] <= DNGN_ROCK_STAIRS_UP )
-              grd[i][j] = DNGN_FLOOR;
-    }
-
-    if ( you.your_level == 65 || you.your_level == 84 || you.your_level == 79 || you.your_level == 89 || you.your_level == 94 )
-    {
-        for (i = 0; i < GXM; i++)
-          for (j = 0; j < GYM; j++)
-            if ( grd[i][j] >= DNGN_STONE_STAIRS_DOWN_I && grd[i][j] <= DNGN_ROCK_STAIRS_UP )
-              grd[i][j] = DNGN_FLOOR;
-    }
-*/
-
-
     unsigned char pc = 0;
     unsigned char pt = random2avg(28, 3);
 
@@ -991,31 +945,6 @@ void down_stairs(bool remove_stairs, int old_level)
     you.turn_is_over = 1;
 
     save_game(false);
-
-    int count_x, count_y;
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if (mgrd[count_x][count_y] != NON_MONSTER
-                && (menv[mgrd[count_x][count_y]].type == -1
-                    || menv[mgrd[count_x][count_y]].x != count_x
-                    || menv[mgrd[count_x][count_y]].y != count_y))
-            {
-                /* This is one of the worst things I've ever done */
-                mgrd[count_x][count_y] = NON_MONSTER;
-
-                /* sometimes dry fountains will start flowing again */
-                if (grd[count_x][count_y] >= DNGN_BLUE_FOUNTAIN
-                    && grd[count_x][count_y] < DNGN_PERMADRY_FOUNTAIN
-                    && (grd[count_x][count_y] % 2) && one_chance_in(3))
-                {
-                    grd[count_x][count_y]--;
-                }
-            }                   // this is so terribly dangerous ... {dlb}
-        }
-    }
 }                               // end down_stairs()
 
 void new_level(void)

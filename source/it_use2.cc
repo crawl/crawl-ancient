@@ -274,7 +274,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
         strcpy(pbolt.beam_name, "magic dart");
         pbolt.colour = LIGHTMAGENTA;
         pbolt.range = random2(5) + 8;
-        pbolt.damage = 1 + (power / 4);                 // max dam: 8
+        pbolt.damage = 2 + (power / 4);                 // max dam: 9
         pbolt.hit = 1500;                               // hits always
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_MMISSILE;                  // unresistable

@@ -93,7 +93,7 @@ bool curse_an_item(char which, char power)
 
         if (cu1 == OBJ_JEWELLERY)
         {
-            if (you.inv_dam[cu] == 200)
+            if (you.inv_dam[cu] == 201)
                 continue;       // no randarts
         }
 
@@ -518,6 +518,11 @@ static void handle_behavior(struct monsters *mon)
             (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER
                && !you.levitation)))
             proxPlayer = false;
+
+        // must be able to see each other
+        if (!see_grid(mon->x, mon->y))
+            proxPlayer = false;
+
         // now, the corollary to that is that sometimes, if a
         // player is right next to a monster, they will 'see'
         if (distance(you.x_pos, you.y_pos, mon->x, mon->y) < 2
@@ -562,19 +567,31 @@ static void handle_behavior(struct monsters *mon)
 
     while(changed)
     {
+        int foe_x, foe_y;
+
         // evaluate these each time; they may change
         if (mon->foe == MHITNOT)
             proxFoe = false;
         else
         {
             if (mon->foe == MHITYOU)
+            {
+                foe_x = you.x_pos;
+                foe_y = you.y_pos;
                 proxFoe = proxPlayer;   // take invis into account
+            }
             else
             {
                 proxFoe = mons_near(mon, mon->foe);
                 if (mons_has_ench(&menv[mon->foe], ENCH_INVIS) &&
                     !mons_see_invis(mon->type))
                     proxFoe = false;
+
+                // XXX monsters will rely on player LOS -- GDL
+                if (!see_grid(menv[mon->foe].x, menv[mon->foe].y))
+                    proxFoe = false;
+                foe_x = menv[mon->foe].x;
+                foe_y = menv[mon->foe].y;
             }
         }
 
@@ -606,12 +623,44 @@ static void handle_behavior(struct monsters *mon)
                     if (isFriendly)
                     {
                         new_foe = MHITYOU;
-                        mon->target_x = you.x_pos;
-                        mon->target_y = you.y_pos;
+                        mon->target_x = foe_x;
+                        mon->target_y = foe_y;
                         break;
                     }
-                    if (mon->foe_memory > 0)
+                    if (mon->foe_memory > 0 && mon->foe != MHITNOT)
                     {
+                        // if we've arrived at our target x,y
+                        // do a stealth check.  If the foe
+                        // fails,  monster will then start
+                        // tracking foe's CURRENT position,
+                        // but only for a few moves (smell and
+                        // intuition only go so far)
+
+                        if (mon->x == mon->target_x &&
+                            mon->y == mon->target_y)
+                        {
+                            if (mon->foe == MHITYOU)
+                            {
+                                if (check_awaken(monster_index(mon)))
+                                {
+                                    mon->target_x = you.x_pos;
+                                    mon->target_y = you.y_pos;
+                                }
+                                else
+                                    mon->foe_memory = 1;
+                            }
+                            else
+                            {
+                                if (coinflip())     // XXX: cheesy!
+                                {
+                                    mon->target_x = menv[mon->foe].x;
+                                    mon->target_y = menv[mon->foe].y;
+                                }
+                                else
+                                    mon->foe_memory = 1;
+                            }
+                        }
+
                         // either keep chasing, or start
                         // wandering.
                         if (mon->foe_memory < 2)
@@ -634,13 +683,14 @@ static void handle_behavior(struct monsters *mon)
                             memory = 20+random2(20);
                             break;
                         case I_ANIMAL:
-                            memory = 5+random2(10);
+                            memory = 6+random2(10);
                             break;
                         case I_INSECT:
-                            memory = 3+random2(5);
+                            memory = 4+random2(5);
                             break;
                         default:
-                            memory = 2;
+                            memory = 3;
+                            break;
                     }
                     mon->foe_memory = memory;
                     break;      // from case
@@ -705,6 +755,14 @@ static void handle_behavior(struct monsters *mon)
                 // 'CORNERED' event,  at which point
                 // we can jump back to WANDER if the foe
                 // isn't present.
+
+                if (proxFoe)
+                {
+                    // try to flee _from_ the correct position
+                    mon->target_x = foe_x;
+                    mon->target_y = foe_y;
+                }
+
                 break;
             case BEH_CORNERED:
                 // foe gone out of LOS?
@@ -1312,6 +1370,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.colour = LIGHTGREY;
         beem.flavour = BEAM_MISSILE;
         beem.thrower = KILL_MON;
+        beem.isBeam = false;
 
         // fire tracer
         fire_tracer(monster, beem);
@@ -2293,8 +2352,11 @@ void monster(void)
                 monster_move(monster);
 
                 // reevaluate behavior, since the monster's
-                // surroundings have changed (it moved)
-                handle_behavior(monster);
+                // surroundings have changed (it may have moved,
+                // or died for that matter.  Don't bother for
+                // dead monsters.  :)
+                if (monster->type != -1)
+                    handle_behavior(monster);
 
             }                   // end while
         }                       // end of if (mons_class != -1)
@@ -2600,6 +2662,10 @@ static void monster_move(struct monsters *monster)
     int count_x, count_y;
     int okmove = DNGN_SHALLOW_WATER;
 
+    // let's not even bother with this if mmov_x and mmov_y are zero.
+    if (mmov_x == 0 && mmov_y == 0)
+        return;
+
     // effectively slows down monster movement across water.
     // Fire elementals can't cross at all.
     if (monster->type == MONS_FIRE_ELEMENTAL || one_chance_in(3))
@@ -2860,7 +2926,8 @@ static void monster_move(struct monsters *monster)
 
     // now,  if a monster can't move in its intended direction,  try
     // either side.  If they're both good,  move in whichever dir
-    // gets it closer to its target.  If neither does,  do nothing.
+    // gets it closer(farther for fleeing monsters) to its target.
+    // If neither does,  do nothing.
     if (good_move[mmov_x + 1][mmov_y + 1] == false)
     {
         int current_distance = distance(monster->x, monster->y,
@@ -2886,8 +2953,21 @@ static void monster_move(struct monsters *monster)
         // first 1 away,  then 2 (3 is silly)
         for (int j=1; j<3; j++)
         {
+            int sdir, inc;
+
+            if (coinflip())
+            {
+                sdir = -j;
+                inc = 2*j;
+            }
+            else
+            {
+                sdir = j;
+                inc = -2*j;
+            }
+
             // try both directions
-            for(mod = -j, i=0; mod < j+1; mod += 2*j, i++)
+            for(mod = sdir, i=0; i<2; mod += inc, i++)
             {
                 newdir = (dir + 8 + mod) % 8;
                 if (good_move[compass_x[newdir] + 1][compass_y[newdir] + 1])
@@ -2895,25 +2975,43 @@ static void monster_move(struct monsters *monster)
                         monster->y + compass_y[newdir],monster->target_x,
                         monster->target_y);
                 else
-                    dist[i] = FAR_AWAY;
+                    dist[i] = (monster->behavior == BEH_FLEE)?(-FAR_AWAY):FAR_AWAY;
             }
 
             // now choose
-            if (dist[0] == FAR_AWAY && dist[1] == FAR_AWAY)
+            if (dist[0] == dist[1] && abs(dist[0]) == FAR_AWAY)
                 continue;
 
-            // which one was better?
-            if (dist[0] < dist[1] && dist[0] < current_distance)
+            // which one was better? -- depends on FLEEING or not
+            if (monster->behavior == BEH_FLEE)
             {
-                mmov_x = compass_x[((dir+8)-j)%8];
-                mmov_y = compass_y[((dir+8)-j)%8];
-                break;
+                if (dist[0] >= dist[1] && dist[0] > current_distance)
+                {
+                    mmov_x = compass_x[((dir+8)+sdir)%8];
+                    mmov_y = compass_y[((dir+8)+sdir)%8];
+                    break;
+                }
+                if (dist[1] >= dist[0] && dist[1] > current_distance)
+                {
+                    mmov_x = compass_x[((dir+8)-sdir)%8];
+                    mmov_y = compass_y[((dir+8)-sdir)%8];
+                    break;
+                }
             }
-            if (dist[1] < dist[0] && dist[1] < current_distance)
+            else
             {
-                mmov_x = compass_x[(dir+j)%8];
-                mmov_y = compass_y[(dir+j)%8];
-                break;
+                if (dist[0] <= dist[1] && dist[0] < current_distance)
+                {
+                    mmov_x = compass_x[((dir+8)+sdir)%8];
+                    mmov_y = compass_y[((dir+8)+sdir)%8];
+                    break;
+                }
+                if (dist[1] <= dist[0] && dist[1] < current_distance)
+                {
+                    mmov_x = compass_x[((dir+8)-sdir)%8];
+                    mmov_y = compass_y[((dir+8)-sdir)%8];
+                    break;
+                }
             }
         }
     } // end - try to find good alternate move

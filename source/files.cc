@@ -292,7 +292,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     unsigned int fit_iquant[8][8];
     unsigned char fit_icol[8][8];
     char fit_iid[8][8];
-    double delta = 0.0;
 
     int itmf = 0;
     int ic = 0;
@@ -742,16 +741,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
+        // update corpses and fountains
         if (env.elapsed_time != 0.0)
-        {
-            delta = you.elapsed_time - env.elapsed_time;
-
-            // because of rounding errors when saving it's possible to
-            // have a negative number if the numbers are large and
-            // close together
-            if (delta > 0.0)
-                update_corpses(delta);
-        }
+            update_corpses(you.elapsed_time - env.elapsed_time);
 
         save_level(you.your_level, (you.level_type != LEVEL_DUNGEON),
                    you.where_are_you);
@@ -763,17 +755,11 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     moving_level = false;
 
     for (count_x = 0; count_x < MAX_ITEMS; count_x++)
-    {
         mitm.link[count_x] = NON_ITEM;
-    }
 
     for (i = 0; i < GXM; i++)
-    {
         for (j = 0; j < GYM; j++)
-        {
             igrd[i][j] = NON_ITEM;
-        }
-    }
 
     // LOAD various tags
 
@@ -802,52 +788,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     redraw_all();
 
-    for (i = 0; i < GXM; i++)
-    {
-        for (j = 0; j < GYM; j++)
-        {
-            if (igrd[i][j] < 0 || igrd[i][j] > NON_ITEM)
-                igrd[i][j] = NON_ITEM;
-        }
-    }
-
-
-    for (i = 0; i < MAX_MONSTERS; i++)
-    {
-        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-        {
-            if (menv[i].inv[j] < 0 || menv[i].inv[j] > NON_ITEM)
-                menv[i].inv[j] = NON_ITEM;
-
-            if (menv[i].inv[j] != NON_ITEM)
-                mitm.link[menv[i].inv[j]] = NON_ITEM;
-        }
-    }
-
-
-    for (i = 0; i < MAX_ITEMS; i++)
-    {
-        if (mitm.link[i] > NON_ITEM)
-            mitm.link[i] = NON_ITEM;
-    }
-
-    for (i = 0; i < MAX_MONSTERS; i++)
-    {
-        if (menv[i].type != -1)
-        {
-            for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-            {
-                if (menv[i].inv[j] != NON_ITEM)
-                {
-                    // if (mitm.link[menv[i].inv[j]] != NON_ITEM)
-                    // no need to use this if -- bwr
-                    mitm.link[menv[i].inv[j]] = NON_ITEM;
-                }
-            }
-        }
-    }
-
-    // closes all the gates if you're on the way out
+    // closes certain gates if you're on the way out
     for (i = 0; i < GXM; i++)
     {
         for (j = 0; j < GYM; j++)
@@ -865,6 +806,7 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
+    // XXX what is level 35?  It currently doesn't exist..
     if (you.your_level == 35 && stair_taken >= DNGN_STONE_STAIRS_UP_I)
     {
         do
@@ -930,30 +872,9 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
     }
 
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            if (mgrd[count_x][count_y] != NON_MONSTER
-                && (menv[mgrd[count_x][count_y]].type == -1
-                    || menv[mgrd[count_x][count_y]].x != count_x
-                    || menv[mgrd[count_x][count_y]].y != count_y))
-            {
-                /* This is one of the worst things I've ever done */
-                mgrd[count_x][count_y] = NON_MONSTER;
-            }
-        }
-    }
-
     if (env.elapsed_time != 0.0)
-    {
-        delta = you.elapsed_time - env.elapsed_time;
+        update_corpses(you.elapsed_time - env.elapsed_time);
 
-        // because of rounding errors when saving it's possible to
-        // have a negative number if the numbers are large and close together
-        if (delta > 0.0)
-            update_corpses(delta);
-    }
 }                               // end load()
 
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
@@ -970,72 +891,6 @@ void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 #ifdef DOS
     strupr(cha_fil);
 #endif
-
-    int fry;
-    int frx;
-
-    // Setting up x and y, which aren't normally used:
-    // XXX .. for what?? What is this code doing?  {gdl}
-    for (frx = 0; frx < MAX_MONSTERS; frx++)
-    {
-        for (fry = 0; fry < NUM_MONSTER_SLOTS; fry++)
-        {
-            if (menv[frx].inv[fry] != NON_ITEM)
-            {
-                mitm.x[menv[frx].inv[fry]] = 2;
-                mitm.y[menv[frx].inv[fry]] = 2;
-                mitm.link[menv[frx].inv[fry]] = NON_ITEM;
-            }
-        }
-    }
-
-    for (count_x = 0; count_x < GXM; count_x++)
-    {
-        for (count_y = 0; count_y < GYM; count_y++)
-        {
-            int count_out = 0;
-
-            if (igrd[count_x][count_y] < 0 || igrd[count_x][count_y] > NON_ITEM)
-                igrd[count_x][count_y] = NON_ITEM;
-
-            if (igrd[count_x][count_y] == NON_ITEM)
-                continue;
-
-            frx = igrd[count_x][count_y];
-
-            while (frx != NON_ITEM)
-            {
-                mitm.x[frx] = count_x;
-                mitm.y[frx] = count_y;
-
-                if (frx > NON_ITEM || frx < 0)
-                {
-                    cprintf("Error! Item out of bounds: ");
-                    itoa(frx, st_prn, 10);
-                    cprintf(st_prn);
-                    if (getch() == 0)
-                        getch();
-                    cprintf(EOL);
-                    break;
-                }
-
-                fry = mitm.link[frx];
-                frx = fry;
-                ++count_out;
-                if (count_out > 1000)
-                {
-                    count_out = 0;
-                    mitm.link[frx] = NON_ITEM;
-                    mpr("Item link error.");
-                    break;
-                }
-
-                if (frx == NON_ITEM)
-                    break;
-            }
-        }
-    }
-    // END weirdness.
 
     FILE *saveFile = fopen(cha_fil, "wb");
 

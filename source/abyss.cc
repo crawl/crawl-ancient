@@ -21,10 +21,32 @@
 #include "lev-pand.h"
 #include "stuff.h"
 
+// public for abyss generation
+void generate_abyss(void)
+{
+    int i, j;                   // loop variables
+    int temp_rand;              // probability determination {dlb}
+
+    for (i = 5; i < (GXM - 5); i++)
+    {
+        for (j = 5; j < (GYM - 5); j++)
+        {
+            temp_rand = random2(4000);
+
+            grd[i][j] = ((temp_rand > 999) ? DNGN_FLOOR :       // 75.0%
+                         (temp_rand > 400) ? DNGN_ROCK_WALL :   // 15.0%
+                         (temp_rand > 100) ? DNGN_STONE_WALL :  //  7.5%
+                         (temp_rand >   0) ? DNGN_METAL_WALL    //  2.5%
+                                           : DNGN_CLOSED_DOOR); // 1 in 4000
+        }
+    }
+
+    grd[45][35] = DNGN_FLOOR;
+}                               // end generate_abyss()
+
 
 static void generate_area(unsigned char gx1, unsigned char gy1,
                           unsigned char gx2, unsigned char gy2)
-/*************************************************************/
 {
     unsigned char i, j;
     unsigned char x1, x2, y1, y2;
@@ -341,7 +363,7 @@ void abyss_teleport(void)
     {
         for (j = 10; j < (GYM - 9); j++)
         {
-            grd[i][j] = 30;     // what the h*** is this? {dlb}
+            grd[i][j] = DNGN_UNSEEN;    // so generate_area will pick it up
             igrd[i][j] = NON_ITEM;
             mgrd[i][j] = NON_MONSTER;
             env.cgrid[i][j] = EMPTY_CLOUD;

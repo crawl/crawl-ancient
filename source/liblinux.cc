@@ -68,6 +68,9 @@ static struct ltchars game_term;
 
 #include <curses.h>
 
+// Character set variable
+int character_set = CHARACTER_SET;
+
 // Globals holding current text/backg. colors
 short FG_COL = WHITE;
 short BG_COL = BLACK;
@@ -602,14 +605,14 @@ void textcolor(int col)
     if ((fg == 128) && (bg == 0))
     {
         // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
+        attrset(COLOR_PAIR(63) | A_BOLD | character_set);
     }
     else
     {
         if (fg & 128)
-            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
+            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | character_set);
         else
-            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
+            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | character_set);
     }
 }
 
@@ -628,14 +631,14 @@ void textbackground(int col)
     if ((fg == 128) && (bg == 0))
     {
         // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
+        attrset(COLOR_PAIR(63) | A_BOLD | character_set);
     }
     else
     {
         if (fg & 128)
-            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
+            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | character_set);
         else
-            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
+            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | character_set);
     }
 }
 

@@ -579,7 +579,6 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_SILVER_STATUE = 21,           //   21
     DNGN_GRANITE_STATUE,
     DNGN_ORANGE_CRYSTAL_STATUE,        //   23
-    DNGN_STATUE_35 = 35,               //   35
     DNGN_STATUE_39 = 39,               //   39
     DNGN_LAVA = 61,                    //   61
     DNGN_DEEP_WATER,                   //   62
@@ -613,6 +612,8 @@ enum DUNGEON_FEATURES                  // (unsigned char) grd[][]
     DNGN_ENTER_PANDEMONIUM,
     DNGN_EXIT_PANDEMONIUM,             //  100
     DNGN_TRANSIT_PANDEMONIUM,          //  101
+    DNGN_BUILDER_SPECIAL_WALL = 105,   //  105; builder() only
+    DNGN_BUILDER_SPECIAL_FLOOR,        //  106; builder() only
     DNGN_ENTER_ORCISH_MINES = 110,     //  110
     DNGN_ENTER_HIVE,
     DNGN_ENTER_LAIR,
@@ -747,13 +748,13 @@ enum ENCHANTMENT                       // menv[].enchantment[]
     ENCH_STICKY_FLAME_II,
     ENCH_STICKY_FLAME_III,
     ENCH_STICKY_FLAME_IV,
-    ENCH_FRIEND_ABJ_I,                 //   NO LONGER USED!
-    ENCH_FRIEND_ABJ_II,                //   NO LONGER USED!
-    ENCH_FRIEND_ABJ_III,               //   NO LONGER USED!
-    ENCH_FRIEND_ABJ_IV,                //   NO LONGER USED!
-    ENCH_FRIEND_ABJ_V,                 //   NO LONGER USED!
-    ENCH_FRIEND_ABJ_VI,                //   NO LONGER USED!
-    ENCH_CREATED_FRIENDLY,             //   71 - DO NOT USE!!!!!!!!
+    ENCH_FRIEND_ABJ_I,                 //   no longer used
+    ENCH_FRIEND_ABJ_II,                //   no longer used
+    ENCH_FRIEND_ABJ_III,               //   no longer used
+    ENCH_FRIEND_ABJ_IV,                //   no longer used
+    ENCH_FRIEND_ABJ_V,                 //   no longer used
+    ENCH_FRIEND_ABJ_VI,                //   no longer used
+    ENCH_CREATED_FRIENDLY,             //   no longer used
     ENCH_SLEEP_WARY,
     NUM_ENCHANTMENTS
 };

@@ -28,6 +28,9 @@ extern unsigned char (*mapch) (unsigned char);
 extern unsigned char (*mapch2) (unsigned char);
 extern unsigned char mapchar3(unsigned char ldfk);
 extern unsigned char mapchar4(unsigned char ldfk);
+#ifdef LINUX
+extern int character_set;       // unices only
+#endif
 
 static string & tolower_string( string &str );
 
@@ -562,7 +565,7 @@ bool parse_args(int argc, char **argv, bool rc_only)
         int o;
         for(o = 0; o < num_cmd_ops; o++)
         {
-            if (stricmp(cmd_ops[o], arg) == NULL)
+            if (stricmp(cmd_ops[o], arg) == 0)
                 break;
         }
         if (o == num_cmd_ops)
@@ -641,6 +644,9 @@ bool parse_args(int argc, char **argv, bool rc_only)
                     viewwindow = &viewwindow3;
                     mapch = &mapchar3;
                     mapch2 = &mapchar4;
+#ifdef LINUX
+                    character_set = 0;
+#endif
                 }
                 break;
             case 6:             // dir
