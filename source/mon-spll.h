@@ -601,7 +601,7 @@
        MS_SMITE,
        MS_NO_SPELL  },
 
-    {  MST_SHINING_DRAGON,
+    {  MST_SHADOW_DRAGON,
        MS_NEGATIVE_BOLT,
        MS_NEGATIVE_BOLT,
        MS_NO_SPELL,

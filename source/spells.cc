@@ -316,7 +316,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 potion_effect(POT_CONFUSION, 10);
                 break;
             case 3:
-                mutate(100);
+                mpr("You feel saturated with unharnessed energies!");
+                you.magic_contamination += random2avg(19,3);
                 break;
             }
             break;
@@ -439,7 +440,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 banished(DNGN_ENTER_ABYSS);     // sends you to the abyss
                 break;
             case 3:
-                mutate(100);
+                mpr("You feel saturated with unharnessed energies!");
+                you.magic_contamination += random2avg(19,3);
                 break;
             }
             break;
@@ -946,8 +948,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 ouch(3 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
-                mpr("Strange energies suffuse your body!");
-                mutate(100);
+                mpr("You feel saturated with unharnessed energies!");
+                you.magic_contamination += random2avg(19,3);
                 break;
             case 2:
                 potion_effect(POT_PARALYSIS, 10);
@@ -964,15 +966,10 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             {
             unsigned char i;
             case 0:
-                mpr("Your body is distorted in a weird and horrible way!");
+                mpr("Your body is flooded with distortional energies!");
+                you.magic_contamination += random2avg(35, 3);
 
-                for (i = 0; i < 4; i++)
-                {
-                    if (!mutate(100, failMsg))
-                        failMsg = false;
-                }
-
-                ouch(7 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
+                ouch(3 + random2avg(18, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
 
             case 1:
@@ -983,12 +980,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
 
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
-
-                for (i = 0; i < 4; i++)
-                {
-                    if (give_bad_mutation())
-                        break;
-                }
+                failMsg = !give_bad_mutation();
+                if (one_chance_in(2))
+                    give_bad_mutation(failMsg);
 
                 ouch(5 + random2avg(23, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;

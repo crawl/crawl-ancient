@@ -52,6 +52,9 @@ static int map_wand_to_mspell(int wand_type);
 
 char mmov_x, mmov_y;
 
+static int compass_x[8] = { -1, 0, 1, 1, 1, 0, -1, -1 };
+static int compass_y[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
+
 bool curse_an_item(char which, char power)
 {
     /* use which later, if I want to curse weapon/gloves whatever
@@ -62,10 +65,10 @@ bool curse_an_item(char which, char power)
     FixedVector < char, ENDOFPACK > possib;
     char cu = power;
 
-    cu = 0;
-    char cu1 = 0;
+    cu;
+    char cu1;
     char cu2 = 0;
-    char cu3 = 0;
+    char cu3;
 
     for (cu = 0; cu < ENDOFPACK; cu++)
     {
@@ -131,56 +134,49 @@ bool curse_an_item(char which, char power)
     return 1;
 }
 
-// who wrote this? for shame! {dlb} --
-// I can't be bothered writing an intelligent function,
-// so I'll make it ugly:
 void monster_blink(struct monsters *monster)
 {
-    FixedVector < int, 2 > passed;      // for random_near_space f(x) {dlb}
+    int nx, ny;
 
-    // XXX: this picks a place based on the player not the monster --bwr
-    if (!random_near_space(passed))
+    if (!random_near_space(monster->x, monster->y, nx, ny,
+        false, false))
         return;
 
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
-    monster->x = passed[0];
-    monster->y = passed[1];
+    monster->x = nx;
+    monster->y = ny;
 
-    mgrd[monster->x][monster->y] = monster_index(monster);
+    mgrd[nx][ny] = monster_index(monster);
 }                               // end monster_blink()
 
-// least_two will try and get a space more than one square away
-// from the player
-bool random_near_space(FixedVector < int, 2 > &passed, bool least_two)
+// allow_adjacent:  allow target to be adjacent to origin
+// restrict_LOS:    restict target to be within PLAYER line of sight
+bool random_near_space(int ox, int oy, int &tx, int &ty, bool allow_adjacent,
+    bool restrict_LOS)
 {
-    passed[0] = 0;
-    passed[1] = 0;
-
-    int blx = passed[0];
-    int bly = passed[1];
     int tries = 0;
 
     do
     {
-        blx = you.x_pos - 6 + random2(14);
-        bly = you.y_pos - 6 + random2(14);
+        tx = ox - 6 + random2(14);
+        ty = oy - 6 + random2(14);
+
+        // origin is not 'near'
+        if (tx == ox && ty == oy)
+            continue;
 
         tries++;
 
         if (tries > 149)
-            return false;
+            break;
     }
-    while (!see_grid(blx, bly)
-           || grd[blx][bly] < DNGN_SHALLOW_WATER
-           || mgrd[blx][bly] != NON_MONSTER
-           || (you.x_pos == blx && you.y_pos == bly)
-           || (least_two && distance(you.x_pos, you.y_pos, blx, bly) <= 2));
+    while ((!see_grid(tx, ty) && restrict_LOS)
+           || grd[tx][ty] < DNGN_SHALLOW_WATER
+           || mgrd[tx][ty] != NON_MONSTER
+           || (!allow_adjacent && distance(ox, oy, tx, ty) <= 2));
 
-    passed[0] = blx;
-    passed[1] = bly;
-
-    return true;
+    return (tries < 150);
 }                               // end random_near_space()
 
 static bool habitat_okay( struct monsters *monster, int targ )
@@ -232,7 +228,7 @@ static bool habitat_okay( struct monsters *monster, int targ )
 // swap pets to their death, we can let that go). -- bwr
 bool swap_places(struct monsters *monster)
 {
-    bool swap = false;
+    bool swap;
 
     int loc_x = you.x_pos;
     int loc_y = you.y_pos;
@@ -304,7 +300,7 @@ void print_wounds(struct monsters *monster)
 {
     // prevents segfault -- cannot use info[] here {dlb}
     char str_wound[200];
-    int  dam_level = MDAM_OKAY;
+    int  dam_level;
 
     if (monster->type == -1)
         return;
@@ -407,7 +403,8 @@ void behavior_event(struct monsters *mon, int event, int param)
         case ME_DISTURB:
             // assumes disturbed by noise.. just wake up by
             // setting to wander.
-            mon->behavior = BEH_WANDER;
+            if (mon->behavior == BEH_SLEEP)
+                mon->behavior = BEH_WANDER;
             break;
         case ME_ANNOY:
             // will turn monster against <param1>,  unless they
@@ -415,7 +412,8 @@ void behavior_event(struct monsters *mon, int event, int param)
             if (isFriendly != sourceFriendly || isSmart)
             {
                 mon->foe = param;
-                mon->behavior = BEH_SEEK;
+                if (mon->behavior != BEH_CORNERED)
+                    mon->behavior = BEH_SEEK;
                 if (param == MHITYOU)
                     mon->attitude = ATT_HOSTILE;
             }
@@ -424,14 +422,16 @@ void behavior_event(struct monsters *mon, int event, int param)
             // will alert monster to <param1> and turn them
             // against them,  unless they have a current foe.
             // it won't turn friends hostile either.
-            mon->behavior = BEH_SEEK;
+            if (mon->behavior != BEH_CORNERED)
+                mon->behavior = BEH_SEEK;
             if (mon->foe == MHITNOT)
                 mon->foe = param;
             break;
         case ME_WHACK:
             // will turn monster against <param1>
             mon->foe = param;
-            mon->behavior = BEH_SEEK;
+            if (mon->behavior != BEH_CORNERED)
+                mon->behavior = BEH_SEEK;
             if (param == MHITYOU)
                 mon->attitude = ATT_HOSTILE;
             break;
@@ -481,7 +481,7 @@ static void handle_behavior(struct monsters *mon)
         return;
     }
 
-    // validate current target
+    // validate current target exists
     if (mon->foe != MHITNOT && mon->foe != MHITYOU)
     {
         if (menv[mon->foe].type == -1)
@@ -516,12 +516,10 @@ static void handle_behavior(struct monsters *mon)
         mon->foe = MHITNOT;
     }
 
-    // monsters do not attack other friendly monsters
+    // friendly monsters do not attack other friendly monsters
     if (!(mon->foe == MHITNOT || mon->foe == MHITYOU))
     {
-        bool foeFriendly = (menv[mon->foe].attitude == ATT_FRIENDLY
-            || monster_has_enchantment(&menv[mon->foe], ENCH_CHARM));
-        if (foeFriendly)
+        if (isFriendly && mons_friendly(&menv[mon->foe]))
             mon->foe = MHITNOT;
     }
 
@@ -543,14 +541,19 @@ static void handle_behavior(struct monsters *mon)
     while(changed)
     {
         // evaluate these each time; they may change
-        if (mon->foe == MHITYOU)
-            proxFoe = proxPlayer;   // take invis into account
+        if (mon->foe == MHITNOT)
+            proxFoe = false;
         else
         {
-            proxFoe = mons_near(mon, mon->foe);
-            if (monster_has_enchantment(&menv[mon->foe], ENCH_INVIS) &&
-                !mons_see_invis(mon->type))
-                proxFoe = false;
+            if (mon->foe == MHITYOU)
+                proxFoe = proxPlayer;   // take invis into account
+            else
+            {
+                proxFoe = mons_near(mon, mon->foe);
+                if (monster_has_enchantment(&menv[mon->foe], ENCH_INVIS) &&
+                    !mons_see_invis(mon->type))
+                    proxFoe = false;
+            }
         }
 
         // track changes to state; attitude never changes here.
@@ -568,14 +571,6 @@ static void handle_behavior(struct monsters *mon)
         {
             mon->target_x = you.x_pos;
             mon->target_y = you.y_pos;
-
-            // a bit of meandering
-            if (proxPlayer && one_chance_in(7))
-            {
-                mon->target_x = 10 + random2(GXM - 10);
-                mon->target_y = 10 + random2(GYM - 10);
-
-            }
         }
         else
         {
@@ -604,7 +599,10 @@ static void handle_behavior(struct monsters *mon)
                 break;
             case BEH_SEEK:
                 // foe gone out of LOS?  Friendlies
-                // will seek player, others go back
+                // will seek player, others may chase
+                // the foe's last position for a
+                // turn or three (in case he's just
+                // gone around a corner),  then go back
                 // to wandering (but may pick the
                 // player up later in check_awake()
                 if (!proxFoe)
@@ -613,8 +611,28 @@ static void handle_behavior(struct monsters *mon)
                         new_foe = MHITYOU;
                     else
                     {
-                        new_beh = BEH_WANDER;
-                        new_foe = MHITNOT;
+                        // hack: smarter monsters will
+                        // tend to persue the player longer.
+                        int keep_going;
+                        switch(mons_intel(monster_index(mon)))
+                        {
+                            case I_HIGH:
+                                keep_going = 97;
+                                break;
+                            case I_NORMAL:
+                                keep_going = 85;
+                                break;
+                            case I_ANIMAL:
+                                keep_going = 80;
+                                break;
+                            case I_INSECT:
+                                keep_going = 50;
+                                break;
+                            default:
+                                keep_going = 85;
+                        }
+                        if (random2(100) >= keep_going)
+                            new_beh = BEH_WANDER;
                     }
                 }
                 if (isHurt && isSmart)
@@ -630,7 +648,17 @@ static void handle_behavior(struct monsters *mon)
                 mon->target_x = 10 + random2(GXM - 10);
                 mon->target_y = 10 + random2(GYM - 10);
 
+                // during their wanderings,  monsters will
+                // eventually relax their guard (stupid
+                // ones will do so faster,  smart monsters
+                // have longer memories
+                if (!proxFoe && mon->foe != MHITNOT)
+                {
+                    if (one_chance_in(isSmart?60:20))
+                        new_foe = MHITNOT;
+                }
                 break;
+
             case BEH_FLEE:
                 // check for healed
                 if (isHealthy && !isScared)
@@ -837,12 +865,14 @@ static bool handle_enchantment(struct monsters *monster)
                         died = true;
                     }
 
+                    // chance to get over poison
                     if (one_chance_in(5))
                     {
-                        monster->enchantment[p]--;      //= 0;
-
-                        if (monster->enchantment[p] % 50 == 6)
+                        if (monster->enchantment[p] == ENCH_POISON_I
+                            || monster->enchantment[p] == ENCH_YOUR_POISON_I)
                             flag_ench(monster, p);
+                        else
+                            monster->enchantment[p] --;
                     }
                 }
                 break;
@@ -1986,7 +2016,6 @@ static bool handle_throw(struct monsters *monster, bolt & beem)
 void monster(void)
 {
     bool brkk = false;
-    int monc = 0;
 
     struct bolt beem;
 
@@ -2000,8 +2029,6 @@ void monster(void)
 
         if (monster->type != -1)
         {
-            monc++;
-
             if (monster->hit_points > monster->max_hit_points)
                 monster->hit_points = monster->max_hit_points;
 
@@ -2096,6 +2123,7 @@ void monster(void)
                         continue;
                 }
 
+                // calculates mmov_x, mmov_y based on monster target.
                 handle_movement(monster);
 
                 brkk = false;
@@ -2170,7 +2198,8 @@ void monster(void)
                 }
 
               end_throw:
-                // see if we move into an unfriendly monster
+
+                // see if we move into (and fight) an unfriendly monster
                 int targmon = mgrd[monster->x + mmov_x][monster->y + mmov_y];
                 if (targmon != i && targmon != NON_MONSTER
                     && !mons_aligned(&menv[i], &menv[targmon]))
@@ -2188,7 +2217,6 @@ void monster(void)
                         mmov_x = 0;
                         mmov_y = 0;
                         brkk = true;
-                        break;
                     }
                 }
 
@@ -2199,6 +2227,7 @@ void monster(void)
                     && monster->y + mmov_y == you.y_pos)
                 {
                     bool isFriendly = mons_friendly(monster);
+                    bool attacked = false;
                     if (monster->type == MONS_GIANT_BAT
                         || monster->type == MONS_UNSEEN_HORROR
                         || monster->type == MONS_GIANT_BLOWFLY)
@@ -2208,11 +2237,17 @@ void monster(void)
                             monster_attack(i);
                             monster->behavior = BEH_WANDER;
                             monster->foe = MHITNOT;
+                            attacked = true;
                         }
                     }
                     else
+                    {
                         if (!isFriendly)
+                        {
                             monster_attack(i);
+                            attacked = true;
+                        }
+                    }
 
                     if ((monster->type == MONS_GIANT_SPORE
                             || monster->type == MONS_BALL_LIGHTNING)
@@ -2228,9 +2263,12 @@ void monster(void)
                         continue;
                     }
 
-                    mmov_x = 0;
-                    mmov_y = 0;
-                    continue;   //break;
+                    if (attacked)
+                    {
+                        mmov_x = 0;
+                        mmov_y = 0;
+                        continue;   //break;
+                    }
                 }
 
                 if (monster->type == -1 || monster->type == MONS_OKLOB_PLANT
@@ -2542,10 +2580,8 @@ static bool mons_pickup(struct monsters *monster)
 
 static void monster_move(struct monsters *monster)
 {
-    bool which_first = coinflip();
-
     FixedArray < bool, 3, 3 > good_move;
-    int count_x, count_y, vacated_x, vacated_y;
+    int count_x, count_y;
     int okmove = DNGN_SHALLOW_WATER;
 
     // effectively slows down monster movement across water.
@@ -2566,6 +2602,7 @@ static void monster_move(struct monsters *monster)
             good_move[count_x][count_y] = true;
             const int targ_x = monster->x + count_x - 1;
             const int targ_y = monster->y + count_y - 1;
+            int target_grid = grd[targ_x][targ_y];
 
             // bounds check - don't consider moving out of grid!
             if (targ_x < 0 || targ_x >= GXM ||
@@ -2577,11 +2614,18 @@ static void monster_move(struct monsters *monster)
 
             if (monster->type == MONS_BORING_BEETLE)
             {
-                if (grd[ targ_x ][ targ_y ] == DNGN_ROCK_WALL)
+                if (target_grid == DNGN_ROCK_WALL)
                 {
                     // don't burrow out of bounds
                     if (!(targ_x > 7 && targ_x < (GXM - 8)
                     && targ_y > 7 && targ_y < (GYM - 8)))
+                    {
+                        good_move[count_x][count_y] = false;
+                        continue;
+                    }
+
+                    // don't burrow at an angle (legacy behavior)
+                    if (count_x != 1 && count_y != 1)
                     {
                         good_move[count_x][count_y] = false;
                         continue;
@@ -2595,12 +2639,42 @@ static void monster_move(struct monsters *monster)
                 continue;
             }
 
-            // at this point, if we don't move into a monster,
-            // its for a good reason.
-            if (mgrd[ targ_x ][ targ_y ] != NON_MONSTER)
+            if (monster_habitat(monster->type) == DNGN_LAVA
+                && target_grid != DNGN_LAVA)
             {
                 good_move[count_x][count_y] = false;
                 continue;
+            }
+
+            if (monster_habitat(monster->type) == DNGN_DEEP_WATER
+                && target_grid != DNGN_DEEP_WATER
+                && target_grid != DNGN_SHALLOW_WATER
+                && target_grid != DNGN_BLUE_FOUNTAIN)
+            {
+                good_move[count_x][count_y] = false;
+                continue;
+            }
+
+            if (monster->type == MONS_WANDERING_MUSHROOM
+                && see_grid(targ_x, targ_y))
+            {
+                good_move[count_x][count_y] = false;
+                continue;
+            }
+
+            // smacking the player is always a good move if
+            // we're hostile (even if we're heading somewhere
+            // else)
+
+            // smacking another monster is good,  if the monsters
+            // are aligned differently
+            if (mgrd[targ_x][targ_y] != NON_MONSTER)
+            {
+                if (mons_aligned(monster, &menv[mgrd[targ_x][targ_y]]))
+                {
+                    good_move[count_x][count_y] = false;
+                    continue;
+                }
             }
 
             const int targ_cloud = env.cgrid[ targ_x ][ targ_y ];
@@ -2687,12 +2761,14 @@ static void monster_move(struct monsters *monster)
                 good_move[count_x][count_y] = false;
             }
         }
-    }
+    } // now we know where we _can_ move.
 
-    // this is a cheat, as all monsters know of secret doors
-    // even dumb ones like jellies <explicitly included below> {dlb}
+    // normal/smart monsters know about secret doors (they _live_ in the
+    // dungeon!)
     if (grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_CLOSED_DOOR
-        || grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_SECRET_DOOR)
+        || (grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_SECRET_DOOR
+            && (mons_intel(monster_index(monster)) == I_HIGH
+                || mons_intel(monster_index(monster)) == I_NORMAL)))
     {
         if (monster->type == MONS_ZOMBIE_SMALL
             || monster->type == MONS_ZOMBIE_LARGE
@@ -2702,8 +2778,8 @@ static void monster_move(struct monsters *monster)
             || monster->type == MONS_SKELETON_LARGE
             || monster->type == MONS_SPECTRAL_THING)
         {
-            if (mons_itemuse(monster->type) > 0)
-                // this is most certainly wrong {dlb}
+            // for zombies, monster type is kept in mon->number
+            if (mons_itemuse(monster->number) > 0)
             {
                 grd[monster->x + mmov_x][monster->y + mmov_y] = DNGN_OPEN_DOOR;
                 return;
@@ -2714,227 +2790,111 @@ static void monster_move(struct monsters *monster)
             grd[monster->x + mmov_x][monster->y + mmov_y] = DNGN_OPEN_DOOR;
             return;
         }
+    } // endif - secret/closed doors
 
-        // this should also be tweaked to include open doors, too
-        if (monster->type == MONS_JELLY
+    // jellies eat doors.  Yum!
+    if ((grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_CLOSED_DOOR
+        || grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_OPEN_DOOR)
+        && (monster->type == MONS_JELLY
             || monster->type == MONS_BROWN_OOZE
             || monster->type == MONS_ACID_BLOB
-            || monster->type == MONS_ROYAL_JELLY)
-        {
-            grd[monster->x + mmov_x][monster->y + mmov_y] = DNGN_FLOOR;
-
-            if (!silenced(you.x_pos, you.y_pos)
-                && !silenced(monster->x, monster->y))
-            {
-                strcpy(info, "You hear a");
-                if (!mons_near(monster))
-                    strcat(info, " distant");
-                strcat(info, " slurping noise.");
-                mpr(info);
-            }
-
-            monster->hit_points += 5;
-
-            // note here, that this makes jellies "grow" {dlb}:
-            if (monster->hit_points > monster->max_hit_points)
-                monster->max_hit_points = monster->hit_points;
-
-            if (monster->hit_points > 50)
-            {
-                // and here is where the jelly might divide {dlb}
-                if (!jelly_divide(monster))
-                    monster->hit_points = 50;
-            }
-        }
-    }
-
-    /*  equivalent of your move() for monsters: */
-    if (mmov_x != 0 && mmov_y != 0)
+            || monster->type == MONS_ROYAL_JELLY))
     {
-        // Now, we want to make the monster move in a straight line unless an
-        //  oblique line is faster (often, either is optimum above a certain
-        //  distance from the target). But should be a little random
+        grd[monster->x + mmov_x][monster->y + mmov_y] = DNGN_FLOOR;
 
-        // seems a bit redundant of the above {dlb}
-        if (mmov_x != 0 && mmov_y != 0
-            && abs(monster->y - monster->target_y)
-                            != abs(monster->x - monster->target_x)
-            && !one_chance_in(4))
+        if (!silenced(you.x_pos, you.y_pos)
+            && !silenced(monster->x, monster->y))
         {
-            if (abs(monster->target_x - monster->x)
-                            > abs(monster->target_y - monster->y))
-            {
-                if (good_move[mmov_x + 1][1])
-                    mmov_y = 0;
-            }
-            else if (good_move[1][mmov_y + 1])
-                mmov_x = 0;
+            strcpy(info, "You hear a");
+            if (!mons_near(monster))
+                strcat(info, " distant");
+            strcat(info, " slurping noise.");
+            mpr(info);
         }
 
-        if (!(good_move[mmov_x + 1][mmov_y + 1]))
+        monster->hit_points += 5;
+
+        // note here, that this makes jellies "grow" {dlb}:
+        if (monster->hit_points > monster->max_hit_points)
+            monster->max_hit_points = monster->hit_points;
+
+        if (monster->hit_points > 50)
         {
-            // now why on earth would this all have to be repeated? {dlb}
-            // what about jellies down here? {dlb}
-
-            /* some monsters opening doors */
-            if (mons_itemuse(monster->type) > 0
-                && (grd[monster->x + mmov_x][monster->y + mmov_y]
-                                                    == DNGN_CLOSED_DOOR
-                    || grd[monster->x + mmov_x][monster->y + mmov_y]
-                                                    == DNGN_SECRET_DOOR))
-            {
-                if (monster->type == MONS_ZOMBIE_SMALL
-                    || monster->type == MONS_ZOMBIE_LARGE
-                    || monster->type == MONS_SIMULACRUM_SMALL
-                    || monster->type == MONS_SIMULACRUM_LARGE
-                    || monster->type == MONS_SKELETON_SMALL
-                    || monster->type == MONS_SKELETON_LARGE
-                    || monster->type == MONS_SPECTRAL_THING)
-                {
-                    // see above for comments {dlb}
-                    if (mons_itemuse(monster->type) > 0)
-                    {
-                        grd[monster->x + mmov_x][monster->y + mmov_y]
-                                                        = DNGN_OPEN_DOOR;
-                        return;
-                    }
-                }
-                else
-                {
-                    grd[monster->x + mmov_x][monster->y + mmov_y]
-                                                        = DNGN_OPEN_DOOR;
-                    return;
-                }
-            }
-
-            if (which_first)
-            {
-                if (good_move[mmov_x + 1][1])
-                    mmov_y = 0;
-                else if (good_move[1][mmov_y + 1])
-                    mmov_x = 0;
-            }
-            else
-            {
-                if (good_move[1][mmov_y + 1])
-                    mmov_x = 0;
-                else if (good_move[mmov_x + 1][1])
-                    mmov_y = 0;
-            }
-
-            if (mmov_x != 0 && mmov_y != 0)
-            {
-                mmov_x = random2(3) - 1;
-                mmov_y = random2(3) - 1;
-            }
+            // and here is where the jelly might divide {dlb}
+            if (!jelly_divide(monster))
+                monster->hit_points = 50;
         }
-    }
-    else /* end of: if (mmov_x !=0 etc */
+    } // done door-eating jellies
+
+    // take care of beetle burrowing
+    if (monster->type == MONS_BORING_BEETLE)
     {
-        if (mmov_x != 0 ^ mmov_y != 0)  /* ^ = XOR, || = OR(inc) */
-        {
-            if (mmov_x != 0 && !(good_move[mmov_x + 1][1]))
-            {
-                if (coinflip())
-                {
-                    if (good_move[1][0])
-                    {
-                        mmov_y = -1;
-                        mmov_x = 0;
-                    }
-                    else
-                    {
-                        if (good_move[1][2])
-                        {
-                            mmov_y = 1;
-                            mmov_x = 0;
-                        }
-                    }
-                }
-                else
-                {
-                    if (good_move[1][2])
-                    {
-                        mmov_y = 1;
-                        mmov_x = 0;
-                    }
-                    else
-                    {
-                        if (good_move[1][0])
-                        {
-                            mmov_y = -1;
-                            mmov_x = 0;
-                        }
-                    }
-                }
-            }
-            else if (mmov_y != 0 && !(good_move[1][mmov_y + 1]))
-            {
-                if (coinflip())
-                {
-                    if (good_move[0][1])
-                    {
-                        mmov_x = -1;
-                        mmov_y = 0;
-                    }
-                    else if (good_move[2][1])
-                    {
-                        mmov_x = 1;
-                        mmov_y = 0;
-                    }
-                }
-                else
-                {
-                    if (good_move[2][1])
-                    {
-                        mmov_x = 1;
-                        mmov_y = 0;
-                    }
-                    else if (good_move[0][1])
-                    {
-                        mmov_x = -1;
-                        mmov_y = 0;
-                    }
-                }
-            }
-
-            if (mmov_x != 0 && mmov_y != 0)
-            {
-                if (good_move[mmov_x + 1][mmov_y + 1])
-                {
-                    mmov_y = random2(3) - 1;
-                    mmov_x = random2(3) - 1;
-                }
-            }
-        }                   // end of if (mmov_x != 0 ^ etc for the 2nd time
-    }                       // end of else above
-
-    /* maybe: (makes worms stupid, though) */
-    if (monster->type == MONS_BORING_BEETLE && mmov_x != 0 && mmov_y != 0)
-    {
-        if (coinflip())
-            mmov_x = 0;
-        else
-            mmov_y = 0;
-
         if (grd[monster->x + mmov_x][monster->y + mmov_y] == DNGN_STONE_WALL
-            && monster->x + mmov_x > 6 && monster->x + mmov_x < (GXM - 7)
-            && monster->y + mmov_y > 6 && monster->y + mmov_y < (GYM - 7))
+            && good_move[mmov_x + 1][mmov_y + 1] == true)
         {
             grd[monster->x + mmov_x][monster->y + mmov_y] = DNGN_FLOOR;
 
             if (!silenced(you.x_pos, you.y_pos))
                 mpr("You hear a grinding noise.");
+
+            // I find it too powerful that these things can burrow and
+            // move in the same turn,  but I'll leave it for now.  -- GDL
         }
     }
 
-    unsigned char grik = grd[monster->x + mmov_x][monster->y + mmov_y];
+    // now,  if a monster can't move in its intended direction,  try
+    // either side.
+    if (good_move[mmov_x + 1][mmov_y + 1] == false)
+    {
+        int dir = -1;
+        int which_first;
+
+        for(int i=0; i<8; i++)
+        {
+            if (compass_x[i] == mmov_x && compass_y[i] == mmov_y)
+            {
+                dir = i;
+                break;
+            }
+        }
+        if (dir != -1)
+        {
+            bool found_alt = false;
+            for (int j=1; j<3; j++)
+            {
+                which_first = coinflip()?j:-j;
+                int newdir = (dir + 8 + which_first) % 8;
+                if (good_move[compass_x[newdir] + 1][compass_y[newdir] + 1])
+                {
+                    mmov_x = compass_x[newdir];
+                    mmov_y = compass_y[newdir];
+                    found_alt = true;
+                }
+                else
+                {
+                    newdir = (dir + 8 - which_first) % 8;
+                    if (good_move[compass_x[newdir] + 1][compass_y[newdir] + 1])
+                    {
+                        mmov_x = compass_x[newdir];
+                        mmov_y = compass_y[newdir];
+                        found_alt = true;
+                    }
+                }
+                if (found_alt)
+                    break;
+            }
+        }
+    } // end - try to find good alternate move
+
+    // ------------------------------------------------------------------
+    // if we haven't found a good move by this point, we're not going to.
+    // ------------------------------------------------------------------
 
     mgrd[monster->x][monster->y] = NON_MONSTER;
 
-    if (grik >= okmove
-        && mgrd[monster->x + mmov_x][monster->y + mmov_y] == NON_MONSTER)
+    if (good_move[mmov_x + 1][mmov_y + 1] && !(mmov_x == 0 && mmov_y == 0))
     {
+        // check for attacking player
         if (monster->x + mmov_x == you.x_pos
             && monster->y + mmov_y == you.y_pos)
         {
@@ -2943,26 +2903,11 @@ static void monster_move(struct monsters *monster)
             mmov_y = 0;
         }
 
-        vacated_x = monster->x;
-        vacated_y = monster->y;
-
-        if (monster_habitat(monster->type) == DNGN_LAVA && grik != DNGN_LAVA)
+        // check for attacking another monster
+        int targmon = mgrd[monster->x + mmov_x][monster->y + mmov_y];
+        if (targmon != NON_MONSTER)
         {
-            mmov_x = 0;
-            mmov_y = 0;
-        }
-
-        if (monster_habitat(monster->type) == DNGN_DEEP_WATER
-            && grik != DNGN_DEEP_WATER
-            && grik != DNGN_SHALLOW_WATER && grik != DNGN_BLUE_FOUNTAIN)
-        {
-            mmov_x = 0;
-            mmov_y = 0;
-        }
-
-        if (monster->type == MONS_WANDERING_MUSHROOM
-            && see_grid(monster->x + mmov_x, monster->y + mmov_y))
-        {
+            monsters_fight(monster_index(monster), targmon);
             mmov_x = 0;
             mmov_y = 0;
         }
@@ -2984,7 +2929,6 @@ static void monster_move(struct monsters *monster)
         if (monster->behavior == BEH_FLEE)
             behavior_event(monster, ME_CORNERED);
     }
-
 
     /* need to put in something so that monster picks up multiple
        items (eg ammunition) identical to those it's carrying. */
@@ -3268,9 +3212,8 @@ unsigned char monster_habitat(int which_class)
 
 bool monster_descriptor(int which_class, unsigned char which_descriptor)
 {
-    switch (which_descriptor)
+    if (which_descriptor == MDSC_LEAVES_HIDE)
     {
-    case MDSC_LEAVES_HIDE:
         switch (which_class)
         {
         case MONS_DRAGON:
@@ -3285,9 +3228,10 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         default:
             return false;
         }
-        break;
+    }
 
-    case MDSC_REGENERATES:
+    if (which_descriptor == MDSC_REGENERATES)
+    {
         switch (which_class)
         {
         case MONS_CACODEMON:
@@ -3304,9 +3248,10 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         default:
             return false;
         }
-        break;
+    }
 
-    case MDSC_NOMSG_WOUNDS:
+    if (which_descriptor == MDSC_NOMSG_WOUNDS)
+    {
         switch (which_class)
         {
         case MONS_RAKSHASA:
@@ -3321,10 +3266,6 @@ bool monster_descriptor(int which_class, unsigned char which_descriptor)
         default:
             return false;
         }
-        break;
-
-    default:
-        break;
     }
     return false;
 }                               // end monster_descriptor()

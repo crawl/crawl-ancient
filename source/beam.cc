@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *   <7>    21mar2001    GDL    Replaced all FP arithmetic with integer*100 math
  *   <6>    07jan2001    GDL    complete rewrite.
  *   <5>    22July2000   GDL    allowed 'dummy' missiles from monsters
  *   <4>    11/14/99     cdl    evade beams with random40(ev) vice random2(ev)
@@ -75,10 +76,10 @@ static bool isBouncy(struct bolt &beam);
 static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y);
 static bool beam_term_on_target(struct bolt &beam);
 static void beam_explodes(struct bolt &beam, int x, int y);
-static int bounce(float &step1, float &step2, float w1, float w2, float &n1, float &n2,
+static int bounce(int &step1, int &step2, int w1, int w2, int &n1, int &n2,
     int l1, int l2, int &t1, int &t2, bool topBlocked, bool sideBlocked);
-static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
-    float stepx, float stepy, bool roundX, bool roundY);
+static bool fuzzyLine(int nx, int ny, int &tx, int &ty, int lx, int ly,
+    int stepx, int stepy, bool roundX, bool roundY);
 static int  affect_wall(struct bolt &beam, int x, int y);
 static int  affect_place_clouds(struct bolt &beam, int x, int y);
 static void affect_place_explosion_clouds(struct bolt &beam, int x, int y);
@@ -130,22 +131,23 @@ void beam(struct bolt &pbolt, int inv_number)
 {
     int dx, dy;             // total delta between source & target
     int lx, ly;             // last affected x,y
-    float stepx, stepy;     // x,y increment
-    float wx, wy;           // 'working' x,y
+    int stepx, stepy;       // x,y increment - FP
+    int wx, wy;             // 'working' x,y - FP
     bool beamTerminate;     // has beam been 'stopped' by something?
-    float nx, ny;           // test(new) x,y - FP
-    int   tx, ty;           // test(new) x,y - integer
+    int nx, ny;             // test(new) x,y - FP
+    int tx, ty;             // test(new) x,y - integer
     bool roundX, roundY;    // which to round?
     int rangeRemaining;
     bool fuzzyOK;           // fuzzification resulted in OK move
     bool sideBlocked, topBlocked;
 
-//DEBUG
-//    sprintf(info, "%s %s fired to %d, %d : t=%d c=%d f=%d (%d,%d) ",
-//        (pbolt.isBeam)?"beam":"missile", (pbolt.isTracer)?"tracer":"",
-//        pbolt.target_x, pbolt.target_y, pbolt.type, pbolt.colour,
-//        pbolt.flavour, pbolt.hit, pbolt.damage );
-//    mpr(info);
+#ifdef WIZARD
+    sprintf(info, "%s %s fired to %d, %d : t=%d c=%d f=%d (%d,%d) ",
+        (pbolt.isBeam)?"beam":"missile", (pbolt.isTracer)?"tracer":"",
+        pbolt.target_x, pbolt.target_y, pbolt.type, pbolt.colour,
+        pbolt.flavour, pbolt.hit, pbolt.damage );
+    mpr(info);
+#endif
 
     // init
     pbolt.aimedAtFeet = false;
@@ -160,8 +162,8 @@ void beam(struct bolt &pbolt, int inv_number)
     if (dx == 0 && dy == 0)
     {
         pbolt.aimedAtFeet = true;
-        stepx = 0.0;
-        stepy = 0.0;
+        stepx = 0;
+        stepy = 0;
         roundY = false;
         roundX = false;
         tx = pbolt.source_x;
@@ -171,14 +173,14 @@ void beam(struct bolt &pbolt, int inv_number)
     {
         if (abs(dx) >= abs(dy))
         {
-            stepx = (dx>0)?1.0:-1.0;
-            stepy = (float)dy/(float)(abs(dx));
+            stepx = (dx>0)?100:-100;
+            stepy = 100 * dy/(abs(dx));
             roundY = true;
         }
         else
         {
-            stepy = (dy>0)?1.0:-1.0;
-            stepx = (float)dx/(float)(abs(dy));
+            stepy = (dy>0)?100:-100;
+            stepx = 100 * dx/(abs(dy));
             roundX = true;
         }
     }
@@ -187,9 +189,9 @@ void beam(struct bolt &pbolt, int inv_number)
     beamTerminate = false;
     // setup working coords
     lx = pbolt.source_x;
-    wx = (float)lx;
+    wx = 100 * lx;
     ly = pbolt.source_y;
-    wy = (float)ly;
+    wy = 100 * ly;
     // setup range
     rangeRemaining = pbolt.range;
     if (pbolt.rangeMax > pbolt.range)
@@ -218,13 +220,13 @@ void beam(struct bolt &pbolt, int inv_number)
 
         if (roundY)
         {
-            tx = (int)nx;
-            ty = (int)(ny + 0.5);
+            tx = nx / 100;
+            ty = (ny + 50) / 100;
         }
         if (roundX)
         {
-            ty = (int)ny;
-            tx = (int)(nx + 0.5);
+            ty = ny / 100;
+            tx = (nx + 50) / 100;
         }
 
         // check that tx, ty are valid.  If not,  set to last
@@ -271,10 +273,10 @@ void beam(struct bolt &pbolt, int inv_number)
                     // if it doesn't, we'll quit in the next if stmt anyway.
                     if (roundY)
                     {
-                        if ( grd[lx + (int)stepx][ly] < MINMOVE)
+                        if ( grd[lx + stepx / 100][ly] < MINMOVE)
                             sideBlocked = true;
                         if (dy != 0)
-                            if ( grd[lx][ly + (stepy>0.0?1:-1)] < MINMOVE)
+                            if ( grd[lx][ly + (stepy>0?1:-1)] < MINMOVE)
                                 topBlocked = true;
 
                         rangeRemaining -= bounce(stepx, stepy, wx, wy, nx, ny,
@@ -282,10 +284,10 @@ void beam(struct bolt &pbolt, int inv_number)
                     }
                     else
                     {
-                        if ( grd[lx][ly + (int)stepy] < MINMOVE)
+                        if ( grd[lx][ly + stepy / 100] < MINMOVE)
                             sideBlocked = true;
                         if (dx != 0)
-                            if ( grd[lx + (stepx>0.0?1:-1)][ly] < MINMOVE)
+                            if ( grd[lx + (stepx>0?1:-1)][ly] < MINMOVE)
                                 topBlocked = true;
 
                         rangeRemaining -= bounce(stepy, stepx, wy, wx, ny, nx,
@@ -339,8 +341,9 @@ void beam(struct bolt &pbolt, int inv_number)
         if (pbolt.aimedAtFeet)
             beamTerminate = true;
 
-        // actually draw the beam/missile/whatever.
-        if (!pbolt.isTracer)
+        // actually draw the beam/missile/whatever,
+        // if the player can see the cell.
+        if (!pbolt.isTracer && see_grid(tx,ty))
         {
             // we don't clean up the old position.
             // first, most people like seeing the full path,
@@ -714,11 +717,11 @@ bool check_mons_magres(struct monsters * monster, int pow)
 // Enchants all monsters in player's sight.
 bool mass_enchantment(int wh_enchant, int pow)
 {
-    int i = 0;                  // loop variable {dlb}
+    int i;                      // loop variable {dlb}
     int p;                      // loop variable {dlb}
     bool brek = false;
     bool msgGenerated = false;
-    struct monsters *monster = 0;       // NULL {dlb}
+    struct monsters *monster;
 
     viewwindow(0, false);
 
@@ -1083,7 +1086,8 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 void poison_monster(struct monsters *monster, bool fromPlayer)
 {
     int p;
-    bool brek = false;
+    bool yourPoison;
+    int poison_strength = -1;
 
     if (monster->type == -1)
         return;
@@ -1100,40 +1104,56 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
 
     for (p = 0; p < 3; p++)
     {
-        if (monster->enchantment[p] % 50 == 10)
-            return;
-
-        if (monster->enchantment[p] % 50 >= 7
-            && monster->enchantment[p] % 50 < 10)
+        if (monster->enchantment[p] >= ENCH_POISON_I
+            && monster->enchantment[p] <= ENCH_POISON_IV)
         {
-            (monster->enchantment[p])++;
-            brek = true;
-            simple_monster_message(monster, " looks rather more sickly.");
+            yourPoison = false;
+            poison_strength = monster->enchantment[p] - ENCH_POISON_I;
+            break;
+        }
+        if (monster->enchantment[p] >= ENCH_YOUR_POISON_I
+            && monster->enchantment[p] <= ENCH_YOUR_POISON_IV)
+        {
+            yourPoison = true;
+            poison_strength = monster->enchantment[p] - ENCH_YOUR_POISON_I;
             break;
         }
     }
 
-    if (!brek)
+    // is monster currently NOT poisoned?
+    if (poison_strength < 0)
     {
-        for (p = 0; p < 3; p++)
-        {
+        for(p=0; p<3; p++)
             if (monster->enchantment[p] == ENCH_NONE)
-            {
-                monster->enchantment[p] = ENCH_YOUR_POISON_I;
-                monster->enchantment1 = 1;
-                simple_monster_message(monster, " looks rather ill.");
                 break;
-            }
-        }
     }
 
-    if (!fromPlayer
-        && monster->enchantment[p] <= ENCH_YOUR_POISON_IV
-        && monster->enchantment[p] >= ENCH_YOUR_POISON_I)
-    {
-        monster->enchantment[p] += 50;
-    }
+    // no slots left.  Oops!
+    if (p == 3)
+        return;
+
+    // increase poison strength,  cap at 3 (level is 0..3)
+    poison_strength ++;
+    if (poison_strength > 3)
+        poison_strength = 3;
     else
+    {
+        simple_monster_message(monster, (poison_strength == 0)?
+            " looks rather ill." : " looks rather more sickly.");
+    }
+
+    // now patch up monster enchantment
+    monster->enchantment1 = 1;
+
+    // now, if player poisons the monster at ANY TIME, they should
+    // get credit for the kill if the monster dies from poison.  This
+    // really isn't that abusable -- GDL.
+
+    monster->enchantment[p] = poison_strength +
+        (fromPlayer || yourPoison)?ENCH_YOUR_POISON_I : ENCH_POISON_I;
+
+    // finally, take care of deity preferences
+    if (fromPlayer)
     {
         naughty(NAUGHTY_POISON, 5 + random2(3)); //jmf: TSO now hates poison
         done_good(GOOD_POISON, 5);      //jmf: had test god who liked poison
@@ -1143,7 +1163,7 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
 // similar to poison_monster() -- makes the monster burn if hit by napalm
 void sticky_flame_monster(int mn, bool source, int power)
 {
-    int long_last = 0;
+    int long_last;
     bool brek = false;
     int p;
 
@@ -1478,7 +1498,7 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
                 }
             }                   // end of if igrd != NON_ITEM
 
-            int o = 0;
+            int o;
 
             for (o = 0; o < MAX_ITEMS; o++)
             {
@@ -1520,7 +1540,7 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
 #define B_VERT      2
 #define B_BOTH      3
 
-static int bounce(float &step1, float &step2, float w1, float w2, float &n1, float &n2,
+static int bounce(int &step1, int &step2, int w1, int w2, int &n1, int &n2,
     int l1, int l2, int &t1, int &t2, bool topBlocked, bool sideBlocked)
 {
     int bounceType = 0;
@@ -1531,7 +1551,7 @@ static int bounce(float &step1, float &step2, float w1, float w2, float &n1, flo
     if (topBlocked && sideBlocked)
     {
         // check for veritcal bounce only
-        if ((int)(w2 + step2 - 0.5) == (int)(w2 - 0.5))
+        if ((w2 + step2 - 50)/100 == (w2 - 50)/100)
             bounceType = B_VERT;
         else
             bounceType = B_BOTH;
@@ -1543,20 +1563,20 @@ static int bounce(float &step1, float &step2, float w1, float w2, float &n1, flo
             n1 = w1;
             n2 = w2 + step2;
             step1 = -step1;
-            t1 = (int)n1;
-            t2 = (int)(n2 + 0.5);
+            t1 = n1 / 100;
+            t2 = (n2 + 50)/100;
             // check top
-            if (t2 != (int)n2 && topBlocked)
-                t2 = (int)n2;
+            if (t2 != n2/100 && topBlocked)
+                t2 = n2/100;
             break;
         case B_HORZ:            // a little tricky
-            if (step2 > 0.0)
-                n2 = (float)(1 + 2*(int)w2) - (w2 + step2);
+            if (step2 > 0)
+                n2 = (100 + 200*(w2/100)) - (w2 + step2);
             else
-                n2 = (float)(1 + 2*(int)(w2 - 0.5)) - (w2 + step2);
+                n2 = (100 + 200*((w2 - 50)/100)) - (w2 + step2);
             n1 = w1 + step1;
-            t1 = (int)n1;
-            t2 = (int)(n2 + 0.5);
+            t1 = n1 /100;
+            t2 = (n2 + 50) / 100;
             step2 = -step2;
             break;
         case B_BOTH:
@@ -1565,10 +1585,10 @@ static int bounce(float &step1, float &step2, float w1, float w2, float &n1, flo
             t1 = l1;
             t2 = l2;
             // horizontal:
-            if (step2 > 0.0)
-                n2 = (float)(1 + 2*(int)w2) - (w2 + step2);
+            if (step2 > 0)
+                n2 = (100 + 200*(w2/100)) - (w2 + step2);
             else
-                n2 = (float)(1 + 2*(int)(w2 - 0.5)) - (w2 + step2);
+                n2 = (100 + 200*((w2 - 50)/100)) - (w2 + step2);
             // reverse both directions
             step1 =- step1;
             step2 =- step2;
@@ -1582,8 +1602,8 @@ static int bounce(float &step1, float &step2, float w1, float w2, float &n1, flo
     return bounceCount;
 }
 
-static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
-    float stepx, float stepy, bool roundX, bool roundY)
+static bool fuzzyLine(int nx, int ny, int &tx, int &ty, int lx, int ly,
+    int stepx, int stepy, bool roundX, bool roundY)
 {
     bool fuzzyOK = false;
     int fx, fy;                 // fuzzy x,y
@@ -1594,10 +1614,10 @@ static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
     if (roundY)
     {
         // try up
-        fy = (int)(ny + 0.999);
+        fy = (ny + 100) / 100;
         // check for monotonic
-        if (fy != ty && ((stepy>0.0 && fy >= ly)
-            || (stepy<0.0 && fy <= ly)))
+        if (fy != ty && ((stepy>0 && fy >= ly)
+            || (stepy<0 && fy <= ly)))
             fuzzyOK = true;
         // see if up try is blocked
         if (fuzzyOK && grd[tx][fy] < MINMOVE)
@@ -1605,10 +1625,10 @@ static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
 
         // try down
         if (!fuzzyOK)
-            fy = (int)ny;
+            fy = ny / 100;
         // check for monotonic
-        if (fy != ty && ((stepy>0.0 && fy >= ly)
-            || (stepy<0.0 && fy <= ly)))
+        if (fy != ty && ((stepy>0 && fy >= ly)
+            || (stepy<0 && fy <= ly)))
             fuzzyOK = true;
         if (fuzzyOK && grd[tx][fy] < MINMOVE)
             fuzzyOK = false;
@@ -1616,10 +1636,10 @@ static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
     if (roundX)
     {
         // try up
-        fx = (int)(nx + 0.999);
+        fx = (nx + 100) / 100;
         // check for monotonic
-        if (fx != tx && ((stepx>0.0 && fx >= lx)
-            || (stepx<0.0 && fx <= lx)))
+        if (fx != tx && ((stepx>0 && fx >= lx)
+            || (stepx<0 && fx <= lx)))
             fuzzyOK = true;
         // see if up try is blocked
         if (fuzzyOK && grd[fx][ty] < MINMOVE)
@@ -1627,10 +1647,10 @@ static bool fuzzyLine(float nx, float ny, int &tx, int &ty, int lx, int ly,
 
         // try down
         if (!fuzzyOK)
-            fx = (int)nx;
+            fx = nx / 100;
         // check for monotonic
-        if (fx != tx && ((stepx>0.0 && fx >= lx)
-            || (stepx<0.0 && fx <= lx)))
+        if (fx != tx && ((stepx>0 && fx >= lx)
+            || (stepx<0 && fx <= lx)))
             fuzzyOK = true;
         if (fuzzyOK && grd[fx][ty] < MINMOVE)
             fuzzyOK = false;
@@ -1786,10 +1806,17 @@ static int  affect_wall(struct bolt &beam, int x, int y)
         {
             grd[ x ][ y ] = DNGN_FLOOR;
 
-            if (!see_grid( x, y ))
-                mpr("You hear a hideous screaming!");
+            if (!silenced(you.x_pos, you.y_pos))
+            {
+                if (!see_grid( x, y ))
+                    mpr("You hear a hideous screaming!");
+                else
+                    mpr("The statue screams as its substance crumbles away!");
+            }
             else
-                mpr("The statue screams as its substance crumbles away!");
+                if (see_grid(x,y))
+                    mpr("The statue twists and shakes as its substance crumbles away!");
+
             beam.obviousEffect = 1;
         }
 
@@ -1888,7 +1915,7 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
     if (strcmp(beam.beam_name, "poison gas") == 0)
     {
         cloud_type = YOU_KILL(beam.thrower)?CLOUD_POISON:CLOUD_POISON_MON;
-        place_cloud(CLOUD_POISON, x, y, random2(4) + 2);
+        place_cloud(cloud_type, x, y, random2(4) + 2);
     }
 
     return 0;
@@ -2520,7 +2547,7 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
             && random2(hurt_final) -
             random2(mon->armor_class) > 0)
         {
-            poison_monster( mon, thrower );
+            poison_monster( mon, YOU_KILL(beam.thrower) );
         }
 
         if (mons_category(mon->type) == MC_MIMIC)
@@ -2871,7 +2898,6 @@ static void explosion1(struct bolt &pbolt)
     {
         seeMsg = "The beam explodes into a cloud of software bugs!";
         hearMsg = "You hear the sound of one hand clapping!";
-        return;
     }
 
     // check for see/hear/no msg

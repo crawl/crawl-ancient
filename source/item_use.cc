@@ -2370,6 +2370,11 @@ void zap_wand(void)
             in_name(zap_device_2, 3, str_pass);
             strcat(buff, str_pass);
             mpr(buff);
+
+            // update if wielding
+            if (you.equip[EQ_WEAPON] == zap_device_2)
+                wield_change = 1;
+
         }
     }
 
@@ -2596,7 +2601,7 @@ void read_scroll(void)
     char affected = 0;
     int i;
     struct bolt beam;
-    // added: scrolls are never tracers.
+    // added: scroll effects are never tracers.
     beam.isTracer = false;
 
     if (you.berserker)
@@ -2738,9 +2743,10 @@ void read_scroll(void)
     {
         you.inv_quantity[sc_read_2]--;
 
-        if (you.inv_quantity[sc_read_2] == 0)
+        if (you.equip[EQ_WEAPON] == sc_read_2)
         {
-            if (you.equip[EQ_WEAPON] == sc_read_2)
+            wield_change = true;
+            if (you.inv_quantity[sc_read_2] == 0)
             {
                 you.equip[EQ_WEAPON] = -1;
                 mpr("You are now empty-handed.");
@@ -3302,6 +3308,16 @@ void read_scroll(void)
     // finally, identify the scroll {dlb}:
     if (id_the_scroll)
         set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
+
+    if (you.inv_quantity[sc_read_2] == 0)
+    {
+        if (you.equip[EQ_WEAPON] == sc_read_2)
+        {
+            you.equip[EQ_WEAPON] = -1;
+            mpr("You are now empty-handed.");
+            wield_change = 1;
+        }
+    }
 
     return;
 }                               // end read_scroll()

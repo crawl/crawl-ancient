@@ -1218,7 +1218,7 @@ void cast_sticks_to_snakes(int pow)
     {
         // this is how you get multiple big snakes
         how_many = 1;
-        mpr("FIXME: impliment OBJ_DEBRIS conversion! (spells4.cc)");
+        mpr("FIXME: implement OBJ_DEBRIS conversion! (spells4.cc)");
     }
 #endif // USE_DEBRIS_CODE
 
@@ -1286,21 +1286,22 @@ void cast_conjure_ball_lightning(int pow)
 
     bool summoned = false;
 
-    for (int i = 0; i < num; i++) {
-        FixedVector<int, 2>  targ;
+    for (int i = 0; i < num; i++)
+    {
+        int tx=0, ty=0;
 
         // Ball Lightning currently created somewhere in LOS of the player.
         // the location being intentionally unspecified in order to make
         // the spell more "random" and thus in tune with Air damage spells.
-        if (!random_near_space( targ ))
+        if (!random_near_space( you.x_pos, you.y_pos, tx, ty, true, true))
         {
             // if we fail, we'll try the ol' summon next to player trick.
-            targ[0] = you.x_pos;
-            targ[1] = you.y_pos;
+            tx = you.x_pos;
+            ty = you.y_pos;
         }
 
         if (create_monster(MONS_BALL_LIGHTNING, 0, BEH_FRIENDLY,
-                           targ[0], targ[1], MHITNOT, 250) != -1)
+                           tx, ty, MHITNOT, 250) != -1)
         {
             summoned = true;
         }
@@ -3210,8 +3211,6 @@ void cast_condensation_shield(int pow)
 
 static int quadrant_blink(char x, char y, int pow, int garbage)
 {
-    FixedVector < int, 2 > passed;
-    bool cancel = false;
     bool done = false;
     bool down = (you.y_pos > y);
     bool left = (you.x_pos < x);
@@ -3221,40 +3220,32 @@ static int quadrant_blink(char x, char y, int pow, int garbage)
     if (x == you.x_pos && y == you.y_pos)
         return 0;
 
+    // now that we know what quadrant we want,  reuse x and y
+
     // I'll accept that 98 is a magic number for the cap here -- bwr
     if (pow > 98)
         pow = 98;
 
-    do
+    while(random_near_space(you.x_pos, you.y_pos, x, y))
     {
-        if (!random_near_space(passed, true)
-            || (you.x_pos == passed[0] && you.y_pos == passed[1]))
-        {
-            cancel = true;
-            pow -= 2;
-        }
-        else             //jmf: FIXME: make a `cone' for non-angle directions
-        {
-            cancel = false;
-            done = true;
+        done = true;
 
-            if (up && passed[1] < you.y_pos)
-                done = false;
-            if (down && passed[1] > you.y_pos)
-                done = false;
-            if (right && passed[0] < you.x_pos)
-                done = false;
-            if (left && passed[0] > you.x_pos)
-                done = false;
-        }
+        if (up && y < you.y_pos)
+            done = false;
+        if (down && y > you.y_pos)
+            done = false;
+        if (right && x < you.x_pos)
+            done = false;
+        if (left && x > you.x_pos)
+            done = false;
     }
-    while (!done && !cancel && random2(100) < pow--);
+    while (!done && random2(100) < pow--);
 
-    if (cancel)
+    if (!done)
         return 0;
 
-    you.x_pos = passed[0];
-    you.y_pos = passed[1];
+    you.x_pos = x;
+    you.y_pos = y;
 
     if (you.level_type == LEVEL_ABYSS)
     {

@@ -386,6 +386,12 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 if (fmenv->speed_increment < 50)
                     continue;
 
+                // only friendly monsters,  or those actively seeking the
+                // player,  will follow up/down stairs.
+                if (!(mons_friendly(fmenv) ||
+                    (fmenv->behavior == BEH_SEEK && fmenv->foe == MHITYOU)))
+                    continue;
+
                 foll_class[following] = fmenv->type;
                 //itoa(foll_class[following], st_prn, 10);
 

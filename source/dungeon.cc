@@ -246,7 +246,6 @@ int builder(unsigned int lev_numb, char level_type)
         mitm.pluses[loopy] = 0;
         mitm.pluses2[loopy] = 0;
         mitm.special[loopy] = 0;
-        bcount_y = 100000;      // what the h*** ??? {dlb}
         mitm.quantity[loopy] = 0;
         mitm.colour[loopy] = 0;
         mitm.x[loopy] = 0;

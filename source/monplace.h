@@ -32,6 +32,7 @@
  * proximity    0 = no extra restrictions on monster placement
  *              1 = try to place the monster near the player
  *              2 = don't place the monster near the player
+ *              3 = place the monster near stairs (regardless of player pos)
  * *********************************************************************** */
 int mons_place(int mon_type, char behavior, int target, bool summoned,
     int px, int py, int level_type = LEVEL_DUNGEON, int proximity = 0,

@@ -46,14 +46,14 @@ char *mutation_name(char which_mutat);
 /* ***********************************************************************
  * called from: religion
  * *********************************************************************** */
-bool give_good_mutation(void);
+bool give_good_mutation(bool failMsg = true);
 
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: items - spells
  * *********************************************************************** */
-bool give_bad_mutation(void);
+bool give_bad_mutation(bool failMsg = true);
 
 
 // last updated 12may2000 {dlb}

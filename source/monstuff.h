@@ -39,9 +39,12 @@ void monster_blink(struct monsters *monster);
 
 
 /* ***********************************************************************
- * called from: spells1
+ * called from: spells1 spells4 monstuff
+ * defaults are set up for player blink;  monster blink should call with
+ * false, false
  * *********************************************************************** */
-bool random_near_space( FixedVector<int, 2>& passed, bool least_two = false );
+bool random_near_space( int ox, int oy, int &tx, int &ty,
+    bool allow_adjacent = false, bool restrict_LOS = true);
 
 
 /* ***********************************************************************

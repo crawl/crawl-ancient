@@ -18,6 +18,8 @@
 #include "version.h"
 #include "defines.h"
 
+char oldTitle[80];
+
 static HANDLE inbuf = NULL;
 static HANDLE outbuf = NULL;
 static int current_color = -1;
@@ -239,6 +241,9 @@ void init_libw32c(void)
       fputs("Could not initialise libw32c console support.", stderr);
       exit(0);
    }
+
+   GetConsoleTitle( oldTitle, 78 );
+
    SetConsoleTitle( "Crawl " VERSION );
    // by default,  set string input to false:  use char-input only
    setStringInput( false );
@@ -262,6 +267,25 @@ void init_libw32c(void)
 
    //DEBUG
    //foo = fopen("debug.txt", "w");
+}
+
+void deinit_libw32c(void)
+{
+   // don't do anything if we were never initted
+   if (inbuf == NULL || outbuf == NULL)
+      return;
+
+   clrscr();
+
+   // restore console attributes for normal function
+   setStringInput(true);
+
+   // set cursor and normal textcolor
+   _setcursortype_internal(_NORMALCURSOR);
+   textcolor(DARKGREY);
+
+   // finally, restore title
+   SetConsoleTitle( oldTitle );
 }
 
 // we don't take our cues from Crawl.  Cursor is shown

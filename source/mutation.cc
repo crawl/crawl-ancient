@@ -2113,7 +2113,7 @@ bool perma_mutate(int which_mut, char how_much)
         return false;
 }                               // end perma_mutate()
 
-bool give_good_mutation(void)
+bool give_good_mutation(bool failMsg)
 {
     int temp_rand = 0;          // probability determination {dlb}
     int which_good_one = 0;
@@ -2146,10 +2146,10 @@ bool give_good_mutation(void)
                       (temp_rand ==  1) ? MUT_CLARITY
                                        : MUT_ROBUST);
 
-    return (mutate(which_good_one));
+    return (mutate(which_good_one, failMsg));
 }                               // end give_good_mutation()
 
-bool give_bad_mutation(void)
+bool give_bad_mutation(bool failMsg)
 {
 
     int temp_rand = 0;          // probability determination {dlb}
@@ -2170,7 +2170,7 @@ bool give_bad_mutation(void)
                      (temp_rand ==  1) ? MUT_BLURRY_VISION
                                        : MUT_FRAIL);
 
-    return (mutate(which_bad_one));
+    return (mutate(which_bad_one), failMsg);
 }                               // end give_bad_mutation()
 
 //jmf: might be useful somewhere (eg Xom or transmigration effect)

@@ -240,12 +240,12 @@ int main(int argc, char *argv[])
     init_mac();
 #endif
 
-    // check for highscore list - must be done BEFORE libw32c init
+    // check for highscore list - should be done BEFORE libw32c init
     if (Options.sc_entries > 0)
     {
         cprintf(" Best Crawlers -"EOL);
         hiscores_print_list();
-        exit(1);
+        end(0);
     }
 
 #ifdef WIN32CONSOLE
@@ -2017,7 +2017,7 @@ static void input(void)
         you.magic_points_regeneration -= 100;
     }
 
-    viewwindow(0, true);
+    viewwindow(1, true);
 
     monster();
 
@@ -2143,8 +2143,14 @@ static void input(void)
         && you.where_are_you != BRANCH_ECUMENICAL_TEMPLE
         && one_chance_in(240))
     {
+        int prox = 2;       // not near player
+
+        // generate 10% of wandering monsters near stairs
+        if (one_chance_in(10))
+            prox = 3;
+
         mons_place(WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
-            50,50, LEVEL_DUNGEON, 2);
+            50,50, LEVEL_DUNGEON, prox);
     }
 
     // place Abyss monsters.

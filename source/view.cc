@@ -1001,6 +1001,13 @@ bool check_awaken(int mons_aw)
     mons_perc = 10 + (mons_intel(monster->type) * 4) + monster->hit_dice
                    + mons_see_invis(monster->type) * 5;
 
+    // critters that are wandering still have MHITYOU as their foe are
+    // still actively on guard for the player,  even if they can't see
+    // him.  Give them a large bonus (handle_behavior() will nuke 'foe'
+    // after a while,  removing this bonus.
+    if (monster->behavior == BEH_WANDER && monster->foe == MHITYOU)
+        mons_perc += 15;
+
     if (you.invis && !mons_see_invis(monster->type))
         mons_perc -= 75;
 
@@ -1242,6 +1249,9 @@ void noisy(char loudness, char nois_x, char nois_y)
     for (p = 0; p < MAX_MONSTERS; p++)
     {
         monster = &menv[p];
+
+        if (monster->type < 0)
+            continue;
 
         if (distance(monster->x, monster->y, nois_x, nois_y) <= dist
             && !silenced(monster->x, monster->y))

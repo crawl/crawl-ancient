@@ -631,6 +631,11 @@ void you_teleport2(bool allow_control)
         return;
     }
 
+    // after this point, we're guaranteed to teleport. Turn off auto-butcher.
+    // corpses still get butchered,  but at least we don't get a silly message.
+    if (you.delay_t > 0 && you.delay_doing == DELAY_BUTCHER)
+        you.delay_t = 0;
+
     FixedVector < int, 2 > plox;
 
     plox[0] = 1;
@@ -639,8 +644,7 @@ void you_teleport2(bool allow_control)
     if (is_controlled)
     {
         mpr("You may choose your destination (press '.' or delete to select).");
-        mpr("Expect minor deviation; teleporting into an open area is "
-            "recommended.");
+        mpr("Expect minor deviation.");
         more();
 
         show_map(plox);
@@ -683,7 +687,6 @@ void you_teleport2(bool allow_control)
                 || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
                 || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
             {
-                mpr("Oops!");
                 is_controlled = false;
             }
         }

@@ -2119,7 +2119,6 @@ void wield_warning(bool newWeapon)
     // put the standard wep name in.
     standard_name_weap(wepType, wepstr2);
     strcat(wepstr, wepstr2);
-    strcat(wepstr, ".");
 
     // only warn about str/dex for non-launcher weapons
     if (!launches_things(wepType))
@@ -2127,19 +2126,26 @@ void wield_warning(bool newWeapon)
 #ifdef USE_NEW_COMBAT_STATS
         const int stat_bonus = effective_stat_bonus();
 
-        strcpy( info, "Your relatively low " );
-        strcat( info, (you.strength < you.dex) ? "strength " : "dexterity " );
-
-        if (stat_bonus <= -2)
+        if (stat_bonus <= -4)
         {
-            strcat( info, "limits the use of " );
-            strcat( info, wepstr );
-            mpr( info, MSGCH_WARN );
-        }
-        else if (stat_bonus <= -5)
-        {
-            strcat( info, "severely limits the use of " );
-            strcat( info, wepstr );
+            if (you.strength < you.dex)
+            {
+                if (you.strength < 11)
+                    sprintf(info, "You have %strouble swinging %s.",
+                        (you.strength < 7)?"":"a little ", wepstr);
+                else
+                    sprintf(info, "You'd be more effective with "
+                        "%s if you were stronger.", wepstr);
+            }
+            else
+            {
+                if (you.dex < 11)
+                    sprintf(info, "Wielding %s is %s awkward.", wepstr,
+                        (you.dex < 7)?"fairly":"a little");
+                else
+                    sprintf(info, "You'd be more effective with "
+                        "%s if you were nimbler.", wepstr);
+            }
             mpr( info, MSGCH_WARN );
         }
 #endif

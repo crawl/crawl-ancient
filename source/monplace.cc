@@ -134,6 +134,9 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     // (3) decide on banding (good lord!)
     band_size = 1;
     band_monsters[0] = mon_type;
+    // no banding for monsters coming up/down the stairs
+    if (proximity == 3)
+        allow_bands = false;
 
     if (allow_bands)
     {
@@ -146,6 +149,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     // (4) for first monster, choose location.  This is pretty intensive.
     if (!summoned)
     {
+        int tries = 0;
         // try to pick px, py that is
         // a) not occupied
         // b) compatible
@@ -153,6 +157,18 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
         unsigned char grid_wanted = monster_habitat(mon_type);
         while(true)
         {
+            tries ++;
+            // give up on stair placement?
+            if (proximity == 3)
+            {
+                if (tries > 320)
+                {
+                    proximity = 2;
+                    tries = 0;
+                }
+            }
+            else if (tries > 60) return false;
+
             px = 10 + random2(GXM - 10);
             py = 10 + random2(GYM - 10);
 
@@ -178,18 +194,32 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
                 if (env.trap_type[trap] == TRAP_TELEPORT)
                     continue;
 
+            bool proxOK = true;
+            bool close_to_player;
             // check proximity to player
-            if (proximity != 0)
+            switch (proximity)
             {
-                bool close_to_player = true;
-                if (px < you.x_pos - 7 || px > you.x_pos + 7
-                    || py < you.y_pos - 7 || py > you.y_pos + 7)
-                    close_to_player = false;
+                case 0:
+                    break;
+                case 1:
+                case 2:
+                    if (distance(you.x_pos, px, you.y_pos, py) > 7)
+                        close_to_player = false;
 
-                if ((proximity == 1 && !close_to_player)
-                    || (proximity == 2 && close_to_player))
-                    continue;
+                    if ((proximity == 1 && !close_to_player)
+                        || (proximity == 2 && close_to_player))
+                        proxOK = false;
+                    break;
+
+                case 3:
+                    proxOK = near_stairs(px, py, 1);
+                    break;
+                deafult:
+                    break;
             }
+
+            if (!proxOK)
+                continue;
 
             // cool.. passes all tests
             break;
@@ -1030,8 +1060,7 @@ bool empty_surrounds(int emx, int emy, unsigned char spc_wanted,
                 continue;
 
             // players won't summon out of LOS
-            if (env.show[tx - you.x_pos + 9][ty - you.y_pos + 9] == 0
-                && playerSummon)
+            if (!see_grid(tx, ty) && playerSummon)
                 continue;
 
             if (grd[tx][ty] == spc_wanted)

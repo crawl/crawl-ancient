@@ -139,6 +139,10 @@ void end(int end_arg)
     deinit_mac();
 #endif
 
+#ifdef WIN32CONSOLE
+    deinit_libw32c();
+#endif
+
     exit(end_arg);
 }
 
@@ -483,3 +487,27 @@ int letter_to_index(int the_letter)
 
     return the_letter;
 }                               // end letter_to_index()
+
+bool near_stairs(int px, int py, int max_dist)
+{
+    int i,j;
+
+    for(i=-max_dist; i<=max_dist; i++)
+    {
+        for(j=-max_dist; j<=max_dist; j++)
+        {
+            int x = px + i;
+            int y = py + j;
+
+            if (x<0 || x>=GXM || y<0 || y>=GYM)
+                continue;
+
+            // very simple check
+            if (grd[x][y] >= DNGN_STONE_STAIRS_DOWN_I
+                && grd[x][y] <= DNGN_RETURN_LAIR_IV)
+                return true;
+        }
+    }
+
+    return false;
+}

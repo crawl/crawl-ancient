@@ -4039,7 +4039,7 @@ void describe_spell(int spelled)
     case SPELL_AIRSTRIKE:       // jet planes in Crawl ??? {dlb}
         description +=
             "causes the air around a creature to twist itself into "
-            "a whirling vortex of meterological fury. ";
+            "a whirling vortex of meteorological fury. ";
         break;
 
     case SPELL_SHADOW_CREATURES:
@@ -4358,7 +4358,6 @@ void describe_spell(int spelled)
 //---------------------------------------------------------------
 void describe_monsters(int class_described, unsigned char which_mons)
 {
-    UNUSED(which_mons);
     string description;
 
     description.reserve(200);
@@ -4578,7 +4577,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_PHANTOM:
-        description = "A mansized, humanoid and transparent undead spirit.";
+        description = "A transparent man-like undead spirit.";
         break;
 
     case MONS_RAT:
@@ -4690,7 +4689,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_CYCLOPS:
         description = "A giant with one eye in the centre of its forehead."
-            " Despite their lack of binocular vision, cyclopses "
+            " Despite their lack of binocular vision, cyclopes "
             "throw boulders with fearsomely accuracy.";
         break;
 
@@ -5504,7 +5503,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_WHITE_IMP:
-        description = "A small and mischevious minor demon. ";
+        description = "A small and mischeivous minor demon. ";
         break;
 
     case MONS_LEMURE:
@@ -5805,7 +5804,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_EDMUND:
-        description += "A lightly armored warrior.";
+        description += "A lightly armoured warrior.";
         break;
 
     case MONS_PSYCHE:
@@ -5962,7 +5961,30 @@ void describe_monsters(int class_described, unsigned char which_mons)
         // onocentaur - donkey
     }
 
+#ifdef WIZARD
+    int hspell_pass[6] = { MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL,
+                           MS_NO_SPELL, MS_NO_SPELL, MS_NO_SPELL };
 
+    int msecc = ((class_described == MONS_HELLION)       ? MST_BURNING_DEVIL:
+                 (class_described == MONS_PANDEMONIUM_DEMON) ? MST_GHOST
+                                                 : menv[ which_mons ].number);
+
+    mons_spell_list(msecc, hspell_pass);
+
+    description += "$Monster Spells: ";
+
+    // XXX: Eventually, we should probably access an array of the
+    // full names... but this will do for now. -- bwr
+    for (int i = 0; i < 6; i++)
+    {
+        char arr[16];
+        sprintf( arr, "%d", hspell_pass[ i ] );
+        description += arr;
+
+        if (i != 5)
+            description += ", ";
+    }
+#endif
 
     print_description(description);
 

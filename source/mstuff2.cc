@@ -19,6 +19,7 @@
 
 #include <string>
 #include <string.h>
+#include <stdio.h>
 
 #include "externs.h"
 
@@ -307,6 +308,12 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     int sumcount = 0;
     int sumcount2;
     int summonik = 0;
+
+#ifdef WIZARD
+    sprintf( info, "Mon #%d casts spell #%d", monster_index(monster),
+        spell_cast );
+    mpr( info );
+#endif
 
     if (spell_cast == MS_HELLFIRE_BURST
         || spell_cast == MS_BRAIN_FEED

@@ -39,15 +39,12 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
 
     FixedVector < unsigned char, 5 > replaced;
 
+    // nuke map
     for (i = 0; i < GXM; i++)
-    {
         for (j = 0; j < GYM; j++)
-        {
             env.map[i][j] = 0;
-            mgrd[i][j] = NON_MONSTER;
-        }
-    }
 
+    // generate level composition vector
     for (i = 0; i < 5; i++)
     {
         temp_rand = random2(10000);
@@ -65,7 +62,7 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
     {
         rooms_to_do = 1 + random2(10);
 
-        do
+        while(true)
         {
             x1 = 10 + random2(GXM - 20);
             y1 = 10 + random2(GYM - 20);
@@ -79,7 +76,7 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
             {
                 for (j = y1; j < y2; j++)       // that is, [10,(GYM-1)]  {dlb}
                 {
-                    if (grd[i][j] != 30)
+                    if (grd[i][j] != DNGN_UNSEEN)
                         goto continued;
                 }
             }
@@ -98,7 +95,6 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
             if (rooms_done >= rooms_to_do)
                 break;
         }
-        while (1);
     }
 
   out_of_rooms:
@@ -106,9 +102,8 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
     {
         for (j = gy1; j < gy2 + 1; j++)
         {
-            if (grd[i][j] == 30 && random2(100) <= thickness)
+            if (grd[i][j] == DNGN_UNSEEN && random2(100) <= thickness)
             {
-
                 grd[i][j] = DNGN_FLOOR;
 
                 if (items_placed < 150 && one_chance_in(200))
@@ -137,7 +132,7 @@ static void generate_area(unsigned char gx1, unsigned char gy1,
     {
         for (j = gy1; j < gy2 + 1; j++)
         {
-            if (grd[i][j] == 30)        // what the h*** is 30 ??? {dlb}
+            if (grd[i][j] == DNGN_UNSEEN)
                 grd[i][j] = replaced[random2(5)];
 
             if (one_chance_in(7500))
@@ -170,11 +165,14 @@ char area_shift(void)
             continue;
         }
 
+        // remove non-nearby monsters
         if (menv[i].x < you.x_pos - 10
             || menv[i].x >= you.x_pos + 11
             || menv[i].y < you.y_pos - 10 || menv[i].y >= you.y_pos + 11)
         {
             menv[i].type = -1;
+
+            mgrd[menv[i].x][menv[i].y] = NON_MONSTER;
 
             for (unsigned int j = 0; j < NUM_MONSTER_SLOTS; j++)
             {
@@ -185,18 +183,6 @@ char area_shift(void)
                     menv[i].inv[j] = NON_ITEM;
                 }
             }
-
-            for (unsigned int j = 0; j < MAX_MONSTERS; j++)
-            {
-                if (menv[j].foe == i)
-                    menv[j].foe = MHITNOT;
-            }
-        }
-        else
-        {
-            // this will make it find a new target
-            menv[i].target_x = menv[i].x;
-            menv[i].target_y = menv[i].y;
         }
     }
 
@@ -205,15 +191,17 @@ char area_shift(void)
     {
         for (int j = 5; j < (GYM - 5); j++)
         {
-            if (i > you.x_pos - 10 && i < you.x_pos + 11
-                && j > you.y_pos - 10 && j < you.y_pos + 11)
+            // don't modify terrain by player
+            if (i >= you.x_pos - 10 && i < you.x_pos + 11
+                && j >= you.y_pos - 10 && j < you.y_pos + 11)
             {
                 continue;
             }
 
-            grd[i][j] = 30;
-            mgrd[i][j] = NON_MONSTER;
+            // nuke terrain otherwise
+            grd[i][j] = DNGN_UNSEEN;
 
+            // nuke items
             if (igrd[i][j] != NON_ITEM)
             {
                 int k = igrd[i][j];
@@ -259,6 +247,7 @@ char area_shift(void)
         }
     }
 
+    // shift all monsters & items to new area
     for (int i = you.x_pos - 10; i < you.x_pos + 11; i++)
     {
         if (i < 0 || i >= GXM)
@@ -279,15 +268,10 @@ char area_shift(void)
 
             if (mgrd[i][j] != NON_MONSTER)
             {
-                mgrd[ipos][jpos] = mgrd[i][j];
                 menv[mgrd[ipos][jpos]].x = ipos;
                 menv[mgrd[ipos][jpos]].y = jpos;
-                mgrd[i][j] = NON_MONSTER;
             }
-            else
-            {
-                mgrd[ipos][jpos] = NON_MONSTER;
-            }
+            mgrd[i][j] = NON_MONSTER;
 
             env.cgrid[ipos][jpos] = env.cgrid[i][j];
 

@@ -799,9 +799,17 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             monster_die(defender, KILL_YOU, 0);
 
             if (defender->type == MONS_GIANT_SPORE)
-                mpr("You hit the giant spore.");
+            {
+                sprintf(info, "You %s the giant spore.",
+                    damage_noise);
+                mpr(info);
+            }
             else if (defender->type == MONS_BALL_LIGHTNING)
-                mpr("You hit the ball lightning.");
+            {
+                sprintf(info, "You %s the ball lightning.",
+                    damage_noise);
+                mpr(info);
+            }
             return;
         }
 
@@ -810,7 +818,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         {
             hit = true;
 
-            strcpy(info, "You hit ");
+            sprintf(info, "You %s ", damage_noise);
             strcat(info, ptr_monam(defender, 1));
             strcat(info, ", but do no damage.");
             mpr(info);
@@ -2848,10 +2856,6 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         return false;
     }
 
-    // don't attack friend
-    if (mons_aligned(attacker, defender))
-        return false;
-
     if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
         && !mons_flies(attacker->type)
         && monster_habitat(attacker->type) == DNGN_FLOOR && one_chance_in(4))
@@ -4310,6 +4314,48 @@ static int weapon_type_modify(int weapnum, char *noise, char *noise2,
 
     strcpy(noise2, "");
 
+    // take transformations into account, if no weapon is weilded
+    if (weap_type == WPN_UNKNOWN && you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
+    {
+        switch (you.attribute[ATTR_TRANSFORMATION])
+        {
+            case TRAN_SPIDER:
+                if (damage < HIT_STRONG)
+                    strcpy(noise, "bite");
+                else
+                    strcpy(noise, "maul");
+                break;
+            case TRAN_BLADE_HANDS:
+                if (damage < HIT_MED)
+                    strcpy(noise, "slash");
+                else if (damage < HIT_STRONG)
+                    strcpy(noise, "slice");
+                break;
+            case TRAN_ICE_BEAST:
+            case TRAN_STATUE:
+            case TRAN_LICH:
+                if (damage < HIT_MED)
+                    strcpy(noise, "punch");
+                else
+                    strcpy(noise, "pummel");
+                break;
+            case TRAN_DRAGON:
+            case TRAN_SERPENT_OF_HELL:
+                if (damage < HIT_MED)
+                    strcpy(noise, "claw");
+                else if (damage < HIT_STRONG)
+                    strcpy(noise, "bite");
+                else
+                    strcpy(noise, "maul");
+                break;
+            case TRAN_AIR:
+                strcpy(noise, "buffet");
+                break;
+        } // transformations
+
+        return damage;
+    }
+
     switch (weap_type)
     {
     case WPN_KNIFE:
@@ -4356,9 +4402,9 @@ static int weapon_type_modify(int weapnum, char *noise, char *noise2,
     case WPN_SABRE:
     case WPN_DEMON_BLADE:
         if (damage < HIT_MED)
-            strcpy(noise, "slice");
-        else if (damage < HIT_STRONG)
             strcpy(noise, "slash");
+        else if (damage < HIT_STRONG)
+            strcpy(noise, "slice");
         else
         {
             strcpy(noise, "open");

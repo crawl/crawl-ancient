@@ -28,6 +28,7 @@
 
 #include "externs.h"
 
+#include "beam.h"
 #include "debug.h"
 #include "effects.h"
 #include "fight.h"
@@ -1292,15 +1293,19 @@ void handle_time(int time_delta)
         lose_stat(STAT_RANDOM, 1);
     }
 
-    // Account for mutagenic radiation
-    // XXX: perhaps more enchantments should be added here, or the
-    // rate should be increased?  -- bwr
-    if (you.invis || (you.haste && !you.berserker))
-    {
-        if (you.magic_contamination < 100 && one_chance_in(10))
-            you.magic_contamination++;
-    }
+    // Account for mutagenic radiation.  Invis and haste will give the
+    // player about .1 points per turn,  mutagenic randarts will give
+    // about 1.5 points on average,  so they can corrupt the player
+    // quite quickly.  Wielding one for a short battle is OK,  which is
+    // as things should be.   -- GDL
+    if (you.invis && random2(10) < 6)
+        you.magic_contamination ++;
 
+    if (you.haste && !you.berserker && random2(10) < 6)
+        you.magic_contamination++;
+
+    // randarts are usually about 20x worse than running around invisible
+    // or hasted.. this seems OK.
     you.magic_contamination += random2(1 + scan_randarts(RAP_MUTAGENIC));
 
     if (you.magic_contamination > 0 && coinflip())
@@ -1308,14 +1313,41 @@ void handle_time(int time_delta)
         if (you.magic_contamination > 4
             && random2(150) <= you.magic_contamination)
         {
-            mpr("You've accumulated too much magical radiation!", MSGCH_WARN);
-            if (coinflip())
+            mpr("Your body shudders with the violent release of wild energies!", MSGCH_WARN);
+
+            // for particularly violent releases,  make a little boom
+            if (you.magic_contamination > 25)
+            {
+                struct bolt boom;
+                boom.type = SYM_BURST;
+                boom.colour = random_colour();
+                boom.flavour = BEAM_FIRE + random2(7);
+                boom.target_x = you.x_pos;
+                boom.target_y = you.y_pos;
+                boom.damage = 100 + (you.magic_contamination / 2);
+                boom.thrower = KILL_YOU;
+                boom.ex_size = (you.magic_contamination / 15);
+                boom.ench_power = (you.magic_contamination * 5);
+                boom.beam_source = NON_MONSTER;
+                boom.isBeam = false;
+                boom.isTracer = false;
+                strcpy(boom.beam_name, "magical storm");
+                explosion(boom);
+            }
+
+            // we want to warp the player,  not do good stuff!
+            if (one_chance_in(4))
                 mutate(100);
             else
                 give_bad_mutation();
-        }
 
-        you.magic_contamination--;
+            // we're meaner now,  what with explosions and whatnot,  but
+            // we dial down the contamination a little faster if its actually
+            // mutating you.  -- GDL
+            you.magic_contamination -= (random2(you.magic_contamination / 4) + 1);
+        }
+        else
+            you.magic_contamination--;
     }
 
     // Random chance to identify staff in hand based off of Spellcasting

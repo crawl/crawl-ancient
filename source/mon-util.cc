@@ -493,31 +493,9 @@ void define_monster(int k)
         m2_sec = random2(3);
         break;
 
-    case MONS_JESSICA:
-    case MONS_DUANE:
-        m2_sec = 0;
-        break;
-    case MONS_SIGMUND:
-        m2_sec = 1;
-        break;
-    case MONS_BLORK_THE_ORC:
-    case MONS_PSYCHE:
-    case MONS_MICHAEL:
-        m2_sec = 2;
-        break;
-    case MONS_JOZEF:
-        m2_sec = 10;
-        break;
     case MONS_LICH:
     case MONS_ANCIENT_LICH:
         m2_sec = 20 + random2(4);
-        break;
-    case MONS_ADOLF:
-    case MONS_BORIS:
-        m2_sec = 23;
-        break;
-    case MONS_MARGERY:
-        m2_sec = 50;
         break;
     case MONS_HELL_KNIGHT:
         m2_sec = (coinflip() ? 58 : 59);
@@ -525,88 +503,13 @@ void define_monster(int k)
     case MONS_NECROMANCER:
         m2_sec = (coinflip() ? 60 : 61);
         break;
-    case MONS_HAROLD:
-    case MONS_NORRIS:
-        m2_sec = 59;
-        break;
-    case MONS_JOSEPHINE:
-        m2_sec = 60;
-        break;
     case MONS_WIZARD:
     case MONS_OGRE_MAGE:
     case MONS_DEEP_ELF_MAGE:
         m2_sec = 62 + random2(5);
         break;
-    case MONS_ERICA:
-        m2_sec = 63;
-        break;
-    case MONS_LOUISE:
-    case MONS_RUPERT:
-        m2_sec = 65;
-        break;
-    case MONS_WAYNE:
-        m2_sec = 67;
-        break;
-    case MONS_FRANCIS:
-    case MONS_FRANCES:
-        m2_sec = 68;
-        break;
-    case MONS_WHITE_IMP:
-        m2_sec = 74;
-        break;
-    case MONS_YNOXINUL:
-        m2_sec = 75;
-        break;
-    case MONS_NEQOXEC:
-        m2_sec = 76;
-        break;
-    case MONS_HELLWING:
-        m2_sec = 77;
-        break;
-    case MONS_SMOKE_DEMON:
-        m2_sec = 78;
-        break;
-    case MONS_CACODEMON:
-        m2_sec = 79;
-        break;
-    case MONS_GREEN_DEATH:
-        m2_sec = 80;
-        break;
-    case MONS_BALRUG:
-        m2_sec = 81;
-        break;
-    case MONS_GERYON:
-        m2_sec = 83;
-        break;
-    case MONS_DISPATER:
-        m2_sec = 84;
-        break;
-    case MONS_ASMODEUS:
-        m2_sec = 85;
-        break;
-    case MONS_ERESHKIGAL:
-        m2_sec = 86;
-        break;
-    case MONS_ANTAEUS:
-        m2_sec = 87;
-        break;
-    case MONS_MNOLEG:
-        m2_sec = 90;
-        break;
-    case MONS_LOM_LOBON:
-        m2_sec = 91;
-        break;
-    case MONS_CEREBOV:
-        m2_sec = 92;
-        break;
-    case MONS_GLOORX_VLOQ:
-        m2_sec = 93;
-        break;
     case MONS_DEEP_ELF_CONJURER:
         m2_sec = (coinflip()? 97 : 98);
-        break;
-    case MONS_KOBOLD_DEMONOLOGIST:
-        m2_sec = 105;
         break;
     case MONS_BUTTERFLY:
     case MONS_POTION_MIMIC:

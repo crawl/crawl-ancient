@@ -1382,8 +1382,7 @@ void choose_weapon( void )
             standard_name_weap(startwep[i], wepName);
 
             sprintf(info, "%c - %s%s" EOL, 'a' + i, wepName,
-                (x <= -5) ? " (awkward)":
-                (x <= -2) ? " (not ideal)" : "");
+                (x <= -4) ? " (not ideal)":"");
             cprintf(info);
         }
 
@@ -1397,7 +1396,7 @@ void choose_weapon( void )
         }
         while (keyin != '?' && (keyin < 'a' || keyin > ('a' + num_choices)));
 
-        if (keyin != '?')
+        if (keyin != '?' && effective_stat_bonus(startwep[keyin-'a']) > -4)
             cprintf(EOL "A fine choice. " EOL);
     }
 
@@ -2203,6 +2202,15 @@ void enterPlayerName(bool blankOK)
 // was a bit of prefixing like the player_* functions in player.cc. -- bwr
 bool verifyPlayerName(void)
 {
+    // quick check for CON -- blows up real good under DOS/Windows
+#if defined(DOS) || defined(WIN32CONSOLE)
+    if (stricmp(you.your_name, "con") == 0)
+    {
+        cprintf("Sorry, that name gives your OS a headache.");
+        return false;
+    }
+#endif
+
      for (int i = 0; i < strlen(you.your_name); i++)
     {
 #if MAC

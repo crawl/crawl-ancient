@@ -413,7 +413,7 @@ void drop_everything(void)
     if (inv_count() < 1)
         return;
 
-    mpr( "You find yourself unable to carry your possesions!" );
+    mpr( "You find yourself unable to carry your possessions!" );
 
     for(i=0; i<ENDOFPACK; i++)
     {

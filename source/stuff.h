@@ -164,4 +164,10 @@ char index_to_letter (int the_index);
 int letter_to_index(int the_letter);
 
 
+// last updated 16mar2001 {dlb}
+/* ***********************************************************************
+ * called from: monplace
+ * *********************************************************************** */
+bool near_stairs(int px, int py, int max_dist);
+
 #endif

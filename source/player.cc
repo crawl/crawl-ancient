@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "externs.h"
 
@@ -2834,11 +2835,11 @@ void display_char_status(void)
 
     if (you.magic_contamination > 5)
     {
-        strcpy(info, "You are ");
-        strcat(info, (you.magic_contamination > 25) ? "almost glowing" :
-                     (you.magic_contamination > 15) ? "infused"
-                                                    : "mildly infused");
-        strcat(info, " with magical energy.");
+        sprintf(info, "You are %s with residual magics%c",
+            (you.magic_contamination > 25) ? "practically glowing" :
+            (you.magic_contamination > 15) ? "heavily infused"
+                                           : "contaminated",
+            (you.magic_contamination > 25) ? '!' : '.');
         mpr(info);
     }
 
@@ -3443,7 +3444,8 @@ char *job_title(int which_job)
 // it will make things a bit easier (ie. avoid HuTr (Human-Troll?)) -- bwr
 char *species_abbrev(unsigned char which_species)
 {
-    if (player_genus(GENPC_DRACONIAN)) // was this further differentiated? {dlb}
+    // was this further differentiated? {dlb}
+    if (player_genus(GENPC_DRACONIAN, which_species))
         return "Dr";
 
     switch (which_species)
@@ -3473,7 +3475,7 @@ char *species_abbrev(unsigned char which_species)
     case SP_SLUDGE_ELF:         return "SE";
     case SP_SPRIGGAN:           return "Sp";
     case SP_TROLL:              return "Tr";
-    default:                    return "Yk";
+    default:                    return "XX";
     }
 }                               // end species_abbrev()
 

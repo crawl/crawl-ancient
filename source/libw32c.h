@@ -58,6 +58,7 @@ typedef std::basic_string<char> string;
 #define _NOCURSOR       false
 
 void init_libw32c(void);
+void deinit_libw32c(void);
 void _setcursortype(int curstype);
 void clrscr(void);
 void gotoxy(int x, int y);

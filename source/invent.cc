@@ -446,8 +446,8 @@ void wizard_string(char comm[50], int i)
     strcpy( comm,
            (i ==  10) ? "a    : acquirement"                  :
            (i ==  15) ? "b    : banish yourself to the Abyss" :
-           (i ==  20) ? "d/*  : create down stairdcase"       :
-           (i ==  30) ? "g    : add a skill"                    :
+           (i ==  20) ? "d/*  : create down staircase"        :
+           (i ==  30) ? "g    : add a skill"                  :
            (i ==  40) ? "h    : heal yourself"                :
            (i ==  50) ? "i    : identify an item"             :
            (i ==  70) ? "l    : make entrance to labyrinth"   :

@@ -1652,7 +1652,7 @@ enum MONSTER_SPELL_TEMPLATES
     MST_FROST_GIANT,                    // 110
     MST_ANGEL,
     MST_DAEVA,
-    MST_SHINING_DRAGON,
+    MST_SHADOW_DRAGON,
     MST_SPHINX,
     MST_MUMMY,                          // 115
     MST_ELECTRIC_GOLEM,
@@ -1666,8 +1666,8 @@ enum MONSTER_SPELL_TEMPLATES
     MST_BOGGART,
     MST_EYE_OF_DEVASTATION,             // 125
     MST_QUICKSILVER_DRAGON,
-    MST_IRON_DRAGON,
-    MST_SKELETAL_WARRIOR,               // 127
+    MST_IRON_DRAGON,                    // 127
+    MST_SKELETAL_WARRIOR,
     NUM_MSTYPES
 };
 

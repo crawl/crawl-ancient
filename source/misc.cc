@@ -1599,7 +1599,7 @@ void weird_writing(char stringy[40])
                     (temp_rand == 11) ? "charcoal" :
                     (temp_rand == 12) ? "pastel" :
                     (temp_rand == 13) ? "mauve"
-                                      : "colorless");
+                                      : "colourless");
 
     strcat(stringy, " ");
 

@@ -314,6 +314,15 @@ bool your_spells(int spc2, int powc, bool allow_fail)
             }
             while (!spell_typematch(spc2, sptype));
 
+            // all spell failures give a bit of magical radiation..
+            // High level spells failing very badly will give
+            // rand2avg(9*90/60,2) + 1 ~= 8 points,  which is
+            // fairly bad..  if they hit a bad miscast effect,
+            // they'll almost certainly get a bad mutation. --GDL
+
+            you.magic_contamination += random2avg((spell_mana(spc2)
+                * (spell_fail(spc2) - spfl)) / 60, 2) + 1;
+
             miscast_effect( sptype, spell_mana(spc2),
                                         spell_fail(spc2) - spfl, 100 );
 

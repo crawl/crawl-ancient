@@ -109,7 +109,7 @@ void blink(void)
 
 void random_blink(bool allow_partial_control)
 {
-    FixedVector < int, 2 > passed;
+    int tx, ty;
 
     if (scan_randarts(RAP_PREVENT_TELEPORTATION))
         mpr("You feel a weird sense of stasis.");
@@ -117,10 +117,9 @@ void random_blink(bool allow_partial_control)
     {
         mpr("The power of the Abyss keeps you in your place!");
     }
-    else if (!random_near_space(passed, true)
-             || (you.x_pos == passed[0] && you.y_pos == passed[1]))
+    else if (!random_near_space(you.x_pos, you.y_pos, tx, ty))
     {
-        mpr("You feel rather strange for a moment.");
+        mpr("You feel jittery for a moment.");
     }
 
 #ifdef USE_SEMI_CONTROLLED_BLINK
@@ -137,8 +136,8 @@ void random_blink(bool allow_partial_control)
     {
         mpr("You blink.");
 
-        you.x_pos = passed[0];
-        you.y_pos = passed[1];
+        you.x_pos = tx;
+        you.y_pos = ty;
 
         if (you.level_type == LEVEL_ABYSS)
         {
