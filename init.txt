@@ -358,3 +358,13 @@ lowercase_invocations = true
 # (but will be harder for newbies to understand).
 
 # terse_hand = false
+
+
+#
+# delay_message_clear - experimental (may be ugly at points)
+#
+# Setting this option to true will delay the clearing of messages until
+# the message space is full (default is false which results in clearing
+# between player actions).
+
+# delay_message_clear = true

@@ -2013,7 +2013,7 @@ const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
         }
     }
 
-    char *const ptr = strchr( tempstr, '%' );
+    const char *const ptr = strchr( tempstr, '%' );
     const bool species_found = (ptr != NULL);
 
     if (species_found)

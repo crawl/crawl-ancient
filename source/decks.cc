@@ -354,7 +354,7 @@ static void cards(unsigned char which_card)
     case CARD_INTELLIGENCE:
         mpr("You have drawn the Brain!");
 
-        you.intel += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+        you.intel += 1 + random2( you.skills[SK_EVOCATIONS] ) / 7;
 
         if (you.max_intel < you.intel)
             you.max_intel = you.intel;
@@ -365,7 +365,7 @@ static void cards(unsigned char which_card)
     case CARD_STRENGTH:
         mpr("You have drawn Strength!");
 
-        you.strength += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+        you.strength += 1 + random2( you.skills[SK_EVOCATIONS] ) / 7;
 
         if (you.max_strength < you.strength)
             you.max_strength = you.strength;
@@ -376,7 +376,7 @@ static void cards(unsigned char which_card)
     case CARD_QUICKSILVER:
         mpr("You have drawn the Quicksilver card.");
 
-        you.dex += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+        you.dex += 1 + random2( you.skills[SK_EVOCATIONS] ) / 7;
 
         if (you.max_dex < you.dex)
             you.max_dex = you.dex;
@@ -387,7 +387,7 @@ static void cards(unsigned char which_card)
     case CARD_STUPIDITY:
         mpr("You have drawn Stupidity!");
 
-        you.intel -= (2 + random2avg(5, 2));
+        you.intel -= (2 + random2avg(3, 2));
         if (you.intel < 4)
             you.intel = 0;
 
@@ -400,7 +400,7 @@ static void cards(unsigned char which_card)
     case CARD_WEAKNESS:
         mpr("You have drawn Weakness.");
 
-        you.strength -= (2 + random2avg(5, 2));
+        you.strength -= (2 + random2avg(3, 2));
         if (you.strength < 4)
             you.strength = 0;
 
@@ -413,7 +413,7 @@ static void cards(unsigned char which_card)
     case CARD_SLOTH:
         mpr("You have drawn the Slug.");
 
-        you.dex -= (2 + random2avg(5, 2));
+        you.dex -= (2 + random2avg(3, 2));
         if (you.dex < 4)
             you.dex = 0;
 

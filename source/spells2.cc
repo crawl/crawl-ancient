@@ -959,7 +959,7 @@ int vampiric_drain(int pow)
         return -1;
     }
 
-    // The practical maiximum of this is about 25 (pow @ 100).  -- bwr
+    // The practical maximum of this is about 25 (pow @ 100).  -- bwr
     inflicted = 3 + random2avg( 9, 2 ) + random2(pow) / 7;
 
     if (inflicted >= monster->hit_points)

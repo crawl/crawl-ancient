@@ -370,7 +370,7 @@ void quant_name( const item_def &item, int quant, char des,
     item_def tmp = item;
     tmp.quantity = quant;
 
-    item_name( tmp, des, buff );
+    item_name( tmp, des, buff, terse );
 }                               // end quant_name()
 
 char item_name( const item_def &item, char descrip, char buff[ ITEMNAME_SIZE ],

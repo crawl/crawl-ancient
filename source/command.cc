@@ -158,7 +158,7 @@ static void adjust_spells(void)
             keyin = nthing;
         else
         {
-            mesclr();
+            mesclr( true );
             goto query;
         }
     }
@@ -209,7 +209,7 @@ static void adjust_spells(void)
             keyin = nthing;
         else
         {
-            mesclr();
+            mesclr( true );
             goto query;
         }
     }
@@ -284,7 +284,7 @@ static void adjust_ability(void)
             keyin = nthing;
         else
         {
-            mesclr();
+            mesclr( true );
             goto query;
         }
     }
@@ -336,7 +336,7 @@ static void adjust_ability(void)
             keyin = nthing;
         else
         {
-            mesclr();
+            mesclr( true );
             goto query;
         }
     }

@@ -1575,7 +1575,15 @@ int mons_adjust_flavoured( struct monsters *monster, struct bolt &pbolt,
         if (mons_res_poison(monster) > 0)
         {
             if (doFlavouredEffects)
-                simple_monster_message(monster, " partially resists.");
+            {
+                simple_monster_message( monster, " partially resists." );
+
+                // Poison arrow can poison any living thing regardless of
+                // poison resistance. -- bwr
+                const int holy = mons_holiness( monster->type );
+                if (holy == MH_PLANT || holy == MH_NATURAL)
+                    poison_monster( monster, YOU_KILL(pbolt.thrower), 2, true );
+            }
 
             hurted /= 2;
         }
@@ -1966,7 +1974,8 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 }                               // end mons_ench_f2()
 
 // actually poisons a monster (w/ message)
-void poison_monster( struct monsters *monster, bool fromPlayer, int levels )
+void poison_monster( struct monsters *monster, bool fromPlayer, int levels,
+                     bool force )
 {
     bool yourPoison = false;
     int ench = ENCH_NONE;
@@ -1975,11 +1984,11 @@ void poison_monster( struct monsters *monster, bool fromPlayer, int levels )
     if (monster->type == -1)
         return;
 
-    if (mons_res_poison(monster) > 0)
+    if (!force && mons_res_poison(monster) > 0)
         return;
 
     // who gets the credit if monster dies of poison?
-    ench = mons_has_ench(monster, ENCH_POISON_I, ENCH_POISON_IV);
+    ench = mons_has_ench( monster, ENCH_POISON_I, ENCH_POISON_IV );
     if (ench != ENCH_NONE)
     {
         old_strength = ench - ENCH_POISON_I;

@@ -419,7 +419,7 @@ const char *get_class_name( int which_job );
  * *********************************************************************** */
 void contaminate_player(int change, bool statusOnly = false);
 
-void poison_player( int amount );
+void poison_player( int amount, bool force = false );
 void reduce_poison_player( int amount );
 
 void confuse_player( int amount, bool resistable = true );

@@ -194,7 +194,7 @@ static void open_door(char move_x, char move_y);
    It all starts here. Some initialisations are run first, then straight to
    new_game and then input.
 */
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
 #ifdef USE_ASCII_CHARACTERS
     // Default to the non-ibm set when it makes sense.
@@ -362,7 +362,6 @@ int main(int argc, char *argv[])
 #endif
 
     return 0;
-
 }                               // end main()
 
 #ifdef WIZARD

@@ -72,7 +72,7 @@ void cast_selective_amnesia(bool force)
             }
 
             if (!isalpha( keyin ))
-                mesclr();
+                mesclr( true );
             else
                 break;
         }

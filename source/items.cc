@@ -882,7 +882,7 @@ void pickup(void)
                 }
 
                 strcat(info, "\? (y,n,a,q)");
-                mpr(info);
+                mpr( info, MSGCH_PROMPT );
 
                 keyin = get_ch();
             }
@@ -961,6 +961,17 @@ bool items_stack( const item_def &item1, const item_def &item2 )
     {
         if ((item1.flags & ~ISFLAG_IDENT_MASK)
                 != (item2.flags & ~ISFLAG_IDENT_MASK))
+        {
+            return (false);
+        }
+
+        // Thanks to mummy cursing, we can have potions of decay
+        // that don't look alike... so we don't stack potions
+        // if either isn't identified and they look different.  -- bwr
+        if (item1.base_type == OBJ_POTIONS
+            && item1.special != item2.special
+            && (item_not_ident( item1, ISFLAG_KNOW_TYPE )
+                || item_not_ident( item2, ISFLAG_KNOW_TYPE )))
         {
             return (false);
         }
@@ -2517,8 +2528,8 @@ void cmd_destroy_item( void )
     {
         if (you.equip[i] == item)
         {
-            // mesclr();
-            mpr( "You can't destroy equipped items!" );
+            mesclr( true );
+            mpr( "You cannot destroy equipped items!" );
             return;
         }
     }

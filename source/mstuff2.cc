@@ -646,7 +646,6 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
     case MS_SUMMON_DEMON_GREATER:
     case MS_CANTRIP:
         return;
-        break;
     default:
         break;
     }

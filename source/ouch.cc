@@ -164,11 +164,14 @@ int check_your_resists(int hurted, int flavour)
         resist = player_res_poison();
 
         if (!resist)
-            poison_player( 6 + random2(3) );
+            poison_player( 6 + random2(3), true );
         else
         {
-            canned_msg(MSG_YOU_RESIST);
+            mpr("You partially resist.");
             hurted /= 2;
+
+            if (!you.is_undead)
+                poison_player( coinflip() ? 2 : 3, true );
         }
         break;
 

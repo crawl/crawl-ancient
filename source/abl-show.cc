@@ -375,7 +375,7 @@ bool activate_ability(void)
     {
         if (need_redraw)
         {
-            mesclr();
+            mesclr( true );
             redraw_screen();
         }
 

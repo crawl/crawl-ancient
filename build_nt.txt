@@ -30,6 +30,11 @@ Notes for building crawl with Borland C++ 5.5 free commandline tools
   for example:
   -L"g:\bcc55\lib;g:\bcc55\lib\psdk"
   (This may already be done if you've set up Borland for use with VIDE)
-* cd to the source directory and edit 'makefile' to point to 'makefile.win'.
-* finally,  type 'make all' ('make' defaults to 'make debug' which isn't
+
+* cd to the source directory and edit 'makefile'
+    * set MAKEFILE=makefile.bor
+    * comment out the OTHER=-j2 line
+    * remove EXTRA_FLAGS=... from command (set flags in makefile.bor instead)
+
+* finally,  type 'make all' ('make' may default to 'make debug' which isn't
   quite supported yet using the free tools)

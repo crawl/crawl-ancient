@@ -744,6 +744,7 @@ int kbhit()
     int i;
 
     nodelay(stdscr, TRUE);
+    timeout(0);  // apparently some need this to guarantee non-blocking -- bwr
     i = wgetch(stdscr);
     nodelay(stdscr, FALSE);
 

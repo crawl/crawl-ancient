@@ -2543,7 +2543,6 @@ char god_colour( char god ) //mv - added
     case GOD_ELYVILON:
     case GOD_OKAWARU:
         return(CYAN);
-        break;
 
     case GOD_YREDELEMNUL:
     case GOD_KIKUBAAQUDGHA:
@@ -2551,22 +2550,20 @@ char god_colour( char god ) //mv - added
     case GOD_VEHUMET:
     case GOD_TROG:
         return(LIGHTRED);
-        break;
 
     case GOD_XOM:
         return(YELLOW);
-        break;
 
     case GOD_NEMELEX_XOBEH:
         return(LIGHTMAGENTA);
-        break;
 
     case GOD_SIF_MUNA:
         return(LIGHTBLUE);
-        break;
 
     case GOD_NO_GOD:
     default:
-        return(YELLOW);
+        break;
     }
+
+    return(YELLOW);
 }

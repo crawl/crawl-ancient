@@ -355,12 +355,17 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
         if (menv[id].type == -1)
             break;
     }
+
     if (id == MAX_MONSTERS)
         return -1;
 
     // scrap monster inventory
     for (i = 0; i < NUM_MONSTER_SLOTS; i++)
         menv[id].inv[i] = NON_ITEM;
+
+    // scrap monster enchantments
+    for (i = 0; i < NUM_MON_ENCHANTS; i++)
+        menv[id].enchantment[i] = ENCH_NONE;
 
     // setup habitat and placement
     if (first_band_member)

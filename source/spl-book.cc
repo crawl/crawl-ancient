@@ -1360,7 +1360,7 @@ bool learn_spell(void)
             break;
     }
 
-    mesclr();
+    mesclr( true );
 
     if (you.mutation[MUT_BLURRY_VISION] > 0
                 && random2(4) < you.mutation[MUT_BLURRY_VISION])

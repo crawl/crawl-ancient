@@ -486,6 +486,8 @@ int tag_read(FILE *fp, char minorVersion)
 // it (currently none)
 void tag_missing(int tag, char minorVersion)
 {
+    UNUSED( minorVersion );
+
     switch(tag)
     {
         case TAG_LEVEL_ATTITUDE:

@@ -49,13 +49,16 @@ std::string & trim_string( std::string &str )
     // basic_string::erase to take iterators,  and basic_string::remove
     // to take size_t or integer.  This is ass-backwards compared to
     // nearly all other C++ compilers.  Crap.             (GDL)
-#ifdef __BCPLUSPLUS__
-    str.remove( 0, str.find_first_not_of( " \t\n\r" ) );
-    str.remove( str.find_last_not_of( " \t\n\r" ) + 1 );
-#else
+    //
+    // Borland 5.5 does this correctly now... leaving the old code
+    // around for now in case anyone needs it.  -- bwr
+// #ifdef __BCPLUSPLUS__
+//     str.remove( 0, str.find_first_not_of( " \t\n\r" ) );
+//     str.remove( str.find_last_not_of( " \t\n\r" ) + 1 );
+// #else
     str.erase( 0, str.find_first_not_of( " \t\n\r" ) );
     str.erase( str.find_last_not_of( " \t\n\r" ) + 1 );
-#endif
+// #endif
 
     return (str);
 }
@@ -283,6 +286,7 @@ void read_init_file(void)
     Options.cls                    = '\0';
     Options.terse_hand             = true;
     Options.auto_list              = false;
+    Options.delay_message_clear    = false;
 
     Options.flush_input[ FLUSH_ON_FAILURE ]     = true;
     Options.flush_input[ FLUSH_BEFORE_COMMAND ] = false;
@@ -697,6 +701,10 @@ void read_init_file(void)
         else if (key == "auto_list")
         {
             Options.auto_list = read_bool( field, Options.auto_list );
+        }
+        else if (key == "delay_message_clear")
+        {
+            Options.delay_message_clear = read_bool( field, Options.delay_message_clear );
         }
         else if (key == "terse_hand")
         {

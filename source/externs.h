@@ -477,6 +477,7 @@ struct game_options
     char        race;           // preselected race
     char        cls;            // preselected class
     bool        terse_hand;     // use terse description for wielded item
+    bool        delay_message_clear; // avoid clearing messages each turn
     unsigned int friend_brand;  // Attribute for branding friendly monsters
     bool        no_dark_brand;  // Attribute for branding friendly monsters
 

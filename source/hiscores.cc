@@ -1179,8 +1179,10 @@ FILE *hs_open( const char *mode )
     return handle;
 }
 
-void hs_close(FILE *handle, const char *mode)
+void hs_close( FILE *handle, const char *mode )
 {
+    UNUSED( mode );
+
     if (handle == NULL)
         return;
 
@@ -1201,6 +1203,47 @@ void hs_close(FILE *handle, const char *mode)
   #endif
     }
 #endif
+}
+
+static void hs_init( struct scorefile_entry &dest )
+{
+    // simple init
+    dest.version = 0;
+    dest.release = 0;
+    dest.points = -1;
+    dest.name[0] = '\0';
+    dest.uid = 0;
+    dest.race = 0;
+    dest.cls = 0;
+    dest.lvl = 0;
+    dest.race_class_name[0] = '\0';
+    dest.best_skill = 0;
+    dest.best_skill_lvl = 0;
+    dest.death_type = KILLED_BY_SOMETHING;
+    dest.death_source = 0;
+    dest.mon_num = 0;
+    dest.death_source_name[0] = '\0';
+    dest.auxkilldata[0] = '\0';
+    dest.dlvl = 0;
+    dest.level_type = 0;
+    dest.branch = 0;
+    dest.final_hp = -1;
+    dest.final_max_hp = -1;
+    dest.final_max_max_hp = -1;
+    dest.str = -1;
+    dest.intel = -1;
+    dest.dex = -1;
+    dest.damage = -1;
+    dest.god = -1;
+    dest.piety = -1;
+    dest.penance = -1;
+    dest.wiz_mode = 0;
+    dest.birth_time = 0;
+    dest.death_time = 0;
+    dest.real_time = -1;
+    dest.num_turns = -1;
+    dest.num_diff_runes = 0;
+    dest.num_runes = 0;
 }
 
 void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
@@ -1245,10 +1288,12 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
     dest.num_runes = src.num_runes;
 }
 
-bool hs_read(FILE *scores, struct scorefile_entry &dest)
+bool hs_read( FILE *scores, struct scorefile_entry &dest )
 {
     char inbuf[200];
     int c = EOF;
+
+    hs_init( dest );
 
     // get a character..
     if (scores != NULL)
@@ -1256,10 +1301,7 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
 
     // check for NULL scores file or EOF
     if (scores == NULL || c == EOF)
-    {
-        dest.points = 0;
         return false;
-    }
 
     // get a line - this is tricky.  "Lines" come in three flavors:
     // 1) old-style lines which were 80 character blocks
@@ -1270,11 +1312,8 @@ bool hs_read(FILE *scores, struct scorefile_entry &dest)
     // put 'c' in first spot
     inbuf[0] = c;
 
-    if (fgets(&inbuf[1], (c==':') ? 198 : 81, scores) == NULL)
-    {
-        dest.points = 0;
+    if (fgets(&inbuf[1], (c==':') ? (sizeof(inbuf) - 2) : 81, scores) == NULL)
         return false;
-    }
 
     // check type;  lines starting with a colon are new-style scores.
     if (c == ':')

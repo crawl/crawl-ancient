@@ -378,8 +378,8 @@ int prompt_invent_item( const char *prompt, int type_expect,
     {
         if (need_redraw)
         {
-            mesclr();
             redraw_screen();
+            mesclr( true );
         }
 
         if (need_prompt)
@@ -504,6 +504,8 @@ void list_commands(bool wizard)
 
 const char *wizard_string( int i )
 {
+    UNUSED( i );
+
 #ifdef WIZARD
     return((i ==  10) ? "a    : acquirement"                  :
            (i ==  13) ? "A    : set all skills to level"      :

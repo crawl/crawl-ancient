@@ -46,6 +46,9 @@
 
 static int torment_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( pow );
+    UNUSED( garbage );
+
     // is player?
     if (x == you.x_pos && y == you.y_pos)
     {
@@ -76,6 +79,7 @@ static int torment_monsters(int x, int y, int pow, int garbage)
 
     monster->hit_points = 1 + (monster->hit_points / 2);
     simple_monster_message(monster, " convulses!");
+
     return 1;
 }
 

@@ -227,10 +227,12 @@ void mpr(const char *inf, int channel, int param)
 
     textcolor(LIGHTGREY);
 
-    if (Message_Line == get_number_of_lines() - 18) // ( Message_Line == 8 )
+    const int num_lines = get_number_of_lines();
+
+    if (Message_Line == num_lines - 18) // ( Message_Line == 8 )
         more();
 
-    gotoxy(1, Message_Line + 18);     // (1, Message_Line + 17)
+    gotoxy( (Options.delay_message_clear) ? 2 : 1, Message_Line + 18 );
     strncpy(info2, inf, 78);
     info2[78] = 0;
 
@@ -241,6 +243,13 @@ void mpr(const char *inf, int channel, int param)
     textcolor(LIGHTGREY);
 
     Message_Line++;
+
+    if (Options.delay_message_clear
+            && channel != MSGCH_PROMPT
+            && Message_Line == num_lines - 18)
+    {
+        more();
+    }
 
     // equipment lists just waste space in the message recall
     if (channel != MSGCH_EQUIPMENT)
@@ -261,11 +270,19 @@ bool any_messages(void)
     return (Message_Line > 0);
 }
 
-void mesclr(void)
+void mesclr( bool force )
 {
     // if no messages, return.
-    if (Message_Line == 0)
+    if (!any_messages())
         return;
+
+    if (!force && Options.delay_message_clear)
+    {
+        gotoxy( 1, Message_Line + 18 );
+        textcolor( channel_to_colour( MSGCH_PLAIN, 0 ) );
+        cprintf( ">" );
+        return;
+    }
 
     // turn cursor off -- avoid 'cursor dance'
     _setcursortype(_NOCURSOR);
@@ -309,7 +326,7 @@ void more(void)
     char keypress = 0;
 
 #ifdef PLAIN_TERM
-    gotoxy(2, get_number_of_lines());
+    gotoxy( 2, get_number_of_lines() );
 #endif
 
 #ifdef DOS_TERM
@@ -330,7 +347,7 @@ void more(void)
     }
     while (keypress != ' ' && keypress != '\r' && keypress != '\n');
 
-    mesclr();
+    mesclr( (Message_Line >= get_number_of_lines() - 18) );
 }                               // end more()
 
 void replay_messages(void)

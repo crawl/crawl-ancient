@@ -2059,7 +2059,7 @@ void show_map( FixedVector<int, 2> &spec_place )
         spec_place[0] = start_x + curs_x;
         spec_place[1] = start_y + curs_y;
         goto putty;
-        break;
+
     default:
         move_x = 0;
         move_y = 0;

@@ -309,6 +309,7 @@ void setStringInput(bool value)
 
 void init_colors(char *windowTitle)
 {
+   UNUSED( windowTitle );
    int i;
 
    // look up the Crawl shortcut
@@ -379,6 +380,7 @@ void deinit_libw32c(void)
 // only on input.
 void _setcursortype(int curstype)
 {
+    UNUSED( curstype );
     ;
 }
 
@@ -524,6 +526,10 @@ void cprintf(const char *format, ...)
 void window(int x, int y, int lx, int ly)
 {
    // do nothing
+   UNUSED( x );
+   UNUSED( y );
+   UNUSED( lx );
+   UNUSED( ly );
 }
 
 int wherex(void)
@@ -690,6 +696,7 @@ void delay(int ms)
 void textbackground(int c)
 {
    // do nothing
+   UNUSED( c );
 }
 
 int getConsoleString(char *buf, int maxlen)

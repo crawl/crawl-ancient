@@ -176,6 +176,8 @@ int get_mimic_colour( struct monsters *mimic )
 // monster curses a random player inventory item:
 bool curse_an_item( char which, char power )
 {
+    UNUSED( power );
+
     /* use which later, if I want to curse weapon/gloves whatever
        which, for now: 0 = non-mummy, 1 = mummy (potions as well)
        don't change mitm.special of !odecay */
@@ -218,7 +220,10 @@ bool curse_an_item( char which, char power )
     /* problem: changes large piles of potions */
     /* don't change you.inv_special (just for fun) */
     if (you.inv[item].base_type == OBJ_POTIONS)
+    {
         you.inv[item].sub_type = POT_DECAY;
+        unset_ident_flags( you.inv[item], ISFLAG_IDENT_MASK ); // all different
+    }
     else
         do_curse_item( you.inv[item] );
 
@@ -4832,7 +4837,7 @@ bool message_current_target(void)
         if (mons_near(montarget) && player_monster_visible( montarget ))
         {
             snprintf( info, INFO_SIZE,
-                      "You are currently targeting %s (p to target).",
+                      "You are currently targeting %s (use p/t to fire).",
                       ptr_monam(montarget, DESC_NOCAP_THE) );
 
             mpr(info);

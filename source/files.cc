@@ -198,6 +198,8 @@ static void load_ghost();
 void make_filename( char *buf, const char *prefix, int level, int where,
                     bool isLabyrinth, bool isGhost )
 {
+    UNUSED( isGhost );
+
     char suffix[4], lvl[5];
     char finalprefix[kFileNameLen];
 
@@ -991,7 +993,11 @@ void save_game(bool leave_game)
 
 void load_ghost(void)
 {
+    char majorVersion;
+    char minorVersion;
     char cha_fil[kFileNameSize];
+    int imn;
+    int i;
 
     make_filename( cha_fil, "bones", you.your_level, you.where_are_you,
                    (you.level_type != LEVEL_DUNGEON), true );
@@ -1000,9 +1006,6 @@ void load_ghost(void)
 
     if (gfile == NULL)
         return;                 // no such ghost.
-
-    char majorVersion;
-    char minorVersion;
 
     if (!determine_ghost_version(gfile, majorVersion, minorVersion))
     {
@@ -1040,7 +1043,7 @@ void load_ghost(void)
     unlink(cha_fil);
 
     // translate ghost to monster and place.
-    for (int imn = 0; imn < MAX_MONSTERS - 10; imn++)
+    for (imn = 0; imn < MAX_MONSTERS - 10; imn++)
     {
         if (menv[imn].type != -1)
             continue;
@@ -1061,7 +1064,7 @@ void load_ghost(void)
 
         menv[imn].number = 250;
 
-        for (int i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
+        for (i = GVAL_SPELL_1; i <= GVAL_SPELL_6; i++)
         {
             if (ghost.values[i] != MS_NO_SPELL)
             {
@@ -1069,6 +1072,12 @@ void load_ghost(void)
                 break;
             }
         }
+
+        for (i = 0; i < NUM_MONSTER_SLOTS; i++)
+            menv[imn].inv[i] = NON_ITEM;
+
+        for (i = 0; i < NUM_MON_ENCHANTS; i++)
+            menv[imn].enchantment[i] = ENCH_NONE;
 
         do
         {

@@ -29,7 +29,7 @@ struct message_item {
  *              misc - player - spell - spl-book - spells1 - spells2 -
  *              spells3
  * *********************************************************************** */
-void mesclr(void);
+void mesclr( bool force = false );
 
 
 // last updated 12may2000 {dlb}

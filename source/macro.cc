@@ -39,6 +39,7 @@
 #include <deque>
 
 #include <stdio.h>      // for snprintf
+#include <ctype.h>      // for tolower
 
 #include "externs.h"
 

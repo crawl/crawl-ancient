@@ -389,6 +389,7 @@ static char vault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // cell vault
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -433,6 +434,7 @@ static char vault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // little maze vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -480,6 +482,7 @@ static char vault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // thingy vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -524,6 +527,7 @@ static char vault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // hourglass vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -569,6 +573,7 @@ static char vault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // a more Angbandy vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -615,6 +620,7 @@ static char vault_6(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // four-leaf vault
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -658,6 +664,7 @@ static char vault_7(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // cross vault
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -702,6 +709,7 @@ static char vault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // another thingy vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -747,6 +755,7 @@ static char vault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char vault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {    // impenetrable vault
+    UNUSED( mons_array );
 
     for (unsigned char i = 0; i < 81; i++)
         strcpy(vgrid[i], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -1037,6 +1046,7 @@ static char fort_yaktaur(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char box_level(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // by John Savard
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -2197,6 +2207,7 @@ static char hall_of_Zot(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char temple(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // this is the ecumenical temple level
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     strcpy(vgrid[1], "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
@@ -2594,6 +2605,7 @@ static char swamp(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "..xxxx=xxx..");
@@ -2614,6 +2626,8 @@ static char minivault_1(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
+
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "..xxxx.xxxx.");
     strcpy(vgrid[2], "..xx.....xx.");
@@ -2633,6 +2647,7 @@ static char minivault_2(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".cccccccccc.");
@@ -2653,6 +2668,7 @@ static char minivault_3(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "....xwxx....");
@@ -2673,6 +2689,7 @@ static char minivault_4(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_5(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".x.xxxxxxxx.");
@@ -2764,6 +2781,7 @@ static char minivault_8(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // evil zoo
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".==========.");
@@ -2785,6 +2803,7 @@ static char minivault_9(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxx..xxxx.");
@@ -2800,12 +2819,12 @@ static char minivault_10(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 
 static char minivault_11(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // multicoloured onion
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".+xxxxxxxx+.");
@@ -2821,12 +2840,12 @@ static char minivault_11(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 
 static char minivault_12(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // closed box minivault
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxxxxxxxx.");
@@ -2842,12 +2861,12 @@ static char minivault_12(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 
 static char minivault_13(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // little trap spiral
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxxxxxxxx.");
@@ -2863,12 +2882,12 @@ static char minivault_13(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 
 static char minivault_14(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // water cross
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".wwwww.wwww.");
@@ -2884,11 +2903,11 @@ static char minivault_14(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 static char minivault_15(char vgrid[81][81], FixedVector<int, 7>& mons_array) /* lava pond */
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -2904,12 +2923,12 @@ static char minivault_15(char vgrid[81][81], FixedVector<int, 7>& mons_array) /*
     strcpy(vgrid[11], "............");
 
     return 1;
-
 }
 
 
 static char minivault_16(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -2925,12 +2944,12 @@ static char minivault_16(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[11], "............");
 
     return MAP_NORTH;
-
 }
 
 
 static char minivault_17(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -2951,6 +2970,7 @@ static char minivault_17(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_18(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -2971,6 +2991,7 @@ static char minivault_18(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_19(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xx......xx.");
@@ -2991,6 +3012,7 @@ static char minivault_19(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_20(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxx..xxxx.");
@@ -3011,6 +3033,7 @@ static char minivault_20(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_21(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".^xxxxxxxx^.");
@@ -3032,6 +3055,7 @@ static char minivault_21(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_22(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".....xx.....");
@@ -3053,6 +3077,7 @@ static char minivault_22(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_23(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "x.x.x.x.x.x.");
     strcpy(vgrid[1], ".x.x.x.x.x.x");
@@ -3074,6 +3099,7 @@ static char minivault_23(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_24(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "....xxxx....");
@@ -3095,6 +3121,7 @@ static char minivault_24(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_25(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xx+xxxxxxx.");
@@ -3116,6 +3143,7 @@ static char minivault_25(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_26(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "c..........c");
     strcpy(vgrid[1], ".c...cc...c.");
@@ -3137,6 +3165,7 @@ static char minivault_26(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_27(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".x.xxxxxxxx.");
@@ -3158,6 +3187,7 @@ static char minivault_27(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_28(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], ".xxxx.xxxx..");
@@ -3205,6 +3235,7 @@ static char minivault_29(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_30(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -3226,6 +3257,7 @@ static char minivault_30(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_31(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -3247,6 +3279,7 @@ static char minivault_31(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_32(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -3268,6 +3301,7 @@ static char minivault_32(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 
 static char minivault_33(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 {     // lava pond
+    UNUSED( mons_array );
 
     strcpy(vgrid[0], "............");
     strcpy(vgrid[1], "............");
@@ -3287,35 +3321,37 @@ static char minivault_33(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 static char minivault_34(char vgrid[81][81], FixedVector<int, 7>& mons_array, bool orientation)
-{ //jmf: multi-god temple thing
-  int i, di;
+{
+    //jmf: multi-god temple thing
+    UNUSED( mons_array );
+    int i, di;
 
-  if ( orientation )
-  {
-      i = 0;
-      di = +1;
-  }
-  else
-  {
-      i = 11;
-      di = -1;
-  }
+    if ( orientation )
+    {
+        i = 0;
+        di = +1;
+    }
+    else
+    {
+        i = 11;
+        di = -1;
+    }
 
-  for (int c=0; c <= 11; c++, i += di)
-  {
-      strcpy(vgrid[i], "............");
-      strcpy(vgrid[i], ".=xxxxxxxx=.");
-      strcpy(vgrid[i], ".x9......9x.");
-      strcpy(vgrid[i], ".xT......Tx.");
-      strcpy(vgrid[i], ".x..C..C..x.");
-      strcpy(vgrid[i], ".xT......Tx.");
-      strcpy(vgrid[i], ".xxxxxxxxxx.");
-      strcpy(vgrid[i], ".xxx$$$$xxx.");
-      strcpy(vgrid[i], ".xx8....8xx.");
-      strcpy(vgrid[i], "..xx....xx..");
-      strcpy(vgrid[i], "...xG..Gx...");
-      strcpy(vgrid[i], "............");
-  }
+    for (int c=0; c <= 11; c++, i += di)
+    {
+        strcpy(vgrid[i], "............");
+        strcpy(vgrid[i], ".=xxxxxxxx=.");
+        strcpy(vgrid[i], ".x9......9x.");
+        strcpy(vgrid[i], ".xT......Tx.");
+        strcpy(vgrid[i], ".x..C..C..x.");
+        strcpy(vgrid[i], ".xT......Tx.");
+        strcpy(vgrid[i], ".xxxxxxxxxx.");
+        strcpy(vgrid[i], ".xxx$$$$xxx.");
+        strcpy(vgrid[i], ".xx8....8xx.");
+        strcpy(vgrid[i], "..xx....xx..");
+        strcpy(vgrid[i], "...xG..Gx...");
+        strcpy(vgrid[i], "............");
+    }
 
     return MAP_NORTH;
 }
@@ -3331,35 +3367,37 @@ static char minivault_34_b(char vgrid[81][81], FixedVector<int, 7>& mons_array)
 }
 
 static char minivault_35(char vgrid[81][81], FixedVector<int, 7>& mons_array, bool orientation)
-{ //jmf: another multi-god temple thing
-  int i, di;
+{
+    UNUSED( mons_array );
+    //jmf: another multi-god temple thing
+    int i, di;
 
-  if (orientation)
-  {
-      i = 0;
-      di = +1;
-  }
-  else
-  {
-      i = 11;
-      di = -1;
-  }
+    if (orientation)
+    {
+        i = 0;
+        di = +1;
+    }
+    else
+    {
+        i = 11;
+        di = -1;
+    }
 
-  for (int c=0; c <= 11; c++, i += di)
-  {
-      strcpy(vgrid[i], "............");
-      strcpy(vgrid[i], "..vvvvvvvv..");
-      strcpy(vgrid[i], ".vv......vv.");
-      strcpy(vgrid[i], ".v..x..x..v.");
-      strcpy(vgrid[i], ".v.Cx..xC.v.");
-      strcpy(vgrid[i], ".v..x..x..v.");
-      strcpy(vgrid[i], ".vT8x..x8Tv.");
-      strcpy(vgrid[i], ".vvvx==xvvv.");
-      strcpy(vgrid[i], "...Gx99xG...");
-      strcpy(vgrid[i], "...+*99*+...");
-      strcpy(vgrid[i], "...GxxxxG...");
-      strcpy(vgrid[i], "............");
-  }
+    for (int c=0; c <= 11; c++, i += di)
+    {
+        strcpy(vgrid[i], "............");
+        strcpy(vgrid[i], "..vvvvvvvv..");
+        strcpy(vgrid[i], ".vv......vv.");
+        strcpy(vgrid[i], ".v..x..x..v.");
+        strcpy(vgrid[i], ".v.Cx..xC.v.");
+        strcpy(vgrid[i], ".v..x..x..v.");
+        strcpy(vgrid[i], ".vT8x..x8Tv.");
+        strcpy(vgrid[i], ".vvvx==xvvv.");
+        strcpy(vgrid[i], "...Gx99xG...");
+        strcpy(vgrid[i], "...+*99*+...");
+        strcpy(vgrid[i], "...GxxxxG...");
+        strcpy(vgrid[i], "............");
+    }
 
     return MAP_NORTH;
 }

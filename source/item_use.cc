@@ -2695,7 +2695,7 @@ static void handle_read_book( int item_slot )
 
     if (spell < 'a' || spell > 'h')     //jmf: was 'g', but 8=h
     {
-        mesclr();
+        mesclr( true );
         return;
     }
 
@@ -2704,14 +2704,14 @@ static void handle_read_book( int item_slot )
     nthing = which_spell_in_book(you.inv[item_slot].sub_type, spell_index);
     if (nthing == SPELL_NO_SPELL)
     {
-        mesclr();
+        mesclr( true );
         return;
     }
 
     describe_spell( nthing );
     redraw_screen();
 
-    mesclr();
+    mesclr( true );
     return;
 }
 

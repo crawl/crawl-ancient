@@ -2152,8 +2152,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " roars horribly.");
                 mpr(info, MSGCH_TALK);
                 mpr("You are afraid.", MSGCH_WARN);
-                return true;
-                break;
+                return (true);
             }
             break;          // end Xtahua
 

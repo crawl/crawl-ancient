@@ -140,6 +140,9 @@ static void place_debris(int x, int y, int debris_type)
         move_item_to_grid( &large, x, y );
 
 #else
+    UNUSED( x );
+    UNUSED( y );
+    UNUSED( debris_type );
     return;
 #endif
 }                               // end place_debris()
@@ -170,6 +173,8 @@ inline bool player_hurt_monster(int monster, int damage)
 // Here begin the actual spells:
 static int shatter_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     dice_def   dam_dice( 0, 5 + pow / 4 );  // number of dice set below
     const int  monster = mgrd[x][y];
 
@@ -262,6 +267,7 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
 static int shatter_items(int x, int y, int pow, int garbage)
 {
     UNUSED( pow );
+    UNUSED( garbage );
 
     int broke_stuff = 0, next, obj = igrd[x][y];
 
@@ -302,6 +308,8 @@ static int shatter_items(int x, int y, int pow, int garbage)
 
 static int shatter_walls(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     int  chance = 0;
     int  stuff = 0;
 
@@ -839,6 +847,7 @@ void cast_conjure_ball_lightning( int pow )
 
 static int sleep_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
     int mnstr = mgrd[x][y];
 
     if (mnstr == NON_MONSTER)                                   return 0;
@@ -868,6 +877,7 @@ void cast_mass_sleep(int pow)
 
 static int tame_beast_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
     int which_mons = mgrd[x][y];
 
     if (which_mons == NON_MONSTER)                             return 0;
@@ -912,6 +922,7 @@ void cast_tame_beasts(int pow)
 static int ignite_poison_objects(int x, int y, int pow, int garbage)
 {
     UNUSED( pow );
+    UNUSED( garbage );
 
     int obj = igrd[x][y], next, strength = 0;
 
@@ -955,6 +966,7 @@ static int ignite_poison_objects(int x, int y, int pow, int garbage)
 static int ignite_poison_clouds( int x, int y, int pow, int garbage )
 {
     UNUSED( pow );
+    UNUSED( garbage );
 
     bool did_anything = false;
 
@@ -986,6 +998,8 @@ static int ignite_poison_clouds( int x, int y, int pow, int garbage )
 
 static int ignite_poison_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     struct bolt beam;
     beam.flavour = BEAM_FIRE;   // this is dumb, only used for adjust!
 
@@ -1232,6 +1246,8 @@ void cast_animate_golem(int pow)
 
 static int discharge_monsters( int x, int y, int pow, int garbage )
 {
+    UNUSED( garbage );
+
     const int mon = mgrd[x][y];
     int damage = 0;
 
@@ -1417,6 +1433,8 @@ void cast_bend(int pow)
 // the insane damage potential.  -- bwr
 int disperse_monsters(int x, int y, int pow, int message)
 {
+    UNUSED( message );
+
     const int monster_attacked = mgrd[x][y];
 
     if (monster_attacked == NON_MONSTER)
@@ -1461,6 +1479,8 @@ void cast_dispersal(int pow)
 
 static int spell_swap_func(int x, int y, int pow, int message)
 {
+    UNUSED( message );
+
     int monster_attacked = mgrd[x][y];
 
     if (monster_attacked == NON_MONSTER)
@@ -1592,6 +1612,8 @@ static int make_a_random_cloud(int x, int y, int pow, int ctype)
 
 static int passwall(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     char dx, dy, nx = x, ny = y;
     int howdeep = 0;
     bool done = false;
@@ -1677,6 +1699,7 @@ void cast_passwall(int pow)
 static int intoxicate_monsters(int x, int y, int pow, int garbage)
 {
     UNUSED( pow );
+    UNUSED( garbage );
 
     int mon = mgrd[x][y];
 
@@ -1706,6 +1729,8 @@ void cast_intoxicate(int pow)
 // intended as a high-level Elven (a)bility
 static int glamour_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     int mon = mgrd[x][y];
 
     // Power in this function is already limited by a function of
@@ -1801,6 +1826,9 @@ void cast_glamour(int pow)
 
 bool backlight_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( pow );
+    UNUSED( garbage );
+
     int mon = mgrd[x][y];
 
     if (mon == NON_MONSTER)
@@ -2172,6 +2200,8 @@ void make_shuggoth(int x, int y, int hp)
 
 static int rot_living(int x, int y, int pow, int message)
 {
+    UNUSED( message );
+
     int mon = mgrd[x][y];
     int ench;
 
@@ -2202,6 +2232,8 @@ static int rot_living(int x, int y, int pow, int message)
 
 static int rot_undead(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     int mon = mgrd[x][y];
     int ench;
 
@@ -2266,6 +2298,8 @@ static int rot_undead(int x, int y, int pow, int garbage)
 
 static int rot_corpses(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     return make_a_rot_cloud(x, y, pow, CLOUD_MIASMA);
 }                               // end rot_corpses()
 
@@ -2293,6 +2327,8 @@ void do_monster_rot(int mon)
 
 static int snake_charm_monsters(int x, int y, int pow, int message)
 {
+    UNUSED( message );
+
     int mon = mgrd[x][y];
 
     if (mon == NON_MONSTER)                             return 0;
@@ -3056,6 +3092,8 @@ void cast_condensation_shield(int pow)
 
 static int quadrant_blink(int x, int y, int pow, int garbage)
 {
+    UNUSED( garbage );
+
     if (x == you.x_pos && y == you.y_pos)
         return (0);
 

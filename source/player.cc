@@ -155,35 +155,24 @@ bool player_genus(unsigned char which_genus, unsigned char species)
     case SP_UNK0_DRACONIAN:
     case SP_UNK1_DRACONIAN:
     case SP_UNK2_DRACONIAN:
-        if (which_genus == GENPC_DRACONIAN)
-            return (true);
-        else
-            return (false);
-        break;
+        return (which_genus == GENPC_DRACONIAN);
 
     case SP_ELF:
     case SP_HIGH_ELF:
     case SP_GREY_ELF:
     case SP_DEEP_ELF:
     case SP_SLUDGE_ELF:
-        if (which_genus == GENPC_ELVEN)
-            return (true);
-        else
-            return (false);
-        break;
+        return (which_genus == GENPC_ELVEN);
 
     case SP_HILL_DWARF:
     case SP_MOUNTAIN_DWARF:
-        if (which_genus == GENPC_DWARVEN)
-            return (true);
-        else
-            return (false);
-        break;
+        return (which_genus == GENPC_DWARVEN);
 
     default:
-        return (false);
         break;
     }
+
+    return (false);
 }                               // end player_genus()
 
 // Looks in equipment "slot" to see if there is an equiped "sub_type".
@@ -3674,9 +3663,9 @@ void contaminate_player(int change, bool statusOnly)
     mpr( info, (change > 0) ? MSGCH_WARN : MSGCH_RECOVERY );
 }
 
-void poison_player( int amount )
+void poison_player( int amount, bool force )
 {
-    if (player_res_poison() || amount <= 0)
+    if ((!force && player_res_poison()) || amount <= 0)
         return;
 
     const int old_value = you.poison;

@@ -292,6 +292,9 @@ void redraw_screen(void)
 
     print_stats();
 
+    if (Options.delay_message_clear)
+        mesclr( true );
+
     new_level();
 
     viewwindow(1, false);

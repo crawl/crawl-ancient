@@ -3477,7 +3477,9 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_POISON_ARROW:
-        description += "hurls an arrow of extremely powerful poison. ";
+        description +=
+            "hurls a magical arrow of the most vile and noxious toxin.  "
+            "No living thing is completely immune to it's effects. ";
         break;
 
     case SPELL_OLGREBS_TOXIC_RADIANCE:

@@ -3759,6 +3759,8 @@ static int builder_by_branch(int level_number)
 
 static int builder_normal(int level_number, char level_type, spec_room &sr)
 {
+    UNUSED( level_type );
+
     bool skipped = false;
     bool done_city = false;
 
@@ -3947,6 +3949,8 @@ static int builder_basic(int level_number)
 
 static void builder_extras( int level_number, int level_type )
 {
+    UNUSED( level_type );
+
     if (level_number >= 11 && level_number <= 23 && one_chance_in(15))
         place_specific_stair(DNGN_ENTER_LABYRINTH);
 
@@ -4588,6 +4592,8 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
 
 static void builder_items(int level_number, char level_type, int items_wanted)
 {
+    UNUSED( level_type );
+
     int i = 0;
     unsigned char specif_type = OBJ_RANDOM;
     int items_levels = level_number;

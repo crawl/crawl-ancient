@@ -279,6 +279,16 @@
     // mark friendly monsters... results depend on the type of
     // term used... under X Windows try "rxvt".
     #define USE_COLOUR_OPTS
+
+    // For cases when the game will be played on terms that don't support the
+    // curses "bold == lighter" 16 colour mode. -- bwr
+    //
+    // Darkgrey is a particular problem in the 8 colour mode.  Popular values
+    // for replacing it around here are: WHITE, BLUE, and MAGENTA.  THis
+    // option has no affect in 16 colour mode. -- bwr
+    //
+    // #define USE_8_COLOUR_TERM_MAP
+    // #define COL_TO_REPLACE_DARKGREY     MAGENTA
 #endif
 
 // =========================================================================
@@ -290,16 +300,7 @@
 // if this works out okay, eventually we can change this to USE_OLD_RANDOM
 #define USE_NEW_RANDOM
 
-// For cases when the game will be played on terms that don't support the
-// curses "bold == lighter" 16 colour mode. -- bwr
-// #define USE_8_COLOUR_TERM_MAP
-
-// Darkgrey is a particular problem in the 8 colour mode.  Popular values
-// for replacing it around here are: WHITE, BLUE, and MAGENTA.  THis
-// option has no affect in 16 colour mode. -- bwr
-// #define COL_TO_REPLACE_DARKGREY     MAGENTA
-
-// Uncomment this if you find the labyrinth to be buggy and what to
+// Uncomment this if you find the labyrinth to be buggy and want to
 // remove it from the game.
 // #define SHUT_LABYRINTH
 
@@ -351,13 +352,12 @@
 //mv: (new 9 Aug 01) switches on new unrands
 #define USE_NEW_UNRANDS
 
-//mv: (new 9 Aug 01) turns off missile trails,
-//might be slow on some computers
-//#define MISSILE_TRAILS_OFF
+// mv: (new 9 Aug 01) turns off missile trails, might be slow on some computers
+// #define MISSILE_TRAILS_OFF
 
 // bwr: allow player to destroy items in inventory (but not equiped items)
 // See comment at items.cc::cmd_destroy_item() for details/issues.
-#define ALLOW_DESTROY_ITEM_COMMAND
+// #define ALLOW_DESTROY_ITEM_COMMAND
 
 // bwr: set this to non-zero if you want to know the pluses, "runed" status
 // of the monster's weapons in the hiscore file.

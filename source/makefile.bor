@@ -2,8 +2,7 @@
 # Makefile for Borland C++ 5.5 free commandline tools
 #
 
-include makefile.obj
-OBJECTS += libw32c.o
+!include makefile.obj
 
 GAME = ..\crawl.exe
 
@@ -47,8 +46,8 @@ CFLAGS      = -I. -D$(WIN32DEFINES) -4 -a -k- -Oc -OS -Oi -Ov -H- -P -c
 NICEFLAGS   = -w-8004
 DEBUGFLAGS  = -v -y
 
-$(GAME) : $(OBJECTS)
-	$(LINK) $(LINKOPTS) c0x32.obj $(OBJECTS), $(GAME),, import32.lib cw32.lib
+$(GAME) : $(OBJECTS) libw32c.o
+	$(LINK) $(LINKOPTS) c0x32.obj $?, $(GAME),, import32.lib cw32.lib
 
 .cc.o:
 	$(CC) $(CFLAGS) $(NICEFLAGS) -o$*.o $<

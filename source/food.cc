@@ -1158,9 +1158,7 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
             break;
 
         default:
-            return true;
-            break;
-
+            return (true);
         }
         break;
 
@@ -1170,12 +1168,10 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
     // exotic stuff later would be good to explore - 13mar2000 {dlb}
     case OBJ_CORPSES:
     default:
-        return false;
-        break;
-
+        return (false);
     }
 
-    return survey_says;
+    return (survey_says);
 }                               // end can_ingest()
 
 // see if you can follow along here -- except for the Amulet of the Gourmand

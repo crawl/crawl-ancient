@@ -411,7 +411,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 
                         describe_monsters( menv[ mid ].type, mid );
                         redraw_screen();
-                        mesclr();
+                        mesclr( true );
                         // describe the cell again.
                         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
                         break;
@@ -427,7 +427,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 
                     case ESCAPE:
                         moves.isCancel = true;
-                        mesclr();
+                        mesclr( true );
                         return;
 
                     default:
@@ -497,7 +497,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
         // CURSOR MOVED - describe new cell.
         cx = newcx;
         cy = newcy;
-        mesclr();
+        mesclr( true );
         if (env.show[cx - 8][cy] == 0 && !(cx == 17 && cy == 9))
         {
             mpr("You can't see that place.");
@@ -506,7 +506,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
     } // end WHILE
 
-    mesclr();
+    mesclr( true );
 }                               // end look_around()
 
 //---------------------------------------------------------------
