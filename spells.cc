@@ -13,7 +13,7 @@
  * will occur. Set to 100 for the old probabilities (although the individual
  * effects have been made much nastier since then).
  */
-#define WILD_MAGIC_NASTINESS 200
+#define WILD_MAGIC_NASTINESS 100
 
 #include "AppHdr.h"
 #include "spells.h"
@@ -66,11 +66,10 @@ int keyin;
 char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect)
 {
 
-/*
-   sp_type is the type of the spell
-   mag_pow is overall power of the spell or effect (ie its level)
-   mag_fail is the degree to which you failed
-   force_effect forces a certain effect to occur. Currently unused.
+/*  sp_type is the type of the spell
+ *  mag_pow is overall power of the spell or effect (ie its level)
+ *  mag_fail is the degree to which you failed
+ *  force_effect forces a certain effect to occur. Currently unused.
  */
 
     struct bolt beam[1];
@@ -118,7 +117,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
     switch (sp_type)
     {
 
-    case 11:                    // conjuration
+    case SPTYP_CONJURATION:            // conjuration
 
         switch (spec_effect)
         {
@@ -238,7 +237,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         }
         break;                  // end conjuration
 
-    case 12:
+    case SPTYP_ENCHANTMENT:
         switch (spec_effect)
         {
         case 0:         // just a harmless message
@@ -294,48 +293,38 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much more annoying
-
             switch (random2(3))
             {
             case 0:             // curse
-
                 curse_an_item(0, 0);
                 strcpy(info, "You sense a malignant aura.");
                 mpr(info);
                 break;
             case 1:
                 potion_effect(POT_SLOWING, 10);         // slow
-
                 break;
             case 2:
                 potion_effect(POT_BERSERK_RAGE, 10);    // berserk
-
                 break;
             }
             break;
 
         case 3:         // potentially lethal
-
             switch (random2(4))
             {
             case 0:             // curse
-
-                do
-                {
-                    curse_an_item(0, 0);
-                    loopj = random2(3);
-                }
-                while (loopj != 0);
-                strcpy(info, "You sense an overwhelmingly malignant aura!");
-                mpr(info);
-                break;
+              do {
+                curse_an_item(0, 0);
+                loopj = random2(3);
+              } while (loopj != 0);
+              strcpy(info, "You sense an overwhelmingly malignant aura!");
+              mpr(info);
+              break;
             case 1:
                 potion_effect(POT_PARALYSIS, 10);       // paral
-
                 break;
             case 2:
                 potion_effect(POT_CONFUSION, 10);       // conf
-
                 break;
             case 3:
                 if (mutate(100) == 0)
@@ -348,11 +337,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         break;                  // end enchantments
 
     case 20:                    // translocations
-
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -390,7 +377,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // mostly harmless
-
             switch (random2(3))
             {
             case 0:
@@ -415,7 +401,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // less harmless
-
             switch (random2(2))
             {
             case 0:
@@ -434,7 +419,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     random_blink();
                 ouch(5 + random2(5) + random2(5), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 10);       // conf
-
                 break;
             case 2:
                 strcpy(info, "Space twists in upon itself!");
@@ -448,7 +432,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // much less harmless
-
             switch (random2(4))
             {
             case 0:
@@ -464,14 +447,12 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 you_teleport2(1);
                 ouch(9 + random2(9) + random2(9), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 30);       // conf
-
                 break;
             case 2:
                 strcpy(info, "You are cast into the Abyss!");
                 mpr(info);
                 more();
                 banished(96);   // sends you to the abyss
-
                 break;
             case 3:
                 if (mutate(100) == 0)
@@ -479,17 +460,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             }
             break;
-
-
         }
         break;                  // end translocations
 
-    case 18:                    // Summonings
-
+    case SPTYP_SUMMONING:                    // Summoning
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -527,11 +504,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a little bad
-
             switch (random2(3))
             {
             case 0:             // identical to translocation
-
                 strcpy(info, "You create a localised field of spatial distortion.");
                 mpr(info);
                 strcpy(info, "Ouch!");
@@ -551,7 +526,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             }
 
         case 2:         // more bad
-
             switch (random2(3))
             {
             case 0:
@@ -578,9 +552,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             }
             break;
 
-
         case 3:         // more bad
-
             switch (random2(4))
             {
             case 0:
@@ -604,23 +576,17 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 strcpy(info, "You are cast into the Abyss!");
                 mpr(info);
                 banished(96);   // sends you to the abyss
-
                 break;
             }
             break;
 // A powerful entity turns its attention onto you
-
         }                       // end Summonings
-
         break;
 
-
-    case 19:                    // Divinations
-
+    case SPTYP_DIVINATION:                    // Divinations
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -658,7 +624,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // more annoying things
-
             switch (random2(2))
             {
             case 0:
@@ -668,13 +633,11 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             case 1:
                 potion_effect(POT_CONFUSION, 1);        // conf
-
                 break;
             }
             break;
 
         case 2:         // even more annoying things
-
             switch (random2(2))
             {
             case 0:
@@ -695,21 +658,17 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 you.intel-= random2(3) + 1;
                 you.redraw_intelligence = 1;
                 potion_effect(POT_CONFUSION, 1);        // conf
-
                 break;
             case 1:
                 strcpy(info, "You feel lost.");
                 mpr(info);
                 forget_map(40 + random2(40));
                 potion_effect(POT_CONFUSION, 1);        // conf
-
                 break;
-
             }
             break;
 
         case 3:         // nasty
-
             switch (random2(3))
             {
             case 0:
@@ -726,7 +685,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 forget_map(100);
                 potion_effect(POT_CONFUSION, 100);      // conf
-
                 break;
             case 2:
                 if (you.is_undead != 0)
@@ -750,16 +708,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     */
                 you.redraw_intelligence = 1;
                 potion_effect(POT_CONFUSION, 100);      // conf
-
                 break;
             }
             break;
-
         }
         break;                  // end divinations
 
-    case 16:                    // necromancy
-
+    case SPTYP_NECROMANCY:                    // necromancy
         if (you.religion == GOD_KIKUBAAQUDGHA && you.piety >= 50 && random2(150) <= you.piety)
         {
             mpr("Nothing appears to happen.");
@@ -805,7 +760,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit nasty
-
             switch (random2(3))
             {
             case 0:
@@ -823,11 +777,9 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 strcpy(info, "You feel horribly lethargic.");
                 mpr(info);
                 potion_effect(POT_SLOWING, 15);         // slow
-
                 break;
             case 2:
                 strcpy(info, "You smell decay.");       // identical to a harmless message
-
                 mpr(info);
                 you.rotting++;
                 break;
@@ -835,7 +787,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much nastier
-
             switch (random2(3))
             {
             case 0:
@@ -851,7 +802,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     drain_exp();
                     break;
                 }               // otherwise it just flows through...
-
             case 2:
                 if (you.is_undead != 0)
                 {
@@ -867,7 +817,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // even nastier
-
             switch (random2(6))
             {
             case 0:
@@ -882,7 +831,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 loopj = (you.hp / 2) - 1;
                 if (loopj <= 0)
                     loopj = 0;
-                ouch(loopj, 0, KILLED_BY_MONSTER);      // can never die from this, right?
+                ouch(loopj, 0, KILLED_BY_MONSTER); // can never die from this, right?
 
                 you.redraw_hit_points = 1;
                 break;
@@ -894,7 +843,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     drain_exp();
                     break;
                 }               // otherwise it just flows through...
-
             case 2:
                 lose_stat(100, 1 + random2(4) + random2(4));
                 break;
@@ -921,15 +869,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             }
             break;
-
         }
         break;                  // end necromancy
 
-    case 15:                    /* transmigr */
+    case SPTYP_TRANSMIGRATION:                    /* transmigr */
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -967,7 +913,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // slightly annoying
-
             switch (random2(2))
             {
             case 0:
@@ -981,7 +926,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // much more annoying
-
             switch (random2(4))
             {
             case 0:
@@ -994,25 +938,23 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             case 2:
                 potion_effect(POT_PARALYSIS, 10);       // paral
-
                 break;
             case 3:
                 potion_effect(POT_CONFUSION, 10);       // conf
-
                 break;
             }
             break;
 
         case 3:         // even nastier
-
             switch (random2(3))
             {
             case 0:
                 mpr("Your body is distorted in a weird and horrible way!");
-                mutate(100);
-                mutate(100);
-                mutate(100);
-                mutate(100);
+                for (int i = 0; i < 4; i++) //jmf: changed to loop
+                  mutate(100);
+                //mutate(100);
+                //mutate(100);
+                //mutate(100);
                 ouch(7 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
@@ -1022,26 +964,24 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
-                if (give_bad_mutation() == 0)
-                    if (give_bad_mutation() == 0)
-                        if (give_bad_mutation() == 0)
-                            give_bad_mutation();
+                for (int i = 0; i < 4; i++) //jmf: changed to loop
+                  if (give_bad_mutation() != 0)
+                    break;
+                //if (give_bad_mutation() == 0)
+                //    if (give_bad_mutation() == 0)
+                //        if (give_bad_mutation() == 0)
+                //            give_bad_mutation();
                 ouch(5 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
-
         }
         break;                  // end transmigrations
 
-
-
-    case 13:                    // fire
-
+    case SPTYP_FIRE:                    // fire
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -1079,7 +1019,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1098,7 +1037,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1119,8 +1057,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = RED;
-                beam[0].thing_thrown = 1;       // your explosion (is this right?)
-
+                beam[0].thing_thrown = 1;   // your explosion (is this right?)
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
@@ -1128,7 +1065,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // considerably less harmless stuff
-
             switch (random2(3))
             {
             case 0:
@@ -1146,7 +1082,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "fireball");
                 beam[0].colour = RED;
-                beam[0].thing_thrown = 1;       // your explosion (is this right?)
+                beam[0].thing_thrown = 1;  // your explosion (is this right?)
 
                 explosion(random2(2), beam);
                 noisy(20, you.x_pos, you.y_pos);
@@ -1161,13 +1097,10 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
         }
         break;                  // end fire
 
-
-    case 14:                    // ice
-
+    case SPTYP_ICE:                    // ice
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -1205,7 +1138,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1223,7 +1155,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1243,8 +1174,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = WHITE;
-                beam[0].thing_thrown = 1;       // your explosion (is this right?)
-
+                beam[0].thing_thrown = 1;   // your explosion (is this right?)
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
@@ -1252,7 +1182,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1267,16 +1196,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             }
             break;
-
         }
         break;                  // end ice
 
-    case 22:                    // Earth
-
+    case SPTYP_EARTH:                    // Earth
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
         case 1:
             switch (random2(10))
             {
@@ -1315,7 +1241,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // slightly less harmless stuff
-
             switch (random2(1))
             {
             case 0:
@@ -1341,18 +1266,16 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
-
             switch (random2(1))
             {
             case 0:
-                strcpy(info, "You conjure up an explosion of flying shrapnel!");
+              strcpy(info, "You conjure up an explosion of flying shrapnel!");
                 mpr(info);
                 strcpy(info, "Oops.");
                 mpr(info);
                 beam[0].type = 43;
                 beam[0].damage = 115;
                 beam[0].flavour = 19;   // shrapnel
-
                 beam[0].bx = you.x_pos;
                 beam[0].by = you.y_pos;
                 strcpy(beam[0].beam_name, "explosion");
@@ -1361,23 +1284,19 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     beam[0].colour = BROWN;
                 if (random2(5) == 0)
                     beam[0].colour = LIGHTCYAN;
-                beam[0].thing_thrown = 1;       // your explosion (is this right?)
-
+                beam[0].thing_thrown = 1;  // your explosion (is this right?)
                 explosion(0, beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
             }
             break;
-
         }
         break;                  // end Earth
 
-    case 23:                    // air
-
+    case SPTYP_AIR:                    // air
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -1415,7 +1334,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1430,7 +1348,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 2:         // rather less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1440,13 +1357,12 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 strcpy(info, "Noxious gasses pour from your hands!");
                 mpr(info);
-                big_cloud(2, you.x_pos, you.y_pos, 20);
+                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20);
                 break;
             }
             break;
 
         case 3:         // less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1462,28 +1378,23 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 strcpy(beam[0].beam_name, "explosion");
                 beam[0].colour = LIGHTBLUE;
                 beam[0].thing_thrown = 1;       // your explosion (is this right?)
-
                 explosion(0 + (random2(4) != 0), beam);
                 noisy(10, you.x_pos, you.y_pos);
                 break;
             case 1:
                 strcpy(info, "Venomous gasses pour from your hands!");
                 mpr(info);
-                big_cloud(4, you.x_pos, you.y_pos, 20);
+                big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20);
                 break;
             }
             break;
-
         }
         break;                  // end air
 
-
-    case 21:                    // poison
-
+    case SPTYP_POISON:                    // poison
         switch (spec_effect)
         {
         case 0:         // just a harmless message
-
             switch (random2(10))
             {
             case 0:
@@ -1521,7 +1432,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 1:         // a bit less harmless stuff
-
             switch (random2(2))
             {
             case 0:
@@ -1533,13 +1443,12 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 strcpy(info, "Noxious gasses pour from your hands!");
                 mpr(info);
-                place_cloud(2, you.x_pos, you.y_pos, 2 + random2(4));
+                place_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 2 + random2(4));
                 break;
             }
             break;
 
         case 2:         // rather less harmless stuff
-
             switch (random2(3))
             {
             case 0:
@@ -1551,7 +1460,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 strcpy(info, "Noxious gasses pour from your hands!");
                 mpr(info);
-                big_cloud(2, you.x_pos, you.y_pos, 20);
+                big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20);
                 break;
             case 2:
                 if (player_res_poison() != 0)
@@ -1562,7 +1471,6 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             break;
 
         case 3:         // less harmless stuff
-
             switch (random2(3))
             {
             case 0:
@@ -1574,7 +1482,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 strcpy(info, "Venomous gasses pour from your hands!");
                 mpr(info);
-                big_cloud(4, you.x_pos, you.y_pos, 20);
+                big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20);
                 break;
             case 2:
                 if (player_res_poison() != 0)
@@ -1583,10 +1491,8 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 break;
             }
             break;
-
         }
         break;                  // end poison
-
 
 /*
    11 = conjuration

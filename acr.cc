@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *     <15>     1/9/2000        BCR             new Wiz command: blink
  *     <14>     10/13/99        BCR             Added auto door opening,
  *                                              move "you have no
  *                                              religion" to describe.cc
@@ -1075,8 +1076,6 @@ static bool Use_No_Black = false;
          #endif
             break;
 
-      //  case '^': disarm_trap(); break;
-
          case '#':
          case CMD_CHARACTER_DUMP:
             char name_your[kNameLen];
@@ -1155,9 +1154,6 @@ static bool Use_No_Black = false;
          case 'g':
             debug_add_skills();
             break;
-         case 'X':
-            Xom_acts( 1, 20, 1 );
-            break;
          case 'h':
             you.rotting = 0;
             you.poison = 0;
@@ -1167,6 +1163,9 @@ static bool Use_No_Black = false;
             you.hunger = abs(you.hunger) + 5000;
             you.redraw_hit_points = 1;
             break;
+         case 'k':
+           blink();  // wizards can always blink
+           break;
          case '\"':
          case '~':
             level_travel();
@@ -1192,6 +1191,9 @@ static bool Use_No_Black = false;
          case 'l':
             grd[you.x_pos][you.y_pos] = 81;
             break;
+         case 'u':
+            grd[you.x_pos][you.y_pos] = 89;
+            break;
          case 'i':
             identify(0);
             break;
@@ -1206,6 +1208,9 @@ static bool Use_No_Black = false;
             strcat(info, st_prn);
             strcat(info, " skill points.");
             mpr(info);
+            break;
+          case 'X':
+            Xom_acts( 1, 20, 1 );
             break;
           case 'z':
             cast_spec_spell(); break; /* cast spell by number */
@@ -1247,8 +1252,13 @@ static bool Use_No_Black = false;
             magic_mapping(99, 100);
           break;
           case '^':
-            mpr("You feel more pious! Well done.");
-            gain_piety(10);
+          {
+            int old_piety = you.piety;
+            gain_piety(50);
+            sprintf(info, "Congratulations, your piety went from %d to %d!",
+                    old_piety, you.piety);
+            mpr(info);
+          }
           break;
           case '\'':
             for (i = 0; i < ITEMS; i++)
@@ -2216,18 +2226,15 @@ static bool Use_No_Black = false;
       door_move[0].move_x = move_x;
       door_move[0].move_y = move_y;
 
-      if (move_x != 100 && env.mgrid[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] != MNG && (menv[env.mgrid[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y]].type < MLAVA0 || menv[env.mgrid[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y]].number == 0))
+      if (   move_x != 100
+          && env.mgrid
+             [you.x_pos + door_move[0].move_x]
+             [you.y_pos + door_move[0].move_y] != MNG
+          && (menv[env.mgrid[you.x_pos + door_move[0].move_x]
+                   [you.y_pos + door_move[0].move_y]].type < MLAVA0
+          || menv[env.mgrid[you.x_pos + door_move[0].move_x]
+                 [you.y_pos + door_move[0].move_y]].number == 0))
       {
-      /* if (menv [env.mgrid [you.x_pos + door_move[0].move_x] [you.y_pos + door_move[0].move_y]].enchantment [2] == 6 && player_see_invis() == 0)
-      {
-      strcpy(info, "Something seems to be in the way.");
-      mpr(info);
-      you.turn_is_over = 1;
-      return;
-      }
-      strcpy(info, "You might want to wait for the creature standing in your way to move.");
-      mpr(info);
-      return; */
          you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
          you.turn_is_over = 1;
 
@@ -2237,7 +2244,6 @@ static bool Use_No_Black = false;
             // supposed to be one
             you.berserk_penalty = 0;
          }
-
          return;
       }
 
@@ -2259,18 +2265,11 @@ static bool Use_No_Black = false;
          strcpy(info, "Which direction?");
          mpr(info);
          direction(0, door_move);
-      }                           /* else
-                                   {
-                                   if (grd [you.x_pos + door_move[0].move_x] [you.y_pos + door_move[0].move_y] == 70)
-                                   {
-                                   close_door(door_move[0].move_x, door_move[0].move_x);
-                                   return;
-                                   }
-                                   } */
-
+      }
+/*BCR* what is this doing?  Its preventing easy crawl from working in wizard
       if (door_move[0].nothing == -1)
          return;
-
+   */
       if (door_move[0].move_x > 1 || door_move[0].move_y > 1 || door_move[0].move_x < -1 || door_move[0].move_y < -1)
       {
          strcpy(info, "I'm afraid your arm isn't that long.");
@@ -2278,9 +2277,11 @@ static bool Use_No_Black = false;
          return;
       }
 
-      if (grd[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] == 3)
+      if (grd
+          [you.x_pos + door_move[0].move_x]
+          [you.y_pos + door_move[0].move_y] == 3)
       {
-         int  skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
+         int skill = you.dex + (SK_TRAPS_DOORS + SK_STEALTH) / 2;
 
          if (random2(skill) == 0)
          {
@@ -2288,13 +2289,13 @@ static bool Use_No_Black = false;
             noisy(15, you.x_pos, you.y_pos);
          }
          else if (you.levitation != 0)
-            {
-               strcpy(info, "You reach down and open the door.");
-            }
-            else
-            {
-               strcpy(info, "You open the door.");
-            }
+         {
+            strcpy(info, "You reach down and open the door.");
+         }
+         else
+         {
+            strcpy(info, "You open the door.");
+         }
 
          mpr(info);
          grd[you.x_pos + door_move[0].move_x][you.y_pos + door_move[0].move_y] = 70;
@@ -2917,7 +2918,11 @@ static bool Use_No_Black = false;
       if (you.running == 2)
          you.running = 1;
 
-      if (you.level_type == 2 && (you.x_pos <= 21 || you.x_pos >= 59 || you.y_pos <= 15 || you.y_pos >= 54))
+      if (   you.level_type == 2
+          && (   you.x_pos <= 21
+              || you.x_pos >= 59
+              || you.y_pos <= 15
+              || you.y_pos >= 54))
       {
          env.cloud_no = area_shift();
          you.pet_target = MHITNOT;

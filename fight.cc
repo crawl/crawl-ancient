@@ -6,15 +6,15 @@
  *  Change History (most recent first):
  *
  *   <9>   11/23/99      LRH    Now you don't get xp/piety for killing
- *                                                              monsters who were created friendly
+ *                              monsters who were created friendly
  *   <8>   11/14/99      cdl    evade with random40(ev) vice random2(ev)
  *   <7>   10/ 8/99      BCR    Large races get a smaller
  *                                    penalty for large shields
  *   <6>    9/09/99      BWR    Code for 1-1/2 hand weapons
  *   <5>    8/08/99      BWR    Reduced power of EV/shields
  *   <4>    6/22/99      BWR    Changes to stabbing code, made
- *                                      most gods not care about the
- *                                      deathes of summoned monsters
+ *                              most gods not care about the
+ *                              deathes of summoned monsters
  *   <3>    5/21/99      BWR    Upped learning of armour skill
  *                                    in combat slightly.
  *   <2>    5/12/99      BWR    Fixed a bug where burdened
@@ -103,15 +103,16 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
     {
         if      (   you.inv_type[you.equip[EQ_SHIELD]] == ARM_SHIELD
                  && you.skills[SK_SHIELDS] < random2(7))
+        {
             heavy_armour++;
+        }
         else if (you.inv_type[you.equip[EQ_SHIELD]] == ARM_LARGE_SHIELD)
         {
           int i;
           // this was originally just in here three times, so it now loops
           for(i = 0; i < 3; i++)
           {
-            if (you.skills[SK_SHIELDS] < random2(13))
-            {
+            if (you.skills[SK_SHIELDS] < random2(13)) {
               // BCR - Giant races do not get a larger penalty for large shields.
               if (you.species >= SP_OGRE && you.species <= SP_UNK2_DRACONIAN)
                 heavy_armour++;
@@ -160,7 +161,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
 /*
    IMPORTANT: If damage routines are changed, must also change in ouch.cc
    for saving of player ghosts.
-
  */
     bool helpless = mons_flag(menv[monster_attacked].type, M_NO_EXP_GAIN);
 
@@ -665,7 +665,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
             {
                 if (mons_holiness(menv[monster_attacked].type) <= MH_NORMAL && damage_done >= 1 && random2(5) != 0 && you.hp < you.hp_max)
                 {
-                    you.hp += random2(damage_done) + 1;         // more than if not killed
+                    you.hp += random2(damage_done) + 1;
+                    // more than if not killed
 
                     you.redraw_hit_points = 1;
                     if (you.hp > you.hp_max)
@@ -793,6 +794,161 @@ void you_attack(int monster_attacked, bool unarmed_attacks )
             break;
         }
     }
+
+    //jmf: BEGIN STAFF HACK
+    // How much bonus damage will a staff of <foo> do?
+    // FIXME: make these not macros. inline functions?
+#define STAFF_DAMAGE(SKILL) ((3 + random2(you.skills[ SKILL ] ) \
+                                + random2(you.skills[ SKILL ] ) \
+                                + random2(you.skills[ SKILL ] )) /3 )
+#define STAFF_COST 2
+#define CAT_MONSTER_INFO(MONSTER) strcat(info, \
+                                  monam(menv[MONSTER].number, \
+                                        menv[MONSTER].type, \
+                                        menv[MONSTER].enchantment[2], 1) )
+
+#define CAT_PUNCTUATION(DAMAGE) if (DAMAGE < 3) strcat(info, "."); \
+                                if (DAMAGE >= 3) strcat(info, "!"); \
+                                if (DAMAGE >= 10) strcat(info, "!"); \
+                                if (DAMAGE >  20) strcat(info, "!");
+
+
+  if (you.inv_class [you.equip [EQ_WEAPON]] == OBJ_STAVES) {
+    specdam = 0;
+    if (you.magic_points > STAFF_COST)
+      switch (you.inv_type [you.equip [EQ_WEAPON]])
+        {
+        case STAFF_AIR:
+          if (damage_done + you.skills [SK_AIR_MAGIC] > random2(30)) {
+            if (mons_res_elec(menv [monster_attacked].type))
+              break;
+            CAT_MONSTER_INFO(monster_attacked) ;
+            strcat(info, " is jolted");
+            specdam = STAFF_DAMAGE(SK_AIR_MAGIC) ;
+            CAT_PUNCTUATION(specdam) ;
+            mpr(info);
+            if (random2(2)) exercise(SK_AIR_MAGIC, 1);
+          }
+          break;
+
+        case STAFF_COLD: // FIXME: I don't think I used these right ...
+          if (mons_res_cold(menv[monster_attacked].type) > 0)
+            break;
+          specdam = STAFF_DAMAGE(SK_ICE_MAGIC) ;
+          if (menv [monster_attacked].inv [2] != 501
+              && mitm.special[menv [monster_attacked].inv [2]] % 30 == 3)
+            specdam /= 3;
+          if (mons_res_cold(menv [monster_attacked].type) == 0
+              && (menv [monster_attacked].inv [2] == 501
+                  || mitm.special[menv [monster_attacked].inv [2]] % 30 != 3)){
+            specdam += random2( 3 + you.skills [SK_ICE_MAGIC] ) + 1;
+          }
+          if (specdam != 0) {
+            strcpy(info, "You freeze ");
+            CAT_MONSTER_INFO(monster_attacked) ;
+            CAT_PUNCTUATION(specdam) ;
+            mpr(info);
+            if (random2(2)) exercise(SK_ICE_MAGIC, 1);
+          }
+          break;
+
+        case STAFF_EARTH:
+          if (mons_flies(menv[monster_attacked].type))
+            break; //jmf: lame, but someone ought to resist
+          specdam = STAFF_DAMAGE(SK_EARTH_MAGIC) ;
+          strcpy(info, "You crush ");
+          CAT_MONSTER_INFO(monster_attacked) ;
+          CAT_PUNCTUATION(specdam) ;
+          mpr(info);
+          if (random2(2)) exercise(SK_EARTH_MAGIC, 1);
+          break;
+
+        case STAFF_FIRE:
+          if (mons_res_fire(menv [monster_attacked].type) > 0)
+            break;
+          specdam = STAFF_DAMAGE(SK_FIRE_MAGIC) ;
+          if (menv [monster_attacked].inv [2] != 501
+              && mitm.special[menv [monster_attacked].inv [2]] % 30 == 2)
+            specdam = (random2(damage_done) / 2 + 1) / 3;
+          if (mons_res_fire(menv [monster_attacked].type) == -1
+              && (menv [monster_attacked].inv [2] == 501
+                  || mitm.special[menv [monster_attacked].inv [2]] % 30 != 2)){
+            specdam = random2(damage_done) + 1;
+          }
+          if (specdam != 0) {
+            strcpy(info, "You burn ");
+            CAT_MONSTER_INFO(monster_attacked) ;
+            CAT_PUNCTUATION(specdam) ;
+            if (random2(2)) exercise(SK_FIRE_MAGIC, 1);
+            mpr(info);
+          }
+          break;
+
+        case STAFF_POISON:
+          if (damage_done + you.skills [SK_POISON_MAGIC] > random2(30)) {
+            poison_monster(monster_attacked, 0);
+            if (random2(2)) exercise(SK_POISON_MAGIC, 1);
+          }
+          break;
+
+        case STAFF_DEATH:
+          // FIXME: bring into line with other staff functions
+          if (mons_holiness(menv [monster_attacked].type) <= MH_NORMAL
+              && random2(8) <= you.skills [SK_NECROMANCY]) {
+            strcpy(info, monam(menv[monster_attacked].number,
+                               menv[monster_attacked].type,
+                               menv[monster_attacked].enchantment[2], 0) );
+            strcat(info, " convulses in agony");
+            specdam = STAFF_DAMAGE(SK_NECROMANCY) ;
+            CAT_PUNCTUATION(specdam) ;
+            mpr(info);
+            naughty(NAUGHTY_NECROMANCY, 4);
+            if (random2(2)) exercise(SK_NECROMANCY, 1);
+          }
+          break;
+
+        default:
+          mpr("You're weilding some staff I've never heard of! (fight.cc)");
+        case STAFF_POWER:
+        case STAFF_SUMMONING_I:
+        case STAFF_SUMMONING_II:
+        case STAFF_DESTRUCTION_I:
+        case STAFF_DESTRUCTION_II:
+        case STAFF_DESTRUCTION_III:
+        case STAFF_DESTRUCTION_IV:
+        case STAFF_WARDING:
+        case STAFF_DISCOVERY:
+        case STAFF_DEMONOLOGY:
+        case STAFF_CHANNELING:
+        case STAFF_CONJURATION:
+        case STAFF_ENCHANTMENT:
+        case STAFF_ENERGY:
+        case STAFF_WIZARDRY:
+          break;
+        }
+    if (specdam > 0) {
+      you.magic_points -= STAFF_COST ;
+      you.redraw_magic_points = 1;
+      if (you.inv_ident [you.equip [EQ_WEAPON]] < 3 ) {
+        you.inv_ident [you.equip [EQ_WEAPON]] = 3;
+        strcpy(info, "You are wielding ");
+        in_name(you.equip [EQ_WEAPON], 3, str_pass);
+        strcat(info, str_pass);
+        strcat(info, ".");
+        mpr(info);
+        more();
+        wield_change = 1;
+      }
+      goto post_spec_damage;
+    }
+  }
+
+#undef STAFF_DAMAGE
+#undef STAFF_COST
+#undef CAT_MONSTER_INFO
+#undef CAT_PUNCTUATION
+  // END STAFF HACK
+
 
     if (you.equip[EQ_WEAPON] != -1
             && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && hit == 1)
@@ -988,8 +1144,7 @@ dam_thing:
                 you.hp += damage_done;
             }
             else
-            {
-                /* thus is probably more valuable on larger weapons? */
+            {   /* thus is probably more valuable on larger weapons? */
                 you.hp += random2(damage_done) + 1;
             }
 
@@ -1091,6 +1246,7 @@ dam_thing:
         }                       /* end switch */
     }
 
+ post_spec_damage: //jmf: added
     if (mons_holiness(menv[monster_attacked].type) < MH_NORMAL)
         naughty(NAUGHTY_ATTACK_HOLY, menv[monster_attacked].hit_dice);
 

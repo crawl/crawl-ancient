@@ -323,7 +323,7 @@ void pray(void)
                 break;
             }
 
-            // shouldn't give you something if it's just going to fall in a pool
+            //shouldn't give you something if it's just going to fall in a pool
             if (gift != BOOK_MINOR_MAGIC_I && (grd[you.x_pos][you.y_pos] != 61
                                         && grd[you.x_pos][you.y_pos] != 62))
             {
@@ -411,7 +411,7 @@ char *god_name_long(int which_god)
     case GOD_SHINING_ONE:
         return "The Shining One";
     case GOD_KIKUBAAQUDGHA:
-        return "Kikubaaqudgha";
+        return "Kikubaaqudgha the Vile";
     case GOD_YREDELEMNUL:
         return "Yredelemnul";
     case GOD_XOM:
@@ -421,11 +421,11 @@ char *god_name_long(int which_god)
     case GOD_OKAWARU:
         return "Okawaru";
     case GOD_MAKHLEB:
-        return "Makhleb";
+        return "Makhleb the Destroyer";
     case GOD_SIF_MUNA:
         return "Sif Muna";
     case GOD_TROG:
-        return "Trog";
+        return "Trog the Disgruntled";
     case GOD_NEMELEX_XOBEH:
         return "Nemelex Xobeh";
     case GOD_ELYVILON:
@@ -433,7 +433,6 @@ char *god_name_long(int which_god)
     }
 
     return "Illegal God";
-
 }
 
 
@@ -1224,6 +1223,7 @@ void naughty(char type_naughty, int naughtiness)
    7 = butchering in the name of peaceful diety
    8 = stabbing
    9 = spellcasting (Trog hates this)
+   10= poison (TSO now frowns upon poison)
  */
 
     int piety_loss = 0;
@@ -1294,7 +1294,14 @@ void naughty(char type_naughty, int naughtiness)
         }
         break;
 
-
+    case NAUGHTY_POISON: /* poison */
+      switch (you.religion)
+        {
+        case GOD_SHINING_ONE:
+          piety_loss = naughtiness;
+          break;
+        }
+      break;
     }
 
     if (piety_loss == 0)
@@ -1319,7 +1326,6 @@ void naughty(char type_naughty, int naughtiness)
 
 void lose_piety(char pgn)
 {
-
     int old_piety = you.piety;
 
     if (you.piety - pgn < 0)

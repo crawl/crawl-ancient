@@ -1,5 +1,9 @@
 Bugs:
 
+* pressing ctrl-4 in Linux can cause a core dump
+
+* Monsters can be created on top of doors.
+
 * makefile for sgi IRIX does not work.  No clue why.
 
 * Sometimes when I'm in the Abyss and I use an exit, it goes into an

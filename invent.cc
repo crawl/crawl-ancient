@@ -531,7 +531,7 @@
             strcpy(comm, "b    - (b)anish yourself to the Abyss");
             break;
          case 20:
-            strcpy(comm, "d/*  - ?");
+            strcpy(comm, "d/*  - create (d)own stairdcase");
             break;
          case 30:
             strcpy(comm, "g    - add a skill");
@@ -543,7 +543,10 @@
             strcpy(comm, "i    - (i)dentify an item");
             break;
          case 70:
-            strcpy(comm, "l    - ?");
+            strcpy(comm, "l    - make entrance to (l)abyrinth");
+            break;
+         case 75:
+            strcpy(comm, "k    - controlled blin(k)");
             break;
          case 80:
             strcpy(comm, "m/+  - create a (m)onster by number");
@@ -555,7 +558,10 @@
             strcpy(comm, "o/%%  - create an (o)bject");
             break;
          case 100:
-            strcpy(comm, "p    - ?");
+            strcpy(comm, "p    - make entrance to (p)andemonium");
+            break;
+         case 105:
+            strcpy(comm, "u    - create (u)p staircase");
             break;
          case 110:
             strcpy(comm, "x    - gain 5000 e(x)perience");

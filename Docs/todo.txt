@@ -1,8 +1,9 @@
 Enhancements:
 
-* Make food acquirement give you more kinds of food.
+* Make dangerous things be shown on top of a stack.  This includes traps,
+  walls of fire, etc.
 
-* Some commands in wizard help are still undefined.
+* Make food acquirement give you more kinds of food.
 
 * file locking for the high score file
 

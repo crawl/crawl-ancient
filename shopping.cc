@@ -168,7 +168,7 @@ char in_a_shop(char shoppy, char id[4][50])
         strcat(sh_name, "Distillery!");
         break;
     case 10:
-        strcat(sh_name, "Magic scroll Shop!");
+        strcat(sh_name, "Magic Scroll Shop!");
         break;
     case 11:
         strcat(sh_name, "General Store!");
@@ -2104,6 +2104,7 @@ char book_rarity(char which_book)
     case BOOK_SURVEYANCES:
     case BOOK_POISONINGS:
     case BOOK_HINDERANCE:
+    case BOOK_CANTRIPS: //jmf: added
         return 1;
 
     case BOOK_CHANGES:
@@ -2133,6 +2134,7 @@ char book_rarity(char which_book)
         return 6;
 
     case BOOK_ENCHANTMENTS:
+    case BOOK_PARTY_TRICKS: //jmf: added
         return 7;
 
     case BOOK_TRANSFIGURATIONS:

@@ -13,6 +13,6 @@
 #define VERSION_H
 
 #define VERSION "3.40"
-#define BUILD_DATE "12/30/1999"
+#define BUILD_DATE "1/10/2000"
 
 #endif

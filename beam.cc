@@ -57,15 +57,15 @@
 int check_mons_resists(struct bolt beam[1], int o, int hurted);
 int check_mons_magres(int mn, int pow);
 int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1]);
-
+void naughty(char, int);
 
 // Up to line 1111
 
 
 /*
-   Handles any projectiles which leave visible non-smoke trails and can affect
-   multiple opponents. Eg firebolt, but not magic dart or thrown weapons.
-   Should be merged with missile(), as there is a lot of redundant code here.
+ *  Handles any projectiles which leave visible non-smoke trails and can affect
+ *  multiple opponents. Eg firebolt, but not magic dart or thrown weapons.
+ *  Should be merged with missile(), as there is a lot of redundant code here.
  */
 void beam(struct bolt beam[1])
 {
@@ -1516,12 +1516,10 @@ void missile(struct bolt beam[1], int throw_2)
                             return;
                         }
 
-
                         break;
                     }
                     else if (YOU_KILL(beam[0].thing_thrown) && mons_near(o) && (menv[o].type < MLAVA0 || menv[o].number == 0))  // No message if monster missile misses
-
-                    {
+                      {
                         strcpy(info, "The ");
                         strcat(info, beam[0].beam_name);
                         strcat(info, " misses ");
@@ -1551,7 +1549,6 @@ void missile(struct bolt beam[1], int throw_2)
         {
             goto landed;
         }
-
 
     }                           // end of for n loop
 
@@ -1650,7 +1647,6 @@ landed:
         }                       // end of else
 
     }                           // if (thing_throw == 2) ...
-
 
     beam[0].aim_down = 0;
 /* ^ must have this before every return in this function! */
@@ -2327,12 +2323,8 @@ somethinghap:
 }
 
 
-
-
-
-
 /*
-   Puts the poison value into a monster's enchantment variable.
+ * Puts the poison value into a monster's enchantment variable.
  */
 void poison_monster(int mn, char source)
 {
@@ -2340,63 +2332,56 @@ void poison_monster(int mn, char source)
     int brek = 0;
 
     if (menv[mn].type == -1)
-        return;
+      return;
 
     if (mons_res_poison(menv[mn].type) > 0)
-        return;
+      return;
     if (menv[mn].inv[2] != 501 && mitm.special[menv[mn].inv[2]] % 30 == 4)
-        return;
+      return;
 
-    for (p = 0; p < 3; p++)
-    {
-        if (menv[mn].enchantment[p] % 50 == 10)
-        {
-            return;
+    for (p = 0; p < 3; p++) {
+      if (menv[mn].enchantment[p] % 50 == 10) {
+        return;
+      }
+      if (menv[mn].enchantment[p] % 50 >= 7 && menv[mn].enchantment[p] % 50 < 10) {
+        menv[mn].enchantment[p]++;
+        brek = 1;
+        if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0)) {
+          strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
+          strcat(info, " looks rather sicker.");
+          mpr(info);
+          //jmf: it's worse to kick something when it's sick
+          naughty( NAUGHTY_POISON, 10 + random2(you.experience_level) );
         }
-        if (menv[mn].enchantment[p] % 50 >= 7 && menv[mn].enchantment[p] % 50 < 10)
-        {
-            menv[mn].enchantment[p]++;
-            brek = 1;
-            if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0))
-            {
-                strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                strcat(info, " looks rather sicker.");
-                mpr(info);
-            }
-            break;
-        }
+        break;
+      }
     }                           /* end of for p */
 
     if (brek == 0)
-        for (p = 0; p < 3; p++)
-        {
-
-            if (menv[mn].enchantment[p] == 0)
-            {
-                menv[mn].enchantment[p] = 7;
-                menv[mn].enchantment1 = 1;
-                if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0))
-                {
-                    strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
-                    strcat(info, " looks rather sick.");
-                    mpr(info);
-                }
-                break;
-            }
+      for (p = 0; p < 3; p++) {
+        if (menv[mn].enchantment[p] == 0) {
+          menv[mn].enchantment[p] = 7;
+          menv[mn].enchantment1 = 1;
+          if (mons_near(mn) && (menv[mn].enchantment[2] != 6 || player_see_invis() != 0)) {
+            strcpy(info, monam(menv[mn].number, menv[mn].type, menv[mn].enchantment[2], 0));
+            strcat(info, " looks rather sick.");
+            mpr(info);
+            naughty( NAUGHTY_POISON, 5 + random2(you.experience_level/2) );
+          }
+          break;
         }
+      }
 
-    if (source == 1 && menv[mn].enchantment[p] <= 10 && menv[mn].enchantment[p] >= 7)
-    {
-        menv[mn].enchantment[p] += 50;
+    if (source == 1 && menv[mn].enchantment[p] <= 10 && menv[mn].enchantment[p] >= 7) {
+      menv[mn].enchantment[p] += 50;
     }
-
 }
 
 
 /*
-   Like poison_monster; makes the monster burn if hit by napalm.
+ * Like poison_monster; makes the monster burn if hit by napalm.
  */
-void sticky_flame_monster(int mn, char source, int power)       /* modelled on the poison_monster function */
+void sticky_flame_monster(int mn, char source, int power)
 {
 
     int long_last = 0;
@@ -2417,11 +2402,10 @@ void sticky_flame_monster(int mn, char source, int power)       /* modelled on t
 
     for (p = 0; p < 3; p++)
     {
-        if (menv[mn].enchantment[p] == 34 || menv[mn].enchantment[p] == 64)     // already covered in sticky flame - ouch!
-
-        {
-            return;
-        }
+      if (menv[mn].enchantment[p] == 34 || menv[mn].enchantment[p] == 64) {
+        // already covered in sticky flame - ouch!
+        return;
+      }
         if ((menv[mn].enchantment[p] >= 31 && menv[mn].enchantment[p] < 34) || (menv[mn].enchantment[p] >= 61 && menv[mn].enchantment[p] < 64))
         {
             menv[mn].enchantment[p] += long_last;

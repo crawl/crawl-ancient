@@ -5,6 +5,32 @@ Note: This is the list of changes we used in the development of v3.40 of
       most visible changes in the versions.txt file.
 
 Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+1/10/99
+
+* From Josh Boardman:
+  + Lots of enumming, mostly spells
+  + Paladins get a long sword to start and long sword skill
+  + Spriggans can be stalkers
+  + Poisoning something already poisoned gives extra naughty
+  + Added more powerful staves
+  + Armour skill no affects how much armour hurts spellcasting
+  + better summon small mammals spell
+  + Vehumet will help with spell failure and preserve int
+* Large characters get a smaller spellcasting penalty for wearing
+  large shields
+* fixed easy crawl bug in wizard mode
+* added wiz commands for controlled blink and create up staircase
+* fixed the wiz help so that all wiz commands now have help
+* Changed the subspecies selection in newgame.cc so that there is no
+  duplication of info in there.  See the newgame.cc for more details.
+* made Ogre berserkers start with 3 clubs and 1 maces skills, the reverse
+  of all other races, because these races start with clubs rather than axes.
+* made troll berserkers start with 3 unarmed and 2 dodging, but no weapon
+  skills, because they start with no weapons.
+* allowed halflings to be assassins and warpers.
+* thieves now get more starting gold: random2(10) * 6 + random2(10) * 4.
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 12/30/99
 
 * Axed linuxlib.*

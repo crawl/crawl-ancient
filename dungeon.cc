@@ -6,8 +6,7 @@
  *  Change History (most recent first):
  *
  *
-     <6>     11/06/99    cdl    random3 -> random2
- *   <5>      8/08/99    BWR    Upped rarity of unique artefacts
+ *   <6>     11/06/99    cdl    random3 -> random2
  *   <5>      8/08/99    BWR    Upped rarity of unique artefacts
  *   <4>      7/13/99    BWR    Made pole arms of speed.
  *   <3>      5/22/99    BWR    Made named artefact weapons
@@ -53,10 +52,10 @@
 #include "itemname.h"
 
 #define NUMBER_SPELLBOOKS                       59
-#define SPLBOOK_TOME_OF_DEST            35
+#define SPLBOOK_TOME_OF_DEST                    35
 #define SPLBOOK_MANUALS                         41
 
-   unsigned char border_type = DNGN_ROCK_WALL;
+unsigned char border_type = DNGN_ROCK_WALL;
 
    int bcount_x;
    int bcount_y;
@@ -159,408 +158,433 @@
 
    This really needs to go somewhere else.
  */
-   int spellbook_template_array[NUMBER_SPELLBOOKS][7] =
-   {
+int spellbook_template_array[NUMBER_SPELLBOOKS][7] =
+{
     // Beginning spellbook 1
-   {0,
-   5,                         // Magic missile
-   26,                       // Throw flame
-   49,                       // Summon small mammal
-   59,                       // Blink
-   13,                       // conf fl
-   15},                      // Fire bolt
-
+  {0,
+   SPELL_MAGIC_DART,         // Magic missile
+   SPELL_THROW_FLAME,        // Throw flame
+   SPELL_SUMMON_SMALL_MAMMAL,// Summon small mammal
+   SPELL_BLINK,              // Blink
+   SPELL_CONJURE_FLAME,      // conf fl
+   SPELL_BOLT_OF_FIRE,       // Bolt of Fire
+  },
     // Beginning spellbook 2
-   {0,
-   5,                         // Magic missile
-   27,                       // Throw frost
-   49,                       // Summon small mammal
-   59,                       // Blink
-   21,                       // Slow
-   16},                      // Cold bolt
-
+  {0,
+   SPELL_MAGIC_DART,         // Magic missile
+   SPELL_THROW_FROST,        // Throw frost
+   SPELL_SUMMON_SMALL_MAMMAL,// Summon small mammal
+   SPELL_BLINK,              // Blink
+   SPELL_SLOW,               // Slow
+   SPELL_BOLT_OF_COLD,       // Bolt of Cold
+  },
     // Beginning spellbook 4
-   {0,
-   5,                         // Magic missile
-   13,                       // Conjure flame
-   21,                       // Slow
-   59,                       // Blink
-   15,                       // Bolt of fire
-   30},                      // Mephitic cloud
-
+  {0,
+   SPELL_MAGIC_DART,         // Magic missile
+   SPELL_BLINK,              // Blink
+   SPELL_CONJURE_FLAME,      // Conjure flame
+   SPELL_SLOW,               // Slow
+   SPELL_BOLT_OF_FIRE,       // Bolt of fire
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+  },
         // Book of conjurations
-   {0,
-   5,                         // Magic missile
-   26,                       // Throw flame
-   13,                       // Conjure flame
-   30,                       // Mephitic cloud
-   16,                       // Frost bolt
-   17},                      // Thunderbolt
-
-        // Book of conjurations
-   {0,
-   5,                         // Magic missile
-   27,                       // Throw frost
-   13,                       // Conjure flame
-   30,                       // Mephitic cloud
-   15,                       // Fire bolt
-   6},                       // Fireball
-
+  {0,
+   SPELL_MAGIC_DART,         // Magic missile
+   SPELL_THROW_FLAME,        // Throw flame
+   SPELL_CONJURE_FLAME,      // Conjure flame
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+   SPELL_BOLT_OF_COLD,       // Frost bolt
+   SPELL_LIGHTNING_BOLT, // Thunderbolt //jmf: there *IS* a SPELL_THUNDERBOLT
+  },
+        // Book of conjurations 2
+  {0,
+   SPELL_MAGIC_DART,         // Magic missile
+   SPELL_THROW_FROST,        // Throw frost
+   SPELL_CONJURE_FLAME,      // Conjure flame
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+   SPELL_BOLT_OF_FIRE,       // Fire bolt
+   SPELL_BOLT_OF_IRON,       // Bolt of iron //jmf: too much fire!
+  },
         // Book of flames
-   {0,
-   75,                        // Burn
-   26,                       // Throw flame
-   13,                       // Conjure flame
-   79,                       // Sticky flame
-   15,                       // Fire bolt
-   6},                       // Fireball
-
+  {0,
+   SPELL_BURN,               // Burn
+   SPELL_THROW_FLAME,        // Throw flame
+   SPELL_CONJURE_FLAME,      // Conjure flame
+   SPELL_STICKY_FLAME,       // Sticky flame
+   SPELL_BOLT_OF_FIRE,       // Fire bolt
+   SPELL_FIREBALL,          // Fireball
+  },
         // Book of frost
-   {0,
-   76,                        // Freeze
-   27,                       // Throw frost
-   81,                       // Ice armour
+  {0,
+   SPELL_FREEZE,              // Freeze
+   SPELL_THROW_FROST,         // Throw frost
+   SPELL_OZOCUBUS_ARMOUR,     //jmf: was 81
    SPELL_ICE_BOLT,
-   80,                        // Ice beast
-   29},                      // freez cloud
-
+   SPELL_SUMMON_ICE_BEAST,    // Ice beast
+   SPELL_FREEZING_CLOUD,      // freez cloud
+  },
         // Book of invocations
-   {0,
-   146,                       // Recall
+  {0,
+   SPELL_RECALL,                 // Recall
    SPELL_SHADOW_CREATURES,
-   61,                        // Swarm
-   62,                       // Thing
-   72,                       // Summon wraiths
-   210},
-
+   SPELL_SWARM,                  // Swarm
+   SPELL_SUMMON_HORRIBLE_THINGS, // Things
+   SPELL_SUMMON_WRAITHS,         // Summon wraiths
+   210,
+  },
         // Book of fire
-   {0,
-   124,                       // Fire brand
-   77,                       // Summon elemental
-   31,                       // Ring of flame
-   57,                       // Firestorm
+  {0,
+   SPELL_FIRE_BRAND,         // Fire brand
+   SPELL_SUMMON_ELEMENTAL,   // Summon elemental
+   SPELL_RING_OF_FLAMES,     // Ring of flames
+   SPELL_FIRE_STORM,         // Firestorm
    210,
-   210},
-
+   210,
+  },
     // Book of ice
-   {0,
-   125,                       // Freezing aura
-   77,                       // Summon elemental
-   16,                       // Frost bolt
-   78,                       // Refrigeration
+  {0,
+   SPELL_FREEZING_AURA,          // Freezing aura
+   SPELL_SUMMON_ELEMENTAL,       // Summon elemental
+   SPELL_BOLT_OF_COLD,           // Cold bolt
+   SPELL_OZOCUBUS_REFRIGERATION, // Refrigeration
    SPELL_ICE_STORM,
-   210},
-
+   210,
+  },
     // 10 - Book of surveyance
-   {0,
-   58,                        // Detect traps
-   64,                       // Magic mapping
-   73,                       // Detect items
-   137,                      // Detect creatures
+  {0,
+   SPELL_DETECT_TRAPS,       // Detect traps
+   SPELL_MAGIC_MAPPING,      // Magic mapping
+   SPELL_DETECT_ITEMS,       // Detect items
+   SPELL_DETECT_CREATURES,   // Detect creatures
    210,
-   210},
-
+   210,
+  },
         // Book of spatial translocation
-   {0,
-   59,                        // Blink
-   28,                       // Controlled blink
-   139,                      // Controlled teleport
-   1,                        // Teleport self
+  {0,
+   SPELL_BLINK,              // Blink
+   SPELL_CONTROLLED_BLINK,   // Controlled blink
+   SPELL_CONTROL_TELEPORT,   // Controlled teleport
+   SPELL_TELEPORT_SELF,      // Teleport self
    210,
-   210},
-
+   210,
+  },
     // Book of enchantments - the fourth one
-   {0,
-   43,                        // Selective amnesia
-   52,                       // Levitation
-   4,                        // Remove curse
-   159,                      // Deflect missiles
-   68,                       // Extension
-   210},
-
+  {0,
+   SPELL_SELECTIVE_AMNESIA,  // Selective amnesia
+   SPELL_LEVITATION,         // Levitation
+   SPELL_REMOVE_CURSE,       // Remove curse
+   SPELL_DEFLECT_MISSILES,   // Deflect missiles
+   SPELL_EXTENSION,          // Extension
+   210,
+  },
     // Book of poison
-   {0,
-   115,                       // Sting
-   138,                      // Cure poison
-   141,                      // Brand weapon
-   30,                       // Mephitic cloud
-   35,                       // Venom bolt
-   210},
-
-    // Book of fire and storms
-   {0,
-   17,                        // Thunderbolt
-   6,                        // Fireball
-   57,                       // Fire storm
+  {0,
+   SPELL_STING,              // Sting
+   SPELL_CURE_POISON_II,     // Cure poison
+   SPELL_POISON_WEAPON,      // Brand weapon
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+   SPELL_VENOM_BOLT,         // Venom bolt
+   210,
+  },
+    // Book of storms
+  {0,
+   SPELL_LIGHTNING_BOLT,     // Thunderbolt
+   SPELL_FIREBALL,           // Fireball
+   SPELL_FIRE_STORM,         // Fire storm
+   SPELL_ICE_STORM,          //jmf: added ice storm
    210,
    210,
-   210},
-
+  },
     // Book of death
-   {0,
-   53,                        // Bolt of draining
-   112,                      // Bone shards
-   122,                      // Rot corpses
-   126,                      // Lethal infusion
-   148,                      // Agony
-   210},
+  {0,
+   SPELL_BOLT_OF_DRAINING,   // Bolt of draining
+   SPELL_BONE_SHARDS,        // Bone shards
+   SPELL_CORPSE_ROT,         // Rot corpses
+   SPELL_LETHAL_INFUSION,    // Lethal infusion
+   SPELL_AGONY,              // Agony
+   210,
+  },
 
     // Book of hinderance
-   {0,
-   21,                        // Slow
-   23,                       // Paralize
+  {0,
+   SPELL_SLOW,               // Slow
+   SPELL_CONFUSE,            //jmf: added
+   SPELL_PARALYZE,           // Paralize
+   SPELL_TELEPORT_OTHER,     //jmf: added
    210,
    210,
-   210,
-   210},
+  },
 
     // Book of changes
-   {0,                         //
-   150,                      // Disrupt
-   149,                      // Spider form
-   152,                      // Blade hands
-   14,                       // Dig
-   154,                      // Ice beast form
-   210},
+  {0,
+   SPELL_DISRUPT,            // Disrupt
+   SPELL_SPIDER_FORM,        // Spider form
+   SPELL_BLADE_HANDS,        // Blade hands
+   SPELL_DIG,                // Dig
+   SPELL_ICE_FORM,           // Ice beast form
+   210,
+  },
 
     // Book of transfigurations
-   {0,
-   20,                        // Polymorph other
-   153,                      // Statue form
-   144,                      // Alter self
-   155,                      // Dragon form
-   156,                      // Lich form
-   210},
+  {0,
+   SPELL_POLYMORPH_OTHER,    // Polymorph other
+   SPELL_STATUE_FORM,        // Statue form
+   SPELL_ALTER_SELF,         // Alter self
+   SPELL_DRAGON_FORM,        // Dragon form
+   SPELL_NECROMUTATION,      // Lich form
+   210,
+  },
 
     // Useful magic
-   {0,
-   143,                       // Noise 2
-   43,                       // Selective amnesia
-   48,                       // Detect curse
-   14,                       // Dig
-   4,                        // Remove curse
-   210},
-
+  {0,
+   SPELL_PROJECTED_NOISE,    // Noise 2
+   SPELL_SELECTIVE_AMNESIA,  // Selective amnesia
+   SPELL_DETECT_CURSE,       // Detect curse
+   SPELL_DIG,                // Dig
+   SPELL_REMOVE_CURSE,       // Remove curse
+   210,
+  },
     // Book of war chants
     // Note: If any are added here, must chance Crusader in crawlfnc.cc
-   {0,
-   124,                       // Fire brand
-   125,                      // Freezing aura
-   83,                       // Repel missiles
-   84,                       // Berserk
-   111,                      // Regeneration
-   22},                      // Haste
-
+  {0,
+   SPELL_FIRE_BRAND,         // Fire brand
+   SPELL_FREEZING_AURA,      // Freezing aura
+   SPELL_REPEL_MISSILES,     // Repel missiles
+   SPELL_BERSERKER_RAGE,     // Berserker rage
+   SPELL_REGENERATION,       // Regeneration
+   SPELL_HASTE,              // Haste
+  },
     // Clouds?
-   {0,
-   30,                        // Mephitic cloud
-   13,                       // Conjure flame
-   29,                       // Freezing cloud
-   56,                       // Poison cloud
+  {0,
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+   SPELL_CONJURE_FLAME,      // Conjure flame
+   SPELL_FREEZING_CLOUD,     // Freezing cloud
+   SPELL_POISONOUS_CLOUD,    // Poison cloud
    210,
-   210},
-
+   210
+  },
         // Book of healing
-   {0,
-   40,                        // Cure poison
-   38,                       // Lesser heal
-   39,                       // Greater heal
-   41,                       // Purification
+  {0,
+   SPELL_CURE_POISON_I,      // Cure poison
+   SPELL_LESSER_HEALING,     // Lesser heal
+   SPELL_GREATER_HEALING,    // Greater heal
+   SPELL_PURIFICATION,       // Purification
    210,
-   210},
-
+   210
+  },
     // Book of necromancy
-   {0,
-   67,                        // Pain
-   70,                       // Animate skeleton
-   71,                       // Vampiric draining
-   85,                       // Dispel undead
-   111,                      // Regeneration
-   66},                      // Animate dead
+  {0,
+   SPELL_PAIN,               // Pain
+   SPELL_ANIMATE_SKELETON,   // Animate skeleton
+   SPELL_VAMPIRIC_DRAINING,  // Vampiric draining
+   SPELL_DISPEL_UNDEAD,      // Dispel undead
+   SPELL_ANIMATE_DEAD,       // Animate dead
+   SPELL_REGENERATION,       // Regeneration
+  },
 
     // Necronomicon
-   {0,
-   158,                       // Symbol of Torment
-   69,                       // Control undead
-   42,                       // Death's door
-   72,                       // Summon wraiths
-   156,                      // Lich form
-   157},                     // Death channel
-
+  {0,
+   SPELL_SYMBOL_OF_TORMENT,  // Symbol of Torment
+   SPELL_CONTROL_UNDEAD,     // Control undead
+   SPELL_DEATHS_DOOR,        // Death's door
+   SPELL_SUMMON_WRAITHS,     // Summon wraiths
+   SPELL_NECROMUTATION,      // Lich form
+   SPELL_DEATH_CHANNEL,      // Death channel
+  },
     // Book of summonings
-   {0,
-   49,                        // Summon small animal
-   82,                       // Summon imp
-   50,                       // Abjur
-   51,                       // Summon scopians
-   80,                       // Summon ice beas
-   77},                      // Summon elemental
+  {0,
+   SPELL_SUMMON_SMALL_MAMMAL,// Summon small mammal
+   SPELL_CALL_IMP,           // Summon imp
+   SPELL_ABJURATION_I,       // Abjur
+   SPELL_SUMMON_SCORPIONS,   // Summon scopians
+   SPELL_SUMMON_ICE_BEAST,   // Summon ice beast
+   SPELL_SUMMON_ELEMENTAL,   // Summon elemental
+  },
 
     // Book of charms
-   {0,
-   83,                        // Repel missiles
-   21,                       // Slow
-   63,                       // Enslave
-   25,                       // Invisibility
-   22,                       // Haste
-   2},                       // Fear
+  {0,
+   SPELL_REPEL_MISSILES,     // Repel missiles
+   SPELL_SLOW,               // Slow
+   SPELL_ENSLAVEMENT,        // Enslavement
+   SPELL_INVISIBILITY,       // Invisibility
+   SPELL_HASTE,              // Haste
+   SPELL_CAUSE_FEAR,         // Fear
+  },
 
     // Book of demonology
-   {0,
-   119,                       // Demon
-   120,                      // Demonic horde
-   121,                      // Greater demon
+  {0,
+   SPELL_CALL_IMP,             //jmf: added
+   SPELL_SUMMON_DEMON,         // Demon
+   SPELL_DEMONIC_HORDE,        // Demonic horde
+   SPELL_SUMMON_GREATER_DEMON, // Greater demon
    210,
    210,
-   210},
-
+  },
     // Book of air
-   {0,
+  {0,
    SPELL_ARC,
-   133,                       // Swiftness
-   83,                       // Repel missiles
-   //        52,           // Levitation
-   30,                       // Mephitic cloud
-   132,                      // Shock
-   77},                      // Summon elemental
-
+   SPELL_SWIFTNESS,          // Swiftness
+   SPELL_REPEL_MISSILES,     // Repel missiles
+   //SPELL_LEVITATION,         // Levitation
+   SPELL_MEPHITIC_CLOUD,     // Mephitic cloud
+   SPELL_SHOCK,              // Shock
+   SPELL_SUMMON_ELEMENTAL,   // Summon elemental
+  },
     // Book of the sky
-   {0,
-   135,                       // Insulation
+  {0,
+   SPELL_INSULATION,           // Insulation
    SPELL_AIRSTRIKE,
-   134,                       // Fly
-   159,                      // Deflect missiles
-   17,                       // Lightning bolt
-   136},                     // Orb of electroc
-
+   SPELL_FLY,                  // Fly
+   SPELL_DEFLECT_MISSILES,     // Deflect missiles
+   SPELL_LIGHTNING_BOLT,       // Lightning bolt
+   SPELL_ORB_OF_ELECTROCUTION, // Orb of electroc
+  },
     // 30 - Book of divinations
-   {0,
-   48,                        // Detect curse
-   0,                        // Identification
+  {0,
+   SPELL_DETECT_CURSE,       // Detect curse
+   SPELL_IDENTIFY,           // Identification
    210,
    210,
    210,
-   210},
-
+   210,
+  },
     // Book of the Warp
-   {0,
-   146,                       // Recall
-   37,                       // Teleport away
-   113,                      // Banishment
-   147,                      // Portal
+  {0,
+   SPELL_RECALL,             // Recall
+   SPELL_TELEPORT_OTHER,     // Teleport away
+   SPELL_BANISHMENT,         // Banishment
+   SPELL_PORTAL,             // Portal
    210,
-   210},
-
+   210,
+  },
     // Book of venom
-   {0,
-   140,                       // Poison ammo
-   149,                      // Spider form
-   51,                       // Summon scorpions
-   142,                      // Poison resist
-   36,                       // olg tox rad
-   56},                      // Poison cloud
-
+  {0,
+   SPELL_POISON_AMMUNITION,  // Poison ammo
+   SPELL_SPIDER_FORM,        // Spider form
+   SPELL_SUMMON_SCORPIONS,   // Summon scorpions
+   SPELL_RESIST_POISON,      // Poison resist
+   SPELL_OLGREBS_TOXIC_RADIANCE, // olg tox rad
+   SPELL_POISONOUS_CLOUD,    // Poisonous cloud
+  },
     // Book of annihilations
-   {0,
-   60,                        // Myst bolt
-   56,                       // Poison cloud
-   136,                      // Orb of electro
-   54,                       // Crystal spear
+  {0,
+   SPELL_ISKENDERUNS_MYSTIC_BLAST, // Myst bolt
+   SPELL_POISONOUS_CLOUD,          // Poison cloud
+   SPELL_ORB_OF_ELECTROCUTION,     // Orb of electro
+   SPELL_LEHUDIBS_CRYSTAL_SPEAR,   // Crystal spear
    SPELL_ICE_STORM,
-   57},                       // Firestorm
-
+   SPELL_FIRE_STORM,               // Firestorm
+  },
     // Book of unlife
-   {0,
-   116,                       // Sublimation of Blood
-   66,                       // Animate Dead
-   110,                      // Twisted Resurrection
-   74,                       // Revivification
+  {0,
+   SPELL_SUBLIMATION_OF_BLOOD, // Sublimation of Blood
+   SPELL_ANIMATE_DEAD,         // Animate Dead
+   SPELL_TWISTED_RESURRECTION, // Twisted Resurrection
+   SPELL_BORGNJORS_REVIVIFICATION, // Revivification
    210,
-   210},
-
+   210,
+  },
     // 35 is the tome of destruction
-   {0,
+  {0,
    210,
    210,
    210,
    210,
    210,
-   210},
-
+   210,
+  },
     // Book of control
-   {0,
-   24,                        // Confusion
-   63,                       // Enslavement
-   44,                       // Mass confusion
-   69,                       // Control undead
+  {0,
+   SPELL_CONFUSE,            // Confusion
+   SPELL_ENSLAVEMENT,        // Enslavement
+   SPELL_MASS_CONFUSION,     // Mass confusion
+   SPELL_CONTROL_UNDEAD,     // Control undead
+   SPELL_CONTROL_TELEPORT,   //jmf: added
    210,
-   210},
-
+  },
     // Book of mutations
-   {0,
-   20,                        // Polymorph other
-   144,                      // Alter self
-   114,                      // Degeneration
+  {0,
+   SPELL_POLYMORPH_OTHER,    // Polymorph other
+   SPELL_ALTER_SELF,         // Alter self
+   SPELL_CIGOTUVIS_DEGENERATION, // Degeneration
    210,
    210,
-   210},
-
+   210,
+  },
     // Book of Takumi
-   {0,
-   117,                       // Takumi's dance
-   123,                      // Takumi's vorpal blade
+  {0,
+   SPELL_TUKIMAS_DANCE,        // Tukima's dance
+   SPELL_TUKIMAS_VORPAL_BLADE, // Tukima's vorpal blade
    210,
    210,
    210,
-   210},
-
+   210,
+  },
     // Book of geomancy
-   {0,
-   127,                       // Crush
-   129,                      // Stone arrow
-   64,                       // Magic mapping
-   14,                       // Dig
-   128,                      // Bolt of iron
-   77},                      // Summon elemental
-
+  {0,
+   SPELL_CRUSH,              // Crush
+   SPELL_STONE_ARROW,        // Stone arrow
+   SPELL_MAGIC_MAPPING,      // Magic mapping
+   SPELL_DIG,                // Dig
+   SPELL_BOLT_OF_IRON,       // Bolt of iron
+   SPELL_SUMMON_ELEMENTAL,   // Summon elemental
+  },
     // 40 - Book of earth
-   {0,
-   131,                       // Stonemail
-   130,                      // Tomb
+  {0,
+   SPELL_STONEMAIL,             // Stonemail
+   SPELL_TOMB_OF_DOROKLOHE,     // Tomb
    SPELL_ORB_OF_FRAGMENTATION,
-   54,                        // lehudib's crystal sphere
+   SPELL_LEHUDIBS_CRYSTAL_SPEAR, // lehudib's crystal sphere
    210,
-   210},
-
+   210,
+  },
     // 41 : manuals
-   {0,
+  {0,
    210,
    210,
    210,
    210,
    210,
-   210},
-
+   210,
+  },
     // Book of wizardry
-   {0,
-   137,                       // Detect creatures
-   77,                       // Summon elemental
-   1,                        // Teleport
-   6,                        // Fireball
-   22,                       // Haste
-   0},                       // Identification
-
+  {0,
+   SPELL_DETECT_CREATURES,   // Detect creatures
+   SPELL_SUMMON_ELEMENTAL,   // Summon elemental
+   SPELL_TELEPORT_SELF,      // Teleport
+   SPELL_FIREBALL,           // Fireball
+   SPELL_HASTE,              // Haste
+   SPELL_IDENTIFY,           // Identify
+  },
         // Book of power
-   {0,
-   64,                        // Magic mapping
-   66,                       // Animate dead
-   56,                       // Poison cloud
-   128,                      // Bolt of iron
-   25,                       // Invisibility
-   44},                      // Mass confusion
-
-        // 44 to 49 are unused.
-   {0,
+  {0,
+   SPELL_MAGIC_MAPPING,      // Magic mapping
+   SPELL_ANIMATE_DEAD,       // Animate dead
+   SPELL_POISONOUS_CLOUD,    // Poison cloud
+   SPELL_BOLT_OF_IRON,       // Bolt of iron
+   SPELL_INVISIBILITY,       // Invisibility
+   SPELL_MASS_CONFUSION,     // Mass confusion
+  },
+       // Book of Cantrips //jmf: added
+  {0,
+   SPELL_ANIMATE_SKELETON,
+   SPELL_STING,
+   SPELL_SUMMON_SMALL_MAMMAL,
+   SPELL_DISRUPT,
+   SPELL_CREATE_NOISE,
+   210,
+  },
+      // Book of Party Tricks //jmf: added
+  {0,
+   SPELL_BLINK,
+   SPELL_LEVITATION,
+   SPELL_CALL_IMP,
+   SPELL_FIRE_BRAND,
+   SPELL_PROJECTED_NOISE,
+   210,
+  },
+        // 46 to 49 are unused.
+  {0,
    210,
    210,
    210,
@@ -568,7 +592,7 @@
    210,
    210},
 
-   {0,
+  {0,
    210,
    210,
    210,
@@ -576,7 +600,7 @@
    210,
    210},
 
-   {0,
+  {0,
    210,
    210,
    210,
@@ -584,23 +608,7 @@
    210,
    210},
 
-   {0,
-   210,
-   210,
-   210,
-   210,
-   210,
-   210},
-
-   {0,
-   210,
-   210,
-   210,
-   210,
-   210,
-   210},
-
-   {0,
+  {0,
    210,
    210,
    210,
@@ -609,7 +617,7 @@
    210},
 
         // 50 - Staff of smiting
-   {0,
+  {0,
    45,                        // Smiting
    210,
    210,
@@ -618,7 +626,7 @@
    210},
 
         // Staff of summoning
-   {0,
+  {0,
    61,                        // Swarm
    77,                       // Elemental
    119,                      // Demon
@@ -627,7 +635,7 @@
    210},
 
     // Staff of destruction
-   {0,
+  {0,
    26,                        // Throw fire
    15,                       // Firebolt
    6,                        // Fireball
@@ -636,7 +644,7 @@
    210},
 
     // Staff of destruction
-   {0,
+  {0,
    27,                        // Throw frost
    16,                       // Frostbolt
    17,                       // Thunderbolt
@@ -645,7 +653,7 @@
    210},
 
         // Staff of destruction
-   {0,
+  {0,
    6,                         // Fireball
    17,                       // Thunderbolt
    54,                       // Throw splinters
@@ -654,7 +662,7 @@
    210},
 
     // Staff of destruction
-   {0,
+  {0,
    15,                        // Frost bolt
    16,                       // Firebolt
    55,                       // Bolt of unaccuracy
@@ -663,7 +671,7 @@
    210},
 
     // Staff of warding
-   {0,
+  {0,
    46,                        // Repel undead
    2,                        // Cause fear
    50,                       // Abjuration
@@ -672,7 +680,7 @@
    210},
 
     // Staff of exploration
-   {0,
+  {0,
    58,                        // Detect traps
    64,                       // Magic mapping
    73,                       // Detect items
@@ -681,7 +689,7 @@
    210},
 
     // Staff of demonology
-   {0,
+  {0,
    119,                       // Demon
    120,                      //
    121,                      //
@@ -3102,12 +3110,8 @@
    }                               // end int place_monster
 
 
-
-
-
-
-   void make_room(void)
-   {
+void make_room(void)
+{
 
       int find_door = 0;
       int diag_door = 0;
@@ -3543,9 +3547,6 @@
             }
             dir_x = 0;
          }
-
-
-
 
          if (dir_x == 0 && dir_y == 0)
             continue;
@@ -7889,33 +7890,33 @@
          case OBJ_BOOKS:                    // books
             switch (mitm.special[bp] % 10)
             {
-               case 0:         //strcat(glog , "paperback book");
-               case 1:         //strcat(glog , "hardcover book");
+               case 0:
+               case 1:
                   mitm.colour[bp] = random2(15) + 1;
                   break;
 
                case 2:
-                  mitm.colour[bp] = DARKGREY;  //strcat(glog , "leatherbound book");
+                  mitm.colour[bp] = DARKGREY;
                   if (random2(3) == 0)
                      mitm.colour[bp] = BROWN;
                   break;
 
                case 3:
-                  mitm.colour[bp] = CYAN;     //strcat(glog , "metal-bound book");
+                  mitm.colour[bp] = CYAN;
                   break;
 
                case 4:
-                  mitm.colour[bp] = LIGHTGREY;  //strcat(glog , "papyrus book");
+                  mitm.colour[bp] = LIGHTGREY;
                   break;
 
-               case 5:         //strcat(glog , " book");
-               case 6:         //strcat(glog , " book");
+               case 5:
+               case 6:
                default:
                   break;
             }
             break;
 
-         case OBJ_STAVES:                    // staves
+         case OBJ_STAVES:
             mitm.colour[bp] = BROWN;
             break;
 
@@ -8301,8 +8302,8 @@
          y2 = roy2[spec_room_done];
          morgue();
 
-         is_a_specroom = 2;      // ????????????????????????????????????????????????
-        // should this be here?
+         is_a_specroom = 2;      // ????????????????????????????
+         // should this be here?
 
          for (bcount_x = x1 - 1; bcount_x < x2; bcount_x++)
          {
@@ -10738,122 +10739,3 @@
             return -1;
       }
    }
-
-
-/*
-   void item_bugs(void)
-   {
-
-   int i = 0;
-   int total_number = 0;
-
-   for (i = 0; i < ITEMS; i ++)
-   {
-   if (mitm.quantity [i] <= 0) continue;
-   total_number ++;
-   itoa(i, st_prn, 10);
-   cprintf("item ");
-   cprintf(st_prn);
-   cprintf(" x ");
-   itoa(mitm.x [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", y ");
-   itoa(mitm.y [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", c ");
-   itoa(mitm.base_type [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", t ");
-   itoa(mitm.sub_type [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", p ");
-   itoa(mitm.pluses [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", p2 ");
-   itoa(mitm.pluses2 [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", d ");
-   itoa(mitm.special [i], st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", q ");
-   itoa(mitm.quantity [i], st_prn, 10);
-   cprintf(st_prn);
-   find_item(i);
-   cprintf("\n\r");
-   // itoa(mitm.y [i], st_prn, 10);
-   if (total_number % 10 == 0)
-   {
-   cprintf("Waiting...\n\r");
-   if (getch() == 0) getch();
-   }
-
-   }
-
-   itoa(total_number, st_prn, 10);
-   cprintf("Total: ");
-   cprintf(st_prn);
-
-   cprintf("Waiting...\n\r");
-   if (getch() == 0) getch();
-
-   clrscr();
-
-   }
-
-
-   void find_item(unsigned int found)
-   {
-
-   int i = 0;
-
-   int x = 0;
-   int y = 0;
-
-   for (x = 0; x < 80; x ++)
-   {
-   for (y = 0; y < 70; y ++)
-   {
-   if (igrd [x] [y] == found)
-   {
-   cprintf(EOL"Item lying on floor at ");
-   itoa(x, st_prn, 10);
-   cprintf(st_prn);
-   cprintf(", ");
-   itoa(y, st_prn, 10);
-   cprintf(st_prn);
-   cprintf(".");
-   }
-   }
-   }
-
-
-   for (i = 0; i < ITEMS; i ++)
-   {
-   if (mitm.link [i] == found)
-   {
-   cprintf(EOL"Item linked from ");
-   itoa(i, st_prn, 10);
-   cprintf(st_prn);
-   cprintf(".");
-   }
-   }
-
-   for (x = 0; x < MNST; x ++)
-   {
-   for (y = 0; y < 8; y ++)
-   {
-   if (menv[x].inv [y] == found)
-   {
-   cprintf(EOL"Item carried by monster ");
-   itoa(x, st_prn, 10);
-   cprintf(st_prn);
-   cprintf(" in inv slot ");
-   itoa(y, st_prn, 10);
-   cprintf(st_prn);
-   cprintf(".");
-   }
-   }
-   }
-
-   }
- */

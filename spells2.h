@@ -24,7 +24,8 @@
    int vampiric_drain(int pow);
    int burn_freeze(int pow, char b_f);
    int summon_elemental(int pow, unsigned char restricted_type, unsigned char unfriendly);
-   void summon_small_mammals(void);
+//   void summon_small_mammals(void);
+   void summon_small_mammals(int pow); //jmf: changed
    void summon_scorpions(int pow);
    void summon_ice_beast_etc(int pow, int ibc);
    void summon_swarm(int pow);

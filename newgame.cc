@@ -5,28 +5,39 @@
  *
  *  Change History (most recent first):
  *
- *     <11>      11/22/99       LRH             Er, re-un-capitalised class
- *                                              names (makes them distinguish-
- *                                              able in score list)
- *     <10>      10/31/99       CDL             Allow Spriggan Assassins
- *                                              Remove some old comments
- *      <9>      10/12/99       BCR             Made sure all the classes are
- *                                              capitalized correctly.
- *      <8>      9/09/99        BWR             Changed character selection
- *                                              screens look (added sub-species
- *                                              menus from Dustin Ragan)
- *      <7>      7/13/99        BWR             Changed assassins to use
- *                                              hand crossbows, changed
- *                                              rangers into hunters.
- *      <6>      6/22/99        BWR             Added new rangers/slingers
- *      <5>      6/17/99        BCR             Removed some Linux/Mac filename
- *                                              weirdness
- *      <4>      6/13/99        BWR             sys_env support
- *      <3>      6/11/99        DML             Removed tmpfile purging.
- *      <2>      5/20/99        BWR             CRAWL_NAME, new berserk, upped
- *                                              troll food consumption, added
- *                                              demonspawn transmuters.
- *      <1>      -/--/--        LRH             Created
+ *     <13>      1/10/2000      BCR   Made ogre berserkers get club
+ *                                    skill, Trolls get unarmed skill
+ *                                    Halflings can be assasins and
+ *                                    warpers
+ *     <12>      12/4/99        jmf   Gave Paladins more armour skill + a
+ *                                    long sword (to compensate for
+ *                                    their inability to use poison).
+ *                                    Allowed Spriggan Stalkers (since
+ *                                    that's basically just a venom mage
+ *                                    + assassin, both of which are now
+ *                                    legal).
+ *     <11>      11/22/99       LRH   Er, re-un-capitalised class
+ *                                    names (makes them distinguish-
+ *                                    able in score list)
+ *     <10>      10/31/99       CDL   Allow Spriggan Assassins
+ *                                    Remove some old comments
+ *      <9>      10/12/99       BCR   Made sure all the classes are
+ *                                    capitalized correctly.
+ *      <8>      9/09/99        BWR   Changed character selection
+ *                                    screens look (added sub-species
+ *                                    menus from Dustin Ragan)
+ *      <7>      7/13/99        BWR   Changed assassins to use
+ *                                    hand crossbows, changed
+ *                                    rangers into hunters.
+ *      <6>      6/22/99        BWR   Added new rangers/slingers
+ *      <5>      6/17/99        BCR   Removed some Linux/Mac filename
+ *                                    weirdness
+ *      <4>      6/13/99        BWR   sys_env support
+ *      <3>      6/11/99        DML   Removed tmpfile purging.
+ *      <2>      5/20/99        BWR   CRAWL_NAME, new berserk, upped
+ *                                    troll food consumption, added
+ *                                    demonspawn transmuters.
+ *      <1>      -/--/--        LRH   Created
  */
 
 #include "AppHdr.h"
@@ -164,7 +175,7 @@ char new_game(void)
     else
     {
         cprintf(EOL "Hello, and welcome to Dungeon Crawl v" VERSION "!");
-        cprintf(EOL "(Copyright 1997, 1998, 1999 Linley Henzell)");
+        cprintf(EOL "(Copyright 1997, 1998, 1999, 2000 Linley Henzell)");
         cprintf(EOL "Please read Crawl.txt for instructions and legal details." EOL EOL);
 name_q:
         cprintf("What is your name today? ");
@@ -207,10 +218,10 @@ name_q:
 
 // *BCR* #else
 /*
- * And why check for a filename called bones onlt when not on Linux?
+ * And why check for a filename called bones only when not on Linux?
  */
 
-// if SAVE_DIR_PATH is defined, the userid will be taccked onto the end of
+// if SAVE_DIR_PATH is defined, the userid will be tacked onto the end of
 // the character's files, making bones a valid player name.
 
 #ifndef SAVE_DIR_PATH
@@ -374,8 +385,18 @@ spec_query:
     }
 
 switch_start:
+#ifdef SEPARATE_SELECTION_SCREENS_FOR_SUBSPECIES
+/* *BCR* I changed the way the alternate species selection works.
+ * Before, there was a seperate case for the super classes, and
+ * they would assign the race seperately.  In the new way of doing it,
+ * I convert the choice from the subspecies selection screen into the
+ * keyin value used in the original switch statement.  This way, if
+ * we change the stats for these races, we won't have to modify in two
+ * places.
+ */
     switch (keyn)
     {
+    // the E and D cases allow you to select elf/dwarf subspecies
     case 'E':
         clrscr();
         cprintf("What type of elf?" EOL EOL);
@@ -392,7 +413,7 @@ switch_start:
         do {
             keyn = getch();
         } while (keyn != '?' && keyn != 'x' && keyn != 'X'
-                                        && !(keyn >= 'a' && keyn <= 'e'));
+                 && !(keyn >= 'a' && keyn <= 'e'));
 
         if (keyn == '?')
         {
@@ -410,43 +431,8 @@ switch_start:
             end(0);
         }
 
-        switch (keyn)
-        {
-        case 'a':
-            you.species = SP_ELF;   // elf
-            you.strength = 5;
-            you.intel = 8;
-            you.dex = 8;
-            break;
-
-        case 'b':
-            you.species = SP_HIGH_ELF;      // high-elf
-            you.strength = 5;
-            you.intel = 9;
-            you.dex = 8;
-            break;
-
-        case 'c':
-            you.species = SP_GREY_ELF;      // grey-elf
-            you.strength = 4;
-            you.intel = 9;
-            you.dex = 8;
-            break;
-
-        case 'd':
-            you.species = SP_DEEP_ELF;      // deep elf
-            you.strength = 4;
-            you.intel = 10;
-            you.dex = 7;
-            break;
-
-        case 'e':
-            you.species = SP_SLUDGE_ELF;    // sludge elf
-            you.strength = 5;
-            you.intel = 7;
-            you.dex = 8;
-            break;
-        }
+        // *BCR* Elves start at 'b' and go from there, so 'a' + 1 works
+        keyn++;
         break;
 
     case 'D':
@@ -462,7 +448,7 @@ switch_start:
         do {
             keyn = getch();
         } while (keyn != '?' && keyn != 'x' && keyn != 'X'
-                                        && !(keyn >= 'a' && keyn <= 'b'));
+                 && !(keyn >= 'a' && keyn <= 'b'));
 
         if (keyn == '?')
         {
@@ -480,23 +466,13 @@ switch_start:
             end(0);
         }
 
-        switch (keyn)
-        {
-        case 'a':
-            you.species = SP_HILL_DWARF;    // hill dwarf
-            you.strength = 9;
-            you.intel = 3;
-            you.dex = 4;
-            break;
-
-        case 'b':
-            you.species = SP_MOUNTAIN_DWARF;        // mountain dwarf
-            you.strength = 9;
-            you.intel = 4;
-            you.dex = 5;
-            break;
-        }
+        // *BCR* Dwarves start at 'g' and go from there, so 'a' + 6 works
+        keyn += 6;
         break;
+    }
+#endif // ends the alternate species selection method
+    switch (keyn)
+    {
 
     case 'a':
         you.species = SP_HUMAN; // human
@@ -646,7 +622,7 @@ the game go to such effort to conceal their type until maturity?)
         do {
             keyn = getch();
         } while (keyn != '?' && keyn != 'x' && keyn != 'X'
-                                            && !(keyn >= 'a' && keyn <= 'i'));
+                 && !(keyn >= 'a' && keyn <= 'i'));
 
         if (keyn == '?')
         {
@@ -725,7 +701,8 @@ the game go to such effort to conceal their type until maturity?)
         break;
 
     case '?':
-        keyn = 97 + random2(25);
+// *BCR*        keyn = 97 + random2(25);
+        keyn = 'a' + random2(25);
         goto switch_start;
 
     case 'X':
@@ -761,9 +738,9 @@ the game go to such effort to conceal their type until maturity?)
             continue;
 
         if (i < 26)
-            putch(i + 97);
+            putch(i + 'a');
         else
-            putch(i + 39);
+            putch((i - 26) + 'A');
         cprintf(" - ");
 
         switch (i)
@@ -1195,18 +1172,7 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
             you.inv_dam[1] = (4 + random2(2)) * 30;
         you.inv_colour[1] = random2(15) + 1;
 
-/*      you.AC = 1;
-   you.evasion = 10; */
-
-        // 11 = spear
-        // 9 = hand ae
-        // 3 = dagger
-
-//      } // end of switch random2(4)
-
-//      int leftover = 8;
-
-//      you.strength = 6;
+        you.strength += 0;  // no change
         you.dex += 3;
         you.intel += 7;
 
@@ -1219,27 +1185,19 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
 
         you.inv_class[2] = OBJ_BOOKS;
         you.inv_type[2] = random2(3);
-//      strcpy(you.inv_name [23], "wand of invisibility");
         you.inv_quantity[2] = 1;
         you.inv_plus[2] = 127;
         you.inv_dam[2] = 1;
-        // you.num_inv_items = 13;
         you.inv_colour[2] = 3;
-
-/* you.res_magic = 10; */
 
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 1;
         you.skills[SK_DODGING + random2(2)]++;
-
-/*        if (you.skills [SK_DODGING] == 2) you.evasion ++; */
-
         you.skills[SK_SPELLCASTING] = 2;
         you.skills[SK_CONJURATIONS] = 1;
         you.skills[SK_ENCHANTMENTS] = 1;
         you.skills[SK_SPELLCASTING + random2(3)]++;
         you.skills[SK_SUMMONINGS + random2(5)]++;
-
         you.skills[SK_SHORT_BLADES] = 1;
         you.skills[SK_STAVES] = 1;
         break;
@@ -1253,30 +1211,13 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         you.hp_max = 12;
         you.magic_points = 1;
         you.max_magic_points = 1;
-/*      you.f_abil = 7;
-   you.mag_abil = 7;
-   you.thr_abil = 5;
-   you.speed = 10; */
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
-        //switch(random2(6))
-        //{
-        //      case 0 : you.inv_type [0] = 1; damage = 6; break;
-        //      case 1 : you.inv_type [0] = 2; damage = 7; break;
-        //      case 2 : you.inv_type [0] = 4; damage = 7; break;
-        //      case 3 : you.inv_type [0] = 9; damage = 7; break;
-        //case 4 :
-        you.inv_type[0] = WPN_MACE;
-        //case 5 : you.inv_type [0] = 5; damage = 6; break;
-        //}
-
-
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
-
 
         // Robe
         you.inv_quantity[1] = 1;
@@ -1286,26 +1227,12 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         you.inv_dam[1] = 0;
         you.inv_colour[1] = WHITE;
 
-/*      you.AC = 1;
-   you.evasion = 10; */
-
         you.inv_class[2] = OBJ_POTIONS;
         you.inv_type[2] = POT_HEALING;
-//      strcpy(you.inv_name [23], "wand of invisibility");
         you.inv_quantity[2] = 2 + random2(2);
         you.inv_plus[2] = 0;
         you.inv_dam[2] = 0;
-        // you.num_inv_items = 13;
         you.inv_colour[2] = random2(15) + 1;    // hmmm...
-
-
-        // 11 = spear
-        // 9 = hand ae
-        // 3 = dagger
-
-//      } // end of switch random2(4)
-
-//      int leftover = 8;
 
         you.strength += 4;
         you.dex += 2;
@@ -1315,12 +1242,10 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         you.equip[EQ_BODY_ARMOUR] = 1;
 
         you.gold = random2(10);
-/* you.res_magic = 10; */
 
         you.skills[SK_FIGHTING] = 2;
         you.skills[SK_DODGING] = 1;
         you.skills[SK_SHIELDS] = 1;
-// you.skills [SK_THROWING] = 2;
         you.skills[SK_MACES_FLAILS] = 2;
         you.skills[SK_STAVES] = 1;
 
@@ -1351,8 +1276,6 @@ getkey:
 
         break;
 
-
-
     case JOB_THIEF:             // thief
 
         strcpy(you.class_name, "Thief");
@@ -1360,11 +1283,6 @@ getkey:
         you.hp_max = 11;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 7;
-   you.mag_abil = 6;
-   you.thr_abil = 12;
-   you.speed = 10; */
-
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;      // damage = 6; //break;
@@ -1403,13 +1321,6 @@ getkey:
         you.inv_dam[4] = 0;
         you.inv_colour[4] = LIGHTCYAN;
 
-/* you.AC = 3;
-   you.evasion = 9; */
-
-        // 11 = spear
-        // 9 = hand axe
-        // 3 = dagger
-
         you.strength += 3;
         you.dex += 5;
         you.intel += 2;
@@ -1418,8 +1329,8 @@ getkey:
         you.equip[EQ_BODY_ARMOUR] = 2;
         you.equip[EQ_CLOAK] = 3;
 
-        you.gold = random2(10);
-/* you.res_magic = 3; */
+// *BCR* Thieves now get more starting starting gold.
+        you.gold = (random2(10) * 6) + (random2(10) * 4);
 
         you.skills[SK_FIGHTING] = 1;
         you.skills[SK_SHORT_BLADES] = 2;
@@ -1576,7 +1487,7 @@ getkey:
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
-        you.inv_type[0] = WPN_SHORT_SWORD;
+        you.inv_type[0] = WPN_LONG_SWORD;
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
@@ -1618,8 +1529,7 @@ getkey:
         you.skills[SK_ARMOUR + random2(2)]++;
 
         you.skills[SK_SHIELDS] = 2;
-        you.skills[SK_SHORT_BLADES] = 2;
-        you.skills[SK_LONG_SWORDS] = 2;
+        you.skills[SK_LONG_SWORDS] = 3;
         you.skills[SK_INVOCATIONS] = 1;
         break;
 
@@ -1699,6 +1609,8 @@ getkey:
         you.magic_points = 0;
         you.max_magic_points = 0;
 
+// WEAPONS
+
         if (you.species == SP_OGRE)
         {
             you.inv_quantity[0] = 1;
@@ -1707,31 +1619,21 @@ getkey:
             you.inv_plus[0] = 50;
             you.inv_plus2[0] = 50;
             you.inv_dam[0] = 0;
-            you.inv_colour[0] = BROWN;
-
+            you.inv_colour[0] = LIGHTCYAN;
+            you.equip[EQ_WEAPON] = 0;
         }
-
-        if (you.species == SP_TROLL)
+        else if (you.species == SP_TROLL)
         {
+            you.equip[EQ_WEAPON] = -1;
+// *BCR* Looks like Troll berserkers don't get weapons; should get unarmed?
+/*
             you.inv_quantity[0] = 0;
             you.inv_class[0] = OBJ_WEAPONS;
             you.inv_type[0] = WPN_CLUB;
             you.inv_plus[0] = 50;
             you.inv_dam[0] = 0;
             you.inv_colour[0] = BROWN;
-
-        }
-
-        if (you.species == SP_OGRE || you.species == SP_TROLL
-                            || (you.species >= SP_RED_DRACONIAN
-                                        && you.species <= SP_UNK2_DRACONIAN))
-        {
-            you.inv_quantity[1] = 1;
-            you.inv_class[1] = OBJ_ARMOUR;
-            you.inv_type[1] = ARM_ANIMAL_SKIN;
-            you.inv_plus[1] = 50;
-            you.inv_dam[1] = 0;
-            you.inv_colour[1] = BROWN;
+*/
         }
         else
         {
@@ -1742,77 +1644,67 @@ getkey:
             you.inv_plus2[0] = 50;
             you.inv_dam[0] = 0;
             you.inv_colour[0] = LIGHTCYAN;
+            you.equip[EQ_WEAPON] = 0;
+        }
 
-/*            you.inv_quantity[1] = 1;
-            you.inv_class[1] = OBJ_WEAPONS;
-            you.inv_type[1] = WPN_SPEAR;
+// ARMOUR
+
+        if (   you.species == SP_OGRE
+            || you.species == SP_TROLL
+            || (you.species >= SP_RED_DRACONIAN
+                && you.species <= SP_UNK2_DRACONIAN))
+        {
+            you.inv_quantity[1] = 1;
+            you.inv_class[1] = OBJ_ARMOUR;
+            you.inv_type[1] = ARM_ANIMAL_SKIN;
             you.inv_plus[1] = 50;
-            you.inv_plus2[1] = 50;
             you.inv_dam[1] = 0;
-            you.inv_colour[1] = LIGHTCYAN;
-
-            you.inv_quantity[2] = 1;
-            you.inv_class[2] = OBJ_WEAPONS;
-            you.inv_type[2] = WPN_SPEAR;
-            you.inv_plus[2] = 50;
-            you.inv_plus2[2] = 50;
-            you.inv_dam[2] = 0;
-            you.inv_colour[2] = LIGHTCYAN;
-
-            you.inv_quantity[3] = 1;
-            you.inv_class[3] = OBJ_WEAPONS;
-            you.inv_type[3] = WPN_SPEAR;
-            you.inv_plus[3] = 50;
-            you.inv_plus2[3] = 50;
-            you.inv_dam[3] = 0;
-            you.inv_colour[3] = LIGHTCYAN;*/
-
-
+            you.inv_colour[1] = BROWN;
+            you.equip[EQ_BODY_ARMOUR] = 1;
+        }
+        else
+        {
             you.inv_quantity[4] = 1;
             you.inv_class[4] = OBJ_ARMOUR;
             you.inv_type[4] = ARM_LEATHER_ARMOUR;
             you.inv_plus[4] = 50;
             you.inv_dam[4] = 0;
             you.inv_colour[4] = BROWN;
+            you.equip[EQ_BODY_ARMOUR] = 4;
         }
+
+// STATS
 
         you.strength += 7;
         you.dex += 4;
         you.intel -= 1;
-        you.equip[EQ_WEAPON] = 0;
         you.gold = random2(10);
 
         you.skills[SK_FIGHTING] = 2;
 
-        if (you.species != SP_TROLL)
+// SKILLS
+        if (you.species == SP_TROLL)
         {
-            you.equip[EQ_WEAPON] = 0;
-            you.equip[EQ_BODY_ARMOUR] = 4;
+// *BCR* Troll Berserkers get no weapon, so I gave them unarmed/dodging
+            you.skills[SK_FIGHTING] += 3;
+            you.skills[SK_DODGING] = 2;
+            you.skills[SK_UNARMED_COMBAT] = 3;
+        }
+        else if (you.species == SP_OGRE)
+        {
+            you.skills[SK_FIGHTING] += 3;
+            you.skills[SK_AXES] = 1;
+            you.skills[SK_MACES_FLAILS] = 3;
         }
         else
         {
-            you.equip[EQ_WEAPON] = -1;
-            you.equip[EQ_BODY_ARMOUR] = 1;
-        }
-
-        if (you.species == SP_OGRE)
-        {
-            you.equip[EQ_WEAPON] = 0;
-            you.equip[EQ_BODY_ARMOUR] = 1;
-        }
-
-
-        if (you.species != SP_OGRE && you.species != SP_TROLL)
-        {
+            you.skills[SK_AXES] = 3;
+            you.skills[SK_MACES_FLAILS] = 1;
             you.skills[SK_ARMOUR] = 2;
             you.skills[SK_DODGING] = 2;
             you.skills[SK_THROWING] = 2;
         }
-        else
-            you.skills[SK_FIGHTING] += 3;
 
-        you.skills[SK_AXES] = 3;
-        you.skills[SK_MACES_FLAILS] = 1;
         break;
 
     case JOB_HUNTER:
@@ -1951,7 +1843,8 @@ getkey:
         if (you.char_class == JOB_WARPER)
             strcpy(you.class_name, "warper");
 
-        switch (random2(8))   /* get a random lvl 1 attack spell - later overwritten for most classes */
+        // get a random lvl 1 attack spell; later overwritten for most classes
+        switch (random2(8))
         {
         case 0:
             you.spells[0] = SPELL_BURN;
@@ -1984,7 +1877,7 @@ getkey:
         you.inv_class[0] = OBJ_WEAPONS;
 
         if (you.species == SP_OGRE_MAGE)
-            you.inv_type[0] = WPN_SHORT_SWORD;
+            you.inv_type[0] = WPN_QUARTERSTAFF;
         else
             you.inv_type[0] = WPN_DAGGER;
 
@@ -2015,18 +1908,13 @@ getkey:
             you.inv_colour[1] = BROWN;
         if (you.char_class == JOB_VENOM_MAGE)
             you.inv_colour[1] = GREEN;
-/*      you.AC = 1;
-   if (you.char_class == JOB_ENCHANTER) you.AC = 2;
-   you.evasion = 10; */
-//      you.strength = 6;
+        you.strength += 0; // no change
         you.dex += 4;
         you.intel += 6;
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
         you.gold = random2(10);
         you.inv_class[2] = OBJ_BOOKS;
-
-/*        you.res_magic = 10; */
 
         you.inv_type[2] = BOOK_CONJURATIONS_I + random2(2);     // conj
 
@@ -2037,25 +1925,22 @@ getkey:
 
             you.inv_plus[2] = 127;
             you.skills[SK_SUMMONINGS] = 4;
-            // gets some darts - this class is very difficult to start off with
+            // gets some darts. This class is difficult to start off with
             you.inv_quantity[3] = random2(5) + random2(5) + 7;
             you.inv_class[3] = OBJ_MISSILES;
-            you.inv_type[3] = MI_DART;  //wtype;
+            you.inv_type[3] = MI_DART;
 
             you.inv_plus[3] = 50;
             you.inv_dam[3] = 0;
             you.inv_colour[3] = LIGHTCYAN;
         }
-        if (you.char_class == JOB_CONJURER)
+
+        switch (you.char_class)
         {
+        case JOB_CONJURER:
             you.skills[SK_CONJURATIONS] = 4;    // conjurer
-
-        }
-        if (you.char_class == JOB_ENCHANTER)    // ench
-
-        {
-/*          you.res_magic = 12; */
-
+            break;
+        case JOB_ENCHANTER:
             you.inv_type[2] = BOOK_CHARMS;      // charms
 
             you.inv_plus[2] = 127;
@@ -2085,10 +1970,7 @@ getkey:
                 break;
             }
             you.inv_plus2[3] = 0;
-        }                       // end of enchanter
-
-        switch (you.char_class)
-        {
+            break;
         case JOB_FIRE_ELEMENTALIST:     // fire elementalist
 
             you.inv_type[2] = BOOK_FLAMES;
@@ -2130,7 +2012,6 @@ getkey:
             you.inv_type[2] = BOOK_GEOMANCY;
             you.inv_plus[2] = 127;
             you.skills[SK_CONJURATIONS] = 1;    // conj
-            //         you.skills [SK_ENCHANTMENTS] = 1; // ench
 
             you.skills[SK_EARTH_MAGIC] = 3;     // earth magic
 
@@ -2166,7 +2047,6 @@ getkey:
         }
 
         you.inv_quantity[2] = 1;
-//      you.inv_plus [2] = 124;
         you.inv_dam[2] = 0;
         you.inv_colour[2] = random2(15) + 1;
         if (you.char_class == JOB_FIRE_ELEMENTALIST)
@@ -2175,26 +2055,14 @@ getkey:
             you.inv_colour[2] = LIGHTCYAN;
         if (you.char_class == JOB_VENOM_MAGE)
             you.inv_colour[2] = GREEN;
-/*  you.res_magic = 10; */
 
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 1;
         you.skills[SK_DODGING + random2(2)]++;
-/* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
-
         you.skills[SK_SPELLCASTING] = 1;
         you.skills[SK_SHORT_BLADES] = 1;
-/*      if (you.species == SP_OGRE_MAGE)
-   {
-   you.skills [SK_SHORT_BLADES] = 0;
-   you.skills [SK_POLEARMS] = 2;
-   } */
         you.skills[SK_STAVES] = 1;
-
-
         break;
-
-
     case JOB_CRUSADER:          // Crusader
 
         strcpy(you.class_name, "Crusader");
@@ -3422,6 +3290,7 @@ char class_allowed(char speci, char char_class)
         case SP_GREY_ELF:
         case SP_DEEP_ELF:
         case SP_SLUDGE_ELF:
+        case SP_HALFLING:
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_MUMMY:
@@ -3888,6 +3757,7 @@ char class_allowed(char speci, char char_class)
         switch (speci)
         {
         case SP_HUMAN:
+        case SP_SPRIGGAN:
         case SP_ELF:
         case SP_HIGH_ELF:
         case SP_GREY_ELF:
@@ -3898,9 +3768,7 @@ char class_allowed(char speci, char char_class)
         case SP_NAGA:
         case SP_DEMIGOD:
         case SP_DEMONSPAWN:
-
         case SP_KENKU:
-
             return 1;
         }
         return 0;
@@ -3932,7 +3800,6 @@ char class_allowed(char speci, char char_class)
         switch (speci)
         {
         case SP_HILL_ORC:
-        case SP_HALFLING:
         case SP_HILL_DWARF:
         case SP_KOBOLD:
         case SP_MUMMY:

@@ -5,10 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *      <3>      5/20/99        BWR             Extend screen lines support.
- *      <2>      5/09/99        JDJ             spellbook_contents prints unknown spells
- *                                                                      in light blue.
- *      <1>      -/--/--        LRH             Created
+ *      <4>    05jan2000        jmf   Changed many numbers to enums
+ *      <3>      5/20/99        BWR   Extend screen lines support.
+ *      <2>      5/09/99        JDJ   spellbook_contents prints unknown spells
+ *                                    in light blue.
+ *      <1>      -/--/--        LRH   Created
  */
 
 #include "AppHdr.h"
@@ -49,7 +50,6 @@ char spell_list(void);
 char spell_list(void)
 {
     char st_pass[60];
-
     int j;
     char lines = 0;
     unsigned char anything = 0;
@@ -60,7 +60,6 @@ char spell_list(void)
 
 #ifdef DOS_TERM
     char buffer[4800];
-
     gettext(1, 1, 80, 25, buffer);
 #endif
 
@@ -69,9 +68,7 @@ char spell_list(void)
 #endif
 
     strcpy(st_pass, "");
-
     clrscr();
-
     cprintf("  Your Spells                       Type                  Success   Level");
     lines++;
 
@@ -107,7 +104,6 @@ char spell_list(void)
 
     for (j = 0; j < 25; j++)
     {
-
         if (lines > NUMBER_OF_LINES - 2)
         {
             gotoxy(1, NUMBER_OF_LINES);
@@ -137,7 +133,6 @@ char spell_list(void)
 
         if (you.spells[j] != 210)
         {
-
             anything++;
             if (lines > 0)
                 cprintf(EOL);
@@ -156,159 +151,128 @@ char spell_list(void)
 
             gotoxy(35, wherey());
             already = 0;
-            if (spell_type(you.spells[j], 17) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_HOLY) == 1) {
                 cprintf("Holy");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 21) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_POISON) == 1) {
                 print_slash(already);
                 cprintf("Poison");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 13) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_FIRE) == 1) {
                 print_slash(already);
                 cprintf("Fire");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 14) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_ICE) == 1) {
                 print_slash(already);
                 cprintf("Ice");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 22) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_EARTH) == 1) {
                 print_slash(already);
                 cprintf("Earth");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 23) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_AIR) == 1) {
                 print_slash(already);
                 cprintf("Air");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 11) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_CONJURATION) == 1) {
                 print_slash(already);
                 cprintf("Conjuration");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 12) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_ENCHANTMENT) == 1) {
                 print_slash(already);
                 cprintf("Enchantment");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 19) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_DIVINATION) == 1) {
                 print_slash(already);
                 cprintf("Divination");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 20) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_TRANSLOCATION) == 1) {
                 print_slash(already);
                 cprintf("Translocation");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 18) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_SUMMONING) == 1) {
                 print_slash(already);
                 cprintf("Summoning");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 15) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_TRANSMIGRATION) == 1) {
                 print_slash(already);
                 cprintf("Transmigration");
                 already = 1;
             }
-            if (spell_type(you.spells[j], 16) == 1)
-            {
+            if (spell_type(you.spells[j], SPTYP_NECROMANCY) == 1) {
                 print_slash(already);
                 cprintf("Necromancy");
                 already = 1;
             }
 
-
-
 /*
-   types of spells:
-   11 = conjuration
-   12 = enchantment
-   13 = fire
-   14 = ice
-   15 = transmigration
-   16 = necromancy
-   17 = holy
-   18 = summoning
-   19 = divination
-   20 = translocation
-   21 = poison
+ *  types of spells:
+ *  11 = conjuration
+ *  12 = enchantment
+ *  13 = fire
+ *  14 = ice
+ *  15 = transmigration
+ *  16 = necromancy
+ *  17 = holy
+ *  18 = summoning
+ *  19 = divination
+ *  20 = translocation
+ *  21 = poison
  */
             char sval[4];
-
             gotoxy(58, wherey());
-
             int spell_f = spell_fail(you.spells[j]);
 
-            if (spell_f == 100)
-            {
-                cprintf("Useless");
+            if (spell_f == 100) {
+              cprintf("Useless");
             }
-            else if (spell_f > 90)
-            {
-                cprintf("Terrible");
+            else if (spell_f > 90) {
+              cprintf("Terrible");
             }
-            else if (spell_f > 80)
-            {
-                cprintf("Cruddy");
+            else if (spell_f > 80) {
+              cprintf("Cruddy");
             }
-            else if (spell_f > 70)
-            {
-                cprintf("Bad");
+            else if (spell_f > 70) {
+              cprintf("Bad");
             }
-            else if (spell_f > 60)
-            {
-                cprintf("Very Poor");
+            else if (spell_f > 60) {
+              cprintf("Very Poor");
             }
-            else if (spell_f > 50)
-            {
-                cprintf("Poor");
+            else if (spell_f > 50) {
+              cprintf("Poor");
             }
-            else if (spell_f > 40)
-            {
-                cprintf("Fair");
+            else if (spell_f > 40) {
+              cprintf("Fair");
             }
-            else if (spell_f > 30)
-            {
-                cprintf("Good");
+            else if (spell_f > 30) {
+              cprintf("Good");
             }
-            else if (spell_f > 20)
-            {
-                cprintf("Very Good");
+            else if (spell_f > 20) {
+              cprintf("Very Good");
             }
-            else if (spell_f > 10)
-            {
-                cprintf("Great");
+            else if (spell_f > 10) {
+              cprintf("Great");
             }
-            else if (spell_f > 0)
-            {
-                cprintf("Excellent");
+            else if (spell_f > 0) {
+              cprintf("Excellent");
             }
             else
                 cprintf("Perfect");
 
             gotoxy(70, wherey());
-
-
             itoa((int) spell_value(you.spells[j]), sval, 10);
             cprintf(sval);
-
         }
     }                           // end of j loop
 
@@ -335,39 +299,37 @@ char spell_list(void)
 #endif
     // was 35
     ki = getch();
-
     return ki;
-
-
 }
 
 
 void print_slash(char already)
 {
-    if (already == 1)
-        cprintf("/");
+  if (already == 1)
+    cprintf("/");
 }
 
 
 char spell_fail(unsigned char spell)
 {
     int chance = 60;
-    int chance2 = 0;
-
+    int chance2 = 0, armour = 0;
 
     chance -= spell_spec(spell, 0) * 6;
-
     chance -= you.intel * 2;
 
 //chance -= (you.intel - 10) * abs(you.intel - 10);
-
 //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
 
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
-    {
-        chance += (abs(property(OBJ_ARMOUR,
-                        you.inv_type[you.equip[EQ_BODY_ARMOUR]],
-                            PARM_EVASION)) * 5) - 2;
+    if (you.equip[EQ_BODY_ARMOUR] != -1) {
+      //jmf: armour skill now reduces failure due to armour
+      armour += (abs(property(OBJ_ARMOUR,
+                              you.inv_type[you.equip[EQ_BODY_ARMOUR]],
+                              PARM_EVASION)) * 5) - 2;
+      if (armour > 0)
+        armour -= you.skills[SK_ARMOUR] * (you.strength / 5 + 1);
+      if (armour > 0)
+        chance += armour;
     }
 
     if (you.equip[EQ_WEAPON] != -1
@@ -380,7 +342,6 @@ char spell_fail(unsigned char spell)
             wpn_penalty = (5 * (property(OBJ_WEAPONS,
                                         you.inv_type[you.equip[EQ_WEAPON]],
                                         PWPN_SPEED) - 12)) / 2;
-
         }
 
         if (wpn_penalty > 0)
@@ -400,7 +361,11 @@ char spell_fail(unsigned char spell)
                 break;
 
             case ARM_LARGE_SHIELD:
-                chance += 30;
+                // *BCR* Large chars now get a lower penalty for large shields
+                if (you.species >= SP_OGRE && you.species <= SP_UNK2_DRACONIAN)
+                    chance += 20;
+                else
+                    chance += 30;
                 break;
         }
     }
@@ -500,18 +465,20 @@ char spell_fail(unsigned char spell)
     if (chance < -180)
         chance2 = 0;
 
-    if (you.religion == GOD_VEHUMET && you.duration[DUR_PRAYER] != 0 && you.piety >= 50 && (spell_type(spell, 11) != 0 || spell_type(spell, 18) != 0))
+    if (   you.religion == GOD_VEHUMET
+        && you.duration[DUR_PRAYER] != 0
+        && you.piety >= 50
+        && (spell_type(spell, 11) != 0
+        || spell_type(spell, 18) != 0))
     {
-        chance2 /= 2;
+      chance2 /= 2;
     }
 
-    if (you.duration[DUR_TRANSFORMATION] > 0 && you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
-    {
-        chance2 += 20;
+    if (you.duration[DUR_TRANSFORMATION] > 0
+        && you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS) {
+      chance2 += 20;
     }
-
     return chance2;
-
 }
 
 
@@ -747,543 +714,543 @@ int spell_type(unsigned char spell, unsigned char typy)
 
     switch (spell)
     {
-    case 0:
+    case SPELL_IDENTIFY:
         stype = 19;
         break;                  //6; // identify
 
-    case 1:
+    case SPELL_TELEPORT_SELF:
         stype = 20;
         break;                  //5; // teleportation
 
-    case 2:
+    case SPELL_CAUSE_FEAR:
         stype = 12;
         break;                  //4; // cause fear
 
-    case 3:
+    case SPELL_CREATE_NOISE:
         stype = 12;
         break;                  //1; // noise
 
-    case 4:
+    case SPELL_REMOVE_CURSE:
         stype = 12;
         break;                  //5; // remove curse
 
-    case 5:
+    case SPELL_MAGIC_DART:
         stype = 11;
         break;                  //1; // magic missile
 
-    case 6:
+    case SPELL_FIREBALL:
         stype = 1311;
         break;                  //5; // fireball
 
-    case 13:
-        stype = 1311;
+    case SPELL_CONJURE_FLAME:
+        stype = 231311;
         break;                  //3; // conjure flame
 
-    case 14:
+    case SPELL_DIG:
         stype = 1522;
         break;                  //4; // dig
 
-    case 15:
+    case SPELL_BOLT_OF_FIRE:
         stype = 1311;
         break;                  //5; // firebolt
 
-    case 16:
+    case SPELL_BOLT_OF_COLD:
         stype = 1411;
         break;                  //5; // bolt of freezing cold
 
-    case 17:
+    case SPELL_LIGHTNING_BOLT:
         stype = 2311;
         break;                  //6; // bolt of lightning
 
-    case 20:
+    case SPELL_POLYMORPH_OTHER:
         stype = 1512;
         break;                  //6; // polymorph other
 
-    case 21:
+    case SPELL_SLOW:
         stype = 12;
         break;                  //3;
 
-    case 22:
+    case SPELL_HASTE:
         stype = 12;
         break;                  //4;
 
-    case 23:
+    case SPELL_PARALYZE:
         stype = 12;
         break;                  //4;
 
-    case 24:
+    case SPELL_CONFUSE:
         stype = 12;
         break;                  //3;
 
-    case 25:
+    case SPELL_INVISIBILITY:
         stype = 12;
         break;                  //4; // invisibility
 
-    case 26:
+    case SPELL_THROW_FLAME:
         stype = 1311;
         break;                  //2; // throw flame
 
-    case 27:
+    case SPELL_THROW_FROST:
         stype = 1411;
         break;                  //2; // throw frost
 
-    case 28:
+    case SPELL_CONTROLLED_BLINK:
         stype = 20;
         break;                  //4; // blink
 
-    case 29:
-        stype = 1411;
+    case SPELL_FREEZING_CLOUD:
+        stype = 231411;
         break;                  //7; // freezing cloud
 
-    case 30:
+    case SPELL_MEPHITIC_CLOUD:
         stype = 232111;
         break;                  //3; // stinking cloud
 
-    case 31:
+    case SPELL_RING_OF_FLAMES:
         stype = 1312;
         break;                  //8; // ring of flames
 
-    case 32:
+    case SPELL_RESTORE_STRENGTH:
         stype = 17;
         break;                  //2; //  restore strength:
 
-    case 33:
+    case SPELL_RESTORE_INTELLIGENCE:
         stype = 17;
         break;                  //2; //          int
 
-    case 34:
+    case SPELL_RESTORE_DEXTERITY:
         stype = 17;
         break;                  //2; //          dex
 
-    case 35:
+    case SPELL_VENOM_BOLT:
         stype = 2111;
         break;                  //5; // venom bolt
 
-    case 36:
+    case SPELL_OLGREBS_TOXIC_RADIANCE:
         stype = 21;
         break;                  //4; // toxic radiance - uses lots of food?
 
-    case 37:
+    case SPELL_TELEPORT_OTHER:
         stype = 20;
         break;                  //5; // teleport other
 
-    case 38:
+    case SPELL_LESSER_HEALING:
         stype = 17;
         break;                  //2; // lesser healing
 
-    case 39:
+    case SPELL_GREATER_HEALING:
         stype = 17;
         break;                  //6; // greater healing
 
-    case 40:
+    case SPELL_CURE_POISON_I:
         stype = 17;
         break;                  //3; // cure poison
 
-    case 41:
+    case SPELL_PURIFICATION:
         stype = 17;
         break;                  //5; // purification
 
-    case 42:
+    case SPELL_DEATHS_DOOR:
         stype = 1612;
         break;                  //8; // death's door
 
-    case 43:
+    case SPELL_SELECTIVE_AMNESIA:
         stype = 12;
         break;                  //3; // selective amnesia
 
-    case 44:
+    case SPELL_MASS_CONFUSION:
         stype = 12;
         break;                  //7; // mass confusion
 
-    case 45:
+    case SPELL_SMITING:
         stype = 17;
         break;                  //4; // smiting
 
-    case 46:
+    case SPELL_REPEL_UNDEAD:
         stype = 17;
         break;                  //3; // repel undead
 
-    case 47:
+    case SPELL_HOLY_WORD:
         stype = 17;
         break;                  //7; // holy word
 
-    case 48:
+    case SPELL_DETECT_CURSE:
         stype = 19;
         break;                  //3; // detect curse
 
-    case 49:
+    case SPELL_SUMMON_SMALL_MAMMAL:
         stype = 18;
         break;                  //1; // summon small mammal
 
-    case 50:
+    case SPELL_ABJURATION_I:
         stype = 18;
         break;                  //4; // Abjuration
 
-    case 51:
+    case SPELL_SUMMON_SCORPIONS:
         stype = 2118;
         break;                  //4; // summon scorpions
 
-    case 52:
+    case SPELL_LEVITATION:
         stype = 1223;
         break;                  //3; // levitation
 
-    case 53:
+    case SPELL_BOLT_OF_DRAINING:
         stype = 1611;
         break;                  //6; // bolt of draining
 
-    case 54:
+    case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
         stype = 1122;
         break;                  //8; // splinters
 
-    case 55:
+    case SPELL_BOLT_OF_INACCURACY:
         stype = 11;
         break;                  //4; // innacuracy
 
-    case 56:
-        stype = 2111;
+    case SPELL_POISONOUS_CLOUD:
+        stype = 232111;
         break;                  //6; // poisonous cloud
 
-    case 57:
+    case SPELL_FIRE_STORM:
         stype = 1311;
         break;                  //8; // fire storm
 
-    case 58:
+    case SPELL_DETECT_TRAPS:
         stype = 19;
         break;                  //2; // detect traps
 
-    case 59:
+    case SPELL_BLINK:
         stype = 20;
         break;                  //2; // random blink
 
-    case 60:
+    case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         stype = 11;
         break;                  //5; // Isk's blast
 
-    case 61:
+    case SPELL_SWARM:
         stype = 18;
         break;                  //5; // swarm
 
-    case 62:
+    case SPELL_SUMMON_HORRIBLE_THINGS:
         stype = 18;
         break;                  //8; // Summon Thing
 
-    case 63:
+    case SPELL_ENSLAVEMENT:
         stype = 12;
         break;                  //4; // Enslavement
 
-    case 64:
+    case SPELL_MAGIC_MAPPING:
         stype = 1922;
         break;                  //4; // Magic Mapping
 
-    case 65:
+    case SPELL_HEAL_OTHER:
         stype = 17;
         break;                  //3; // heal other
 
-    case 66:
+    case SPELL_ANIMATE_DEAD:
         stype = 16;
         break;                  //7; // Animate dead
 
-    case 67:
+    case SPELL_PAIN:
         stype = 16;
         break;                  //1; // Pain
 
-    case 68:
+    case SPELL_EXTENSION:
         stype = 12;
         break;                  //4; // Extension
 
-    case 69:
+    case SPELL_CONTROL_UNDEAD:
         stype = 1612;
         break;                  //6; // Control Undead
 
-    case 70:
+    case SPELL_ANIMATE_SKELETON:
         stype = 16;
         break;                  //3; // animate skeleton
 
-    case 71:
+    case SPELL_VAMPIRIC_DRAINING:
         stype = 16;
         break;                  //3; // vampiric draining
 
-    case 72:
+    case SPELL_SUMMON_WRAITHS:
         stype = 1618;
         break;                  // summon greater undead
 
-    case 73:
+    case SPELL_DETECT_ITEMS:
         stype = 19;
         break;                  // detect items
 
-    case 74:
+    case SPELL_BORGNJORS_REVIVIFICATION:
         stype = 16;
         break;
 
-    case 75:
+    case SPELL_BURN:
         stype = 13;
         break;                  // burn
 
-    case 76:
+    case SPELL_FREEZE:
         stype = 14;
         break;                  // freeze
 
-    case 77:
+    case SPELL_SUMMON_ELEMENTAL:
         stype = 18;
         break;                  // Summon elemental
 
-    case 78:
+    case SPELL_OZOCUBUS_REFRIGERATION:
         stype = 14;
         break;                  // refrigeration
 
-    case 79:
+    case SPELL_STICKY_FLAME:
         stype = 1311;
         break;                  // Sticky flame
 
-    case 80:
+    case SPELL_SUMMON_ICE_BEAST:
         stype = 1418;
         break;                  // ice beast
 
-    case 81:
+    case SPELL_OZOCUBUS_ARMOUR:
         stype = 1412;
         break;                  // ice armour
 
-    case 82:
+    case SPELL_CALL_IMP:
         stype = 18;
         break;                  // imp
 
-    case 83:
+    case SPELL_REPEL_MISSILES:
         stype = 1223;
         break;                  // repel missiles
 
-    case 84:
+    case SPELL_BERSERKER_RAGE:
         stype = 12;
         break;                  // berserk
 
-    case 85:
+    case SPELL_DISPEL_UNDEAD:
         stype = 16;
         break;                  // dispel undead
 
-    case 86:
+    case SPELL_GUARDIAN:
         stype = 17;
         break;                  // Guardian
 
-    case 87:
+    case SPELL_PESTILENCE:
         stype = 17;
-        break;                  // ???
+        break;                  // Pestilence
 
-    case 88:
+    case SPELL_THUNDERBOLT:
         stype = 1723;
         break;                  // Thunderbolt
 
-    case 89:
+    case SPELL_FLAME_OF_CLEANSING:
         stype = 17;
         break;                  // Flame of Cleansing
 
-    case 90:
+    case SPELL_SHINING_LIGHT:
         stype = 17;
         break;                  // Shining Light
 
-    case 91:
+    case SPELL_SUMMON_DAEVA:
         stype = 17;
-        break;                  // Summon Deva
+        break;                  // Summon Daeva
 
-    case 92:
+    case SPELL_ABJURATION_II:
         stype = 17;
         break;                  // Abjuration
 
-    case 110:
+    case SPELL_TWISTED_RESURRECTION:
         stype = 16;
         break;                  // twisted res
 
-    case 111:
+    case SPELL_REGENERATION:
         stype = 1612;
         break;                  // regen
 
-    case 112:
+    case SPELL_BONE_SHARDS:
         stype = 16;
         break;                  // bone shards
 
-    case 113:
+    case SPELL_BANISHMENT:
         stype = 20;
         break;                  // Banishment
 
-    case 114:
+    case SPELL_CIGOTUVIS_DEGENERATION:
         stype = 1516;
         break;                  // degeneration
 
-    case 115:
+    case SPELL_STING:
         stype = 1121;
         break;                  // sting
 
-    case 116:
+    case SPELL_SUBLIMATION_OF_BLOOD:
         stype = 16;
         break;                  // blood
 
-    case 117:
+    case SPELL_TUKIMAS_DANCE:
         stype = 12;
         break;                  // dance
 
-    case 118:
+    case SPELL_HELLFIRE:
         stype = 1113;
         break;                  // hellfire
 
-    case 119:
+    case SPELL_SUMMON_DEMON:
         stype = 18;
         break;                  // summon demon
 
-    case 120:
+    case SPELL_DEMONIC_HORDE:
         stype = 18;
-        break;                  // summon demon
+        break;                  // demonic horde
 
-    case 121:
+    case SPELL_SUMMON_GREATER_DEMON:
         stype = 18;
-        break;                  // summon demon
+        break;                  // summon greater demon
 
-    case 122:
+    case SPELL_CORPSE_ROT:
         stype = 16;
-        break;                  // rot corpse
+        break;                  // corpse rot
 
-    case 123:
+    case SPELL_TUKIMAS_VORPAL_BLADE:
         stype = 12;
         break;                  // Tukima's blade
 
-    case 124:
+    case SPELL_FIRE_BRAND:
         stype = 1213;
         break;                  // Fire brand
 
-    case 125:
+    case SPELL_FREEZING_AURA:
         stype = 1214;
         break;                  // Ice brand
 
-    case 126:
+    case SPELL_LETHAL_INFUSION:
         stype = 1216;
         break;                  // weapon of draining
 
-    case 127:
+    case SPELL_CRUSH:
         stype = 22;
         break;                  // crush
 
-    case 128:
+    case SPELL_BOLT_OF_IRON:
         stype = 1122;
         break;                  // bolt of iron
 
-    case 129:
+    case SPELL_STONE_ARROW:
         stype = 1122;
         break;                  // stone arrow
 
-    case 130:
-        stype = 1122;
+    case SPELL_TOMB_OF_DOROKLOHE:
+      stype = 1522;          //jmf: changed from 1122
         break;                  // tomb of doro
 
-    case 131:
+    case SPELL_STONEMAIL:
         stype = 1222;
         break;                  // stonemail
 
-    case 132:
+    case SPELL_SHOCK:
         stype = 1123;
         break;                  // shock
 
-    case 133:
+    case SPELL_SWIFTNESS:
         stype = 1223;
         break;                  // swiftness
 
-    case 134:
+    case SPELL_FLY:
         stype = 1223;
         break;                  // flight
 
-    case 135:
+    case SPELL_INSULATION:
         stype = 1223;
         break;                  // insulation
 
-    case 136:
+    case SPELL_ORB_OF_ELECTROCUTION:
         stype = 1123;
         break;                  // orb of elec
 
-    case 137:
+    case SPELL_DETECT_CREATURES:
         stype = 19;
         break;                  // detect creat
 
-    case 138:
+    case SPELL_CURE_POISON_II:
         stype = 21;
         break;                  // cure poison (poison)
 
-    case 139:
+    case SPELL_CONTROL_TELEPORT:
         stype = 1220;
         break;                  // control teleport
 
-    case 140:
-        stype = 21;
+    case SPELL_POISON_AMMUNITION:
+        stype = 2112;
         break;                  // poison ammunition
 
-    case 141:
-        stype = 21;
+    case SPELL_POISON_WEAPON:
+        stype = 2112;
         break;                  // poison weapon
 
-    case 142:
+    case SPELL_RESIST_POISON:
         stype = 2112;
         break;                  // resist poison
 
-    case 143:
+    case SPELL_PROJECTED_NOISE:
         stype = 12;
         break;                  // noise 2
 
-    case 144:
+    case SPELL_ALTER_SELF:
         stype = 15;
         break;                  // alter self
 
-    case 145:
+    case SPELL_DEBUGGING_RAY:
         stype = 11;
         break;                  // debug ray
 
-    case 146:
+    case SPELL_RECALL:
         stype = 1820;
         break;                  // recall
 
-    case 147:
+    case SPELL_PORTAL:
         stype = 20;
         break;                  // Portal
 
-    case 148:
+    case SPELL_AGONY:
         stype = 16;
         break;                  // Agony
 
-    case 149:
+    case SPELL_SPIDER_FORM:
         stype = 1521;
         break;                  // Spider form
 
-    case 150:
+    case SPELL_DISRUPT:
         stype = 15;
         break;                  // Disrupt
 
-    case 151:
+    case SPELL_DISINTEGRATE:
         stype = 15;
         break;                  // Disintegrate
 
-    case 152:
+    case SPELL_BLADE_HANDS:
         stype = 15;
         break;                  // Blade Hands
 
-    case 153:
+    case SPELL_STATUE_FORM:
         stype = 2215;
         break;                  // Statue
 
-    case 154:
+    case SPELL_ICE_FORM:
         stype = 1415;
         break;                  // Ice Form
 
-    case 155:
+    case SPELL_DRAGON_FORM:
         stype = 1315;
         break;                  // Dragon Form
 
-    case 156:
+    case SPELL_NECROMUTATION:
         stype = 1615;
         break;                  // Lich Form
 
-    case 157:
+    case SPELL_DEATH_CHANNEL:
         stype = 16;
         break;                  // Death channel
 
-    case 158:
+    case SPELL_SYMBOL_OF_TORMENT:
         stype = 16;
         break;                  // Symbol of Torment
 
-    case 159:
+    case SPELL_DEFLECT_MISSILES:
         stype = 1223;
         break;                  // deflect missiles
 
@@ -1303,8 +1270,8 @@ int spell_type(unsigned char spell, unsigned char typy)
         stype = 23;
         break;
     case SPELL_SHADOW_CREATURES:
-        stype = 18;
-        break;
+      stype = 1811;  //jmf: was just 18
+      break;
 
 
 /*
@@ -1369,12 +1336,12 @@ int spell_type(unsigned char spell, unsigned char typy)
 
    Enchantment
    These spells mostly cause some kind of durational effect, which lasts only
-   until the magic wears off. Enchantments are distinguished from transmigrations
-   in that the latter cause a permanent alteration in something which persists
-   even after the magic has faded, while the effects of the former last only
-   so long as the magic does. Sometimes enchantments may take advantage of the
-   more powerful aspects of transmigration to induce some kind of radical change
-   (eg polymorph).
+   until the magic wears off. Enchantments are distinguished from trans-
+   migrations in that the latter cause a permanent alteration in something
+   which persists even after the magic has faded, while the effects of the
+   former last only so long as the magic does. Sometimes enchantments may take
+   advantage of the more powerful aspects of transmigration to induce some
+   kind of radical change (eg polymorph).
    Some enchantments would also fall under the description of 'meta-magic'
    spells, like Selective Amnesia and Remove Curse (and if I ever implement
    Dispel Magic, it will be an enchantment).
@@ -1406,13 +1373,13 @@ int spell_type(unsigned char spell, unsigned char typy)
    Necromancy
    This is the fun stuff. Necromancy is a mixed bag of many and various
    different kinds of spells, with a few common themes:
-   -Differentiation of living, dead and undead. Some necromancy affects only the
-   living (pain, vampiric draining etc), some affects only the dead (animate
-   dead, twisted resurrection etc), and some affects only undead (dispel and
-   control undead).
+   -Differentiation of living, dead and undead. Some necromancy affects only
+   the living (pain, vampiric draining etc), some affects only the dead
+   (animate dead, twisted resurrection etc), and some affects only undead
+   (dispel and control undead).
    -Actual or potential harm: eg risk in Death's Door, hp loss with Pain,
-   disease with summon greater undead, etc. Also loss of potential experience gain
-   with bolt of draining and degeneration.
+   disease with summon greater undead, etc. Also loss of potential experience
+   gain with bolt of draining and degeneration.
    -Material components are central to many of the spells.
    -Some spells duplicate effects of other types, but do so in a different
    (neither superior or inferior) way. Eg bone shards is a very powerful spell
@@ -1447,8 +1414,8 @@ int spell_type(unsigned char spell, unsigned char typy)
    Translocation
    Translocation spells deal with teleportation etc, also interplanar travel
    (eg Banishment, and the planned Gate spell).
-   It is possible that I may give summoners some special access to translocations
-   due to the obvious similarities.
+   It is possible that I may give summoners some special access to trans-
+   locations due to the obvious similarities.
 
    Poison
    These spells all involve poison. Most are also conjurations.
@@ -1460,7 +1427,8 @@ int spell_type(unsigned char spell, unsigned char typy)
    Many spells use magic from two types. These spells are equally
    available to either type; a conjurer is no worse at a fire/conjuration than
    at a pure conjuration. I guess a spell could be of three types, but they
-   would have to be types with short names (limited space in the spell windows).
+   would have to be types with short names (limited space in the spell
+   windows).
    - Note : this is no longer true, with the implementation of magic skills.
    Your skill for a spell is effectively the average of all types used in it.
    Poison has no skills, but still has a staff
@@ -1559,409 +1527,409 @@ char spell_value(unsigned char spell)
 
     switch (spell)
     {
-    case 0:
+    case SPELL_IDENTIFY:
         return 6;               // identify
 
-    case 1:
+    case SPELL_TELEPORT_SELF:
         return 5;               // teleportation
 
-    case 2:
+    case SPELL_CAUSE_FEAR:
         return 5;               // cause fear
 
-    case 3:
+    case SPELL_CREATE_NOISE:
         return 1;               // noise
 
-    case 4:
+    case SPELL_REMOVE_CURSE:
         return 5;               // remove curse
 
-    case 5:
+    case SPELL_MAGIC_DART:
         return 1;               // magic missile
 
-    case 6:
+    case SPELL_FIREBALL:
         return 6;               // fireball
 
-    case 13:
+    case SPELL_CONJURE_FLAME:
         return 3;               // conjure flame
 
-    case 14:
+    case SPELL_DIG:
         return 4;               // dig
 
-    case 15:
+    case SPELL_BOLT_OF_FIRE:
         return 5;               // firebolt
 
-    case 16:
+    case SPELL_BOLT_OF_COLD:
         return 5;               // bolt of freezing cold
 
-    case 17:
+    case SPELL_LIGHTNING_BOLT:
         return 6;               // bolt of lightning
 
-    case 20:
+    case SPELL_POLYMORPH_OTHER:
         return 5;               // polymorph other
 
-    case 21:
+    case SPELL_SLOW:
         return 3;               // slow
 
-    case 22:
+    case SPELL_HASTE:
         return 8;               // haste
 
-    case 23:
+    case SPELL_PARALYZE:
         return 4;               // paralyse
 
-    case 24:
+    case SPELL_CONFUSE:
         return 3;               // confuse
 
-    case 25:
+    case SPELL_INVISIBILITY:
         return 6;               // invisibility
 
-    case 26:
+    case SPELL_THROW_FLAME:
         return 2;               // throw flame
 
-    case 27:
+    case SPELL_THROW_FROST:
         return 2;               // throw frost
 
-    case 28:
-        return 4;               // blink
+    case SPELL_CONTROLLED_BLINK:
+        return 4;               // controlledblink
 
-    case 29:
+    case SPELL_FREEZING_CLOUD:
         return 7;               // freezing cloud
 
-    case 30:
+    case SPELL_MEPHITIC_CLOUD:
         return 3;               // stinking cloud
 
-    case 31:
+    case SPELL_RING_OF_FLAMES:
         return 8;               // ring of flames
 
-    case 32:
+    case SPELL_RESTORE_STRENGTH:
         return 2;               //  restore strength:
 
-    case 33:
+    case SPELL_RESTORE_INTELLIGENCE:
         return 2;               //          int
 
-    case 34:
+    case SPELL_RESTORE_DEXTERITY:
         return 2;               //          dex
 
-    case 35:
+    case SPELL_VENOM_BOLT:
         return 5;               // venom bolt
 
-    case 36:
+    case SPELL_OLGREBS_TOXIC_RADIANCE:
         return 4;               // toxic radiance
 
-    case 37:
+    case SPELL_TELEPORT_OTHER:
         return 5;               // teleport other
 
-    case 38:
+    case SPELL_LESSER_HEALING:
         return 2;               // lesser healing
 
-    case 39:
+    case SPELL_GREATER_HEALING:
         return 6;               // greater healing
 
-    case 40:
+    case SPELL_CURE_POISON_I:
         return 3;               // cure poison
 
-    case 41:
+    case SPELL_PURIFICATION:
         return 5;               // purification
 
-    case 42:
+    case SPELL_DEATHS_DOOR:
         return 8;               // death's door
 
-    case 43:
+    case SPELL_SELECTIVE_AMNESIA:
         return 3;               // selective amnesia
 
-    case 44:
+    case SPELL_MASS_CONFUSION:
         return 6;               // mass confusion
 
-    case 45:
+    case SPELL_SMITING:
         return 4;               // smiting??
 
-    case 46:
+    case SPELL_REPEL_UNDEAD:
         return 3;               // repel undead
 
-    case 47:
+    case SPELL_HOLY_WORD:
         return 7;               // holy word
 
-    case 48:
+    case SPELL_DETECT_CURSE:
         return 3;               // detect curse
 
-    case 49:
+    case SPELL_SUMMON_SMALL_MAMMAL:
         return 1;               // summon small mammal
 
-    case 50:
+    case SPELL_ABJURATION_I:
         return 3;               // Abjuration
 
-    case 51:
+    case SPELL_SUMMON_SCORPIONS:
         return 4;               // summon scorpions
 
-    case 52:
+    case SPELL_LEVITATION:
         return 2;               // levitation
 
-    case 53:
+    case SPELL_BOLT_OF_DRAINING:
         return 6;               // bolt of draining
 
-    case 54:
+    case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
         return 8;               // crystal spear
 
-    case 55:
+    case SPELL_BOLT_OF_INACCURACY:
         return 4;               // innacuracy
 
-    case 56:
+    case SPELL_POISONOUS_CLOUD:
         return 6;               // poisonous cloud
 
-    case 57:
+    case SPELL_FIRE_STORM:
         return 9;               // fire storm
 
-    case 58:
+    case SPELL_DETECT_TRAPS:
         return 2;               // detect traps
 
-    case 59:
+    case SPELL_BLINK:
         return 2;               // random blink
 
-    case 60:
+    case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         return 4;               // Isk's blast
 
-    case 61:
+    case SPELL_SWARM:
         return 6;               // swarm
 
-    case 62:
+    case SPELL_SUMMON_HORRIBLE_THINGS:
         return 8;               // Summon Thing
 
-    case 63:
+    case SPELL_ENSLAVEMENT:
         return 4;               // Enslavement
 
-    case 64:
+    case SPELL_MAGIC_MAPPING:
         return 4;               // Magic Mapping
 
-    case 65:
+    case SPELL_HEAL_OTHER:
         return 3;               // heal other
 
-    case 66:
+    case SPELL_ANIMATE_DEAD:
         return 4;               // Animate dead
 
-    case 67:
+    case SPELL_PAIN:
         return 1;               // Pain
 
-    case 68:
+    case SPELL_EXTENSION:
         return 5;               // Extension
 
-    case 69:
+    case SPELL_CONTROL_UNDEAD:
         return 6;               // Control Undead
 
-    case 70:
+    case SPELL_ANIMATE_SKELETON:
         return 1;               // animate skeleton
 
-    case 71:
+    case SPELL_VAMPIRIC_DRAINING:
         return 3;               // vampiric draining
 
-    case 72:
+    case SPELL_SUMMON_WRAITHS:
         return 7;               // summon wraiths
 
-    case 73:
+    case SPELL_DETECT_ITEMS:
         return 2;               // detect items
 
-    case 74:
+    case SPELL_BORGNJORS_REVIVIFICATION:
         return 6;               // reviv
 
-    case 75:
+    case SPELL_BURN:
         return 1;               // burn
 
-    case 76:
+    case SPELL_FREEZE:
         return 1;               // freeze
 
-    case 77:
+    case SPELL_SUMMON_ELEMENTAL:
         return 4;               // Summon elemental
 
-    case 78:
+    case SPELL_OZOCUBUS_REFRIGERATION:
         return 5;               // refrigeration
 
-    case 79:
+    case SPELL_STICKY_FLAME:
         return 4;               // Sticky flame
 
-    case 80:
+    case SPELL_SUMMON_ICE_BEAST:
         return 5;               // Ice beast
 
-    case 81:
+    case SPELL_OZOCUBUS_ARMOUR:
         return 3;               // Ozocubu's Armour
 
-    case 82:
+    case SPELL_CALL_IMP:
         return 3;               // imp
 
-    case 83:
+    case SPELL_REPEL_MISSILES:
         return 2;               // repel missiles
 
-    case 84:
+    case SPELL_BERSERKER_RAGE:
         return 3;               // berserker
 
-    case 85:
+    case SPELL_DISPEL_UNDEAD:
         return 4;               // dispel undead
 
-    case 86:
+    case SPELL_GUARDIAN:
         return 7;               // Guardian
 
-    case 87:
-        return 4;               // ???
+    case SPELL_PESTILENCE:
+        return 4;               // Pestilence
 
-    case 88:
+    case SPELL_THUNDERBOLT:
         return 6;               // Thunderbolt
 
-    case 89:
+    case SPELL_FLAME_OF_CLEANSING:
         return 8;               // Flame of Cleansing
 
-    case 90:
+    case SPELL_SHINING_LIGHT:
         return 7;               // Shining Light
 
-    case 91:
-        return 8;               // Summon Deva
+    case SPELL_SUMMON_DAEVA:
+        return 8;               // Summon Daeva
 
-    case 92:
+    case SPELL_ABJURATION_II:
         return 4;               // Abjuration
 
-    case 110:
+    case SPELL_TWISTED_RESURRECTION:
         return 5;               // twisted res
 
-    case 111:
+    case SPELL_REGENERATION:
         return 3;               // regen
 
-    case 112:
+    case SPELL_BONE_SHARDS:
         return 3;               // bone shards
 
-    case 113:
+    case SPELL_BANISHMENT:
         return 5;               // Banishment
 
-    case 114:
+    case SPELL_CIGOTUVIS_DEGENERATION:
         return 5;               // Degeneration
 
-    case 115:
+    case SPELL_STING:
         return 1;               // sting
 
-    case 116:
+    case SPELL_SUBLIMATION_OF_BLOOD:
         return 2;               // blood
 
-    case 117:
+    case SPELL_TUKIMAS_DANCE:
         return 3;               // dance
 
-    case 118:
+    case SPELL_HELLFIRE:
         return 9;               // hellfire
 
-    case 119:
+    case SPELL_SUMMON_DEMON:
         return 5;               // summon demon
 
-    case 120:
+    case SPELL_DEMONIC_HORDE:
         return 6;               // demonic horde
 
-    case 121:
+    case SPELL_SUMMON_GREATER_DEMON:
         return 7;               // summon greater demon
 
-    case 122:
+    case SPELL_CORPSE_ROT:
         return 2;               // corpse rot
 
-    case 123:
+    case SPELL_TUKIMAS_VORPAL_BLADE:
         return 2;               // Tukima's v bl
 
-    case 124:
+    case SPELL_FIRE_BRAND:
         return 2;               // flaming weapon
 
-    case 125:
+    case SPELL_FREEZING_AURA:
         return 2;               // freezing weapon
 
-    case 126:
+    case SPELL_LETHAL_INFUSION:
         return 2;               // draining weapon
 
-    case 127:
+    case SPELL_CRUSH:
         return 1;               // throw pebble
 
-    case 128:
+    case SPELL_BOLT_OF_IRON:
         return 6;               // bolt of iron
 
-    case 129:
+    case SPELL_STONE_ARROW:
         return 3;               // stone arrow
 
-    case 130:
+    case SPELL_TOMB_OF_DOROKLOHE:
         return 7;               // tomb of doro
 
-    case 131:
+    case SPELL_STONEMAIL:
         return 6;               // stonemail
 
-    case 132:
+    case SPELL_SHOCK:
         return 3;               // shock
 
-    case 133:
+    case SPELL_SWIFTNESS:
         return 2;               // swiftness
 
-    case 134:
+    case SPELL_FLY:
         return 4;               // fly
 
-    case 135:
+    case SPELL_INSULATION:
         return 4;               // insulation
 
-    case 136:
+    case SPELL_ORB_OF_ELECTROCUTION:
         return 7;               // orb of elec
 
-    case 137:
+    case SPELL_DETECT_CREATURES:
         return 2;               // detect creat
 
-    case 138:
+    case SPELL_CURE_POISON_II:
         return 2;               // cure poison (poison)
 
-    case 139:
+    case SPELL_CONTROL_TELEPORT:
         return 4;               // control teleport
 
-    case 140:
+    case SPELL_POISON_AMMUNITION:
         return 4;               // poison ammunition
 
-    case 141:
+    case SPELL_POISON_WEAPON:
         return 2;               // poison weapon
 
-    case 142:
+    case SPELL_RESIST_POISON:
         return 4;               // resist poison
 
-    case 143:
+    case SPELL_PROJECTED_NOISE:
         return 2;               // create noise 2
 
-    case 144:
+    case SPELL_ALTER_SELF:
         return 7;               // alter self
 
-    case 145:
+    case SPELL_DEBUGGING_RAY:
         return 7;               // debug ray
 
-    case 146:
+    case SPELL_RECALL:
         return 3;               // recall
 
-    case 147:
+    case SPELL_PORTAL:
         return 8;               // portal
 
-    case 148:
+    case SPELL_AGONY:
         return 5;               // agony
 
-    case 149:
+    case SPELL_SPIDER_FORM:
         return 3;               // Spider form
 
-    case 150:
+    case SPELL_DISRUPT:
         return 1;               // Disrupt
 
-    case 151:
+    case SPELL_DISINTEGRATE:
         return 6;               // Disintegrate
 
-    case 152:
+    case SPELL_BLADE_HANDS:
         return 4;               // Blade Hands
 
-    case 153:
+    case SPELL_STATUE_FORM:
         return 5;               // Statue form
 
-    case 154:
+    case SPELL_ICE_FORM:
         return 5;               // Ice beast form
 
-    case 155:
+    case SPELL_DRAGON_FORM:
         return 8;               // Dragon Form
 
-    case 156:
+    case SPELL_NECROMUTATION:
         return 8;               // Lich Form
 
-    case 157:
+    case SPELL_DEATH_CHANNEL:
         return 9;               // Death Channel
 
-    case 158:
+    case SPELL_SYMBOL_OF_TORMENT:
         return 6;               // Symbol of Torment
 
-    case 159:
+    case SPELL_DEFLECT_MISSILES:
         return 6;               // deflect missiles
 
     case SPELL_ORB_OF_FRAGMENTATION:
@@ -1995,453 +1963,451 @@ void spell_name(unsigned char spell, char spln[60])
 
     switch (spell)
     {
-    case 0:
+    case SPELL_IDENTIFY:
         strcpy(spln, "Identify");
         break;
-    case 1:
+    case SPELL_TELEPORT_SELF:
         strcpy(spln, "Teleport Self");
         break;
-    case 2:
+    case SPELL_CAUSE_FEAR:
         strcpy(spln, "Cause Fear");
         break;
-    case 3:
+    case SPELL_CREATE_NOISE:
         strcpy(spln, "Create Noise");
         break;
-    case 4:
+    case SPELL_REMOVE_CURSE:
         strcpy(spln, "Remove Curse");
         break;
-    case 5:
+    case SPELL_MAGIC_DART:
         strcpy(spln, "Magic Dart");
         break;
-    case 6:
+    case SPELL_FIREBALL:
         strcpy(spln, "Fireball");
         break;
-    case 13:
+    case SPELL_CONJURE_FLAME:
         strcpy(spln, "Conjure Flame");
         break;
-    case 14:
+    case SPELL_DIG:
         strcpy(spln, "Dig");
         break;
-    case 15:
+    case SPELL_BOLT_OF_FIRE:
         strcpy(spln, "Bolt of Fire");
         break;
-    case 16:
+    case SPELL_BOLT_OF_COLD:
         strcpy(spln, "Bolt of Cold");
         break;
-    case 17:
+    case SPELL_LIGHTNING_BOLT:
         strcpy(spln, "Lightning Bolt");
         break;
-    case 20:
+    case SPELL_POLYMORPH_OTHER:
         strcpy(spln, "Polymorph Other");
         break;
-    case 21:
+    case SPELL_SLOW:
         strcpy(spln, "Slow");
         break;
-    case 22:
+    case SPELL_HASTE:
         strcpy(spln, "Haste");
         break;
-    case 23:
+    case SPELL_PARALYZE:
         strcpy(spln, "Paralyze");
         break;
-    case 24:
+    case SPELL_CONFUSE:
         strcpy(spln, "Confuse");
         break;
-    case 25:
+    case SPELL_INVISIBILITY:
         strcpy(spln, "Invisibility");
         break;
-    case 26:
+    case SPELL_THROW_FLAME:
         strcpy(spln, "Throw Flame");
         break;
-    case 27:
+    case SPELL_THROW_FROST:
         strcpy(spln, "Throw Frost");
         break;
-    case 28:
+    case SPELL_CONTROLLED_BLINK:
         strcpy(spln, "Controlled Blink");
         break;
-    case 29:
+    case SPELL_FREEZING_CLOUD:
         strcpy(spln, "Freezing Cloud");
         break;
-    case 30:
+    case SPELL_MEPHITIC_CLOUD:
         strcpy(spln, "Mephitic Cloud");
         break;
-    case 31:
+    case SPELL_RING_OF_FLAMES:
         strcpy(spln, "Ring of Flames");
         break;
-    case 32:
+    case SPELL_RESTORE_STRENGTH:
         strcpy(spln, "Restore Strength");
         break;
-    case 33:
+    case SPELL_RESTORE_INTELLIGENCE:
         strcpy(spln, "Restore Intelligence");
         break;
-    case 34:
+    case SPELL_RESTORE_DEXTERITY:
         strcpy(spln, "Restore Dexterity");
         break;
-    case 35:
+    case SPELL_VENOM_BOLT:
         strcpy(spln, "Venom Bolt");
         break;
-    case 36:
+    case SPELL_OLGREBS_TOXIC_RADIANCE:
         strcpy(spln, "Olgreb's Toxic Radiance");
         break;
-    case 37:
+    case SPELL_TELEPORT_OTHER:
         strcpy(spln, "Teleport Other");
         break;
-    case 38:
+    case SPELL_LESSER_HEALING:
         strcpy(spln, "Lesser Healing");
         break;
-    case 39:
+    case SPELL_GREATER_HEALING:
         strcpy(spln, "Greater Healing");
         break;
-    case 40:
+    case SPELL_CURE_POISON_I:
         strcpy(spln, "Cure Poison");
         break;
-    case 41:
+    case SPELL_PURIFICATION:
         strcpy(spln, "Purification");
         break;
-    case 42:
+    case SPELL_DEATHS_DOOR:
         strcpy(spln, "Death's Door");
         break;
-    case 43:
+    case SPELL_SELECTIVE_AMNESIA:
         strcpy(spln, "Selective Amnesia");
         break;
-    case 44:
+    case SPELL_MASS_CONFUSION:
         strcpy(spln, "Mass Confusion");
         break;
-    case 45:
+    case SPELL_SMITING:
         strcpy(spln, "Smiting");
         break;
-    case 46:
+    case SPELL_REPEL_UNDEAD:
         strcpy(spln, "Repel Undead");
         break;
-    case 47:
+    case SPELL_HOLY_WORD:
         strcpy(spln, "Holy Word");
         break;
-    case 48:
+    case SPELL_DETECT_CURSE:
         strcpy(spln, "Detect Curse");
         break;
-    case 49:
-        strcpy(spln, "Summon Small Mammal");
+    case SPELL_SUMMON_SMALL_MAMMAL:
+        strcpy(spln, "Summon Small Mammals");
         break;
-    case 50:
+    case SPELL_ABJURATION_I:
         strcpy(spln, "Abjuration");
         break;
-    case 51:
+    case SPELL_SUMMON_SCORPIONS:
         strcpy(spln, "Summon Scorpions");
         break;
-    case 52:
+    case SPELL_LEVITATION:
         strcpy(spln, "Levitation");
         break;
-    case 53:
+    case SPELL_BOLT_OF_DRAINING:
         strcpy(spln, "Bolt of Draining");
         break;
-    case 54:
+    case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
         strcpy(spln, "Lehudib's Crystal Spear");
         break;
-    case 55:
-        strcpy(spln, "Bolt of Inaccuracy");
+    case SPELL_BOLT_OF_INACCURACY:
+      strcpy(spln, "Jagged Bolt"); //"Bolt of Inaccuracy");
         break;
         // spelling?
-    case 56:
+    case SPELL_POISONOUS_CLOUD:
         strcpy(spln, "Poisonous Cloud");
         break;
-    case 57:
+    case SPELL_FIRE_STORM:
         strcpy(spln, "Fire Storm");
         break;
-    case 58:
+    case SPELL_DETECT_TRAPS:
         strcpy(spln, "Detect Traps");
         break;
-    case 59:
+    case SPELL_BLINK:
         strcpy(spln, "Blink");
         break;
-    case 60:
+    case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         strcpy(spln, "Iskenderun's Mystic Blast");
-        break;                  // this name was found in the hack.exe file of an early version of PCHACK. Credit goes to its creator (whoever that may be).
+        break; // this name was found in the hack.exe file of an early version of PCHACK. Credit goes to its creator (whoever that may be).
 
-    case 61:
+    case SPELL_SWARM:
         strcpy(spln, "Swarm");
         break;
-    case 62:
+    case SPELL_SUMMON_HORRIBLE_THINGS:
         strcpy(spln, "Summon Horrible Things");
         break;
-    case 63:
+    case SPELL_ENSLAVEMENT:
         strcpy(spln, "Enslavement");
         break;
-    case 64:
+    case SPELL_MAGIC_MAPPING:
         strcpy(spln, "Magic Mapping");
         break;
-    case 65:
+    case SPELL_HEAL_OTHER:
         strcpy(spln, "Heal Other");
         break;
-    case 66:
+    case SPELL_ANIMATE_DEAD:
         strcpy(spln, "Animate Dead");
         break;
-    case 67:
+    case SPELL_PAIN:
         strcpy(spln, "Pain");
         break;
-    case 68:
+    case SPELL_EXTENSION:
         strcpy(spln, "Extension");
         break;
-    case 69:
+    case SPELL_CONTROL_UNDEAD:
         strcpy(spln, "Control Undead");
         break;
-    case 70:
+    case SPELL_ANIMATE_SKELETON:
         strcpy(spln, "Animate Skeleton");
         break;
-    case 71:
+    case SPELL_VAMPIRIC_DRAINING:
         strcpy(spln, "Vampiric Draining");
         break;
-    case 72:
+    case SPELL_SUMMON_WRAITHS:
         strcpy(spln, "Summon Wraiths");
         break;
-    case 73:
+    case SPELL_DETECT_ITEMS:
         strcpy(spln, "Detect Items");
         break;
-    case 74:
+    case SPELL_BORGNJORS_REVIVIFICATION:
         strcpy(spln, "Borgnjor's Revivification");
         break;
 
-    case 75:
+    case SPELL_BURN:
         strcpy(spln, "Burn");
         break;
-    case 76:
+    case SPELL_FREEZE:
         strcpy(spln, "Freeze");
         break;
-    case 77:
+    case SPELL_SUMMON_ELEMENTAL:
         strcpy(spln, "Summon Elemental");
         break;
-    case 78:
+    case SPELL_OZOCUBUS_REFRIGERATION:
         strcpy(spln, "Ozocubu's Refrigeration");
         break;
-    case 79:
+    case SPELL_STICKY_FLAME:
         strcpy(spln, "Sticky Flame");
         break;
-    case 80:
+    case SPELL_SUMMON_ICE_BEAST:
         strcpy(spln, "Summon Ice Beast");
         break;
-    case 81:
+    case SPELL_OZOCUBUS_ARMOUR:
         strcpy(spln, "Ozocubu's Armour");
         break;
-    case 82:
+    case SPELL_CALL_IMP:
         strcpy(spln, "Call Imp");
         break;
-    case 83:
+    case SPELL_REPEL_MISSILES:
         strcpy(spln, "Repel Missiles");
         break;
-    case 84:
+    case SPELL_BERSERKER_RAGE:
         strcpy(spln, "Berserker Rage");
         break;
-    case 85:
+    case SPELL_DISPEL_UNDEAD:
         strcpy(spln, "Dispel Undead");
         break;
 
-    case 86:
+    case SPELL_GUARDIAN:
         strcpy(spln, "Guardian");
         break;
-    case 87:
+    case SPELL_PESTILENCE:
         strcpy(spln, "Pestilence");
         break;
-    case 88:
+    case SPELL_THUNDERBOLT:
         strcpy(spln, "Thunderbolt");
         break;
-    case 89:
+    case SPELL_FLAME_OF_CLEANSING:
         strcpy(spln, "Flame of Cleansing");
         break;
-    case 90:
+    case SPELL_SHINING_LIGHT:
         strcpy(spln, "Shining Light");
         break;
-    case 91:
+    case SPELL_SUMMON_DAEVA:
         strcpy(spln, "Summon Daeva");
         break;
-    case 92:
+    case SPELL_ABJURATION_II:
         strcpy(spln, "Abjuration");
         break;
 
-    case 110:
+    case SPELL_TWISTED_RESURRECTION:
         strcpy(spln, "Twisted Resurrection");
         break;
-    case 111:
+    case SPELL_REGENERATION:
         strcpy(spln, "Regeneration");
         break;
-    case 112:
+    case SPELL_BONE_SHARDS:
         strcpy(spln, "Bone Shards");
         break;
-    case 113:
+    case SPELL_BANISHMENT:
         strcpy(spln, "Banishment");
         break;
-    case 114:
+    case SPELL_CIGOTUVIS_DEGENERATION:
         strcpy(spln, "Cigotuvi's Degeneration");
         break;
-    case 115:
+    case SPELL_STING:
         strcpy(spln, "Sting");
         break;
-    case 116:
+    case SPELL_SUBLIMATION_OF_BLOOD:
         strcpy(spln, "Sublimation of Blood");
         break;
-    case 117:
+    case SPELL_TUKIMAS_DANCE:
         strcpy(spln, "Tukima's Dance");
         break;
-    case 118:
+    case SPELL_HELLFIRE:
         strcpy(spln, "Hellfire");
         break;                  // Staff of Dispater
 
-    case 119:
+    case SPELL_SUMMON_DEMON:
         strcpy(spln, "Summon Demon");
         break;
-    case 120:
+    case SPELL_DEMONIC_HORDE:
         strcpy(spln, "Demonic Horde");
         break;
-    case 121:
+    case SPELL_SUMMON_GREATER_DEMON:
         strcpy(spln, "Summon Greater Demon");
         break;
-    case 122:
+    case SPELL_CORPSE_ROT:
         strcpy(spln, "Corpse Rot");
         break;
-    case 123:
+    case SPELL_TUKIMAS_VORPAL_BLADE:
         strcpy(spln, "Tukima's Vorpal Blade");
         break;
-    case 124:
+    case SPELL_FIRE_BRAND:
         strcpy(spln, "Fire Brand");
         break;
-    case 125:
+    case SPELL_FREEZING_AURA:
         strcpy(spln, "Freezing Aura");
         break;
-    case 126:
+    case SPELL_LETHAL_INFUSION:
         strcpy(spln, "Lethal Infusion");
         break;
 
-    case 127:
+    case SPELL_CRUSH:
         strcpy(spln, "Crush");
         break;
-    case 128:
+    case SPELL_BOLT_OF_IRON:
         strcpy(spln, "Bolt of Iron");
         break;
-    case 129:
+    case SPELL_STONE_ARROW:
         strcpy(spln, "Stone Arrow");
         break;
-    case 130:
+    case SPELL_TOMB_OF_DOROKLOHE:
         strcpy(spln, "Tomb of Doroklohe");
         break;
-    case 131:
+    case SPELL_STONEMAIL:
         strcpy(spln, "Stonemail");
         break;
 
-    case 132:
+    case SPELL_SHOCK:
         strcpy(spln, "Shock");
         break;
-    case 133:
+    case SPELL_SWIFTNESS:
         strcpy(spln, "Swiftness");
         break;
-    case 134:
+    case SPELL_FLY:
         strcpy(spln, "Fly");
         break;
-    case 135:
+    case SPELL_INSULATION:
         strcpy(spln, "Insulation");
         break;
-    case 136:
+    case SPELL_ORB_OF_ELECTROCUTION:
         strcpy(spln, "Orb of Electrocution");
         break;
-    case 137:
+    case SPELL_DETECT_CREATURES:
         strcpy(spln, "Detect creatures");
         break;
-    case 138:
+    case SPELL_CURE_POISON_II:
         strcpy(spln, "Cure Poison");
         break;
-    case 139:
+    case SPELL_CONTROL_TELEPORT:
         strcpy(spln, "Control Teleport");
         break;
-    case 140:
+    case SPELL_POISON_AMMUNITION:
         strcpy(spln, "Poison Ammunition");
         break;
-    case 141:
+    case SPELL_POISON_WEAPON:
         strcpy(spln, "Poison Weapon");
         break;
-    case 142:
+    case SPELL_RESIST_POISON:
         strcpy(spln, "Resist Poison");
         break;
-    case 143:
+    case SPELL_PROJECTED_NOISE:
         strcpy(spln, "Projected Noise");
         break;
-    case 144:
+    case SPELL_ALTER_SELF:
         strcpy(spln, "Alter Self");
         break;
-    case 145:
+    case SPELL_DEBUGGING_RAY:
         strcpy(spln, "Debugging ray");
         break;
-    case 146:
+    case SPELL_RECALL:
         strcpy(spln, "Recall");
         break;
-    case 147:
+    case SPELL_PORTAL:
         strcpy(spln, "Portal");
         break;
-    case 148:
+    case SPELL_AGONY:
         strcpy(spln, "Agony");
         break;
 
-    case 149:
+    case SPELL_SPIDER_FORM:
         strcpy(spln, "Spider Form");
         break;
-    case 150:
+    case SPELL_DISRUPT:
         strcpy(spln, "Disrupt");
         break;
-    case 151:
+    case SPELL_DISINTEGRATE:
         strcpy(spln, "Disintegrate");
         break;
-    case 152:
+    case SPELL_BLADE_HANDS:
         strcpy(spln, "Blade Hands");
         break;
-    case 153:
+    case SPELL_STATUE_FORM:
         strcpy(spln, "Statue Form");
         break;
-    case 154:
+    case SPELL_ICE_FORM:
         strcpy(spln, "Ice Form");
         break;
-    case 155:
+    case SPELL_DRAGON_FORM:
         strcpy(spln, "Dragon Form");
         break;
-    case 156:
+    case SPELL_NECROMUTATION:
         strcpy(spln, "Necromutation");
         break;
-    case 157:
+    case SPELL_DEATH_CHANNEL:
         strcpy(spln, "Death Channel");
         break;
-    case 158:
+    case SPELL_SYMBOL_OF_TORMENT:
         strcpy(spln, "Symbol of Torment");
         break;
-    case 159:
+    case SPELL_DEFLECT_MISSILES:
         strcpy(spln, "Deflect Missiles");
         break;
-    case 160:
+    case SPELL_ORB_OF_FRAGMENTATION:
         strcpy(spln, "Orb of Fragmentation");
         break;
-    case 161:
+    case SPELL_ICE_BOLT:
         strcpy(spln, "Ice Bolt");
         break;
-    case 162:
+    case SPELL_ICE_STORM:
         strcpy(spln, "Ice Storm");
         break;
-    case 163:
+    case SPELL_ARC:
         strcpy(spln, "Arc");
         break;
-    case 164:
+    case SPELL_AIRSTRIKE:
         strcpy(spln, "Airstrike");
         break;
-    case 165:
+    case SPELL_SHADOW_CREATURES:
         strcpy(spln, "Shadow Creatures");
         break;
 
-
-/* When adding enchantments, must add them to extension as well */
-
-/*
-   spells to do:
-   Contingency?
-   Trigger contingency
-   Preserve Corpses
-   Permanency
-   Ball Lightning
-   Explosive rune?
-   Fennel wands
-   More summonings!
- */
+        /* When adding enchantments, must add them to extension as well */
+        /*
+         *  spells to do:
+         *  Contingency?
+         *  Trigger contingency
+         *  Preserve Corpses
+         *  Permanency
+         *  Ball Lightning
+         *  Explosive rune?
+         *  Fennel wands
+         *  More summonings!
+         */
 
     default:
         strcpy(spln, "another spell");
@@ -2478,139 +2444,114 @@ char spellbook_contents(unsigned char plus, unsigned char type)
     for (int j = 1; j < 7; j++)
     {
         if (stringy[j] != 49)
-            continue;
+          continue;
 
         cprintf(" ");
-
         bool knowsSpell = false;
 
-        for (int i = 0; i < 25 && !knowsSpell; i++)
-        {
-            knowsSpell = you.spells[i] == spell_types[j];
+        for (int i = 0; i < 25 && !knowsSpell; i++) {
+          knowsSpell = you.spells[i] == spell_types[j];
         }
 //        textcolor(knowsSpell ? LIGHTGREY : LIGHTBLUE);
         textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
-
         char strng[2];
 
         if (spelcount < 26)
             strng[0] = (char) spelcount + 97;
         else
             strng[0] = (char) spelcount + 65;
+
         strng[1] = 0;
-
         cprintf(strng);
-
         cprintf(" - ");
-
         char st_pass[60];
-
         spell_name(spell_types[j], st_pass);
-
         cprintf(st_pass);
-
         gotoxy(35, wherey());
         char already = 0;
 
-        if (spell_type(spell_types[j], 17) == 1)
-        {
+        if (spell_type(spell_types[j], 17) == 1) {
             cprintf("Holy");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 21) == 1)
-        {
+        if (spell_type(spell_types[j], 21) == 1) {
             print_slash(already);
             cprintf("Poison");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 13) == 1)
-        {
+        if (spell_type(spell_types[j], 13) == 1) {
             print_slash(already);
             cprintf("Fire");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 14) == 1)
-        {
+        if (spell_type(spell_types[j], 14) == 1) {
             print_slash(already);
             cprintf("Ice");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 22) == 1)
-        {
+        if (spell_type(spell_types[j], 22) == 1) {
             print_slash(already);
             cprintf("Earth");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 23) == 1)
-        {
+        if (spell_type(spell_types[j], 23) == 1) {
             print_slash(already);
             cprintf("Air");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 11) == 1)
-        {
+        if (spell_type(spell_types[j], 11) == 1) {
             print_slash(already);
             cprintf("Conjuration");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 12) == 1)
-        {
+        if (spell_type(spell_types[j], 12) == 1) {
             print_slash(already);
             cprintf("Enchantment");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 19) == 1)
-        {
+        if (spell_type(spell_types[j], 19) == 1) {
             print_slash(already);
             cprintf("Divination");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 20) == 1)
-        {
+        if (spell_type(spell_types[j], 20) == 1) {
             print_slash(already);
             cprintf("Translocation");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 18) == 1)
-        {
+        if (spell_type(spell_types[j], 18) == 1) {
             print_slash(already);
             cprintf("Summoning");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 15) == 1)
-        {
+        if (spell_type(spell_types[j], 15) == 1) {
             print_slash(already);
             cprintf("Transmigration");
             already = 1;
         }
 
-        if (spell_type(spell_types[j], 16) == 1)
-        {
+        if (spell_type(spell_types[j], 16) == 1) {
             print_slash(already);
             cprintf("Necromancy");
             already = 1;
         }
 
         gotoxy(65, wherey());
-
         char sval[2];
-
         itoa((int) spell_value(spell_types[j]), sval, 10);
         cprintf(sval);
-
         cprintf(EOL);
-
         spelcount++;
     }
 
@@ -2623,7 +2564,6 @@ char spellbook_contents(unsigned char plus, unsigned char type)
     puttext(1, 1, 80, 25, buffer);
     window(1, 18, 80, 25);
 #endif
-
     return keyn;
 }
 
@@ -2631,9 +2571,7 @@ char spellbook_contents(unsigned char plus, unsigned char type)
 int which_spell_in_book(int sbook_type, int spl)
 {
     int func_pass[10];
-
     spellbook_template(sbook_type, func_pass);
-
     return func_pass[spl];
 }
 
@@ -2684,47 +2622,44 @@ char undead_can_memorise(unsigned char spell)
 {
     switch (spell)
     {
-    case 42:
+    case SPELL_DEATHS_DOOR:
         return 2;               // death's door
 
-    case 62:
+    case SPELL_SUMMON_HORRIBLE_THINGS:
         return 1;               // Summon Horrible things
 
-    case 74:
-        return 2;               // reviv
-
-    case 84:
-        return 2;               // berserker
+    case SPELL_BORGNJORS_REVIVIFICATION:
+      return 2;               // berserker
         //   case 111: return 2; // regen
 
-    case 138:
+    case SPELL_CURE_POISON_II:
         return 2;               // cure poison (poison)
 
-    case 142:
+    case SPELL_RESIST_POISON:
         return 2;               // resist poison
 
-    case 144:
+    case SPELL_ALTER_SELF:
         return 1;               // alter self
 
-    case 149:
+    case SPELL_SPIDER_FORM:
         return 1;               // Spider form
 
-    case 152:
+    case SPELL_BLADE_HANDS:
         return 1;               // Blade Hands
 
-    case 153:
+    case SPELL_STATUE_FORM:
         return 1;               // Statue form
 
-    case 154:
+    case SPELL_ICE_FORM:
         return 1;               // Ice beast form
 
-    case 155:
+    case SPELL_DRAGON_FORM:
         return 1;               // Dragon Form
 
-    case 156:
+    case SPELL_NECROMUTATION:
         return 2;               // Lich Form
 
-    case 158:
+    case SPELL_SYMBOL_OF_TORMENT:
         return 2;               // Symbol of Torment
 
     default:

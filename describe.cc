@@ -788,7 +788,8 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_QUARTERSTAFF:
-            description = "A pole, held with both hands. ";
+          description = "A sturdy wooden pole. " ;
+            //jmf: was "A pole, held with both hands. ";
             break;
 
         case WPN_SCYTHE:
@@ -812,7 +813,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_KATANA:
-            description = "A very rare and extremely effective imported weapon. ";
+            description = "A very rare and extremely effective imported weapon, featuring a long single-edged blade. ";
             break;
 
         case WPN_EXECUTIONERS_AXE:
@@ -864,7 +865,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
             break;
 
         case WPN_SPIKED_FLAIL:
-            description = "A flail with large spikes on the end.";
+            description = "A flail with large spikes on the metal lump.";
             break;
 
         case WPN_GREAT_MACE:
@@ -1373,8 +1374,8 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         case ARM_STEAM_DRAGON_ARMOUR:
             description += "A magical armour, made from the scales of a "
  "steam-breathing dragon. Although unlike the armour made from the scales "
- "of some larger dragons it does not provide its wearer with much in the way of special "
- "magical protection, it is extremely light and as supple as cloth. ";
+ "of some larger dragons it does not provide its wearer with much in the way "
+ "of special magical protection, it is extremely light and as supple as cloth. ";
             break; /* Actually, it protects from steam */
 
         case ARM_MOTTLED_DRAGON_HIDE:
@@ -1384,8 +1385,8 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
         case ARM_MOTTLED_DRAGON_ARMOUR:
              description += "A magical armour made from the scales of a "
  "mottled dragon. Although unlike the armour made from the scales of some "
- "larger dragons it does not provide its wearer with much in the way of special magical "
- "protection, it is as light and relatively "
+ "larger dragons it does not provide its wearer with much in the way of "
+ "special magical protection, it is as light and relatively "
  "uncumbersome as leather armour. ";
             break; /* Protects from napalm */
 
@@ -1462,17 +1463,17 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
     if (item_dam % 30 < 25)
     {
         switch(item_dam / 30)
-                {
-                case DARM_ELVEN:
-                    description += "It is well-crafted and very light";
-                                        if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
-                                                description += ", and helps its wearer avoid being noticed";
-                                        description += ". ";
-                    break;
-                case DARM_DWARVEN:
-                    description += "It is well-crafted and very durable. ";
-                    break;
-                }
+          {
+          case DARM_ELVEN:
+            description += "It is well-crafted and very light";
+            if (item_type == ARM_CLOAK || item_type == ARM_BOOTS)
+              description += ", and helps its wearer avoid being noticed";
+            description += ". ";
+            break;
+          case DARM_DWARVEN:
+            description += "It is well-crafted and very durable. ";
+            break;
+          }
     }
 
     if (item_id > 1 && (verbose == 1 || item_dam % 30 >= 25))
@@ -1587,7 +1588,7 @@ static string describe_stick(int item_type, int item_plus, unsigned char item_id
             break;
 
         case 6:
-            description += " can hold a creature immobile. ";
+            description += " can render a creature immobile. ";
             break;
 
         case 7:
@@ -2237,15 +2238,15 @@ static string describe_staff(int item_type, unsigned char item_id)
             break;
 
         case 2:
-            description += "This staff increases the power of fire spells cast by its wielder, and protects him or her from the effects of heat and fire. ";
+            description += "This staff increases the power of fire spells cast by its wielder, and protects him or her from the effects of heat and fire. It can burn those struck by it, and will attempt to impart knowledge of Fire Magic to its wielder. ";
             break;
 
         case 3:
-            description += "This staff increases the power of ice spells cast by its wielder, and protects him or her from the effects of cold. ";
+            description += "This staff increases the power of ice spells cast by its wielder, and protects him or her from the effects of cold. It can freeze those struck by it, and will attempt to tutor its wielder in Ice Magic. ";
             break;
 
         case 4:
-            description += "This staff increases the power of poisoning spells cast by its wielder, and protects him or her from the effects of poison. ";
+            description += "This staff increases the power of poisoning spells cast by its wielder, and protects him or her from the effects of poison. It can poison those struck by it, and will attempt to school its wielder in Poison Magic. ";
             break;
 
         case 5:
@@ -2253,7 +2254,7 @@ static string describe_staff(int item_type, unsigned char item_id)
             break;
 
         case 6:
-            description += "This staff increases the power of necromantic spells cast by its wielder. ";
+            description += "This staff increases the power of necromantic spells cast by its wielder. It can cause great pain in those living souls its wielder strikes. It will attempt to teach its weilder Necromancy. ";
             break;
 
         case 7:
@@ -2285,11 +2286,11 @@ static string describe_staff(int item_type, unsigned char item_id)
             break;
 
         case 25:
-            description += "This staff increases the power of air spells cast by its wielder. ";
+            description += "This staff increases the power of air spells cast by its wielder. It can shock those struck by it, and will attempt to teach its weilder Air Magic. ";
             break;
 
         case 26:
-            description += "This staff increases the power of earth spells cast by its wielder. ";
+            description += "This staff increases the power of earth spells cast by its wielder. It can crush those struck by it, and will attempt to teach its weilder Earth Magic. ";
             break;
 
         case 27:
@@ -2434,7 +2435,7 @@ static string describe_misc_item(int item_type, unsigned char item_id)
             description += "A dangerous item which hypnotises anyone so unwise as to gaze into it, leaving them helpless for a significant length of time. ";
             break;
         case 13:
-            description += "This extremely powerful item can unleash a destructive storm of electricity. It is especially effective in the hands of one skilled in air elemental magic, but cannot be used by one protected from its effects. ";
+            description += "This extremely powerful item can unleash a destructive storm of electricity. It is especially effective in the hands of one skilled in air elemental magic, but cannot be used by one who is not a conductor. ";
             break;
         case 14:
             description += "A talisman which allows entry into Zot's domain. ";
@@ -2758,298 +2759,295 @@ void describe_spell(int spelled)
     description += "This spell";
     switch (spelled)
     {
-    case 0:
+    case SPELL_IDENTIFY:
         description += " allows the caster to determine the properties of an otherwise inscrutable magic item. ";
         break;
 
-    case 1:
+    case SPELL_TELEPORT_SELF:
         description += " teleports the caster to a random location. ";
         break;
 
-    case 2:
+    case SPELL_CAUSE_FEAR:
         description += " causes fear in those near to the caster. ";
         break;
 
-    case 3:
+    case SPELL_CREATE_NOISE:
         description += " causes a loud noise to be heard. ";
         break;
 
-    case 4:
+    case SPELL_REMOVE_CURSE:
         description += " removes curses from any items which are being used by the caster. ";
         break;
 
-    case 5:
+    case SPELL_MAGIC_DART:
         description += " hurls a small bolt of magical energy. ";
         break;
 
-    case 6:
+    case SPELL_FIREBALL:
         description += " hurls an exploding bolt of fire. ";
         break;
 
-    case 13:
+    case SPELL_CONJURE_FLAME:
         description += " creates a column of roaring flame. ";
         break;
 
-    case 14:
+    case SPELL_DIG:
         description += " digs a tunnel through unworked rock. ";
         break;
 
-    case 15:
+    case SPELL_BOLT_OF_FIRE:
         description += " hurls a great bolt of flames. ";
         break;
 
-    case 16:
+    case SPELL_BOLT_OF_COLD:
         description += " hurls a great bolt of ice and frost. ";
         break;
 
-    case 17:
+    case SPELL_LIGHTNING_BOLT:
         description += " hurls a mighty bolt of lightning. Although this spell causes less damage than the similar fire and ice spells, it can rip through whole rows of creatures. ";
         break;
 
-    case 20:
+    case SPELL_POLYMORPH_OTHER:
         description += " randomly alters the form of another creature. ";
         break;
 
-    case 21:
+    case SPELL_SLOW:
         description += " slows the actions of a creature. ";
         break;
 
-    case 22:
+    case SPELL_HASTE:
         description += " speeds the actions of a creature. ";
         break;
 
-    case 23:
+    case SPELL_PARALYZE:
         description += " prevents a creature from moving. ";
         break;
 
-    case 24:
+    case SPELL_CONFUSE:
         description += " induces a state of bewilderment and confusion in a creature's mind. ";
         break;
 
-    case 25:
+    case SPELL_INVISIBILITY:
         description += " hides a creature from the sight of others. ";
         break;
 
-    case 26:
+    case SPELL_THROW_FLAME:
         description += " throws a small bolt of flame. ";
         break;
 
-    case 27:
+    case SPELL_THROW_FROST:
         description += " throws a small bolt of frost. ";
         break;
 
-    case 28:
+    case SPELL_CONTROLLED_BLINK:
         description += " allows a short-range translocation, with precise control. ";
         break;
 
-    case 29:
+    case SPELL_FREEZING_CLOUD:
         description += " conjures up a large cloud of lethally cold vapour. ";
         break;
 
-    case 30:
+    case SPELL_MEPHITIC_CLOUD:
         description += " conjures up a large but short-lived cloud of vile fumes. ";
         break;
 
-    case 31:
+    case SPELL_RING_OF_FLAMES:
         description += " surrounds the caster with a mobile ring of searing flame. It is not recommended for those vulnerable to the effects of fire. ";
         break;
 
-    case 32:
+    case SPELL_RESTORE_STRENGTH:
         description += " restores the physical strength of the caster. ";
         break;
 
-    case 33:
+    case SPELL_RESTORE_INTELLIGENCE:
         description += " restores the intelligence of the caster. ";
         break;
 
-    case 34:
+    case SPELL_RESTORE_DEXTERITY:
         description += " restores the dexterity of the caster. ";
         break;
 
-    case 35:
+    case SPELL_VENOM_BOLT:
         description += " throws a bolt of deadly poison. ";
         break;
 
-    case 36:
+    case SPELL_OLGREBS_TOXIC_RADIANCE:
         description += " bathes the caster's surroundings with a poisonous green light. ";
         break;
 
-    case 37:
+    case SPELL_TELEPORT_OTHER:
         description += " randomly translocates another creature. ";
         break;
 
-    case 38:
+    case SPELL_LESSER_HEALING:
         description += " heals a small amount of damage to the caster's body. ";
         break;
 
-    case 39:
+    case SPELL_GREATER_HEALING:
         description += " heals a large amount of damage to the caster's body. ";
         break;
 
-    case 40:
+    case SPELL_CURE_POISON_I:
         description += " removes poison from the caster's system. ";
         break;
 
-    case 41:
+    case SPELL_PURIFICATION:
         description += " purifies the caster's body, removing poison, disease, and some malign enchantments. ";
         break;
 
-    case 42:
+    case SPELL_DEATHS_DOOR:
          description += " is extremely powerful, but carries a degree of "
-  "risk. It renders a living caster almost invulnerable to harm for a "
- "brief"
- "period of time, but can bring them dangerously close to death (how "
- "close"
- "depends on their necromantic abilities).  The spell can be cancelled "
- "at any time by any healing effect, and the "
- "caster will recieve one warning shortly before the spell expires. "
- "Undead cannot use this spell. ";
+ "risk. It renders a living caster almost invulnerable to harm for a "
+ "brief period of time, but can bring them dangerously close to death (how "
+ "close depends on their necromantic abilities).  The spell can be cancelled "
+ "at any time by any healing effect, and the caster will recieve one warning "
+ "shortly before the spell expires. Undead cannot use this spell. ";
         break;
 
-    case 43:
+    case SPELL_SELECTIVE_AMNESIA:
          description += " allows the caster to selectively erase a spell "
  "from memory and regain the magical energy bound up in it. One will be "
  "able to memorise this spell even if their mind is otherwise full of "
  "magic (i.e. You have the maximum number of spells already).";
         break;
 
-    case 44:
+    case SPELL_MASS_CONFUSION:
         description += " causes confusion in all who see the caster. ";
         break;
 
-    case 45:
+    case SPELL_SMITING:
         description += " smites a creature of the caster's choice. ";
         break;
 
-    case 46:
+    case SPELL_REPEL_UNDEAD:
         description += " calls on divine power to repel the unholy. ";
         break;
 
-    case 47:
+    case SPELL_HOLY_WORD:
         description += " involves the speaking of a word of power which repels and can destroy unholy creatures. ";
         break;
 
-    case 48:
+    case SPELL_DETECT_CURSE:
         description += " alerts the caster to the presence of curses on his or her possessions. ";
         break;
 
-    case 49:
-        description += " summons a small creature to the caster's aid. ";
+    case SPELL_SUMMON_SMALL_MAMMAL:
+        description += " summons one or more small creatures to the caster's aid. ";
         break;
 
-    case 50:
+    case SPELL_ABJURATION_I:
         description += " attempts to send hostile summoned creatures to the place from whence they came, or at least reduce the duration of their presence in the caster's locality. ";
         break;
 
-    case 51:
+    case SPELL_SUMMON_SCORPIONS:
         description += " summons one or more giant scorpions to the caster's assistance. ";
         break;
 
-    case 52:
+    case SPELL_LEVITATION:
         description += " allows the caster to float in the air. ";
         break;
 
-    case 53:
+    case SPELL_BOLT_OF_DRAINING:
         description += " hurls a deadly bolt of negative energy, which drains the life of any living creature which it strikes. ";
         break;
 
-    case 54:
+    case SPELL_LEHUDIBS_CRYSTAL_SPEAR:
         description += " hurls a lethally sharp bolt of crystal. ";
         break;
 
-    case 55:
+    case SPELL_BOLT_OF_INACCURACY:
         description += " causes enormous damage to any creature struck by the bolt of incandescent energy that it conjures into existence. Unfortunately, it is very difficult to aim and very rarely hits anything. Pity, that. ";
         break;
 
-    case 56:
+    case SPELL_POISONOUS_CLOUD:
         description += " conjures forth a great cloud of lethal gasses. ";
         break;
 
-    case 57:
+    case SPELL_FIRE_STORM:
         description += " creates a mighty storm of roaring flame. ";
         break;
 
-    case 58:
-        description += " detects any traps in the caster's vicinity. ";
+    case SPELL_DETECT_TRAPS:
+        description += " detects traps in the caster's vicinity. ";
         break;
 
-    case 59:
+    case SPELL_BLINK:
         description += " randomly translocates the caster a short distance. ";
         break;
 
-    case 60:
+    case SPELL_ISKENDERUNS_MYSTIC_BLAST:
         description += " throws a crackling sphere of destructive energy. ";
         break;
 
-    case 61:
+    case SPELL_SWARM:
         description += " summons forth a pestilential swarm. ";
         break;
 
-    case 62:
+    case SPELL_SUMMON_HORRIBLE_THINGS:
          description += " opens a gate to the Abyss and calls through one "
  "or more hideous abominations from that dreadful place. The powers who "
  "supervise this invocation require the caster to surrender some of "
- "s/he/it's intelligence in exchange for their service. ";
+ "his/her/its intelligence in exchange for their service. ";
         break;
 
-    case 63:
+    case SPELL_ENSLAVEMENT:
         description += " causes an otherwise hostile creature to fight on your side for a while. ";
         break;
 
-    case 64:
+    case SPELL_MAGIC_MAPPING:
         description += " reveals your surroundings. ";
         break;
 
-    case 65:
+    case SPELL_HEAL_OTHER:
         description += " heals another creature from a distance. ";
         break;
 
-    case 66:
+    case SPELL_ANIMATE_DEAD:
         description += " causes the dead to rise up and serve the caster; all corpses within a certain distance of the caster are affected. A powerful magician can create an army of mindless undead slaves with this spell. ";
         break;
 
-    case 67:
+    case SPELL_PAIN:
         description += " causes an extremely painful injury to a living creature. ";
         break;
 
-    case 68:
+    case SPELL_EXTENSION:
         description += " extends the durations of most beneficial enchantments affecting the caster. ";
         break;
 
-    case 69:
-        description += " attempts to charm any undead in the vicinity of the caster. ";
+    case SPELL_CONTROL_UNDEAD:
+        description += " attempts to enslave any undead in the vicinity of the caster. ";
         break;
 
-    case 70:
+    case SPELL_ANIMATE_SKELETON:
         description += " raises a skeleton to a state of unlife. ";
         break;
 
-    case 71:
+    case SPELL_VAMPIRIC_DRAINING:
         description += " steals the life of a living creature and grants it to the caster. It will not drain more life than the caster is capable of absorbing. ";
         break;
 
-    case 72:
+    case SPELL_SUMMON_WRAITHS:
         description += " calls on the powers of the undead to aid the caster. ";
         break;
 
-    case 73:
+    case SPELL_DETECT_ITEMS:
         description += " detects any items lying in the caster's general vicinity. ";
         break;
 
-    case 74:
-        description += " instantly heals any and all wounds suffered by the caster, but permanently reduces their resilience by an amount dependent on their magical skill. ";
+    case SPELL_BORGNJORS_REVIVIFICATION:
+        description += " instantly heals any and all wounds suffered by the caster, but permanently reduces their resilience by an amount dependent on (and inverse to) their magical skill. ";
         break;
 
-    case 75:
+    case SPELL_BURN:
         description += " burns a creature. ";
         break;
 
-    case 76:
+    case SPELL_FREEZE:
         description += " freezes a creature.  This may result in the creature"
                        " not being able to move for a short period of time.";
         break;
 
-    case 77:
+    case SPELL_SUMMON_ELEMENTAL:
          description += " calls forth a spirit from the elemental planes "
  "to aid the caster. A large quantity of the desired element must be "
  "available; this is rarely a problem for earth and air, but may be for "
@@ -3058,19 +3056,19 @@ void describe_spell(int spelled)
  "magic).";
         break;
 
-    case 78:
+    case SPELL_OZOCUBUS_REFRIGERATION:
         description += " drains the heat from the caster and the caster's surroundings, causing harm to all creatures not resistant to cold. ";
         break;
 
-    case 79:
+    case SPELL_STICKY_FLAME:
         description += " conjures a sticky glob of liquid fire, which adheres to any creature it strikes and burns. ";
         break;
 
-    case 80:
+    case SPELL_SUMMON_ICE_BEAST:
         description += " calls forth a beast of ice to serve the caster. ";
         break;
 
-    case 81:
+    case SPELL_OZOCUBUS_ARMOUR:
          description += " covers the caster's body with a protective layer "
  "of ice, the power of which depends on his or her skill with Ice magic. "
  "The caster and the caster's equipment are protected from the cold, but "
@@ -3078,231 +3076,255 @@ void describe_spell(int spelled)
  "heavy armour. ";
         break;
 
-    case 82:
+    case SPELL_CALL_IMP:
         description += " calls forth a minor demon from the pits of Hell. ";
         break;
 
-    case 83:
+    case SPELL_REPEL_MISSILES:
         description += " reduces the chance of projectile attacks striking the caster. Even powerful attacks such as lightning bolts or dragon breath are affected, although smaller missiles are repelled to a much greater degree.";
         break;
 
-    case 84:
+    case SPELL_BERSERKER_RAGE:
         description += " sends the caster into a temporary psychotic rage. ";
         break;
 
-    case 85:
+    case SPELL_DISPEL_UNDEAD:
         description += " inflicts a great deal of damage on an undead creature. ";
         break;
 
-    case 110:
+    case SPELL_TWISTED_RESURRECTION:
         description += " allows its caster to imbue a mass of deceased flesh with a magical life force. Casting this spell involves the assembling of a heap of several corpses; the greater the mass of flesh available, the greater the chances of success. "
 ;
         break;
 
-    case 111:
+    case SPELL_REGENERATION:
         description += " dramatically but temporarily increases the caster's recuperative abilities, while also increasing the rate at which he or she consumes food. ";
         break;
 
-    case 112:
+    case SPELL_BONE_SHARDS:
        description += " uses the bones of a skeleton (or the bone-like "
  "exoskeleton of, for example, an insect) as the raw materials for a "
- "lethal "
- "spray of slicing bone fragments, allowing its creator to dispense with "
- "conjuration magic entirely and use necromancy alone for a low-level but "
- "very powerful combat spell. Using a large and heavy skeleton (by "
+ "lethal spray of slicing bone fragments, allowing its creator to dispense "
+ "with conjuration magic entirely and use necromancy alone for a low-level "
+ "but very powerful combat spell. Using a large and heavy skeleton (by "
  "wielding it) results in a more powerful effect. ";
         break;
 
-    case 113:
-        description += " banishes a creature to the Abyss. Magicians wishing to visit that unpleasant place may use it to banish themselves. ";
+    case SPELL_BANISHMENT:
+        description += " banishes a creature to the Abyss. Magicians wishing "
+ "to visit that unpleasant place may use it to banish themselves. ";
         break;
 
-    case 114:
+    case SPELL_CIGOTUVIS_DEGENERATION:
         description += " mutates a creature into a pulsating mass of flesh. ";
         break;
 
-    case 115:
+    case SPELL_STING:
         description += " throws a magical dart of poison. ";
         break;
 
-    case 116:
+    case SPELL_SUBLIMATION_OF_BLOOD:
          description += " converts flesh, blood, and other bodily fluids "
  "into magical energy. The caster may use his or her own body as the "
- "focus "
- "for this spell (which can be dangerous but never directly lethal), or "
- "can "
- "wield a piece of butchered flesh and draw power from that. ";
+ "focus for this spell (which can be dangerous but never directly lethal), "
+ "or can wield a piece of butchered flesh and draw power from that. ";
         break;
 
-    case 117:
-        description += " causes a weapon held in the caster's hand to dance into the air and strike the caster's enemies. It will not function on magical staves or certain items of a unique nature. ";
+    case SPELL_TUKIMAS_DANCE:
+        description += " causes a weapon held in the caster's hand to dance "
+ "into the air and strike the caster's enemies. It will not function on "
+ "magical staves or certain willful artefacts. ";
         break;
 
-    case 118:
-        description += " should only be available from Dispater's staff. So how are you reading this? ";
+    case SPELL_HELLFIRE:
+        description += " should only be available from Dispater's staff. "
+ "So how are you reading this? (describe.cc)";
         break;
 
-    case 119:
-        description += " opens a gate to the realm of Pandemonium and draws forth one of its inhabitants to serve the caster for a time. ";
+    case SPELL_SUMMON_DEMON:
+        description += " opens a gate to the realm of Pandemonium and draws "
+ "forth one of its inhabitants to serve the caster for a time. ";
         break;
 
-    case 120:
-        description += " draws a small swarm of small demons to do battle with the caster's foes. ";
+    case SPELL_DEMONIC_HORDE:
+        description += " draws a small swarm of small demons to do battle "
+ "with the caster's foes. ";
         break;
 
-    case 121:
-        description += " calls one of the greater demons of Pandemonium forth to serve the caster. Beware, for the spell binding it to service may not outlast the spell binding it to this world! ";
+    case SPELL_SUMMON_GREATER_DEMON:
+        description += " calls one of the greater demons of Pandemonium "
+ "forth to serve the caster. Beware, for the spell binding it to service "
+ "may not outlast the spell binding it to this world! ";
         break;
 
-    case 122:
-        description += " rapidly accelerates the process of decay in any corpses lying around the caster, in the process emitting a foul miasmic vapour which eats away at the life force of any creature within it. ";
+    case SPELL_CORPSE_ROT:
+        description += " rapidly accelerates the process of decay in any "
+ "corpses lying around the caster, in the process emitting a foul miasmic "
+ "vapour which eats away at the life force of any creature within it. ";
         break;
 
-    case 123:
-        description += " bestows a lethal but temporary sharpness on a sword held by the caster. It will not affect weapons which are otherwise affected by special enchantments. ";
+    case SPELL_TUKIMAS_VORPAL_BLADE:
+        description += " bestows a lethal but temporary sharpness on a sword "
+ "held by the caster. It will not affect weapons which are otherwise affected "
+ "by special enchantments. ";
         break;
 
-    case 124:
-        description += " sets a weapon held by the caster on fire. It will not affect weapons which are otherwise affected by special enchantments. ";
+    case SPELL_FIRE_BRAND:
+        description += " sets a weapon held by the caster on fire. It will "
+ "not affect weapons which are otherwise affected by special enchantments. ";
         break;
 
-    case 125:
-        description += " infuses a weapon held by the caster with an aura of freezing cold. It will not affect weapons which are otherwise affected by special enchantments. ";
+    case SPELL_FREEZING_AURA:
+        description += " infuses a weapon held by the caster with an aura of "
+ "freezing cold. It will not affect weapons which are otherwise affected by "
+ "special enchantments. ";
         break;
 
-    case 126:
-        description += " infuses a weapon held by the caster with unholy energies. It will not affect weapons which are otherwise affected by special enchantments. ";
+    case SPELL_LETHAL_INFUSION:
+        description += " infuses a weapon held by the caster with unholy "
+  "energies. It will not affect weapons which are otherwise affected by "
+  "special enchantments. ";
         break;
 
-    case 127:
-        description += " crushes a nearby creature with waves of gravitational force. ";
+    case SPELL_CRUSH:
+        description += " crushes a nearby creature with waves of "
+          "gravitational force. ";
         break;
 
-    case 128:
-        description += " hurls a large and heavy metal bolt at the caster's foes. ";
+    case SPELL_BOLT_OF_IRON:
+        description += " hurls a large and heavy metal bolt at the caster's "
+ "foes. ";
         break;
 
-    case 129:
+    case SPELL_STONE_ARROW:
         description += " hurls a sharp spine of rock. ";
         break;
 
-    case 130:
+    case SPELL_TOMB_OF_DOROKLOHE:
   description += " entombs the caster within four walls of rock. These "
  "walls will destroy most objects in their way, but their growth is "
  "obstructed by the presence of any creatures. Beware - one would be "
  "unwise to use this spell without a reliable escape route.";
         break;
 
-    case 131:
+    case SPELL_STONEMAIL:
         description += " protects the caster with chunky scales of stone, the power of which depends on his or her Earth magic skill. These scales can coexist with other forms of armour, but are extremely heavy and cumbersome. ";
         break;
 
-    case 132:
+    case SPELL_SHOCK:
         description += " throws a bolt of electricity. ";
         break;
 
-    case 133:
+    case SPELL_SWIFTNESS:
         description += " imbues its caster with the ability to run extremely fast. It will not increase the speed of those who are fleet of foot anyway (such as centaurs). ";
         break;
 
-    case 134:
+    case SPELL_FLY:
         description += " grants its caster the ability to fly through the air. ";
         break;
 
-    case 135:
+    case SPELL_INSULATION:
         description += " protects its caster from electric shocks. ";
         break;
 
-    case 136:
+    case SPELL_ORB_OF_ELECTROCUTION:
         description += " hurls a crackling orb of electrical energy which causes a huge explosion on impact. ";
         break;
 
-    case 137:
+    case SPELL_DETECT_CREATURES:
         description += " allows the caster to detect any creatures within a certain radius. ";
         break;
 
-    case 138:
+    case SPELL_CURE_POISON_II:
         description += " removes some or all of any poisons from the caster's system. ";
         break;
 
-    case 139:
+    case SPELL_CONTROL_TELEPORT:
         description += " allows the caster to control his or her translocations. ";
         break;
 
-    case 140:
+    case SPELL_POISON_AMMUNITION:
         description += " poisons missile ammunition held by the caster. ";
         break;
 
-    case 141:
+    case SPELL_POISON_WEAPON:
         description += " covers a sharp bladed weapon with poison for a while. ";
         break;
 
-    case 142:
+    case SPELL_RESIST_POISON:
         description += " protects your body from any poisons which may enter it for a period of time. ";
         break;
 
-    case 143:
+    case SPELL_PROJECTED_NOISE:
         description += " produces a noise emanating from a place of the caster's choice. ";
         break;
 
-    case 144:
-        description += " causes a weird alteration in the caster's body, leaving the caster in a weakened state (but never killing them). It may fail to affect those who are heavily mutated already. ";
+    case SPELL_ALTER_SELF:
+        description += " causes a weird alteration in the caster's body, "
+  "leaving the caster in a weakened state (but never killing them). It may "
+  "fail to affect those who are heavily mutated already. ";
         break;
 
         /* 145 - debugging ray */
-    case 146:
-        description += " is greatly prized by summoners and necromancers, as it allows the caster to recall any friendly creatures who may be nearby to a position adjacent to the caster.";
+    case SPELL_RECALL:
+        description += " is greatly prized by summoners and necromancers, "
+ "as it allows the caster to recall any friendly creatures who may be "
+ "nearby to a position adjacent to the caster.";
         break;
 
-    case 147:
+    case SPELL_PORTAL:
          description += " creates a gate allowing long-distance travel "
  "through a relatively ordinary environment (ie the Dungeon only). It "
- "lasts "
- "long enough for the caster and nearby creatures to enter. It will "
+ "lasts long enough for the caster and nearby creatures to enter. It will "
  "not take you past the level limits of your current area.";
         break;
 
-    case 148:
-        description += " cuts the resilience of a target creature in half, although it will never cause death directly.";
+    case SPELL_AGONY:
+        description += " cuts the resilience of a target creature in half, "
+ "although it will never cause death directly.";
         break;
 
-    case 149:
-        description += " temporarily transforms the caster into a venomous spider-like creature.";
+    case SPELL_SPIDER_FORM:
+        description += " temporarily transforms the caster into a venomous "
+ "spider-like creature.";
         break;
 
-    case 150:
-        description += " disrupts the matter of a creature's body, causing injury.";
+    case SPELL_DISRUPT:
+        description += " disrupts the matter of a creature's body, causing "
+ "injury.";
         break;
 
-    case 151:
-        description += " tears apart the matter making up an object (especially a creature's body), causing severe damage.";
+    case SPELL_DISINTEGRATE:
+        description += " tears apart the matter making up an object "
+ "(especially a creature's body), causing severe damage.";
         break;
 
-    case 152:
-        description += " causes long, scythe-shaped blades to grow from the caster's hands. It makes spellcasting a little difficult.";
+    case SPELL_BLADE_HANDS:
+        description += " causes long, scythe-shaped blades to grow from the "
+ "caster's hands. It makes spellcasting a little difficult.";
         break;
 
-    case 153:
+    case SPELL_STATUE_FORM:
         description += " temporarily transforms the caster into a slow-moving but extremely robust stone statue.";
         break;
 
-    case 154:
+    case SPELL_ICE_FORM:
         description += " temporarily transform's the caster's body into a frozen ice-creature.";
         break;
 
-    case 155:
+    case SPELL_DRAGON_FORM:
         description += " temporarily transforms the caster into a great fire-breathing dragon.";
         break;
 
-    case 156:
+    case SPELL_NECROMUTATION:
         description += " first transforms the caster into a semi-corporeal apparition receptive to negative energy, then infuses that form with the powers of Death. The caster becomes resistant to cold, poison, magic and hostile negative energies.";
         break;
 
-    case 157:
+    case SPELL_DEATH_CHANNEL:
         description += " raises living creatures slain by the caster into a state of unliving slavery as spectral horrors.";
         break;
 
-    case 158:
+    case SPELL_SYMBOL_OF_TORMENT:
         description += " calls on the powers of Hell to cause agonising "
  "injuries to anyone or anything living in the caster's vicinity. It "
  "carries a degree of danger for any necromancer brave enough to invoke "
@@ -3311,7 +3333,7 @@ void describe_spell(int spelled)
  "Despite its power, however, it is never lethal.";
         break;
 
-    case 159:
+    case SPELL_DEFLECT_MISSILES:
         description += " protects the caster from any kind of projectile attack, although particular powerful attacks (lightning bolts, etcetera) are deflected less than lighter missiles. ";
         break;
 
@@ -3345,14 +3367,13 @@ void describe_spell(int spelled)
  "Abyssal matter. The creature thus brought into existence will be a "
  "recreation of some type of creature found in the caster's immediate "
  "vicinity. The spell even creates appropriate pieces of equipment for "
-"the"
-"creature, which are given a lasting substance by "
-"their contact with firm reality.";
+ "the creature, which are given a lasting substance by the Conjuration "
+ "portion of this spell.";
         break;
 
     default:
         DEBUGSTR("Bad spell");
-        description += "This spell apparently does not exist. Casting it may therefore be unwise. ";
+        description += " apparently does not exist. Casting it may therefore be unwise. Please contact Dungeon Tech Support at /dev/null for details.";
     }
 
     print_description(description);
@@ -3474,7 +3495,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 14:                    // orc
 
-        description = "An ugly subterranean race, orcs combine the worst features of humans, pigs, and several other unpleasant creatures put together.";
+        description = "An ugly subterranean race, orcs combine the worst features of humans, pigs, and several other unpleasant creatures.";
         break;
 
     case 15:                    // phantom
@@ -3489,7 +3510,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 17:                    // rat
 
-        description = "Rats who have grown large and aggressive in the pestilential dungeon environment.";
+        description = "Rats which have grown large and aggressive in the pestilential dungeon environment.";
         break;
 
     case 18:                    // scorpion
@@ -3592,8 +3613,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
      description = "A wizard who didn't want to die, a Lich is a skeleton "
  "or decaying corpse kept alive by a mighty exercise of necromancy. These"
-" undead creatures can wield great magic and are best avoided by all but"
-" the most confident (or stupid) adventurers.";
+ " undead creatures can wield great magic and are best avoided by all but"
+ " the most confident (or stupid) adventurers.";
         break;
 
     case 38:                    // M
@@ -3603,7 +3624,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 39:                    // N
 
-        description = "A serpent with the head of a human. These nagas are often used as guardians by powerful creatures.";
+        description = "A serpent with the head of a human. These nagas are "
+ "often used as guardians by powerful creatures.";
         break;
 
     case 40:                    // O
@@ -3622,7 +3644,6 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case 78:                    // fake R
-
     case 43:                    // R
 
         description = "A type of demon who comes to the material world in search of power and knowledge. Rakshasas are experts in the art of illusion, among other things.";
@@ -3987,7 +4008,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 125:                   // air elemental
 
-        description = "A spirit drawn from the elemental plane of air. It exists in this world as a swirling vortex of air, which is often undetectable without magical means.";
+        description = "A spirit drawn from the elemental plane of air. It exists in this world as a swirling vortex of air, which is often undetectable without magical aid.";
         break;
 
     case 126:                   // Ice fiend
@@ -3997,7 +4018,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 127:                   // shadow fiend
 
-        description = "One of the most terrible denizens of the many Hells, this horrible being appears as a great mass of writhing shadows which occasionally reveal the skeletal form of a huge demon.";
+        description = "One of the most terrible denizens of the many Hells, this horrible being appears as a great mass of writhing shadows which occasionally reveal a huge, horned skeleton.";
         break;
 
     case 128:                   // brown snake
@@ -4276,7 +4297,6 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case 240:                   // Shadow wraith
 
         description = "A mist-wreathed skeletal shadow hanging in mid-air, this creature is almost invisible even to your enhanced sight. ";    // assumes: to read this message, has see invis
-
         break;
 
     case 241:                   // Giant amoeba
@@ -4520,7 +4540,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 254:                   // Kikubaaqudgha
 
-        description = "A shadowy figure clothed in impenetrable darkness. ";
+        description = "A shadowy figure clothed in profound darkness. ";
         break;
 
     case 275:                   // ooze
@@ -4974,104 +4994,114 @@ void describe_god(int which_god)
         description += "You are not religious.";
         break;
     case GOD_ZIN:
-        description += "Zin is an ancient and revered God, dedicated to the "
-            "establishment of order and the destruction of the forces of chaos and night. "
-            "Valued "
-            "worshippers can gain a variety of powers useful in the fight against evil, "
-            "but must abstain from the use of necromancy and other forms of unholy magic. "
-            "Zin appreciates long-standing faith as well as sacrifices of valued objects "
-            "and the slaying of demons and the undead.";
+      description += "Zin is an ancient and revered God, dedicated to the "
+        "establishment of order and the destruction of the forces of "
+        "chaos and night. Valued worshippers can gain a variety of powers "
+        "useful in the fight against evil, but must abstain from the use "
+        "of necromancy and other forms of unholy magic. Zin appreciates "
+        "long-standing faith as well as sacrifices of valued objects "
+        "and the slaying of demons and the undead.";
         break;
     case GOD_SHINING_ONE:
-        description += "The Shining One is a powerful crusading diety, allied with "
-            "Zin in the fight against evil. Followers may be granted with the ability to "
-            "summarily dispense the wrath of heaven, but must never use any form of evil "
-            "magic and should fight honourably. The Shining One appreciates long-standing persistence in the endless "
-            "crusade, as well as the dedicated destruction of unholy creatures.";
-        break;
+      description += "The Shining One is a powerful crusading diety, allied"
+        " with Zin in the fight against evil. Followers may be granted with"
+        " the ability to summarily dispense the wrath of heaven, but must "
+        "never use any form of evil magic and should fight honourably. The "
+        "Shining One appreciates long-standing persistence in the endless "
+        "crusade, as well as the dedicated destruction of unholy creatures.";
+      break;
     case GOD_KIKUBAAQUDGHA:
-        description += "Kikubaaqudgha is a terrible Demon-God, served by those who "
-            "seek knowledge of the powers of death. Followers gain special powers "
-            "over the undead, and especially favoured servants can call on mighty demons "
-            "to slay their foes. $Kikubaaqudgha requires the deaths of living creatures "
-            "as often as possible, but is not interested in the offering of corpses except "
-            "at an appropriate altar.";
-        if (you.piety >= 50 && you.religion == GOD_KIKUBAAQUDGHA)
-            description += "$Kikubaaqudgha is protecting you from the side-effects of death magic.";
-        break;
+      description += "Kikubaaqudgha is a terrible Demon-God, served by those "
+        "who seek knowledge of the powers of death. Followers gain special "
+        "powers over the undead, and especially favoured servants can call "
+        "on mighty demons to slay their foes. $Kikubaaqudgha requires the "
+        "deaths of living creatures as often as possible, but is not "
+        "interested in the offering of corpses except at an appropriate "
+        "altar.";
+      if (you.piety >= 50 && you.religion == GOD_KIKUBAAQUDGHA)
+        description += "$Kikubaaqudgha is protecting you from the "
+          "side-effects of death magic.";
+      break;
     case GOD_YREDELEMNUL:
-        description += "Yredelemnul is worshipped by those who seek powers over "
-            "death and the undead without having to learn to use necromancy. Followers "
-            "can raise legions of servile undead and gain a number of other useful (if "
-            "unpleasant) powers. Yredelemnul appreciates killing, but prefers corpses "
-            "to be put to use rather than sacrificed.";
-        break;
+      description += "Yredelemnul is worshipped by those who seek powers over "
+        "death and the undead without having to learn to use necromancy. "
+        "Followers can raise legions of servile undead and gain a number of "
+        "other useful (if unpleasant) powers. Yredelemnul appreciates killing,"
+        " but prefers corpses to be put to use rather than sacrificed.";
+      break;
     case GOD_XOM:
-        description += "Xom is a wild and unpredictable God of chaos, who seeks not "
-            "worshippers but playthings to toy with. Many choose to follow Xom in the "
-            "hope of receiving fabulous rewards and mighty powers, but Xom is nothing if "
-            "not capricious.";
-        break;
+      description += "Xom is a wild and unpredictable God of chaos, who seeks"
+        " not worshippers but playthings to toy with. Many choose to follow "
+        "Xom in the hope of receiving fabulous rewards and mighty powers, "
+        "but Xom is nothing if not capricious.";
+      break;
     case GOD_VEHUMET:
-        description += "Vehumet is a God of the destructive powers of magic. "
-            "Followers gain various useful powers to enhance their command of "
-            "the hermetic arts, and the most favoured stand to gain access to "
-            "some of the fearsome spells in Vehumet's library. One's devotion to Vehumet "
-            "can be proved by the causing of as much carnage and destruction as possible.";
-        if (you.religion == GOD_VEHUMET)
+      description += "Vehumet is a God of the destructive powers of magic. "
+        "Followers gain various useful powers to enhance their command of "
+        "the hermetic arts, and the most favoured stand to gain access to "
+        "some of the fearsome spells in Vehumet's library. One's devotion to "
+        "Vehumet can be proved by the causing of as much carnage and "
+        "destruction as possible.";
+      if (you.religion == GOD_VEHUMET)
         {
-            if (you.piety >= 30)
-                description += "$You can gain power from the those you kill in Vehumet's name, or those slain by your servants.";
+          if (you.piety >= 30)
+            description += "$You can gain power from the those you kill "
+              "in Vehumet's name, or those slain by your servants.";
 
-            if (you.piety >= 50)
-                description += "$Your conjurations and summonings cast in Vehumet's name rarely fail.";
+          if (you.piety >= 50)
+            description += "$Your conjurations and summonings cast in "
+              "Vehumet's name rarely fail.";
 
-            if (you.piety >= 75)
-                description += "$During prayer you are protected from summoned creatures.";
+          if (you.piety >= 75)
+            description += "$During prayer you are protected from "
+              "summoned creatures.";
         }
-        break;
+      break;
     case GOD_OKAWARU:
-        description += "Okawaru is a dangerous and powerful God of battle. Followers "
-            "can gain a number of powers useful in combat as well as various rewards, "
-            "but must constantly prove "
-            "themselves through battle and the sacrifice of corpses and valuable items.";
-        break;
+      description += "Okawaru is a dangerous and powerful God of battle. "
+        "Followers can gain a number of powers useful in combat as well as "
+        "various rewards, but must constantly prove themselves through "
+        "battle and the sacrifice of corpses and valuable items.";
+      break;
     case GOD_MAKHLEB:
-        description += "Makhleb the Destroyer is a fearsome God of chaos and violent "
-            "death. Followers, who must constantly appease Makhleb with blood, stand to "
-            "gain various powers of death and destruction. The Destroyer appreciates "
-            "sacrifices of corpses and valuable items.";
-        if (you.piety >= 30 && you.religion == GOD_MAKHLEB)
-            description += "$You can gain power from the deaths of those killed in Makhleb's name.";
-        break;
+      description += "Makhleb the Destroyer is a fearsome God of chaos and "
+        "violent death. Followers, who must constantly appease Makhleb with "
+        "blood, stand to gain various powers of death and destruction. The "
+        "Destroyer appreciates sacrifices of corpses and valuable items.";
+      if (you.piety >= 30 && you.religion == GOD_MAKHLEB)
+        description += "$You can gain power from the deaths of those killed "
+          "in Makhleb's name.";
+      break;
     case GOD_SIF_MUNA:
-        description += "Sif Muna is a contemplative but powerful deity, served by "
-            "those who seek magical knowledge. Sif Muna appreciates sacrifices of valuable "
-            "items, and the casting of spells as often as possible.";
+      description += "Sif Muna is a contemplative but powerful deity, served "
+        "by those who seek magical knowledge. Sif Muna appreciates sacrifices "
+        "of valuable items, and the casting of spells as often as possible.";
         if (you.piety >= 100 && you.religion == GOD_SIF_MUNA)
-            description += "$Sif Muna is protecting you from some of the side-effects of magic.";
+          description += "$Sif Muna is protecting you from some of the "
+            "side-effects of magic.";
         break;
     case GOD_TROG:
-        description += "Trog is an ancient God of anger and violence. Followers are "
-            "expected to kill in Trog's name and sacrifice the dead, and in return gain "
-            "power in battle and occasional rewards. Trog hates wizards, and followers "
-            "are forbidden the use of spell magic.";
-        break;
+      description += "Trog is an ancient God of anger and violence. Followers"
+        " are expected to kill in Trog's name and sacrifice the dead, and in "
+        "return gain power in battle and occasional rewards. Trog hates "
+        "wizards, and followers are forbidden the use of spell magic.";
+      break;
     case GOD_NEMELEX_XOBEH:
-        description += "Nemelex is a strange and unpredictable trickster God, whose "
-            "powers can be invoked through the magical packs of cards which Nemelex "
-            "paints in the ichor of demons. Followers receive occasional gifts, and "
-            "should use these gifts as much as possible. Offerings of any type of "
-            "item are also appreciated.";
-        break;
+      description += "Nemelex is a strange and unpredictable trickster God, "
+        "whose powers can be invoked through the magical packs of cards "
+        "which Nemelex paints in the ichor of demons. Followers receive "
+        "occasional gifts, and should use these gifts as much as possible. "
+        "Offerings of any type of item are also appreciated.";
+      break;
     case GOD_ELYVILON:
-        description += "Elyvilon the Healer is worshipped by the healers (among "
-            "others), who gain their healing powers by long worship and devotion. Although Elyvilon "
-            "prefers a creed of pacifism, those who crusade against evil are not "
-            "excluded. Elyvilon appreciates the offering of weapons.";
-        break;
+      description += "Elyvilon the Healer is worshipped by the healers (among "
+        "others), who gain their healing powers by long worship and devotion. "
+        "Although Elyvilon prefers a creed of pacifism, those who crusade "
+        "against evil are not excluded. Elyvilon appreciates the offering "
+        "of weapons.";
+      break;
     default:
-        DEBUGSTR("Unknown god");
+      DEBUGSTR("Unknown god");
     }
 
     print_description(description);
