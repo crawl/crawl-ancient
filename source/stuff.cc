@@ -34,6 +34,8 @@
 #include "externs.h"
 
 #include "misc.h"
+#include "monstuff.h"
+#include "mon-util.h"
 #include "output.h"
 #include "skills2.h"
 #include "view.h"
@@ -47,6 +49,74 @@ unsigned long cfseed;
 
 // unfortunately required for near_stairs(ugh!):
 extern unsigned char (*mapch) (unsigned char);
+
+void tag_followers( void )
+{
+    int count_x, count_y;
+
+    for (count_x = you.x_pos - 1; count_x <= you.x_pos + 1; count_x++)
+    {
+        for (count_y = you.y_pos - 1; count_y <= you.y_pos + 1; count_y++)
+        {
+            if (count_x == you.x_pos && count_y == you.y_pos)
+                continue;
+
+            if (mgrd[count_x][count_y] == NON_MONSTER)
+                continue;
+
+            struct monsters *fmenv = &menv[mgrd[count_x][count_y]];
+
+            if ((fmenv->type == MONS_PANDEMONIUM_DEMON)
+                || (fmenv->type == MONS_PLANT)
+                || (fmenv->type == MONS_FUNGUS)
+                || (fmenv->type == MONS_OKLOB_PLANT)
+                || (fmenv->type == MONS_CURSE_SKULL)
+                || (fmenv->type == MONS_PLAYER_GHOST)  // cdl
+                || (fmenv->type == MONS_CURSE_TOE)
+                || (fmenv->type == MONS_POTION_MIMIC)
+                || (fmenv->type == MONS_WEAPON_MIMIC)
+                || (fmenv->type == MONS_ARMOUR_MIMIC)
+                || (fmenv->type == MONS_SCROLL_MIMIC)
+                || (fmenv->type == MONS_GOLD_MIMIC)
+                || (fmenv->type == -1))
+            {
+                continue;
+            }
+
+            if (monster_habitat(fmenv->type) != DNGN_FLOOR)
+                continue;
+
+            if (fmenv->speed_increment < 50)
+                continue;
+
+            // only friendly monsters,  or those actively seeking the
+            // player,  will follow up/down stairs.
+            if (!(mons_friendly(fmenv) ||
+                (fmenv->behaviour == BEH_SEEK && fmenv->foe == MHITYOU)))
+            {
+                continue;
+            }
+
+            // monster is chasing player through stairs:
+            fmenv->flags |= MF_TAKING_STAIRS;
+
+#if DEBUG_DIAGNOSTICS
+            snprintf( info, INFO_SIZE, "%s is marked for following.",
+                      ptr_monam( fmenv, DESC_CAP_THE ) );
+            mpr( info, MSGCH_DIAGNOSTIC );
+#endif
+        }
+    }
+}
+
+void untag_followers( void )
+{
+    for (int m = 0; m < MAX_MONSTERS; m++)
+    {
+        struct monsters *mon = &menv[m];
+        mon->flags &= (~MF_TAKING_STAIRS);
+    }
+}
 
 unsigned char get_ch(void)
 {
@@ -103,7 +173,7 @@ int roll_dice( int num, int size )
 
     // If num <= 0 or size <= 0, then we'll just return the default
     // value of zero.  This is good behaviour in that it will be
-    // appropriate for errant calculated values that might be passed in.
+    // appropriate for calculated values that might be passed in.
     if (num > 0 && size > 0)
     {
         ret += num;     // since random2() is zero based
@@ -182,7 +252,8 @@ void redraw_screen(void)
     char title[40];
 
     const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
-    strcpy( title, skill_title( best, you.skills[ best ] ) );
+    strncpy( title, skill_title( best, you.skills[ best ] ), 40 );
+    title[39] = '\0';
 
     draw_border( you.your_name, title, you.species );
 
@@ -425,7 +496,7 @@ void canned_msg(unsigned char which_message)
 
 // jmf: general helper (should be used all over in code)
 //      -- idea borrowed from Nethack
-bool yesno(const char *str, bool safe)
+bool yesno( const char *str, bool safe, bool clear_after )
 {
     unsigned char tmp;
 
@@ -441,7 +512,8 @@ bool yesno(const char *str, bool safe)
             tmp = toupper( tmp );
         }
 
-        mesclr();
+        if (clear_after)
+            mesclr();
 
         if (tmp == 'N')
             return false;
@@ -461,7 +533,7 @@ int grid_distance( int x, int y, int x2, int y2 )
     dy = abs( y - y2 );
 
     // returns distance in terms of moves:
-    return (dx > dy ? dx : dy);
+    return ((dx > dy) ? dx : dy);
 }
 
 int distance( int x, int y, int x2, int y2 )

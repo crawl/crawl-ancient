@@ -31,6 +31,8 @@
 #include "externs.h"
 
 #include "defines.h"
+#include "effects.h"
+#include "ouch.h"
 #include "player.h"
 #include "skills2.h"
 #include "stuff.h"
@@ -940,6 +942,12 @@ void display_mutations(void)
                 ((you.experience_level > 12) ? " strongly" : ""));
         cprintf(" in touch with the powers of death." EOL);
         j++;
+
+        if (you.experience_level >= 12)
+        {
+            cprintf("You can restore your body by infusing magicial energy." EOL);
+            j++;
+        }
         break;
     case SP_GREEN_DRACONIAN:
         if (you.experience_level > 6)
@@ -1089,8 +1097,21 @@ bool mutate(int which_mutation, bool failMsg)
 
     //char st_prn [10];
 
-    if (you.is_undead) // && !force_mutation)
-        return false;
+    // Undead bodies don't mutate, they fall apart. -- bwr
+    if (you.is_undead && (force_mutation || !one_chance_in(5)))
+    {
+        mpr( "Your body decomposes!" );
+
+        if (coinflip())
+            lose_stat( STAT_RANDOM, 1 );
+        else
+        {
+            ouch( 3, 0, KILLED_BY_ROTTING );
+            rot_hp( roll_dice( 1, 3 ) );
+        }
+
+        return (true);
+    }
 
     if (wearing_amulet(AMU_RESIST_MUTATION)
         && !force_mutation && !one_chance_in(10))
@@ -1179,6 +1200,13 @@ bool mutate(int which_mutation, bool failMsg)
     // spriggans already run at max speed (centaurs can get a bit faster)
     if (you.species == SP_SPRIGGAN && mutat == MUT_FAST)
         return false;
+
+    // this might have issues if we allowed it -- bwr
+    if (you.species == SP_KOBOLD
+        && (mutat == MUT_CARNIVOROUS || mutat == MUT_HERBIVOROUS))
+    {
+        return (false);
+    }
 
     // This one can be forced by demonspawn
     if (mutat == MUT_REGENERATION
@@ -1954,7 +1982,7 @@ void demonspawn(void)
                     howm = (coinflip()? 2 : 3);
             }
 
-            if (you.mutation[whichm] != 0)
+            if (whichm != -1 && you.mutation[whichm] != 0)
                 whichm = -1;
 
             counter++;
@@ -2082,7 +2110,7 @@ void demonspawn(void)
             howm = 1;
         }
 
-        if (whichm == -1 || you.mutation[whichm] != 0)
+        if (whichm != -1 && you.mutation[whichm] != 0)
             whichm = -1;
 
         counter++;

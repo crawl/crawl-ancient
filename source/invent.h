@@ -16,7 +16,7 @@
 #define PROMPT_GOT_SPECIAL  -2
 
 int prompt_invent_item( const char *prompt, int type_expect,
-                        bool must_exist = true,
+                        bool must_exist = true, bool allow_easy_quit = true,
                         const char other_valid_char = '\0',
                         int *const count = NULL );
 

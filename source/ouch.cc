@@ -69,29 +69,49 @@
 #include "religion.h"
 #include "shopping.h"
 #include "skills2.h"
+#include "spells4.h"
 #include "stuff.h"
 
 #ifdef MACROS
 #include "macro.h"
 #endif
 
-void end_game(struct scorefile_entry &se);
-void item_corrode(char itco);
+void end_game( struct scorefile_entry &se );
+void item_corrode( char itco );
 
 
 /* NOTE: DOES NOT check for hellfire!!! */
 int check_your_resists(int hurted, int flavour)
 {
+    int resist;
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "checking resistance: flavour=%d", flavour );
+    mpr( info, MSGCH_DIAGNOSTIC );
+#endif
+
+    if (flavour == BEAM_FIRE || flavour == BEAM_LAVA
+        || flavour == BEAM_HELLFIRE || flavour == BEAM_EXPLOSION
+        || flavour == BEAM_FRAG)
+    {
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+        {
+            mpr( "Your icy shield dissipates!", MSGCH_DURATION );
+            you.duration[DUR_CONDENSATION_SHIELD] = 0;
+            you.redraw_armour_class = 1;
+        }
+    }
+
     switch (flavour)
     {
     case BEAM_FIRE:
-        if (player_res_fire() > 100)
+        resist = player_res_fire();
+        if (resist > 0)
         {
             canned_msg(MSG_YOU_RESIST);
-            const int res_fire = player_res_fire() - 100;
-            hurted /= (1 + (res_fire * res_fire));
+            hurted /= (1 + (resist * resist));
         }
-        else if (player_res_fire() < 100)
+        else if (resist < 0)
         {
             mpr("It burns terribly!");
             hurted *= 15;
@@ -100,13 +120,13 @@ int check_your_resists(int hurted, int flavour)
         break;
 
     case BEAM_COLD:
-        if (player_res_cold() > 100)
+        resist = player_res_cold();
+        if (resist > 0)
         {
             canned_msg(MSG_YOU_RESIST);
-            const int res_cold = player_res_cold() - 100;
-            hurted /= (1 + (res_cold * res_cold));
+            hurted /= (1 + (resist * resist));
         }
-        else if (player_res_cold() < 100)
+        else if (resist < 0)
         {
             mpr("You feel a terrible chill!");
             hurted *= 15;
@@ -115,7 +135,8 @@ int check_your_resists(int hurted, int flavour)
         break;
 
     case BEAM_ELECTRICITY:
-        if (player_res_electricity() > 0)
+        resist = player_res_electricity();
+        if (resist > 0)
         {
             canned_msg(MSG_YOU_RESIST);
             hurted /= 3;
@@ -124,7 +145,9 @@ int check_your_resists(int hurted, int flavour)
 
 
     case BEAM_POISON:
-        if (!player_res_poison())
+        resist = player_res_poison();
+
+        if (!resist)
             poison_player( (coinflip() ? 2 : 1) );
         else
         {
@@ -134,20 +157,25 @@ int check_your_resists(int hurted, int flavour)
         break;
 
     case BEAM_NEG:
-        if (player_prot_life() > 0)
+        resist = player_prot_life();
+
+        if (resist > 0)
         {
-            hurted -= (player_prot_life() * hurted) / 3;
+            hurted -= (resist * hurted) / 3;
         }
+
         drain_exp();
         break;
 
     case BEAM_ICE:
-        if (player_res_cold() > 100)
+        resist = player_res_cold();
+
+        if (resist > 0)
         {
             mpr("You partially resist.");
             hurted /= 2;
         }
-        else if (player_res_cold() < 100)
+        else if (resist < 0)
         {
             mpr("You feel a painful chill!");
             hurted *= 13;
@@ -156,12 +184,14 @@ int check_your_resists(int hurted, int flavour)
         break;
 
     case BEAM_LAVA:
-        if (player_res_fire() > 101)
+        resist = player_res_fire();
+
+        if (resist > 1)
         {
             mpr("You partially resist.");
-            hurted /= (1 + (player_res_fire() - 100));
+            hurted /= (1 + resist);
         }
-        else if (player_res_fire() < 100)
+        else if (resist < 0)
         {
             mpr("It burns terribly!");
             hurted *= 15;
@@ -170,48 +200,62 @@ int check_your_resists(int hurted, int flavour)
         break;
     }                           /* end switch */
 
-    return hurted;
+    return (hurted);
 }                               // end check_your_resists()
 
-void splash_with_acid(char acid_strength)
+void splash_with_acid( char acid_strength )
 {
     /* affects equip only?
        assume that a message has already been sent, also that damage has
        already been done
      */
     char splc = 0;
+    int  dam = 0;
+
+    const bool wearing_cloak = (you.equip[EQ_CLOAK] == -1);
 
     for (splc = EQ_CLOAK; splc <= EQ_BODY_ARMOUR; splc++)
     {
         if (you.equip[splc] == -1)
         {
-            ouch(random2(acid_strength) / 5, 0, KILLED_BY_BEAM);
+            if (!wearing_cloak || coinflip())
+                dam += roll_dice( 1, acid_strength );
+
             continue;
-            /* should take extra damage if little armour worn */
         }
 
         if (random2(20) <= acid_strength)
-            item_corrode(you.equip[splc]);
+            item_corrode( you.equip[splc] );
+    }
+
+    if (dam)
+    {
+        mpr( "The acid burns!" );
+        ouch( dam, 0, KILLED_BY_ACID );
     }
 }                               // end splash_with_acid()
 
-void weapon_acid(char acid_strength)
+void weapon_acid( char acid_strength )
 {
     char hand_thing = you.equip[EQ_WEAPON];
 
-    if (you.equip[EQ_WEAPON] == -1)
-    {
-        if (you.equip[EQ_GLOVES] != -1)
-            hand_thing = you.equip[EQ_GLOVES];
-        else
-            return;             // take extra damage
-    }
+    if (hand_thing == -1)
+        hand_thing = you.equip[EQ_GLOVES];
 
-    if (random2(20) <= acid_strength)
-        item_corrode(hand_thing);
+    if (hand_thing == -1)
+    {
+        snprintf( info, INFO_SIZE, "Your %s burn!", your_hand(1) );
+        mpr( info );
+
+        ouch( roll_dice( 1, acid_strength ), 0, KILLED_BY_ACID );
+    }
+    else if (random2(20) <= acid_strength)
+    {
+        item_corrode( hand_thing );
+    }
 }                               // end weapon_acid()
 
-void item_corrode(char itco)
+void item_corrode( char itco )
 {
     int chance_corr = 0;        // no idea what its full range is {dlb}
     bool it_resists = false;    // code simplifier {dlb}
@@ -223,7 +267,7 @@ void item_corrode(char itco)
     if (wearing_amulet(AMU_RESIST_CORROSION) && !one_chance_in(10))
     {
 #if DEBUG_DIAGNOSTICS
-        mpr("Amulet protects.");
+        mpr( "Amulet protects.", MSGCH_DIAGNOSTIC );
 #endif
         return;
     }
@@ -335,7 +379,7 @@ void scrolls_burn(char burn_strength, char target_class)
     if (wearing_amulet(AMU_CONSERVATION) && !one_chance_in(10))
     {
 #if DEBUG_DIAGNOSTICS
-        mpr("Amulet conserves.");
+        mpr( "Amulet conserves.", MSGCH_DIAGNOSTIC );
 #endif
         return;
     }
@@ -482,7 +526,8 @@ void drain_exp(void)
 
         strcat(info, temp_quant);
         strcat(info, " experience points.");
-        mpr(info);
+
+        mpr( info, MSGCH_DIAGNOSTIC );
 #endif
         you.redraw_experience = 1;
 
@@ -567,7 +612,7 @@ void ouch(int dam, int death_source, char death_type)
 
 #if DEBUG_DIAGNOSTICS
             snprintf( info, INFO_SIZE, "Damage: %d; Hit points: %d", dam, you.hp );
-            mpr( info );
+            mpr( info, MSGCH_DIAGNOSTIC );
 #endif // DEBUG_DIAGNOSTICS
 
             if (!yesno("Die?", false))

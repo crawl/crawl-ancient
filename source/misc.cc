@@ -169,6 +169,13 @@ void in_a_cloud(void)
     int hurted = 0;
     int resist;
 
+    if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+    {
+        mpr("Your icy shield dissipates!", MSGCH_DURATION);
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        you.redraw_armour_class = 1;
+    }
+
     switch (env.cloud[cl].type)
     {
     case CLOUD_FIRE:
@@ -178,7 +185,7 @@ void in_a_cloud(void)
 
         mpr("You are engulfed in roaring flames!");
 
-        resist = player_res_fire() - 100;
+        resist = player_res_fire();
 
         if (resist <= 0)
         {
@@ -228,7 +235,7 @@ void in_a_cloud(void)
     case CLOUD_COLD_MON:
         mpr("You are engulfed in freezing vapours!");
 
-        resist = player_res_cold() - 100;
+        resist = player_res_cold();
 
         if (resist <= 0)
         {
@@ -291,7 +298,7 @@ void in_a_cloud(void)
         }
 
         hurted += (random2(6) * you.time_taken) / 10;
-        if (hurted < 0 || player_res_fire() > 100)
+        if (hurted < 0 || player_res_fire() > 0)
             hurted = 0;
 
         ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
@@ -357,7 +364,7 @@ void merfolk_start_swimming(void)
 void up_stairs(void)
 {
     unsigned char stair_find = grd[you.x_pos][you.y_pos];
-    char old_level_where = you.where_are_you;
+    char old_where = you.where_are_you;
     bool was_a_labyrinth = false;
 
     if (stair_find == DNGN_ENTER_SHOP)
@@ -366,6 +373,7 @@ void up_stairs(void)
         return;
     }
 
+    // probably still need this check here (teleportation) -- bwr
     if ((stair_find < DNGN_STONE_STAIRS_UP_I
             || stair_find > DNGN_ROCK_STAIRS_UP)
         && (stair_find < DNGN_RETURN_DUNGEON_I || stair_find > 150))
@@ -377,7 +385,11 @@ void up_stairs(void)
     // Since the overloaded message set turn_is_over, I'm assuming that
     // the overloaded character makes an attempt... so we're doing this
     // check before that one. -- bwr
-    if (you.conf && random2(100) > you.dex)
+    if (!player_is_levitating()
+        && you.conf
+        && (stair_find >= DNGN_STONE_STAIRS_UP_I
+            && stair_find <= DNGN_ROCK_STAIRS_UP)
+        && random2(100) > you.dex)
     {
         mpr("In your confused state, you trip and fall back down the stairs.");
 
@@ -486,16 +498,8 @@ void up_stairs(void)
     }
 
     unsigned char stair_taken = stair_find;
-    bool want_followers = true;
 
-    load( stair_taken, true, was_a_labyrinth, old_level,
-          want_followers, false, old_level_where );
-
-    viewwindow(1, true);
-
-    new_level();
-
-    if (you.levitation)
+    if (player_is_levitating())
     {
         if (you.duration[DUR_CONTROLLED_FLIGHT])
             mpr("You fly upwards.");
@@ -504,6 +508,12 @@ void up_stairs(void)
     }
     else
         mpr("You climb upwards.");
+
+    load(stair_taken, LOAD_ENTER_LEVEL, was_a_labyrinth, old_level, old_where);
+
+    new_level();
+
+    viewwindow(1, true);
 
     you.turn_is_over = 1;
 
@@ -530,6 +540,7 @@ void down_stairs(bool remove_stairs, int old_level)
     }
 #endif
 
+    // probably still need this check here (teleportation) -- bwr
     if ((stair_find < DNGN_ENTER_LABYRINTH
             || stair_find > DNGN_ROCK_STAIRS_DOWN)
         && stair_find != DNGN_ENTER_HELL
@@ -539,8 +550,7 @@ void down_stairs(bool remove_stairs, int old_level)
         && !(stair_find >= DNGN_ENTER_ORCISH_MINES
             && stair_find < DNGN_RETURN_DUNGEON_I))
     {
-        strcpy(info, "You can't go down here!");
-        mpr(info);
+        mpr( "You can't go down here!" );
         return;
     }
 
@@ -558,7 +568,7 @@ void down_stairs(bool remove_stairs, int old_level)
         return;
     }
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
         mpr("You're floating high up above the floor!");
         return;
@@ -755,9 +765,9 @@ void down_stairs(bool remove_stairs, int old_level)
         sysg = unlink(del_file);
 
 #if DEBUG_DIAGNOSTICS
-        strcpy(info, "Deleting: ");
-        strcat(info, del_file);
-        mpr(info);
+        strcpy( info, "Deleting: " );
+        strcat( info, del_file );
+        mpr( info, MSGCH_DIAGNOSTIC );
         more();
 #endif
     }
@@ -769,7 +779,8 @@ void down_stairs(bool remove_stairs, int old_level)
         more();
     }
 
-    if (you.conf
+    if (!player_is_levitating()
+        && you.conf
         && (stair_find >= DNGN_STONE_STAIRS_DOWN_I
             && stair_find <= DNGN_ROCK_STAIRS_DOWN)
         && random2(100) > you.dex)
@@ -788,7 +799,6 @@ void down_stairs(bool remove_stairs, int old_level)
     int stair_taken = stair_find;
 
     //unsigned char save_old = 1;
-    bool want_followers = true;
 
     if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
         stair_taken = DNGN_FLOOR;       //81;
@@ -799,8 +809,35 @@ void down_stairs(bool remove_stairs, int old_level)
     if (remove_stairs)
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
-    load( stair_taken, true, was_a_labyrinth, old_level,
-          want_followers, false, old_where );
+    switch (you.level_type)
+    {
+    case LEVEL_LABYRINTH:
+        mpr("You enter a dark and forbidding labyrinth.");
+        break;
+
+    case LEVEL_ABYSS:
+        mpr("You enter the Abyss!");
+        mpr("To return, you must find a gate leading back.");
+        break;
+
+    case LEVEL_PANDEMONIUM:
+        if (old_level_type == LEVEL_PANDEMONIUM)
+            mpr("You pass into a different region of Pandemonium.");
+        else
+        {
+            mpr("You enter the halls of Pandemonium!");
+            mpr("To return, you must find a gate leading back.");
+        }
+        break;
+
+    default:
+        mpr("You climb downwards.");
+        break;
+    }
+
+    load(stair_taken, LOAD_ENTER_LEVEL, was_a_labyrinth, old_level, old_where);
+
+    new_level();
 
     viewwindow(1, true);
 
@@ -810,14 +847,10 @@ void down_stairs(bool remove_stairs, int old_level)
     switch (you.level_type)
     {
     case LEVEL_LABYRINTH:
-        mpr("You enter a dark and forbidding labyrinth.");
         you.your_level++;
         break;
 
     case LEVEL_ABYSS:
-        mpr("You enter the Abyss!");
-        mpr("To return, you must find a gate leading back.");
-
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
         if (old_level_type != LEVEL_PANDEMONIUM)
@@ -837,18 +870,14 @@ void down_stairs(bool remove_stairs, int old_level)
     case LEVEL_PANDEMONIUM:
         if (old_level_type == LEVEL_PANDEMONIUM)
         {
-            mpr("You pass into a different region of Pandemonium.");
             init_pandemonium();
             for (pc = 0; pc < pt; pc++)
                 pandemonium_mons();
         }
         else
         {
-            mpr("You enter the halls of Pandemonium!");
             if (old_level_type != LEVEL_ABYSS)
                 you.your_level--;       // Linley-suggested addition 17jan2000 {dlb}
-
-            mpr("To return, you must find a gate leading back.");
 
             init_pandemonium();
 
@@ -867,11 +896,10 @@ void down_stairs(bool remove_stairs, int old_level)
         break;
 
     default:
-        mpr("You climb downwards.");
         break;
     }
 
-    new_level();
+    // new_level();
 
     you.turn_is_over = 1;
 
@@ -1476,21 +1504,25 @@ void fall_into_a_pool(bool place, unsigned char terrain)
 
     if (terrain == DNGN_LAVA)
     {
-        strcpy(info, "The lava burns you");
+        const int resist = player_res_fire();
 
-        if (player_res_fire() <= 100)
+        if (resist <= 0)
         {
-            strcat(info, " to a cinder!");
-            mpr(info);
-            ouch(-9999, 0, KILLED_BY_LAVA);
+            mpr( "The lava burns you to a cinder!" );
+            ouch( -9999, 0, KILLED_BY_LAVA );
         }
         else
         {
             // should boost # of bangs per damage in the future {dlb}
-            strcat(info, "!");
-            mpr(info);
-            ouch( (10 + random2avg(100, 2)) / (player_res_fire() - 100), 0,
-                  KILLED_BY_LAVA );
+            mpr( "The lava burns you!" );
+            ouch( (10 + random2avg(100, 2)) / resist, 0, KILLED_BY_LAVA );
+        }
+
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+        {
+            mpr("Your icy shield dissipates!", MSGCH_DURATION);
+            you.duration[DUR_CONDENSATION_SHIELD] = 0;
+            you.redraw_armour_class = 1;
         }
     }
 
@@ -1651,6 +1683,7 @@ bool trap_item(char base_type, char sub_type, char beam_x, char beam_y)
     item.plus = 0;
     item.plus2 = 0;
     item.flags = 0;
+    item.special = 0;
     item.quantity = 1;
     item.colour = LIGHTCYAN;
 

@@ -72,9 +72,9 @@ static void place_specific_stair(unsigned char stair);
 static void place_branch_entrances(int dlevel, char level_type);
 static bool place_specific_trap(unsigned char spec_x, unsigned char spec_y,
     unsigned char spec_type);
-static void place_traps(int level_number);
+static void place_traps( int level_number );
 static void prepare_swamp(void);
-static void prepare_water(void);
+static void prepare_water( int level_number );
 static void check_doors(void);
 static void hide_doors(void);
 static void make_trail(int xs, int xr, int ys, int yr,int corrlength, int intersect_chance,
@@ -414,7 +414,9 @@ void builder(int level_number, char level_type)
     }
 
     link_items();
-    prepare_water();
+
+    if (you.where_are_you != BRANCH_COCYTUS)
+        prepare_water( level_number );
 }                               // end builder()
 
 // Returns item slot or NON_ITEM if it fails
@@ -484,6 +486,15 @@ int items( int allow_uniques,       // not just true-false,
         // misc items placement wholly dependent upon current depth {dlb}:
         if (item_power > 7 && (20 + item_power) >= random2(3500))
             mitm[p].base_type = OBJ_MISCELLANY;
+
+        if (item_power < 7
+            && (mitm[p].base_type == OBJ_BOOKS
+                || mitm[p].base_type == OBJ_STAVES
+                || mitm[p].base_type == OBJ_WANDS)
+            && random2(7) >= item_power)
+        {
+            mitm[p].base_type = coinflip() ? OBJ_POTIONS : OBJ_SCROLLS;
+        }
     }
 
     // determine sub_type accordingly {dlb}:
@@ -2283,11 +2294,19 @@ int items( int allow_uniques,       // not just true-false,
                 && force_type == OBJ_RANDOM))
         {
             mitm[p].sub_type = BOOK_MANUAL;
-            mitm[p].plus = (one_chance_in(4) ? random2(14) + 25
-                                             : random2(19));
 
-            if (mitm[p].plus == SK_UNUSED_1)
-                mitm[p].plus = SK_UNARMED_COMBAT;
+            if (one_chance_in(4))
+            {
+                mitm[p].plus = SK_SPELLCASTING
+                                    + random2(NUM_SKILLS - SK_SPELLCASTING);
+            }
+            else
+            {
+                mitm[p].plus = random2(SK_UNARMED_COMBAT);
+
+                if (mitm[p].plus == SK_UNUSED_1)
+                    mitm[p].plus = SK_UNARMED_COMBAT;
+            }
         }
         break;
 
@@ -2304,7 +2323,7 @@ int items( int allow_uniques,       // not just true-false,
 
             // spell staves
             if (one_chance_in(20))
-                mitm[p].sub_type = STAFF_SMITING + random2(9);
+                mitm[p].sub_type = STAFF_SMITING + random2(10);
 
             if ((mitm[p].sub_type == STAFF_ENERGY
                 || mitm[p].sub_type == STAFF_CHANNELING) && one_chance_in(4))
@@ -2338,6 +2357,7 @@ int items( int allow_uniques,       // not just true-false,
             while //mv: never generated
                ((mitm[p].sub_type == MISC_RUNE_OF_ZOT)
                 || (mitm[p].sub_type == MISC_HORN_OF_GERYON)
+                || (mitm[p].sub_type == MISC_PORTABLE_ALTAR_OF_NEMELEX)
                 // mv: others are possible but less often
                 // btw. chances of generating decks are almost the same as
                 // before, other chances are now distributed more steadily
@@ -2345,7 +2365,6 @@ int items( int allow_uniques,       // not just true-false,
                 || (mitm[p].sub_type == MISC_DECK_OF_SUMMONINGS && !one_chance_in(3))
                 || (mitm[p].sub_type == MISC_DECK_OF_TRICKS && !one_chance_in(3))
                 || (mitm[p].sub_type == MISC_DECK_OF_WONDERS && !one_chance_in(3))
-                || (mitm[p].sub_type == MISC_PORTABLE_ALTAR_OF_NEMELEX && !one_chance_in(3))
                 );
 
             // filling those silly empty boxes -- bwr
@@ -2410,7 +2429,7 @@ int items( int allow_uniques,       // not just true-false,
         move_item_to_grid( &p, x_pos, y_pos );
     }
 
-    item_colour(p);
+    item_colour( mitm[p] );
 
     return (p);
 }                               // end items()
@@ -3064,7 +3083,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         menv[mid].armour_class += 5;
 
     if (!force_item || mitm[thing_created].colour == BLACK)
-        item_colour(thing_created);
+        item_colour( mitm[thing_created] );
 
   give_ammo:
     // mv: gives ammunition
@@ -3089,7 +3108,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         mitm[thing_created].flags = 0;
         menv[mid].inv[MSLOT_MISSILE] = thing_created;
 
-        item_colour( thing_created );
+        item_colour( mitm[thing_created] );
     }                           // end if needs ammo
 
     bp = get_item_slot();
@@ -3122,12 +3141,6 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_DEEP_ELF_SUMMONER:
         if (force_spec == 250)
             force_spec = 1;
-        // deliberate fall through {dlb}
-    case MONS_ORC_KNIGHT:
-    case MONS_ORC_WARLORD:
-    case MONS_ORC_WARRIOR:
-        if (force_spec == 250)
-            force_spec = 3;
         // deliberate fall through {dlb}
     case MONS_IJYB:
     case MONS_ORC:
@@ -3179,9 +3192,15 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     case MONS_URUG:
     case MONS_WAYNE:
         mitm[bp].base_type = OBJ_ARMOUR;
-        mitm[bp].sub_type = 1 + random2(4);
+        mitm[bp].sub_type = ARM_LEATHER_ARMOUR + random2(4);
         break;
 
+    case MONS_ORC_KNIGHT:
+    case MONS_ORC_WARLORD:
+    case MONS_ORC_WARRIOR:
+        if (force_spec == 250)
+            force_spec = 3;
+        // deliberate fall through {dlb}
     case MONS_ADOLF:
     case MONS_HELL_KNIGHT:
     case MONS_LOUISE:
@@ -3393,7 +3412,7 @@ static void prepare_swamp(void)
 
 // Gives water which is next to ground/shallow water a chance of being
 // shallow. Checks each water space.
-static void prepare_water(void)
+static void prepare_water( int level_number )
 {
     int i, j, k, l;             // loop variables {dlb}
     unsigned char which_grid;   // code compaction {dlb}
@@ -3412,14 +3431,14 @@ static void prepare_water(void)
                         {
                             which_grid = grd[i + k][j + l];
 
+                            // must come first {dlb}
                             if (which_grid == DNGN_SHALLOW_WATER
-                                && one_chance_in(8))  // must come first {dlb}
+                                && one_chance_in( 8 + level_number ))
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
                             }
                             else if (which_grid >= DNGN_FLOOR
-                            //mv: was !=DNGN_FLOOR but this looks better
-                                     && !one_chance_in(6))
+                                     && random2(100) < 80 - level_number * 2)
                             {
                                 grd[i][j] = DNGN_SHALLOW_WATER;
                             }
@@ -3891,14 +3910,14 @@ static int builder_basic(int level_number)
     return 0;
 }
 
-static void builder_extras(int level_number, int level_type)
+static void builder_extras( int level_number, int level_type )
 {
 
 #ifdef USE_RIVERS
     //mv: it's better to be here so other dungeon features
     // are not overriden by water
-    int river_type = one_chance_in(5) ? DNGN_SHALLOW_WATER
-                                      : DNGN_DEEP_WATER;
+    int river_type = one_chance_in( 5 + level_number ) ? DNGN_SHALLOW_WATER
+                                                       : DNGN_DEEP_WATER;
 
     if (level_number > 11
         && (one_chance_in(5) || (level_number > 15 && !one_chance_in(5))))
@@ -4414,12 +4433,12 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
                 }
 
                 which_unique = ((level_number > 19) ? 20 + random2(11) :
-                    (level_number > 16) ? 13 + random2(10) :
-                    (level_number > 13) ?  9 + random2( 9) :
-                    (level_number >  9) ?  6 + random2( 5) :
-                    (level_number >  7) ?  4 + random2( 4) :
-                    (level_number >  3) ?  2 + random2( 4)
-                                     : random2(4));
+                                (level_number > 16) ? 13 + random2(10) :
+                                (level_number > 13) ?  9 + random2( 9) :
+                                (level_number >  9) ?  6 + random2( 5) :
+                                (level_number >  7) ?  4 + random2( 4) :
+                                (level_number >  3) ?  2 + random2( 4)
+                                                    : random2(4));
             }
 
             // usually, we'll have quit after a few tries. Make sure we don't
@@ -4447,27 +4466,34 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
         for (y = 0; y < GYM; y++)
         {
             if (grd[x][y] == DNGN_LAVA)
+            {
                 lava_spaces++;
+            }
             else if (grd[x][y] == DNGN_DEEP_WATER
                      || grd[x][y] == DNGN_SHALLOW_WATER)
+            {
                 water_spaces++;
+            }
         }
     }
 
     if (lava_spaces > 49)
     {
         for (i = 0; i < 4; i++)
-            {
+        {
             swimming_things[i] = MONS_LAVA_WORM + random2(3);
+
             //mv: this is really ugly, but easiest
             //IMO generation of water/lava beasts should be changed,
             //because we want data driven code and not things like it
-            if (one_chance_in(30)) swimming_things[i] = MONS_SALAMANDER;
-            }
+            if (one_chance_in(30))
+                swimming_things[i] = MONS_SALAMANDER;
+        }
+
         aq_creatures = random2avg(9, 2) + (random2(lava_spaces) / 10);
 
-        if (aq_creatures > 25)
-            aq_creatures = 25;
+        if (aq_creatures > 15)
+            aq_creatures = 15;
 
         for (i = 0; i < aq_creatures; i++)
         {
@@ -4501,10 +4527,10 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
         if (you.where_are_you == BRANCH_COCYTUS)
             swimming_things[3] = MONS_WATER_ELEMENTAL;
 
-        aq_creatures = random2avg(9, 2) + (random2(water_spaces) / 7);
+        aq_creatures = random2avg(9, 2) + (random2(water_spaces) / 10);
 
-        if (aq_creatures > 25)
-            aq_creatures = 25;
+        if (aq_creatures > 15)
+            aq_creatures = 15;
 
         for (i = 0; i < aq_creatures; i++)
         {
@@ -4901,7 +4927,7 @@ static void beehive(spec_room &sr)
             mitm[i].x = x;
             mitm[i].y = y;
 
-            item_colour(i);
+            item_colour( mitm[i] );
         }
     }
 
@@ -5564,7 +5590,9 @@ static void place_pool(unsigned char pool_type, unsigned char pool_x1,
     // don't place LAVA pools in crypt.. use shallow water instead.
     if ((you.where_are_you == BRANCH_CRYPT || you.where_are_you == BRANCH_TOMB)
         && pool_type == DNGN_LAVA)
+    {
         pool_type = DNGN_SHALLOW_WATER;
+    }
 
     if (pool_x1 >= pool_x2 - 4 || pool_y1 >= pool_y2 - 4)
         return;
@@ -5613,6 +5641,11 @@ static void many_pools(unsigned char pool_type)
     int no_pools = 20 + random2avg(9, 2);
     int timeout = 0;
 
+    if (you.where_are_you == BRANCH_COCYTUS)
+        pool_type = DNGN_DEEP_WATER;
+    else if (you.where_are_you == BRANCH_GEHENNA)
+        pool_type = DNGN_LAVA;
+
     do
     {
         timeout++;
@@ -5643,64 +5676,64 @@ static void many_pools(unsigned char pool_type)
     while (pools < no_pools);
 }                               // end many_pools()
 
-void item_colour(int p)
+void item_colour( item_def &item )
 {
     int switchnum = 0;
     int temp_value;
 
-    switch (mitm[p].base_type)
+    switch (item.base_type)
     {
     case OBJ_WEAPONS:
-        if (is_unrandom_artefact( mitm[p] ))
+        if (is_unrandom_artefact( item ))
             break;              // unrandarts already coloured
 
-        if (is_fixed_artefact( mitm[p] ))
+        if (is_fixed_artefact( item ))
         {
-            switch (mitm[p].special)   // was: - 180, but that is *wrong* {dlb}
+            switch (item.special)   // was: - 180, but that is *wrong* {dlb}
             {
             case SPWPN_SINGING_SWORD:
             case SPWPN_SCEPTRE_OF_TORMENT:
-                mitm[p].colour = YELLOW;
+                item.colour = YELLOW;
                 break;
             case SPWPN_WRATH_OF_TROG:
             case SPWPN_SWORD_OF_POWER:
-                mitm[p].colour = RED;
+                item.colour = RED;
                 break;
             case SPWPN_SCYTHE_OF_CURSES:
-                mitm[p].colour = DARKGREY;
+                item.colour = DARKGREY;
                 break;
             case SPWPN_MACE_OF_VARIABILITY:
-                mitm[p].colour = random_colour();
+                item.colour = random_colour();
                 break;
             case SPWPN_GLAIVE_OF_PRUNE:
-                mitm[p].colour = MAGENTA;
+                item.colour = MAGENTA;
                 break;
             case SPWPN_SWORD_OF_ZONGULDROK:
-                mitm[p].colour = LIGHTGREY;
+                item.colour = LIGHTGREY;
                 break;
             case SPWPN_KNIFE_OF_ACCURACY:
-                mitm[p].colour = LIGHTCYAN;
+                item.colour = LIGHTCYAN;
                 break;
             case SPWPN_STAFF_OF_OLGREB:
-                mitm[p].colour = GREEN;
+                item.colour = GREEN;
                 break;
             case SPWPN_VAMPIRES_TOOTH:
-                mitm[p].colour = WHITE;
+                item.colour = WHITE;
                 break;
             case SPWPN_STAFF_OF_WUCAD_MU:
-                mitm[p].colour = BROWN;
+                item.colour = BROWN;
                 break;
             }
             break;
         }
 
-        if (is_demonic(mitm[p].sub_type))
-            mitm[p].colour = random_colour();
-        else if (launches_things( mitm[p].sub_type ))
-            mitm[p].colour = BROWN;
+        if (is_demonic(item.sub_type))
+            item.colour = random_colour();
+        else if (launches_things( item.sub_type ))
+            item.colour = BROWN;
         else
         {
-            switch (mitm[p].sub_type)
+            switch (item.sub_type)
             {
             case WPN_CLUB:
             case WPN_GIANT_CLUB:
@@ -5708,210 +5741,211 @@ void item_colour(int p)
             case WPN_ANCUS:
             case WPN_WHIP:
             case WPN_QUARTERSTAFF:
-                mitm[p].colour = BROWN;
+                item.colour = BROWN;
                 break;
             case WPN_QUICK_BLADE:
-                mitm[p].colour = LIGHTBLUE;
+                item.colour = LIGHTBLUE;
                 break;
             case WPN_EXECUTIONERS_AXE:
-                mitm[p].colour = RED;
+                item.colour = RED;
                 break;
             default:
-                mitm[p].colour = LIGHTCYAN;
-                if (cmp_equip_race( mitm[p], ISFLAG_DWARVEN ))
-                    mitm[p].colour = CYAN;
+                item.colour = LIGHTCYAN;
+                if (cmp_equip_race( item, ISFLAG_DWARVEN ))
+                    item.colour = CYAN;
                 break;
             }
         }
 
         // I don't think this is ever done -- see start of case {dlb}:
-        if (is_random_artefact( mitm[p] ) && one_chance_in(5))
-            mitm[p].colour = random_colour();
+        if (is_random_artefact( item ) && one_chance_in(5))
+            item.colour = random_colour();
         break;
 
     case OBJ_MISSILES:
-        switch (mitm[p].sub_type)
+        switch (item.sub_type)
         {
         case MI_STONE:
         case MI_LARGE_ROCK:
-            mitm[p].colour = BROWN;
+        case MI_ARROW:
+            item.colour = BROWN;
             break;
         case MI_NEEDLE:
-            mitm[p].colour = WHITE;
+            item.colour = WHITE;
             break;
         default:
-            mitm[p].colour = LIGHTCYAN;
-            if (cmp_equip_race( mitm[p], ISFLAG_DWARVEN ))
-                mitm[p].colour = CYAN;
+            item.colour = LIGHTCYAN;
+            if (cmp_equip_race( item, ISFLAG_DWARVEN ))
+                item.colour = CYAN;
             break;
         }
         break;
 
     case OBJ_ARMOUR:
-        if (is_unrandom_artefact( mitm[p] ))
+        if (is_unrandom_artefact( item ))
             break;              /* unrandarts have already been coloured */
 
-        switch (mitm[p].sub_type)
+        switch (item.sub_type)
         {
         case ARM_CLOAK:
         case ARM_ROBE:
-            mitm[p].colour = random_colour();
+            item.colour = random_colour();
             break;
 
         case ARM_HELMET:
             //caps and wizard's hats are random coloured
-            if (cmp_helmet_type( mitm[p], THELM_CAP )
-                    || cmp_helmet_type( mitm[p], THELM_WIZARD_HAT ))
+            if (cmp_helmet_type( item, THELM_CAP )
+                    || cmp_helmet_type( item, THELM_WIZARD_HAT ))
             {
-                mitm[p].colour = random_colour();
+                item.colour = random_colour();
             }
             else
-                mitm[p].colour = LIGHTCYAN;
+                item.colour = LIGHTCYAN;
             break;
 
         case ARM_BOOTS: // maybe more interesting boot colours?
         case ARM_GLOVES:
         case ARM_LEATHER_ARMOUR:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case ARM_DRAGON_HIDE:
         case ARM_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_DRAGON);
+            item.colour = mons_colour(MONS_DRAGON);
             break;
         case ARM_TROLL_HIDE:
         case ARM_TROLL_LEATHER_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_TROLL);
+            item.colour = mons_colour(MONS_TROLL);
             break;
         case ARM_CRYSTAL_PLATE_MAIL:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
         case ARM_ICE_DRAGON_HIDE:
         case ARM_ICE_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_ICE_DRAGON);
+            item.colour = mons_colour(MONS_ICE_DRAGON);
             break;
         case ARM_STEAM_DRAGON_HIDE:
         case ARM_STEAM_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_STEAM_DRAGON);
+            item.colour = mons_colour(MONS_STEAM_DRAGON);
             break;
         case ARM_MOTTLED_DRAGON_HIDE:
         case ARM_MOTTLED_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_MOTTLED_DRAGON);
+            item.colour = mons_colour(MONS_MOTTLED_DRAGON);
             break;
         case ARM_STORM_DRAGON_HIDE:
         case ARM_STORM_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_STORM_DRAGON);
+            item.colour = mons_colour(MONS_STORM_DRAGON);
             break;
         case ARM_GOLD_DRAGON_HIDE:
         case ARM_GOLD_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_GOLDEN_DRAGON);
+            item.colour = mons_colour(MONS_GOLDEN_DRAGON);
             break;
         case ARM_ANIMAL_SKIN:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case ARM_SWAMP_DRAGON_HIDE:
         case ARM_SWAMP_DRAGON_ARMOUR:
-            mitm[p].colour = mons_colour(MONS_SWAMP_DRAGON);
+            item.colour = mons_colour(MONS_SWAMP_DRAGON);
             break;
         default:
-            mitm[p].colour = LIGHTCYAN;
-            if (cmp_equip_race( mitm[p], ISFLAG_DWARVEN ))
-                mitm[p].colour = CYAN;
+            item.colour = LIGHTCYAN;
+            if (cmp_equip_race( item, ISFLAG_DWARVEN ))
+                item.colour = CYAN;
             break;
         }
 
         // I don't think this is ever done -- see start of case {dlb}:
-        if (is_random_artefact( mitm[p] ) && one_chance_in(5))
-            mitm[p].colour = random_colour();
+        if (is_random_artefact( item ) && one_chance_in(5))
+            item.colour = random_colour();
         break;
 
     case OBJ_WANDS:
-        mitm[p].special = you.item_description[IDESC_WANDS][mitm[p].sub_type];
+        item.special = you.item_description[IDESC_WANDS][item.sub_type];
 
-        switch (mitm[p].special % 12)
+        switch (item.special % 12)
         {
         case 0:         //"iron wand"
-            mitm[p].colour = CYAN;
+            item.colour = CYAN;
             break;
         case 1:         //"brass wand"
         case 5:         //"gold wand"
-            mitm[p].colour = YELLOW;
+            item.colour = YELLOW;
             break;
         case 2:         //"bone wand"
         case 8:         //"ivory wand"
         case 9:         //"glass wand"
         case 10:        //"lead wand"
         default:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
         case 3:         //"wooden wand"
         case 4:         //"copper wand"
         case 7:         //"bronze wand"
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case 6:         //"silver wand"
-            mitm[p].colour = WHITE;
+            item.colour = WHITE;
             break;
         case 11:                //"plastic wand"
-            mitm[p].colour = random_colour();
+            item.colour = random_colour();
             break;
         }
 
-        if (mitm[p].special / 12 == 9)
-            mitm[p].colour = DARKGREY;
+        if (item.special / 12 == 9)
+            item.colour = DARKGREY;
 
         // rare wands (eg disintegration - these will be very rare):
         // maybe only 1 thing, like: crystal, shining, etc.
         break;
 
     case OBJ_POTIONS:
-        mitm[p].special = you.item_description[IDESC_POTIONS][mitm[p].sub_type];
+        item.special = you.item_description[IDESC_POTIONS][item.sub_type];
 
-        switch (mitm[p].special % 14)
+        switch (item.special % 14)
         {
         case 0:         //"clear potion"
         default:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
         case 1:         //"blue potion"
         case 7:         //"inky potion"
-            mitm[p].colour = BLUE;
+            item.colour = BLUE;
             break;
         case 2:         //"black potion"
-            mitm[p].colour = DARKGREY;
+            item.colour = DARKGREY;
             break;
         case 3:         //"silvery potion"
         case 13:        //"white potion"
-            mitm[p].colour = WHITE;
+            item.colour = WHITE;
             break;
         case 4:         //"cyan potion"
-            mitm[p].colour = CYAN;
+            item.colour = CYAN;
             break;
         case 5:         //"purple potion"
-            mitm[p].colour = MAGENTA;
+            item.colour = MAGENTA;
             break;
         case 6:         //"orange potion"
-            mitm[p].colour = LIGHTRED;
+            item.colour = LIGHTRED;
             break;
         case 8:         //"red potion"
-            mitm[p].colour = RED;
+            item.colour = RED;
             break;
         case 9:         //"yellow potion"
-            mitm[p].colour = YELLOW;
+            item.colour = YELLOW;
             break;
         case 10:        //"green potion"
-            mitm[p].colour = GREEN;
+            item.colour = GREEN;
             break;
         case 11:        //"brown potion"
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case 12:        //"pink potion"
-            mitm[p].colour = LIGHTMAGENTA;
+            item.colour = LIGHTMAGENTA;
             break;
         }
         break;
 
     case OBJ_FOOD:
-        switch (mitm[p].sub_type)
+        switch (item.sub_type)
         {
         case FOOD_BEEF_JERKY:
         case FOOD_BREAD_RATION:
@@ -5920,7 +5954,7 @@ void item_colour(int p)
         case FOOD_RAMBUTAN:
         case FOOD_SAUSAGE:
         case FOOD_SULTANA:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case FOOD_BANANA:
         case FOOD_CHEESE:
@@ -5928,170 +5962,170 @@ void item_colour(int p)
         case FOOD_LEMON:
         case FOOD_PIZZA:
         case FOOD_ROYAL_JELLY:
-            mitm[p].colour = YELLOW;
+            item.colour = YELLOW;
             break;
         case FOOD_PEAR:
-            mitm[p].colour = LIGHTGREEN;
+            item.colour = LIGHTGREEN;
             break;
         case FOOD_CHOKO:
         case FOOD_SNOZZCUMBER:
-            mitm[p].colour = GREEN;
+            item.colour = GREEN;
             break;
         case FOOD_APRICOT:
         case FOOD_ORANGE:
-            mitm[p].colour = LIGHTRED;
+            item.colour = LIGHTRED;
             break;
         case FOOD_STRAWBERRY:
-            mitm[p].colour = RED;
+            item.colour = RED;
             break;
         case FOOD_APPLE:
-            mitm[p].colour = (coinflip() ? RED : GREEN);
+            item.colour = (coinflip() ? RED : GREEN);
             break;
         case FOOD_GRAPE:
-            mitm[p].colour = (coinflip() ? MAGENTA : GREEN);
+            item.colour = (coinflip() ? MAGENTA : GREEN);
             break;
         case FOOD_CHUNK:
             // set the appropriate colour of the meat:
-            temp_value = mons_colour( mitm[p].plus );
-            mitm[p].colour = (temp_value == BLACK) ? LIGHTRED : temp_value;
+            temp_value = mons_colour( item.plus );
+            item.colour = (temp_value == BLACK) ? LIGHTRED : temp_value;
             break;
         default:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
         }
         break;
 
     case OBJ_JEWELLERY:
         /* unrandarts have already been coloured */
-        if (is_unrandom_artefact( mitm[p] ))
+        if (is_unrandom_artefact( item ))
             break;
-        else if (is_random_artefact( mitm[p] ))
+        else if (is_random_artefact( item ))
         {
-            mitm[p].colour = random_colour();
+            item.colour = random_colour();
             break;
         }
 
-        mitm[p].colour = YELLOW;
-        mitm[p].special = you.item_description[IDESC_RINGS][mitm[p].sub_type];
+        item.colour = YELLOW;
+        item.special = you.item_description[IDESC_RINGS][item.sub_type];
 
-        switchnum = mitm[p].special % 13;
+        switchnum = item.special % 13;
 
         switch (switchnum)
         {
         case 0:
         case 5:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case 1:
         case 8:
         case 11:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
         case 2:
         case 6:
-            mitm[p].colour = YELLOW;
+            item.colour = YELLOW;
             break;
         case 3:
         case 4:
-            mitm[p].colour = CYAN;
+            item.colour = CYAN;
             break;
         case 7:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
         case 9:
         case 10:
-            mitm[p].colour = WHITE;
+            item.colour = WHITE;
             break;
         case 12:
-            mitm[p].colour = GREEN;
+            item.colour = GREEN;
             break;
         case 13:
-            mitm[p].colour = LIGHTCYAN;
+            item.colour = LIGHTCYAN;
             break;
         }
 
-        if (mitm[p].sub_type >= AMU_RAGE)
+        if (item.sub_type >= AMU_RAGE)
         {
             switch (switchnum)
             {
             case 0:             //"zirconium amulet"
             case 9:             //"ivory amulet"
             case 11:            //"platinum amulet"
-                mitm[p].colour = WHITE;
+                item.colour = WHITE;
                 break;
             case 1:             //"sapphire amulet"
-                mitm[p].colour = LIGHTBLUE;
+                item.colour = LIGHTBLUE;
                 break;
             case 2:             //"golden amulet"
             case 6:             //"brass amulet"
-                mitm[p].colour = YELLOW;
+                item.colour = YELLOW;
                 break;
             case 3:             //"emerald amulet"
-                mitm[p].colour = GREEN;
+                item.colour = GREEN;
                 break;
             case 4:             //"garnet amulet"
             case 8:             //"ruby amulet"
-                mitm[p].colour = RED;
+                item.colour = RED;
                 break;
             case 5:             //"bronze amulet"
             case 7:             //"copper amulet"
-                mitm[p].colour = BROWN;
+                item.colour = BROWN;
                 break;
             case 10:            //"bone amulet"
-                mitm[p].colour = LIGHTGREY;
+                item.colour = LIGHTGREY;
                 break;
             case 12:            //"jade amulet"
-                mitm[p].colour = GREEN;
+                item.colour = GREEN;
                 break;
             case 13:            //"plastic amulet"
-                mitm[p].colour = random_colour();
+                item.colour = random_colour();
             }
         }
 
         // blackened - same for both rings and amulets
-        if (mitm[p].special / 13 == 5)
-            mitm[p].colour = DARKGREY;
+        if (item.special / 13 == 5)
+            item.colour = DARKGREY;
         break;
 
     case OBJ_SCROLLS:
-        mitm[p].colour = LIGHTGREY;
-        mitm[p].special = you.item_description[IDESC_SCROLLS][mitm[p].sub_type];
-        mitm[p].plus = you.item_description[IDESC_SCROLLS_II][mitm[p].sub_type];
+        item.colour = LIGHTGREY;
+        item.special = you.item_description[IDESC_SCROLLS][item.sub_type];
+        item.plus = you.item_description[IDESC_SCROLLS_II][item.sub_type];
         break;
 
     case OBJ_BOOKS:
-        switch (mitm[p].special % 10)
+        switch (item.special % 10)
         {
         case 0:
         case 1:
         default:
-            mitm[p].colour = random_colour();
+            item.colour = random_colour();
             break;
         case 2:
-            mitm[p].colour = (one_chance_in(3) ? BROWN : DARKGREY);
+            item.colour = (one_chance_in(3) ? BROWN : DARKGREY);
             break;
         case 3:
-            mitm[p].colour = CYAN;
+            item.colour = CYAN;
             break;
         case 4:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
         }
         break;
 
     case OBJ_STAVES:
-        mitm[p].colour = BROWN;
+        item.colour = BROWN;
         break;
 
     case OBJ_ORBS:
-        mitm[p].colour = LIGHTMAGENTA;
+        item.colour = LIGHTMAGENTA;
         break;
 
     case OBJ_MISCELLANY:
-        switch (mitm[p].sub_type)
+        switch (item.sub_type)
         {
         case MISC_BOTTLED_EFREET:
         case MISC_STONE_OF_EARTH_ELEMENTALS:
-            mitm[p].colour = BROWN;
+            item.colour = BROWN;
             break;
 
         case MISC_AIR_ELEMENTAL_FAN:
@@ -6101,82 +6135,82 @@ void item_colour(int p)
         case MISC_DISC_OF_STORMS:
         case MISC_HORN_OF_GERYON:
         case MISC_LANTERN_OF_SHADOWS:
-            mitm[p].colour = LIGHTGREY;
+            item.colour = LIGHTGREY;
             break;
 
         case MISC_LAMP_OF_FIRE:
-            mitm[p].colour = YELLOW;
+            item.colour = YELLOW;
             break;
 
         case MISC_BOX_OF_BEASTS:
-            mitm[p].colour = DARKGREY;
+            item.colour = DARKGREY;
             break;
 
         case MISC_RUNE_OF_ZOT:
-            switch (mitm[p].plus)
+            switch (item.plus)
             {
             case RUNE_DIS:                      // iron
-                mitm[p].colour = CYAN;
+                item.colour = CYAN;
                 break;
 
             case RUNE_COCYTUS:                  // icy
-                mitm[p].colour = LIGHTBLUE;
+                item.colour = LIGHTBLUE;
                 break;
 
             case RUNE_TARTARUS:                 // bone
-                mitm[p].colour = WHITE;
+                item.colour = WHITE;
                 break;
 
             case RUNE_SLIME_PITS:               // slimy
-                mitm[p].colour = GREEN;
+                item.colour = GREEN;
                 break;
 
             case RUNE_SNAKE_PIT:                // serpentine
             case RUNE_ELVEN_HALLS:              // elven
-                mitm[p].colour = LIGHTGREEN;
+                item.colour = LIGHTGREEN;
                 break;
 
             case RUNE_VAULTS:                   // silver
-                mitm[p].colour = LIGHTGREY;
+                item.colour = LIGHTGREY;
                 break;
 
             case RUNE_TOMB:                     // golden
-                mitm[p].colour = YELLOW;
+                item.colour = YELLOW;
                 break;
 
             case RUNE_SWAMP:                    // decaying
-                mitm[p].colour = BROWN;
+                item.colour = BROWN;
                 break;
 
             // These two are hardly unique, but since colour isn't used for
             // stacking, so we don't have to worry to much about this. -- bwr
             case RUNE_DEMONIC:             // random pandemonium demonlords
             case RUNE_ABYSSAL:             // random in abyss
-                mitm[p].colour = random_colour();
+                item.colour = random_colour();
                 break;
 
             case RUNE_MNOLEG:                   // glowing
-                mitm[p].colour = coinflip() ? MAGENTA : LIGHTMAGENTA;
+                item.colour = coinflip() ? MAGENTA : LIGHTMAGENTA;
                 break;
 
             case RUNE_LOM_LOBON:                // magical
-                mitm[p].colour = BLUE;
+                item.colour = BLUE;
                 break;
 
             case RUNE_CEREBOV:                  // fiery
-                mitm[p].colour = coinflip() ? RED : LIGHTRED;
+                item.colour = coinflip() ? RED : LIGHTRED;
                 break;
 
             case RUNE_GEHENNA:                  // obsidian
             case RUNE_GLOORX_VLOQ:              // dark
             default:
-                mitm[p].colour = DARKGREY;
+                item.colour = DARKGREY;
                 break;
             }
             break;
 
         case MISC_EMPTY_EBONY_CASKET:
-            mitm[p].colour = DARKGREY;
+            item.colour = DARKGREY;
             break;
 
         case MISC_DECK_OF_SUMMONINGS:
@@ -6184,19 +6218,19 @@ void item_colour(int p)
         case MISC_DECK_OF_TRICKS:
         case MISC_DECK_OF_POWER:
         default:
-            mitm[p].colour = random_colour();
+            item.colour = random_colour();
             break;
         }
         break;
 
     case OBJ_CORPSES:
         // set the appropriate colour of the body:
-        temp_value = mons_colour( mitm[p].plus );
-        mitm[p].colour = (temp_value == BLACK) ? LIGHTRED : temp_value;
+        temp_value = mons_colour( item.plus );
+        item.colour = (temp_value == BLACK) ? LIGHTRED : temp_value;
         break;
 
     case OBJ_GOLD:
-        mitm[p].colour = YELLOW;
+        item.colour = YELLOW;
         break;
     }
 }                               // end item_colour()
@@ -6600,7 +6634,7 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
                 k = 10 + random2(GYM - 20);
             }
             while (grd[j][k] != DNGN_ROCK_WALL
-                            && grd[j + 1][k] != DNGN_ROCK_WALL);
+                    && grd[j + 1][k] != DNGN_ROCK_WALL);
 
             grd[j][k] = i;
 
@@ -7097,10 +7131,9 @@ static char plan_6(int level_number)
     //
     // Note, that although "level_number > 20" will work for most
     // trips to pandemonium (through regular portals), it won't work
-    // for demonspawn who gate themselves there.  This way also allows
-    // the "abyss circle" to occur in the regular dungeon (or any
-    // sub-dungeon allowing this plan and going deep enough). -- bwr
-    if ((level_number > 20 || you.level_type == LEVEL_PANDEMONIUM)
+    // for demonspawn who gate themselves there. -- bwr
+    if (((you.where_are_you == BRANCH_MAIN_DUNGEON && level_number > 20)
+            || you.level_type == LEVEL_PANDEMONIUM)
         && (coinflip() || you.mutation[ MUT_PANDEMONIUM ]))
     {
         grd[40][36] = DNGN_ENTER_ABYSS;
@@ -7707,8 +7740,10 @@ static void big_room(int level_number)
         type_floor = DNGN_LAVA;
 
         if (level_number > 7)
+        {
             type_floor = ((random2(level_number) < 14) ? DNGN_DEEP_WATER
-                                                    : DNGN_LAVA);
+                                                       : DNGN_LAVA);
+        }
 
         octa_room(sr, oblique, type_floor);
     }
@@ -7726,7 +7761,7 @@ static void big_room(int level_number)
     if (level_number > 7 && one_chance_in(4))
     {
         type_floor = ((random2(level_number) < 14) ? DNGN_DEEP_WATER
-                                                : DNGN_LAVA);
+                                                   : DNGN_LAVA);
     }
 
     // make the big room.
@@ -8152,7 +8187,7 @@ void define_zombie( int mid, int ztype, int cs, int power )
 
     define_monster(mid);
 
-    menv[mid].hit_points = hit_points(menv[mid].hit_dice, 6, 5);
+    menv[mid].hit_points = hit_points( menv[mid].hit_dice, 6, 5 );
     menv[mid].max_hit_points = menv[mid].hit_points;
 
     menv[mid].armour_class -= 2;
@@ -8180,7 +8215,7 @@ void define_zombie( int mid, int ztype, int cs, int power )
     }
     else if (cs == MONS_SKELETON_SMALL || cs == MONS_SKELETON_LARGE)
     {
-        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 5, 4);
+        menv[mid].hit_points = hit_points( menv[mid].hit_dice, 5, 4 );
         menv[mid].max_hit_points = menv[mid].hit_points;
 
         menv[mid].armour_class -= 4;
@@ -8193,19 +8228,20 @@ void define_zombie( int mid, int ztype, int cs, int power )
         if (menv[mid].evasion < 0)
             menv[mid].evasion = 0;
 
-        menv[mid].type = ((mons_zombie_size(menv[mid].number) == 2)
+        menv[mid].type = ((mons_zombie_size( menv[mid].number ) == 2)
                             ? MONS_SKELETON_LARGE : MONS_SKELETON_SMALL);
     }
     else if (cs == MONS_SIMULACRUM_SMALL || cs == MONS_SIMULACRUM_LARGE)
     {
-        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 4, 4);
+        // Simulacrum aren't tough, but you can create piles of them. -- bwr
+        menv[mid].hit_points = hit_points( menv[mid].hit_dice, 1, 4 );
         menv[mid].max_hit_points = menv[mid].hit_points;
-        menv[mid].type = ((mons_zombie_size(menv[mid].number) == 2)
+        menv[mid].type = ((mons_zombie_size( menv[mid].number ) == 2)
                             ? MONS_SIMULACRUM_LARGE : MONS_SIMULACRUM_SMALL);
     }
     else if (cs == MONS_SPECTRAL_THING)
     {
-        menv[mid].hit_points = hit_points(menv[mid].hit_dice, 4, 4);
+        menv[mid].hit_points = hit_points( menv[mid].hit_dice, 4, 4 );
         menv[mid].max_hit_points = menv[mid].hit_points;
         menv[mid].armour_class += 4;
         menv[mid].type = MONS_SPECTRAL_THING;

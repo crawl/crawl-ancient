@@ -336,7 +336,7 @@ void mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cast)
     snprintf( info, INFO_SIZE, "Mon #%d casts %s (#%d)", monster_index(monster),
              mons_spell_name( spell_cast ), spell_cast );
 
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (spell_cast == MS_HELLFIRE_BURST
@@ -750,7 +750,7 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
     case MONS_FIREDRAKE:
     case MONS_HELL_HOUND:
     case MONS_DRAGON:
-    case MONS_LINDWORM:
+    case MONS_LINDWURM:
     case MONS_XTAHUA:
         strcat(pbolt.beam_name, "'s blast of flame");
         pbolt.flavour = BEAM_FIRE;
@@ -805,8 +805,7 @@ void throw_type(int lnchClass, int lnchType, int wepClass, int wepType,
 
     if (wepClass == OBJ_WEAPONS)
     {
-        if (wepType == WPN_DAGGER || wepType == WPN_HAND_AXE
-                                            || wepType == WPN_SPEAR)
+        if (wepType == WPN_DAGGER || wepType == WPN_HAND_AXE || wepType == WPN_SPEAR)
         {
             thrown = true;
         }

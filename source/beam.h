@@ -15,6 +15,8 @@
 
 #include "externs.h"
 
+dice_def calc_dice( int num_dice, int max_damage );
+
 
 /* ***********************************************************************
  * called from: bang - it_use2 - monstuff - mstuff2

@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
@@ -29,6 +30,7 @@
 #include "fight.h"
 #include "player.h"
 #include "randart.h"
+#include "religion.h"
 #include "stuff.h"
 #include "wpn-misc.h"
 #include "view.h"
@@ -39,53 +41,63 @@
  Yeoman: http://snt.student.utwente.nl/campus/sagi/artikel/longbow/longbow.html
 */
 
-char *skills[50][5] = {
-    {"Fighting", "Grunt", "Veteran", "Warrior", "Slayer"},      // 0
-    {"Short Blades", "Stabber", "Cutter", "Slicer", "Knifefighter"},
-    {"Long Blades", "Slasher", "Fencer", "Swordfighter", "Eviscerator"},
+// Note:  Even though %s could be used with most of these, remember that
+// the character's race will be listed on the next line.  Its only really
+// intended for cases where things might be really awkward without it. -- bwr
+
+char *skills[50][6] = {
+    {"Fighting", "Skirmisher", "Grunt", "Veteran", "Warrior", "Slayer"},      // 0
+    {"Short Blades", "Stabber", "Cutter", "Knifefighter", "Eviscerator", "Blademaster"},
+    {"Long Blades", "Slasher", "Slicer", "Fencer", "Swordfighter", "Swordmaster"},
     {NULL},                     //  3- was: great swords {dlb}
-    {"Axes", "Chopper", "Cleaver", "Hacker", "Axe Maniac"},
-    {"Maces & Flails", "Basher", "Cruncher", "Smasher", "Shatterer"},   // 5
-    {"Polearms", "Spear-Bearer", "Phalangite", "Lancer", "Halberdier"},
-    {"Staves", "Twirler", "Cruncher", "Smasher", "Skullbreaker"},
-    {"Slings", "Slinger", "Vandal", "Whirler", "Very Crazy Person"},
-    {"Bows", "Shooter", "Yeoman", "Archer", "Merry Person"},
-    {"Crossbows", "Shooter", "Sharpshooter", "Archer", "Ballista"},     // 10
-    {"Darts", "Thrower", "Hurler", "Hurler, First Class", "Darts Champion"},
-    {"Throwing", "Skirmisher", "Marksman", "Hawkeye", "Sniper"},
-    {"Armour", "Grunt", "Heavy Grunt", "Tortoise", "Impregnable"},
-    {"Dodging", "Ducker", "Dodger", "Nimble", "Acrobat"},
-    {"Stealth", "Footpad", "Sneak", "Covert", "Ninjitsur"},
-    {"Stabbing", "Backstabber", "Cutthroat", "Blackguard", "Politician"},
-    {"Shields", "Shield-Bearer", "Blocker", "Peltast", "Hoplite"},
-    {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer"},
-//{"Unarmed Combat", "Brawler", "Martial Artist", "Black Belt", "Sensei"},// 19
-    //jmf: remember that this applies to Troll Fighters as well as Kenku Monks:
-    {"Unarmed Combat", "Brawler", "Boxer", "Martial Artist", "Black Belt"},
+    {"Axes", "Chopper", "Cleaver", "Hacker", "Severer", "Axe Maniac"},
+    {"Maces & Flails", "Basher", "Cudgeler", "Shatterer", "Bludgeoner", "Skullcrusher"},   // 5
+    {"Polearms", "Spear-Bearer", "Pike-%s", "Phalangite", "Lancer", "Halberdier"},
+    {"Staves", "Twirler", "Cruncher", "Smasher", "Stickfighter", "Skullbreaker"},
+
+    {"Slings", "Vandal", "Slinger", "Whirler", "Crazy %s", "Very Crazy %s"},
+    {"Bows", "Shooter", "Yeoman", "Archer", "Merry %s", "Merry %s"},
+    {"Crossbows", "Shooter", "Sharpshooter", "Archer", "%s Ballista", "%s Ballista"},     // 10
+    {"Darts", "Dart Thrower", "Hurler", "Hurler, First Class", "%s Darts Champion", "Universal Darts Champion"},
+    {"Throwing", "Chucker", "Thrower", "Deadly Accurate", "Hawkeye", "Sniper"},
+
+    {"Armour", "Covered", "Protected", "Tortoise", "Impregnable", "Invulnerable"},
+    {"Dodging", "Ducker", "Dodger", "Nimble", "Spry", "Acrobat"},
+    {"Stealth", "Footpad", "Sneak", "Covert", "Unseen", "Imperceptible"},
+    {"Stabbing", "Miscreant", "Blackguard", "Backstabber", "Cutthroat", "Politician"},
+    {"Shields", "Shield-Bearer", "Blocker", "%s Barricade", "Peltast", "Hoplite"},
+    {"Traps & Doors", "Disarmer", "Trapper", "Architect", "Engineer", "Dungeon Master"},
+
+    // STR based fighters, for DEX/martial arts titles see below
+    {"Unarmed Combat", "Ruffian", "Grappler", "Brawler", "Wrestler", "Boxer" },
+
     {NULL},                     // 20- empty
     {NULL},                     // 21- empty
     {NULL},                     // 22- empty
     {NULL},                     // 23- empty
     {NULL},                     // 24- empty
-    {"Spellcasting", "Magician", "Thaumaturge", "Eclecticist", "Archmage"},     // 25
-    {"Conjurations", "Evoker", "Conjurer", "Destroyer", "Annihilator"},
-    {"Enchantments", "Charm-Maker", "Enchanter", "Infuser", "Spellbinder"},
-    {"Summonings", "Caller", "Summoner", "Demonologist", "Hellbinder"},
-    {"Necromancy", "Grave Robber", "Necromancer", "Reanimator", "Death Mage"},
-    {"Translocations", "Jumper", "Blinker", "Portalist", "Plane Walker"},       // 30
-    {"Transmigration", "Changer", "Transformer", "Alchemist", "Transmuter"},
-    {"Divinations", "Seer", "Soothsayer", "Diviner", "Oracle"},
-    {"Fire Magic", "Firebug", "Arsonist", "Pyromaniac", "Infernalist"},
-    {"Ice Magic", "Frost Mage", "Ice Mage", "Cryomancer", "Englaciator"},
-    {"Air Magic", "Wind Mage", "Cloud Mage", "Sky Mage", "Storm Mage"}, // 35
-    {"Earth Magic", "Digger", "Geomancer", "Petrodigitator", "Earth Mage"},
-    {"Poison Magic", "Stinger", "Tainter", "Poisoner", "Venom Mage"},
-    {"Invocations", "Believer", "Servant", "Worldly Agent", "Avatar"},  // 38
+
+    {"Spellcasting", "Magician", "Thaumaturge", "Eclecticist", "Sorcerer", "Archmage"},     // 25
+    {"Conjurations", "Ruinous", "Conjurer", "Destroyer", "Devastator", "Annihilator"},
+    {"Enchantments", "Charm-Maker", "Infuser", "Bewitcher", "Enchanter", "Spellbinder"},
+    {"Summonings", "Caller", "Summoner", "Convoker", "Demonologist", "Hellbinder"},
+    {"Necromancy", "Grave Robber", "Reanimator", "Necromancer", "Thanatomancer", "%s of Death"},
+    {"Translocations", "Jumper", "Blinker", "Shifter", "Portalist", "Plane Walker"},       // 30
+    {"Transmigration", "Changer", "Transmogrifier", "Transformer", "Alchemist", "Transmuter"},
+    {"Divinations", "Seer", "Soothsayer", "Diviner", "Augur", "Oracle"},
+
+    {"Fire Magic", "Firebug", "Arsonist", "Scorcher", "Pyromancer", "Infernalist"},
+    {"Ice Magic", "Chiller", "Frost Mage", "Ice Mage", "Cryomancer", "Englaciator"},
+    {"Air Magic", "Wind Mage", "Cloud Mage", "Air Mage", "Sky Mage", "Storm Mage"}, // 35
+    {"Earth Magic", "Digger", "Geomancer", "Earth Mage", "Metallomancer", "Petrodigitator"},
+    {"Poison Magic", "Stinger", "Tainter", "Polluter", "Poisoner", "Envenomancer"},
+
+    {"Invocations", "Believer", "Servant", "Worldly Agent", "Theurge", "Avatar"},  // 38
+    {"Evocations", "Charlatan", "Prestidigitator", "Fetichist", "Evocator", "Talismancer"}, // 39
 
 /*NOTE: If more skills are added, must change ranges in level_change() in player.cc */
 /*{"",             "", "", "", ""}, */
 
-    {NULL},                     // 39- empty
     {NULL},                     // 40- empty
     {NULL},                     // 41- empty
     {NULL},                     // 42- empty
@@ -98,6 +110,9 @@ char *skills[50][5] = {
     {NULL}                      // 49- empty  {end of array}
 };
 
+char *martial_arts_titles[6] =
+    {"Unarmed Combat", "Martial Artist", "Black Belt", "Sensei", "Master", "Grand Master"};
+
 
 /* Note that this (humans have 100 for all skills) is assumed in the
    level_change function in player.cc, if CLASSES is def'd
@@ -105,7 +120,7 @@ char *skills[50][5] = {
    3.10: but it never is, and CLASSES is probably broken now. Anyway,
    the Spellcasting skill (25) is actually about 130% of what is shown here.
  */
-int spec_skills[ NUM_SPECIES ][39] = {
+int spec_skills[ NUM_SPECIES ][40] = {
     {                           // SP_HUMAN (1)
      100,                       // SK_FIGHTING
      100,                       // SK_SHORT_BLADES
@@ -146,6 +161,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_ELF (2)
@@ -188,6 +204,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      130,                       // SK_EARTH_MAGIC
      110,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     80,                        // SK_EVOCATIONS
      },
 
     {                           // SP_HIGH_ELF (3)
@@ -230,6 +247,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      130,                       // SK_EARTH_MAGIC
      130,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_GREY_ELF (4)
@@ -272,6 +290,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      150,                       // SK_EARTH_MAGIC
      110,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     90,                        // SK_EVOCATIONS
      },
 
     {                           // SP_DEEP_ELF (5)
@@ -314,6 +333,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      80,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     90,                        // SK_EVOCATIONS
      },
 
     {                           // SP_SLUDGE_ELF (6)
@@ -356,6 +376,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      80,                        // SK_EARTH_MAGIC
      80,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     110,                       // SK_EVOCATIONS
      },
 
     {                           // SP_HILL_DWARF (7)
@@ -398,6 +419,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      70,                        // SK_EARTH_MAGIC
      130,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     60,                        // SK_EVOCATIONS
      },
 
     {                           // SP_MOUNTAIN_DWARF (8)
@@ -440,6 +462,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      70,                        // SK_EARTH_MAGIC
      130,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     70,                        // SK_EVOCATIONS
      },
 
     {                           // SP_HALFLING (9)
@@ -482,6 +505,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      120,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     90,                        // SK_EVOCATIONS
      },
 
     {                           // SP_HILL_ORC (10)
@@ -524,6 +548,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      110,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_KOBOLD (11)
@@ -566,6 +591,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     80,                        // SK_EVOCATIONS
      },
 
     {                           // SP_MUMMY (12)
@@ -608,6 +634,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      140,                       // SK_EARTH_MAGIC
      140,                       // SK_POISON_MAGIC
      140,                       // SK_INVOCATIONS
+     140,                       // SK_EVOCATIONS
      },
 
     {                           // SP_NAGA (13)
@@ -650,6 +677,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      60,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_GNOME (14)
@@ -692,6 +720,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      60,                        // SK_EARTH_MAGIC
      130,                       // SK_POISON_MAGIC
      120,                       // SK_INVOCATIONS
+     60,                        // SK_EVOCATIONS
      },
 
     {                           // SP_OGRE (15)
@@ -734,48 +763,50 @@ int spec_skills[ NUM_SPECIES ][39] = {
      120,                       // SK_EARTH_MAGIC
      150,                       // SK_POISON_MAGIC
      130,                       // SK_INVOCATIONS
+     170,                       // SK_EVOCATIONS
      },
 
     {                           // SP_TROLL (16)
-     150,                       // SK_FIGHTING
+     140,                       // SK_FIGHTING
      150,                       // SK_SHORT_BLADES
      150,                       // SK_LONG_SWORDS
      150,                       // SK_UNUSED_1
      150,                       // SK_AXES
-     150,                       // SK_MACES_FLAILS
+     130,                       // SK_MACES_FLAILS
      150,                       // SK_POLEARMS
      150,                       // SK_STAVES
-     150,                       // SK_SLINGS
-     150,                       // SK_BOWS
+     180,                       // SK_SLINGS
+     180,                       // SK_BOWS
      180,                       // SK_CROSSBOWS
-     150,                       // SK_DARTS
-     150,                       // SK_THROWING
+     180,                       // SK_DARTS
+     130,                       // SK_THROWING
      150,                       // SK_ARMOUR
      130,                       // SK_DODGING
      250,                       // SK_STEALTH
-     130,                       // SK_STABBING
-     140,                       // SK_SHIELDS
+     150,                       // SK_STABBING
+     150,                       // SK_SHIELDS
      200,                       // SK_TRAPS_DOORS
-     120,                       // SK_UNARMED_COMBAT
+     100,                       // SK_UNARMED_COMBAT
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
      200,                       // SK_SPELLCASTING
-     150,                       // SK_CONJURATIONS
+     160,                       // SK_CONJURATIONS
      200,                       // SK_ENCHANTMENTS
-     150,                       // SK_SUMMONINGS
-     140,                       // SK_NECROMANCY
-     150,                       // SK_TRANSLOCATIONS
-     150,                       // SK_TRANSMIGRATION
-     180,                       // SK_DIVINATIONS
-     150,                       // SK_FIRE_MAGIC
-     150,                       // SK_ICE_MAGIC
+     160,                       // SK_SUMMONINGS
+     150,                       // SK_NECROMANCY
+     160,                       // SK_TRANSLOCATIONS
+     160,                       // SK_TRANSMIGRATION
+     200,                       // SK_DIVINATIONS
+     160,                       // SK_FIRE_MAGIC
+     160,                       // SK_ICE_MAGIC
      200,                       // SK_AIR_MAGIC
-     110,                       // SK_EARTH_MAGIC
-     130,                       // SK_POISON_MAGIC
+     120,                       // SK_EARTH_MAGIC
+     160,                       // SK_POISON_MAGIC
      150,                       // SK_INVOCATIONS
+     180,                       // SK_EVOCATIONS
      },
 
     {                           // SP_OGRE_MAGE (17)
@@ -818,6 +849,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                        // SK_EVOCATIONS
      },
 
     {                           // SP_RED_DRACONIAN (18)
@@ -860,6 +892,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_WHITE_DRACONIAN (19)
@@ -902,6 +935,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_GREEN_DRACONIAN (20)
@@ -944,6 +978,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      70,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_YELLOW_DRACONIAN (21)
@@ -986,6 +1021,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_GREY_DRACONIAN (22)
@@ -1028,6 +1064,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_BLACK_DRACONIAN (23)
@@ -1070,6 +1107,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      150,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_PURPLE_DRACONIAN (24)
@@ -1100,7 +1138,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // undefined
      70,                        // SK_SPELLCASTING
      100,                       // SK_CONJURATIONS
-     120,                       // SK_ENCHANTMENTS
+     90,                        // SK_ENCHANTMENTS
      100,                       // SK_SUMMONINGS
      100,                       // SK_NECROMANCY
      100,                       // SK_TRANSLOCATIONS
@@ -1112,6 +1150,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     90,                        // SK_EVOCATIONS
      },
 
     {                           // SP_MOTTLED_DRACONIAN (25)
@@ -1154,6 +1193,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_PALE_DRACONIAN (26)
@@ -1196,6 +1236,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     90,                        // SK_EVOCATIONS
      },
 
     {                           // SP_UNK0_DRACONAIN (27)
@@ -1238,6 +1279,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_UNK1_DRACONIAN (28)
@@ -1280,6 +1322,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_UNK2_DRACONIAN (29)
@@ -1322,6 +1365,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_CENTAUR (30)
@@ -1364,6 +1408,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      120,                       // SK_EARTH_MAGIC
      130,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     130,                       // SK_EVOCATIONS
      },
 
     {                           // SP_DEMIGOD (31)
@@ -1405,7 +1450,8 @@ int spec_skills[ NUM_SPECIES ][39] = {
      110,                       // SK_AIR_MAGIC
      110,                       // SK_EARTH_MAGIC
      110,                       // SK_POISON_MAGIC
-     100,                       // SK_INVOCATIONS
+     110,                       // SK_INVOCATIONS
+     110,                       // SK_EVOCATIONS
      },
 
     {                           // SP_SPRIGGAN (32)
@@ -1448,6 +1494,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      120,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      130,                       // SK_INVOCATIONS
+     70,                        // SK_EVOCATIONS
      },
 
     {                           // SP_MINOTAUR (33)
@@ -1490,6 +1537,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      170,                       // SK_EARTH_MAGIC
      170,                       // SK_POISON_MAGIC
      130,                       // SK_INVOCATIONS
+     170,                       // SK_EVOCATIONS
      },
 
     {                           // SP_DEMONSPAN (34)
@@ -1526,12 +1574,13 @@ int spec_skills[ NUM_SPECIES ][39] = {
      110,                       // SK_TRANSLOCATIONS
      110,                       // SK_TRANSMIGRATION
      110,                       // SK_DIVINATIONS
-     110,                       // SK_FIRE_MAGIC
+     100,                       // SK_FIRE_MAGIC
      110,                       // SK_ICE_MAGIC
      110,                       // SK_AIR_MAGIC
      110,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      80,                        // SK_INVOCATIONS
+     110,                       // SK_EVOCATIONS
      },
 
     {                           // SP_GHOUL (35)
@@ -1573,7 +1622,8 @@ int spec_skills[ NUM_SPECIES ][39] = {
      150,                       // SK_AIR_MAGIC
      90,                        // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
-     120,                       // SK_INVOCATIONS
+     110,                       // SK_INVOCATIONS
+     130,                       // SK_EVOCATIONS
      },
 
     {                           // SP_KENKU (36)
@@ -1616,6 +1666,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      120,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      160,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_MERFOLK (37)
@@ -1658,6 +1709,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
      150,                       // SK_EARTH_MAGIC
      80,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
 
@@ -1705,6 +1757,7 @@ int spec_skills[ NUM_SPECIES ][39] = {
         100,               // SK_EARTH_MAGIC
         100,               // SK_POISON_MAGIC
         100,               // SK_INVOCATIONS
+        100,               // SK_EVOCATIONS
     },
 
 ****************************************************** */
@@ -1769,7 +1822,7 @@ void show_skills(void)
     // Don't want the help line to appear too far down a big window.
     int bottom_line = ((num_lines > 30) ? 30 : num_lines);
 
-    for (x = 0; x < 50; x++)
+    for (x = 0; x < NUM_SKILLS; x++)
     {
         /* spells in second column */
         if ((x == SK_SPELLCASTING && scrcol != 40) || scrln > bottom_line - 3)
@@ -1782,9 +1835,7 @@ void show_skills(void)
 
 #if DEBUG_DIAGNOSTICS
         // In diagnostic mode we show skills at 0, but only real skills
-        if (x != SK_UNUSED_1
-            && x <= SK_INVOCATIONS
-            && (x <= SK_UNARMED_COMBAT || x >= SK_SPELLCASTING))
+        if (x != SK_UNUSED_1 && (x <= SK_UNARMED_COMBAT || x >= SK_SPELLCASTING))
 #else
         if (you.skills[x] > 0)
 #endif
@@ -1901,20 +1952,44 @@ char *skill_name(unsigned char which_skill)
 }                               // end skill_name()
 
 
-const char *skill_title(unsigned char best_skill, unsigned char skill_lev)
+const char *skill_title( unsigned char best_skill, unsigned char skill_lev )
 {
     unsigned char skill_rank;
     char *tempstr = NULL;
 
+    static char title_buff[80];
+
     // translate skill level into skill ranking {dlb}:
-    skill_rank = ((skill_lev < 8) ? 0 :
-                  (skill_lev < 13) ? 1 : (skill_lev < 21) ? 2 : 3);
+    skill_rank = ((skill_lev <= 7)  ? 0 :
+                  (skill_lev <= 14) ? 1 :
+                  (skill_lev <= 20) ? 2 :
+                  (skill_lev <= 26) ? 3
+                   /* level 27 */   : 4);
 
     // increment rank by one to "skip" skill name in array {dlb}:
     skill_rank++;
 
     if (best_skill < NUM_SKILLS)
-        tempstr = skills[best_skill][skill_rank];
+    {
+        if (best_skill == SK_UNARMED_COMBAT && you.dex >= you.strength)
+            tempstr = martial_arts_titles[skill_rank];
+        if (best_skill == SK_INVOCATIONS && you.religion == GOD_NO_GOD)
+            tempstr = "Godless";
+        else
+            tempstr = skills[best_skill][skill_rank];
+    }
+
+    char *ptr = strchr( tempstr, '%' );
+
+    if (ptr != NULL)
+    {
+        // need species name
+        snprintf( title_buff, sizeof(title_buff), tempstr,
+                  species_name(you.species, true,
+                       (ptr == tempstr && best_skill != SK_NECROMANCY)) );
+
+        tempstr = title_buff;
+    }
 
     return ((tempstr == NULL) ? "Invalid Title" : tempstr);
 }                               // end skill_title()
@@ -1922,16 +1997,18 @@ const char *skill_title(unsigned char best_skill, unsigned char skill_lev)
 const char *player_title( void )
 {
     const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
+
     return (skill_title( best, you.skills[ best ] ));
 }                               // end player_title()
 
-unsigned char best_skill(unsigned char min_skill, unsigned char max_skill,
-                         unsigned char excl_skill)
+unsigned char best_skill( unsigned char min_skill, unsigned char max_skill,
+                          unsigned char excl_skill )
 {
     unsigned char ret = SK_FIGHTING;
+    unsigned int highest_level = 0;
     unsigned int highest_points = 0;
 
-    for (int i = max_skill; i >= min_skill; i--)    // careful!!!
+    for (int i = min_skill; i <= max_skill; i++)    // careful!!!
     {
         if (i == excl_skill)
             continue;
@@ -1942,15 +2019,22 @@ unsigned char best_skill(unsigned char min_skill, unsigned char max_skill,
         // old system which just compared the overall level, resulting
         // cases where the order of the skills was important (and annoyingly
         // so in cases where one skill is at 9(0) and a 9(9) is chosen
-        // solely because it clobered the first).  Ties should be fairly
-        // rare here, so we're pretty safe in ignoring them. -- bwr
-        const unsigned int points = (you.skill_points[i] * 100)
-                                        / species_skills(i, you.species);
+        // solely because it clobered the first).  Ties are handled by
+        // switching if the new skill is easier for the character's
+        // species. -- bwr
+        const int diff = species_skills( i, you.species );
+        const unsigned int points = (you.skill_points[i] * 100) / diff;
 
-        if (points >= highest_points)
+        if (points > highest_points && you.skills[i] >= highest_level)
         {
             ret = i;
+            highest_level = you.skills[i];
             highest_points = points;
+        }
+        else if (points == highest_points
+                && diff < species_skills( ret, you.species ))
+        {
+            ret = i;
         }
     }
 
@@ -2005,18 +2089,39 @@ int calc_mp(void)
 {
     int enp;
 
-    enp = (you.base_magic_points - 5000) + (you.base_magic_points2 - 5000);
+    // base_magic_points2 accounts for species and magic potions
+    enp = (you.base_magic_points2 - 5000);
 
-    int spell_extra = you.experience_level * you.skills[SK_SPELLCASTING] / 6;
-    int invoc_extra = you.experience_level * you.skills[SK_INVOCATIONS] / 4;;
+    int spell_extra = (you.experience_level * you.skills[SK_SPELLCASTING]) / 4;
+    int invoc_extra = (you.experience_level * you.skills[SK_INVOCATIONS]) / 6;
+    int evoc_extra  = (you.experience_level * you.skills[SK_EVOCATIONS]) / 6;
 
-    enp += ((invoc_extra > spell_extra) ? invoc_extra : spell_extra);
+    if (spell_extra > invoc_extra && spell_extra > evoc_extra)
+        enp += spell_extra;
+    else if (invoc_extra > evoc_extra)
+        enp += invoc_extra;
+    else
+        enp += evoc_extra;
 
-    you.max_magic_points = stepdown_value( enp, 9, 18, 36, 49 );
+    you.max_magic_points = stepdown_value( enp, 9, 18, 45, 100 );
 
+    // this is our "rotted" base (applied after scaling):
+    you.max_magic_points += (you.base_magic_points - 5000);
+
+    // Yes, we really do want this duplication... this is so the stepdown
+    // doesn't truncate before we apply the rotted base.  We're doing this
+    // the nice way. -- bwr
+    if (you.max_magic_points > 50)
+        you.max_magic_points = 50;
+
+    // now applied after scaling so that power items are more useful -- bwr
     you.max_magic_points += player_magical_power();
+
     if (you.max_magic_points > 50)
         you.max_magic_points = 50 + ((you.max_magic_points - 50) / 2);
+
+    if (you.max_magic_points < 0)
+        you.max_magic_points = 0;
 
     if (you.magic_points > you.max_magic_points)
         you.magic_points = you.max_magic_points;
@@ -2072,12 +2177,13 @@ unsigned int skill_exp_needed(int lev)
 
 int species_skills(char skill, char species)
 {
-    if (skill == SK_SPELLCASTING)     /* Spellcasting requires more practice */
+    // Spellcasting is more expensive, invocations and evocations are cheaper
+    if (skill == SK_SPELLCASTING)
         return (spec_skills[species - 1][skill] * 130) / 100;
-    else if (skill == SK_INVOCATIONS) /* Invocations requires less */
-        return (spec_skills[species - 1][skill] * 70) / 100;
+    else if (skill == SK_INVOCATIONS || skill == SK_EVOCATIONS)
+        return (spec_skills[species - 1][skill] * 75) / 100;
     else
-        return spec_skills[species - 1][skill];
+        return (spec_skills[species - 1][skill]);
 }                               // end species_skills()
 
 // new: inform player if they need more throwing skill (GDL)

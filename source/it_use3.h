@@ -31,7 +31,7 @@ void tome_of_power(char sc_read_2);
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void invoke_wielded(void);
+void evoke_wielded(void);
 
 
 // last updated 12may2000 {dlb}

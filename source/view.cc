@@ -914,6 +914,8 @@ void monster_grid(bool do_updates)
                     && mons_shouts(monster->type) > 0
                     && random2(30) >= you.skills[SK_STEALTH])
                 {
+                    int noise_level = 8;
+
                     if (!mons_friendly(monster)
                         && (!silenced(you.x_pos, you.y_pos)
                             && !silenced(monster->x, monster->y)))
@@ -950,9 +952,11 @@ void monster_grid(bool do_updates)
                                 break;
                             case S_SHOUT2:
                                 strcat(info, "two shouts!");
+                                noise_level = 12;
                                 break;
                             case S_ROAR:
                                 strcat(info, "a roar!");
+                                noise_level = 12;
                                 break;
                             case S_SCREAM:
                                 strcat(info, "a hideous shriek!");
@@ -982,13 +986,17 @@ void monster_grid(bool do_updates)
                             case S_GROWL:
                                 strcat(info, "an angry growl!");
                                 break;
+                            case S_HISS:
+                                strcat(info, "an angry hiss!");
+                                noise_level = 4;  // not very loud -- bwr
+                                break;
                             }
 
                             mpr(info);
                         }
                     }
 
-                    noisy(8, monster->x, monster->y);
+                    noisy( noise_level, monster->x, monster->y );
                 }
             }
 
@@ -1087,6 +1095,13 @@ bool check_awaken(int mons_aw)
 
     if (you.invis && !mons_see_invis(monster))
         mons_perc -= 75;
+
+    if (monster->behaviour == BEH_SLEEP
+        && mons_has_ench( monster, ENCH_SLEEP_WARY ))
+    {
+        // monster is "hibernating"... reduce chance of waking
+        mons_perc -= 25;
+    }
 
     // glowing with magical contamination isn't very stealthy
     if (you.magic_contamination > 20)
@@ -2561,7 +2576,7 @@ bool mons_near(struct monsters *monster, unsigned int foe)
 {
     // early out -- no foe!
     if (foe == MHITNOT)
-        return false;
+        return (false);
 
     if (foe == MHITYOU)
     {
@@ -2569,20 +2584,23 @@ bool mons_near(struct monsters *monster, unsigned int foe)
             && monster->y > you.y_pos - 9 && monster->y < you.y_pos + 9)
         {
             if (env.show[monster->x - you.x_pos + 9][monster->y - you.y_pos + 9])
-                return true;
+                return (true);
         }
-        return false;
+        return (false);
     }
+
     // must be a monster
     struct monsters *myFoe = &menv[foe];
     if (myFoe->type >= 0)
     {
         if (monster->x > myFoe->x - 9 && monster->x < myFoe->x + 9
             && monster->y > myFoe->y - 9 && monster->y < myFoe->y + 9)
-            return true;
+        {
+            return (true);
+        }
     }
 
-    return false;
+    return (false);
 }                               // end mons_near()
 
 

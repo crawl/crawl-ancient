@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "externs.h"
 
@@ -65,7 +66,7 @@ void blink(void)
         {
             mpr("Blink to where?", MSGCH_PROMPT);
 
-            direction(beam, DIR_TARGET);
+            direction( beam, DIR_TARGET );
 
             if (!beam.isValid)
             {
@@ -88,16 +89,24 @@ void blink(void)
             mpr("Oops! Maybe something was there already.");
             random_blink(false);
         }
+        else if (you.level_type == LEVEL_ABYSS)
+        {
+            abyss_teleport();
+            you.pet_target = MHITNOT;
+        }
         else
         {
             you.x_pos = beam.tx;
             you.y_pos = beam.ty;
 
-            if (you.level_type == LEVEL_ABYSS)
-            {
-                abyss_teleport();
-                you.pet_target = MHITNOT;
-            }
+            // controlling teleport contaminates the player -- bwr
+            contaminate_player( 1 );
+        }
+
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+        {
+            you.duration[DUR_CONDENSATION_SHIELD] = 0;
+            you.redraw_armour_class = 1;
         }
     }
 
@@ -107,6 +116,7 @@ void blink(void)
 void random_blink(bool allow_partial_control)
 {
     int tx, ty;
+    bool succ = false;
 
     if (scan_randarts(RAP_PREVENT_TELEPORTATION))
         mpr("You feel a weird sense of stasis.");
@@ -126,6 +136,7 @@ void random_blink(bool allow_partial_control)
     {
         mpr("You may select the general direction of your translocation.");
         cast_semi_controlled_blink(100);
+        succ = true;
     }
 #endif
 
@@ -133,6 +144,7 @@ void random_blink(bool allow_partial_control)
     {
         mpr("You blink.");
 
+        succ = true;
         you.x_pos = tx;
         you.y_pos = ty;
 
@@ -141,6 +153,12 @@ void random_blink(bool allow_partial_control)
             abyss_teleport();
             you.pet_target = MHITNOT;
         }
+    }
+
+    if (succ && you.duration[DUR_CONDENSATION_SHIELD] > 0)
+    {
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        you.redraw_armour_class = 1;
     }
 
     return;
@@ -154,7 +172,7 @@ void fireball(int power)
 
     message_current_target();
 
-    direction(fire_ball);
+    direction( fire_ball, DIR_NONE, TARG_ENEMY );
 
     if (!fire_ball.isValid)
         canned_msg(MSG_SPELL_FIZZLES);
@@ -176,28 +194,23 @@ void fireball(int power)
 void cast_fire_storm(int powc)
 {
     struct bolt beam;
-    struct dist fire_storm;
-    // char stx = 0, sty = 0;
-    // char cl_x = 0, cl_y = 0;
-
-    if (powc > 300)
-        powc = 300;
+    struct dist targ;
 
     mpr("Where?");
 
-    direction(fire_storm, DIR_TARGET);
+    direction( targ, DIR_TARGET, TARG_ENEMY );
 
-    beam.target_x = fire_storm.tx;
-    beam.target_y = fire_storm.ty;
+    beam.target_x = targ.tx;
+    beam.target_y = targ.ty;
 
-    if (!fire_storm.isValid)
+    if (!targ.isValid)
     {
         canned_msg(MSG_SPELL_FIZZLES);
         return;
     }
 
-    beam.ex_size = 2 + (powc / 200);
-    beam.flavour = BEAM_FIRE;
+    beam.ex_size = 2 + powc / 100;
+    beam.flavour = BEAM_LAVA;
     beam.type = SYM_ZAP;
     beam.colour = RED;
     beam.beam_source = MHITYOU;
@@ -207,40 +220,14 @@ void cast_fire_storm(int powc)
     beam.isTracer = false;
     beam.ench_power = powc;     // used for radius
     strcpy( beam.beam_name, "great blast of fire" );
-    beam.hit = 10 + (powc / 10);
-    beam.damage = dice_def( 3, 5 + (powc / 7) );
+    beam.hit = 20 + powc / 10;
+    beam.damage = calc_dice( 6, 15 + powc );
 
     explosion( beam );
     mpr("A raging storm of fire appears!");
 
     viewwindow(1, false);
 }                               // end cast_fire_storm()
-
-char spell_direction(struct dist &spelld, struct bolt &pbolt, int restrict)
-{
-    if (restrict == DIR_TARGET)
-        mpr("Choose a target (+/- for next/prev monster)");
-    else
-        mpr("Which direction? (*/+ to target)");
-
-    message_current_target();
-
-    direction(spelld, restrict);
-
-    if (!spelld.isValid)
-    {
-        // check for user cancel
-        canned_msg(MSG_SPELL_FIZZLES);
-        return -1;
-    }
-
-    pbolt.target_x = spelld.tx;
-    pbolt.target_y = spelld.ty;
-    pbolt.source_x = you.x_pos;
-    pbolt.source_y = you.y_pos;
-
-    return 1;
-}                               // end spell_direction()
 
 void identify(int power)
 {
@@ -253,7 +240,7 @@ void identify(int power)
 
     do
     {
-        item_slot = prompt_invent_item( "Identify which item?", -1 );
+        item_slot = prompt_invent_item( "Identify which item?", -1, true, false );
         if (item_slot == PROMPT_ABORT)
         {
             canned_msg( MSG_OK );
@@ -293,7 +280,7 @@ void conjure_flame(int pow)
             done_first_message = true;
         }
 
-        direction(spelld, DIR_TARGET);
+        direction( spelld, DIR_TARGET, TARG_ENEMY );
 
         if (!spelld.isValid)
         {
@@ -326,7 +313,7 @@ void conjure_flame(int pow)
     place_cloud( CLOUD_FIRE, spelld.tx, spelld.ty, durat );
 }                               // end cast_conjure_flame()
 
-void stinking_cloud(void)
+void stinking_cloud( int pow )
 {
     struct dist spelld;
     struct bolt beem;
@@ -335,7 +322,7 @@ void stinking_cloud(void)
 
     message_current_target();
 
-    direction(spelld);
+    direction( spelld, DIR_NONE, TARG_ENEMY );
 
     if (!spelld.isValid)
     {
@@ -356,8 +343,8 @@ void stinking_cloud(void)
     beem.damage = dice_def( 1, 0 );
     beem.hit = 20;
     beem.type = SYM_ZAP;
-    beem.flavour = BEAM_ACID;
-    beem.ench_power = 3 * you.intel;
+    beem.flavour = BEAM_MMISSILE;
+    beem.ench_power = pow;
     beem.thrower = KILL_YOU;
     beem.isBeam = false;
     beem.isTracer = false;
@@ -370,7 +357,7 @@ void cast_big_c(int pow, char cty)
     struct dist cdis;
 
     mpr("Where do you want to put it?", MSGCH_PROMPT);
-    direction(cdis, DIR_TARGET);
+    direction( cdis, DIR_TARGET, TARG_ENEMY );
 
     if (!cdis.isValid)
     {
@@ -393,7 +380,7 @@ static char healing_spell( int healed )
     struct dist bmove;
 
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(bmove, DIR_DIR);
+    direction( bmove, DIR_DIR, TARG_FRIEND );
 
     if (!bmove.isValid)
     {
@@ -460,7 +447,7 @@ char cast_healing( int pow )
     if (pow > 50)
         pow = 50;
 
-    return (healing_spell( pow + random2avg(pow * 2, 2) ));
+    return (healing_spell( pow + roll_dice( 2, pow ) - 2 ));
 }
 
 bool cast_revivification(int power)
@@ -674,26 +661,39 @@ void antimagic( void )
 
 void extension(int pow)
 {
+    int contamination = random2(2);
+
     if (you.haste)
+    {
         potion_effect(POT_SPEED, pow);
+        contamination++;
+    }
 
     if (you.slow)
         potion_effect(POT_SLOWING, pow);
 
+#if 0
     if (you.paralysis)
         potion_effect(POT_PARALYSIS, pow);  // how did you cast extension?
 
     if (you.conf)
         potion_effect(POT_CONFUSION, pow);  // how did you cast extension?
+#endif
 
     if (you.might)
+    {
         potion_effect(POT_MIGHT, pow);
+        contamination++;
+    }
 
     if (you.levitation)
         potion_effect(POT_LEVITATION, pow);
 
     if (you.invis)
+    {
         potion_effect(POT_INVISIBILITY, pow);
+        contamination++;
+    }
 
     if (you.duration[DUR_ICY_ARMOUR])
         ice_armour(pow, true);
@@ -744,7 +744,7 @@ void extension(int pow)
     if (you.duration[DUR_TRANSFORMATION])
     {
         mpr("Your transformation has been extended.");
-        you.duration[DUR_TRANSFORMATION] += 10 + random2(pow);
+        you.duration[DUR_TRANSFORMATION] += random2(pow);
         if (you.duration[DUR_TRANSFORMATION] > 100)
             you.duration[DUR_TRANSFORMATION] = 100;
     }
@@ -764,6 +764,9 @@ void extension(int pow)
 
     if (you.duration[DUR_CONDENSATION_SHIELD])
         cast_condensation_shield(pow);
+
+    if (contamination)
+        contaminate_player( contamination );
 }                               // end extension()
 
 void ice_armour(int pow, bool extending)
@@ -772,6 +775,7 @@ void ice_armour(int pow, bool extending)
     {
         if (!extending)
             mpr("You are wearing too much armour.");
+
         return;
     }
 
@@ -779,14 +783,19 @@ void ice_armour(int pow, bool extending)
     {
         if (!extending)
             mpr("The spell conflicts with another spell still in effect.");
+
         return;
     }
 
     if (you.duration[DUR_ICY_ARMOUR])
-        mpr("Your icy armour thickens.");
+        mpr( "Your icy armour thickens." );
     else
     {
-        mpr("A film of ice covers your body!");
+        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST)
+            mpr( "Your icy body feels more resilient." );
+        else
+            mpr( "A film of ice covers your body!" );
+
         you.redraw_armour_class = 1;
     }
 
@@ -810,7 +819,11 @@ void stone_scales(int pow)
         mpr("Your scaly armour looks firmer.");
     else
     {
-        mpr("A set of stone scales covers your body!");
+        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_STATUE)
+            mpr( "Your stone body feels more resilient." );
+        else
+            mpr( "A set of stone scales covers your body!" );
+
         you.redraw_evasion = 1;
         you.redraw_armour_class = 1;
     }
@@ -827,12 +840,9 @@ void stone_scales(int pow)
 
 void missile_prot(int pow)
 {
-    if (pow > 100)
-        pow = 100;
-
     mpr("You feel protected from missiles.");
 
-    you.duration[DUR_REPEL_MISSILES] += 10 + random2avg(2 * (pow - 1) + 1, 2);
+    you.duration[DUR_REPEL_MISSILES] += 8 + roll_dice( 2, pow );
 
     if (you.duration[DUR_REPEL_MISSILES] > 100)
         you.duration[DUR_REPEL_MISSILES] = 100;
@@ -840,9 +850,6 @@ void missile_prot(int pow)
 
 void deflection(int pow)
 {
-    if (pow > 100)
-        pow = 100;
-
     mpr("You feel very safe from missiles.");
 
     you.duration[DUR_DEFLECT_MISSILES] += 15 + random2(pow);
@@ -871,25 +878,30 @@ void cast_swiftness(int power)
 {
     int dur_incr = 0;
 
-    if (you.species == SP_MERFOLK && player_is_swimming())
+    if (player_in_water())
     {
-        mpr("This spell will not benefit you while you're swimming!");
+        if (you.species == SP_MERFOLK)
+            mpr("This spell will not benefit you while you're swimming!");
+        else
+            mpr("This spell will not benefit you while you're in water!");
+
         return;
     }
 
     if (!you.duration[DUR_SWIFTNESS] && player_movement_speed() <= 6)
     {
-        mpr("You can already move quickly.");
+        mpr( "You can't move any more quickly." );
         return;
     }
 
-    // Reduced the duration (it's easy to chain even in tight situations):
+    // Reduced the duration:  -- bwr
     // dur_incr = random2(power) + random2(power) + 20;
-    dur_incr = random2(power) + random2(power) + random2(10) + 10;
+    dur_incr = 20 + random2( power );
 
     // Centaurs do have feet and shouldn't get here anyways -- bwr
-    strcpy(info, "You feel quick");
-    strcat(info, (you.species == SP_NAGA) ? "." : " on your feet.");
+    snprintf( info, INFO_SIZE, "You feel quick%s",
+              (you.species == SP_NAGA) ? "." : " on your feet." );
+
     mpr(info);
 
     if (dur_incr + you.duration[DUR_SWIFTNESS] > 100)
@@ -902,7 +914,7 @@ void cast_fly(int power)
 {
     int dur_change = 25 + random2(power) + random2(power);
 
-    if (!you.levitation)
+    if (!player_is_levitating())
         mpr("You fly up into the air.");
     else
         mpr("You feel more buoyant.");
@@ -925,7 +937,7 @@ void cast_fly(int power)
 
 void cast_insulation(int power)
 {
-    int dur_incr = random2(power) + 10;
+    int dur_incr = 10 + random2(power);
 
     mpr("You feel insulated.");
 
@@ -937,7 +949,7 @@ void cast_insulation(int power)
 
 void cast_resist_poison(int power)
 {
-    int dur_incr = random2(power) + 10;
+    int dur_incr = 10 + random2(power);
 
     mpr("You feel resistant to poison.");
 
@@ -949,7 +961,7 @@ void cast_resist_poison(int power)
 
 void cast_teleport_control(int power)
 {
-    int dur_incr = random2(power) + 10;
+    int dur_incr = 10 + random2(power);
 
     if (you.duration[DUR_CONTROL_TELEPORT] == 0)
         you.attribute[ATTR_CONTROL_TELEPORT]++;

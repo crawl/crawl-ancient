@@ -30,6 +30,7 @@
 #include "it_use2.h"
 #include "itemname.h"
 #include "items.h"
+#include "invent.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
@@ -39,6 +40,7 @@
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
+#include "skills.h"
 #include "spells1.h"
 #include "spells4.h"
 #include "spl-cast.h"
@@ -57,7 +59,7 @@ enum DEBRIS                 // jmf: add for shatter, dig, and Giants to throw
 };          // jmf: ...and I'll actually implement the items Real Soon Now...
 
 static bool mons_can_host_shuggoth(int type);
-static int make_a_random_cloud(int x, int y, int pow, int ctype);
+// static int make_a_random_cloud(int x, int y, int pow, int ctype);
 static int make_a_rot_cloud(int x, int y, int pow, int ctype);
 static int quadrant_blink(int x, int y, int pow, int garbage);
 
@@ -169,7 +171,7 @@ inline bool player_hurt_monster(int monster, int damage)
 // Here begin the actual spells:
 static int shatter_monsters(int x, int y, int pow, int garbage)
 {
-    dice_def   dam_dice( 0, 5 + pow / 8 );  // number of dice set below
+    dice_def   dam_dice( 0, 5 + pow / 4 );  // number of dice set below
     const int  monster = mgrd[x][y];
 
     if (monster == NON_MONSTER)
@@ -260,6 +262,8 @@ static int shatter_monsters(int x, int y, int pow, int garbage)
 
 static int shatter_items(int x, int y, int pow, int garbage)
 {
+    UNUSED( pow );
+
     int broke_stuff = 0, next, obj = igrd[x][y];
 
     if (obj == NON_ITEM)
@@ -379,10 +383,6 @@ void cast_shatter(int pow)
     int damage = 0;
     const bool sil = silenced( you.x_pos, you.y_pos );
 
-    // level 9 spell == 300 cap.
-    if (pow > 300)
-        pow = 300;
-
     if (!sil)
         noisy( you.x_pos, you.y_pos, 30 );
 
@@ -438,8 +438,8 @@ void cast_forescry(int pow)
 
     you.duration[DUR_FORESCRY] += 5 + random2(pow);
 
-    if (you.duration[DUR_FORESCRY] > 50)
-        you.duration[DUR_FORESCRY] = 50;
+    if (you.duration[DUR_FORESCRY] > 30)
+        you.duration[DUR_FORESCRY] = 30;
 
     you.redraw_evasion = 1;
 }                               // end cast_forescry()
@@ -485,7 +485,7 @@ static void cast_detect_magic(int pow)
     }
 
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(bmove, DIR_DIR);
+    direction( bmove, DIR_DIR );
 
     if (!bmove.isValid)
     {
@@ -650,7 +650,6 @@ void cast_summon_large_mammal(int pow)
 void cast_sticks_to_snakes(int pow)
 {
     int mon, i, how_many = 0, max, behaviour;
-    bool nice = true;           // delete all ammo?
 
     // Toned this down... players should have to earn the second snake.
     // This is nicer is that it allows for a more gradual progression
@@ -672,7 +671,7 @@ void cast_sticks_to_snakes(int pow)
     }
 
     behaviour = item_cursed( you.inv[ weapon ] ) ? BEH_HOSTILE
-                                                    : BEH_FRIENDLY;
+                                                 : BEH_FRIENDLY;
 
     if ((you.inv[ weapon ].base_type == OBJ_MISSILES
          && (you.inv[ weapon ].sub_type == MI_ARROW)))
@@ -688,8 +687,8 @@ void cast_sticks_to_snakes(int pow)
             else
                 mon = MONS_SMALL_SNAKE;
 
-            if (create_monster(mon, ENCH_ABJ_III, behaviour, you.x_pos,
-                you.y_pos, MHITNOT, 250) != -1 || !nice)
+            if (create_monster( mon, ENCH_ABJ_III, behaviour, you.x_pos,
+                                you.y_pos, MHITNOT, 250 ) != -1)
             {
                 how_many++;
             }
@@ -721,7 +720,10 @@ void cast_sticks_to_snakes(int pow)
         else
             mon = MONS_BROWN_SNAKE;
 
-        if (pow > 80 && one_chance_in(3))
+        if (pow > 90 && one_chance_in(3))
+            mon = MONS_GREY_SNAKE;
+
+        if (pow > 70 && one_chance_in(3))
             mon = MONS_BLACK_SNAKE;
 
         if (pow > 40 && one_chance_in(3))
@@ -730,8 +732,8 @@ void cast_sticks_to_snakes(int pow)
         if (pow > 20 && one_chance_in(3))
             mon = MONS_BROWN_SNAKE;
 
-        create_monster(mon, ENCH_ABJ_III, behaviour, you.x_pos,
-            you.y_pos, MHITNOT, 250);
+        create_monster( mon, ENCH_ABJ_III, behaviour, you.x_pos, you.y_pos,
+                        MHITNOT, 250 );
     }
 
 #ifdef USE_DEBRIS_CODE
@@ -772,7 +774,7 @@ void cast_summon_dragon(int pow)
     // especially since these aren't on the Abjuration plan... they'll
     // last until they die (maybe that should be changed, but this is
     // a very high level spell so it might be okay).  -- bwr
-    happy = random2(pow) > 10;
+    happy = (random2(pow) > 5);
 
     if (create_monster(MONS_DRAGON, ENCH_ABJ_III,
                         (happy ? BEH_FRIENDLY : BEH_HOSTILE),
@@ -880,7 +882,9 @@ static int tame_beast_monsters(int x, int y, int pow, int garbage)
     // 50% bonus for dogs, add cats if they get implemented
     if (monster->type == MONS_HOUND || monster->type == MONS_WAR_DOG
                  || monster->type == MONS_BLACK_BEAR)
+    {
         pow += (pow / 2);
+    }
 
     if (you.species == SP_HILL_ORC && monster->type == MONS_WARG)
         pow += (pow / 2);
@@ -908,6 +912,8 @@ void cast_tame_beasts(int pow)
 
 static int ignite_poison_objects(int x, int y, int pow, int garbage)
 {
+    UNUSED( pow );
+
     int obj = igrd[x][y], next, strength = 0;
 
     if (obj == NON_ITEM)
@@ -949,6 +955,8 @@ static int ignite_poison_objects(int x, int y, int pow, int garbage)
 
 static int ignite_poison_clouds( int x, int y, int pow, int garbage )
 {
+    UNUSED( pow );
+
     bool did_anything = false;
 
     const int cloud = env.cgrid[x][y];
@@ -982,7 +990,7 @@ static int ignite_poison_monsters(int x, int y, int pow, int garbage)
     struct bolt beam;
     beam.flavour = BEAM_FIRE;   // this is dumb, only used for adjust!
 
-    dice_def  dam_dice( 0, 5 + pow / 10 );  // dice added below if applicable
+    dice_def  dam_dice( 0, 5 + pow / 7 );  // dice added below if applicable
 
     const int mon_index = mgrd[x][y];
     if (mon_index == NON_MONSTER)
@@ -1014,7 +1022,8 @@ static int ignite_poison_monsters(int x, int y, int pow, int garbage)
     if (ench != ENCH_NONE)
         strength += ench - ENCH_POISON_I + 1;
 
-    // strength is now the sum of both poison types:
+    // strength is now the sum of both poison types (although only
+    // one should actually be present at a given time):
     dam_dice.num += strength;
 
     int damage = roll_dice( dam_dice );
@@ -1024,7 +1033,7 @@ static int ignite_poison_monsters(int x, int y, int pow, int garbage)
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Damage: %d", damage );
-        mpr( info );
+        mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
         if (!player_hurt_monster( mon_index, damage ))
@@ -1045,10 +1054,6 @@ void cast_ignite_poison(int pow)
     int damage = 0, strength = 0, pcount = 0, acount = 0, totalstrength = 0;
     char item;
     bool wasWielding = false;
-
-    // another power cap (level 5-7 spell)
-    if (pow > 200)
-        pow = 200;
 
     // temp weapon of venom => temp fire brand
     const int wpn = you.equip[EQ_WEAPON];
@@ -1145,13 +1150,13 @@ void cast_ignite_poison(int pow)
 
     // player is poisonous
     if (you.mutation[MUT_SPIT_POISON] || you.mutation[MUT_STINGER]
-        || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
+        || you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER // poison attack
         || (!player_is_shapechanged()
-            && (you.species == SP_GREEN_DRACONIAN
-                || you.species == SP_KOBOLD
-                || you.species == SP_NAGA)))
+            && (you.species == SP_GREEN_DRACONIAN       // poison breath
+                || you.species == SP_KOBOLD             // poisonous corpse
+                || you.species == SP_NAGA)))            // spit poison
     {
-        damage = roll_dice( 3, 5 + pow / 10 );
+        damage = roll_dice( 3, 5 + pow / 7 );
     }
 
     // player is poisoned
@@ -1159,20 +1164,24 @@ void cast_ignite_poison(int pow)
 
     if (damage)
     {
-        if (player_res_fire() > 100)
+        const int resist = player_res_fire();
+
+        if (resist > 0)
         {
             mpr("You feel like your blood is boiling!");
             damage = damage / 3;
         }
-        else if (player_res_fire() < 100)
+        else if (resist < 0)
         {
             damage *= 3;
             mpr("The poison in your system burns terribly!");
         }
         else
+        {
             mpr("The poison in your system burns!");
+        }
 
-        ouch(damage, 0, KILLED_BY_TARGETTING);
+        ouch( damage, 0, KILLED_BY_TARGETTING );
 
         if (you.poison > 0)
         {
@@ -1193,7 +1202,7 @@ void cast_silence(int pow)
 
     you.attribute[ATTR_WAS_SILENCED] = 1;
 
-    you.duration[DUR_SILENCE] += 20 + random2avg( pow, 2 );
+    you.duration[DUR_SILENCE] += 10 + random2avg( pow, 2 );
 
     if (you.duration[DUR_SILENCE] > 100)
         you.duration[DUR_SILENCE] = 100;
@@ -1230,7 +1239,7 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
     if (x == you.x_pos && y == you.y_pos)
     {
         mpr( "You are struck by lightning." );
-        damage = 3 + random2( 5 + pow / 20 );
+        damage = 3 + random2( 5 + pow / 10 );
         damage = check_your_resists( damage, BEAM_ELECTRICITY );
         ouch( damage, 0, KILLED_BY_WILD_MAGIC );
     }
@@ -1240,7 +1249,7 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
         return (0);
     else
     {
-        damage = 3 + random2( 5 + pow / 20 );
+        damage = 3 + random2( 5 + pow / 10 );
         damage = mons_adjust_flavoured( &menv[mon], beam, damage );
 
         if (damage)
@@ -1255,7 +1264,7 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
 
     // Recursion to give us chain-lightning -- bwr
     // Low power slight chance added for low power characters -- bwr
-    if ((pow >= 20 && !one_chance_in(3)) || (pow >= 3 && one_chance_in(10)))
+    if ((pow >= 10 && !one_chance_in(3)) || (pow >= 3 && one_chance_in(10)))
     {
         mpr( "The lightning arcs!" );
         pow /= (coinflip() ? 2 : 3);
@@ -1274,10 +1283,7 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
 
 void cast_discharge( int pow )
 {
-    if (pow > 150)
-        pow = 150;
-
-    int num_targs = 1 + random2( 1 + pow / 50 );
+    int num_targs = 1 + random2( 1 + pow / 25 );
     int dam;
 
     dam = apply_random_around_square( discharge_monsters, you.x_pos, you.y_pos,
@@ -1285,7 +1291,7 @@ void cast_discharge( int pow )
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Arcs: %d Damage: %d", num_targs, dam );
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (dam == 0)
@@ -1401,9 +1407,9 @@ void cast_bend(int pow)
 // Really this is just applying the best of Band/Warp weapon/Warp field
 // into a spell that gives the "make monsters go away" benefit without
 // the insane damage potential.  -- bwr
-static int disperse_monsters(int x, int y, int pow, int message)
+int disperse_monsters(int x, int y, int pow, int message)
 {
-    int monster_attacked = mgrd[x][y];
+    const int monster_attacked = mgrd[x][y];
 
     if (monster_attacked == NON_MONSTER)
         return 0;
@@ -1429,8 +1435,7 @@ static int disperse_monsters(int x, int y, int pow, int message)
     }
     else
     {
-        simple_monster_message(defender, " looks slightly unstable.");
-        monster_teleport(defender, false);
+        monster_teleport( defender, true );
         return 1;
     }
 
@@ -1442,7 +1447,7 @@ void cast_dispersal(int pow)
     if (apply_area_around_square( disperse_monsters,
                                   you.x_pos, you.y_pos, pow ) == 0)
     {
-        mpr("There is a brief shimmering around you.");
+        mpr( "There is a brief shimmering in the air around you." );
     }
 }
 
@@ -1524,15 +1529,16 @@ static int make_a_rot_cloud(int x, int y, int pow, int ctype)
 
 int make_a_normal_cloud(int x, int y, int pow, int ctype)
 {
-    place_cloud(ctype, x, y,
-                (3 + random2(pow / 4) + random2(pow / 4) + random2(pow / 4)));
+    place_cloud( ctype, x, y,
+                (3 + random2(pow / 4) + random2(pow / 4) + random2(pow / 4)) );
 
     return 1;
 }                               // end make_a_normal_cloud()
 
+#if 0
+
 static int make_a_random_cloud(int x, int y, int pow, int ctype)
 {
-
     if (ctype == CLOUD_NONE)
         ctype = CLOUD_BLACK_SMOKE;
 
@@ -1574,15 +1580,14 @@ static int make_a_random_cloud(int x, int y, int pow, int ctype)
     return 1;
 }                               // end make_a_random_cloud()
 
+#endif
+
 static int passwall(int x, int y, int pow, int garbage)
 {
     char dx, dy, nx = x, ny = y;
     int howdeep = 0;
     bool done = false;
     int shallow = 1 + (you.skills[SK_EARTH_MAGIC] / 8);
-
-    if (pow > 150)
-        pow = 150;
 
     // allow statues as entry points?
     if (grd[x][y] != DNGN_ROCK_WALL)
@@ -1663,6 +1668,8 @@ void cast_passwall(int pow)
 
 static int intoxicate_monsters(int x, int y, int pow, int garbage)
 {
+    UNUSED( pow );
+
     int mon = mgrd[x][y];
 
     if (mon == NON_MONSTER)
@@ -1680,14 +1687,9 @@ static int intoxicate_monsters(int x, int y, int pow, int garbage)
 
 void cast_intoxicate(int pow)
 {
-    // Actually, this cap actually helps the player, since pow is
-    // only used here for the duration of the players confusion. -- bwr
-    if (pow > 150)
-        pow = 150;
+    potion_effect( POT_CONFUSION, 10 + (100 - pow) / 10);
 
-    potion_effect(POT_CONFUSION, 10 + pow / 10);
-
-    if (one_chance_in(20) && lose_stat(STAT_INTELLIGENCE, 1 + random2(3)))
+    if (one_chance_in(20) && lose_stat( STAT_INTELLIGENCE, 1 + random2(3) ))
         mpr("Your head spins!");
 
     apply_area_visible(intoxicate_monsters, pow);
@@ -1841,17 +1843,144 @@ bool backlight_monsters(int x, int y, int pow, int garbage)
 
 void cast_evaporate(int pow)
 {
-    // level 2 power cap
-    if (pow > 100)
-        pow = 100;
+    // experimenting with allowing the potion to be thrown... we're
+    // still making it have to be "in hands" at this point. -- bwr
+    struct dist spelld;
+    struct bolt beem;
 
-    if (you.equip[EQ_WEAPON] == -1
-        || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_POTIONS)
+#if 0
+    // Old style: potion must come from hand...
+    const int potion = you.equip[EQ_WEAPON];
+#endif
+
+    const int potion = prompt_invent_item( "Throw which potion?", OBJ_POTIONS );
+
+    if (potion == -1)
     {
-        snprintf( info, INFO_SIZE, "Wisps of steam play over your %s!", your_hand(1));
+        snprintf( info, INFO_SIZE, "Wisps of steam play over your %s!",
+                  your_hand(1) );
+
         mpr(info);
         return;
     }
+    else if (you.inv[potion].base_type != OBJ_POTIONS)
+    {
+        mpr( "This spell works only on potions!" );
+        canned_msg(MSG_SPELL_FIZZLES);
+        return;
+    }
+
+    mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
+
+    message_current_target();
+
+    direction( spelld, DIR_NONE, TARG_ENEMY );
+
+    if (!spelld.isValid)
+    {
+        canned_msg(MSG_SPELL_FIZZLES);
+        return;
+    }
+
+    beem.target_x = spelld.tx;
+    beem.target_y = spelld.ty;
+
+    beem.source_x = you.x_pos;
+    beem.source_y = you.y_pos;
+
+    strcpy( beem.beam_name, "potion" );
+    beem.colour = you.inv[potion].colour;
+    beem.range = 9;
+    beem.rangeMax = 9;
+    beem.type = SYM_FLASK;
+    beem.thrower = KILL_YOU_MISSILE;
+    beem.isBeam = false;
+    beem.isTracer = false;
+
+    beem.hit = you.dex / 2 + roll_dice( 2, you.skills[SK_THROWING] / 2 + 1 );
+    beem.damage = dice_def( 1, 0 );  // no damage, just producing clouds
+    beem.ench_power = pow;           // used for duration only?
+
+    beem.flavour = BEAM_POTION_STINKING_CLOUD;
+
+    switch (you.inv[potion].sub_type)
+    {
+    case POT_STRONG_POISON:
+        beem.flavour = BEAM_POTION_POISON;
+        beem.ench_power *= 2;
+        break;
+
+    case POT_DEGENERATION:
+        beem.flavour = (coinflip() ? BEAM_POTION_POISON : BEAM_POTION_MIASMA);
+        beem.ench_power *= 2;
+        break;
+
+    case POT_POISON:
+        beem.flavour = BEAM_POTION_POISON;
+        break;
+
+    case POT_DECAY:
+        beem.flavour = BEAM_POTION_MIASMA;
+        beem.ench_power *= 2;
+        break;
+
+    case POT_PARALYSIS:
+        beem.ench_power *= 2;
+        // fall through
+    case POT_CONFUSION:
+    case POT_SLOWING:
+        beem.flavour = BEAM_POTION_STINKING_CLOUD;
+        break;
+
+    case POT_WATER:
+    case POT_PORRIDGE:
+        beem.flavour = BEAM_POTION_STEAM;
+        break;
+
+    case POT_BERSERK_RAGE:
+        beem.flavour = (coinflip() ? BEAM_POTION_FIRE : BEAM_POTION_STEAM);
+        break;
+
+    case POT_MUTATION:
+    case POT_GAIN_STRENGTH:
+    case POT_GAIN_DEXTERITY:
+    case POT_GAIN_INTELLIGENCE:
+    case POT_EXPERIENCE:
+    case POT_MAGIC:
+        switch (random2(5))
+        {
+        case 0:   beem.flavour = BEAM_POTION_FIRE;            break;
+        case 1:   beem.flavour = BEAM_POTION_COLD;            break;
+        case 2:   beem.flavour = BEAM_POTION_POISON;          break;
+        case 3:   beem.flavour = BEAM_POTION_MIASMA;          break;
+        default:  beem.flavour = BEAM_POTION_RANDOM;          break;
+        }
+        break;
+
+    default:
+        switch (random2(12))
+        {
+        case 0:   beem.flavour = BEAM_POTION_FIRE;            break;
+        case 1:   beem.flavour = BEAM_POTION_STINKING_CLOUD;  break;
+        case 2:   beem.flavour = BEAM_POTION_COLD;            break;
+        case 3:   beem.flavour = BEAM_POTION_POISON;          break;
+        case 4:   beem.flavour = BEAM_POTION_RANDOM;          break;
+        case 5:   beem.flavour = BEAM_POTION_BLUE_SMOKE;      break;
+        case 6:   beem.flavour = BEAM_POTION_BLACK_SMOKE;     break;
+        case 7:   beem.flavour = BEAM_POTION_PURP_SMOKE;      break;
+        default:  beem.flavour = BEAM_POTION_STEAM;           break;
+        }
+        break;
+    }
+
+    if (coinflip())
+        exercise( SK_THROWING, 1 );
+
+    beam(beem);
+
+#if 0
+
+    // This old code:
 
     switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
     {
@@ -1914,10 +2043,169 @@ void cast_evaporate(int pow)
         break;
     }
 
-    dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
+#endif
+
+    // both old and new code use up a potion:
+    dec_inv_item_quantity( potion, 1 );
 
     return;
 }                               // end cast_evaporate()
+
+// The intent of this spell isn't to produce helpful potions
+// for drinking, but rather to provide ammo for the Evaporate
+// spell out of corpses, thus potentially making it useful.
+// Producing helpful potions would break game balance here...
+// and producing more than one potion from a corpse, or not
+// using up the corpse might also lead to game balance problems. -- bwr
+void cast_fulsome_distillation( int powc )
+{
+    if (powc > 50)
+        powc = 50;
+
+    int corpse = -1;
+
+    // Search items at the players location for corpses.
+    // XXX: Turn this into a separate function and merge with
+    // the messes over in butchery, animating, and maybe even
+    // item pickup from stacks (which would make it easier to
+    // create a floor stack menu system later) -- bwr
+    for (int curr_item = igrd[you.x_pos][you.y_pos];
+             curr_item != NON_ITEM;
+             curr_item = mitm[curr_item].link)
+    {
+        if (mitm[curr_item].base_type == OBJ_CORPSES
+            && mitm[curr_item].sub_type == CORPSE_BODY)
+        {
+            it_name( curr_item, DESC_NOCAP_THE, str_pass );
+            snprintf( info, INFO_SIZE, "Distill a potion from %s?", str_pass );
+
+            if (yesno( info, true, false ))
+            {
+                corpse = curr_item;
+                break;
+            }
+        }
+    }
+
+    if (corpse == -1)
+    {
+        canned_msg(MSG_SPELL_FIZZLES);
+        return;
+    }
+
+    const bool rotten = (mitm[corpse].special < 100);
+    const bool big_monster = (mons_type_hit_dice( mitm[corpse].plus ) >= 5);
+    const bool power_up = (rotten && big_monster);
+
+    int potion_type = POT_WATER;
+
+    switch (mitm[corpse].plus)
+    {
+    case MONS_GIANT_BAT:             // extracting batty behaviour : 1
+    case MONS_UNSEEN_HORROR:         // extracting batty behaviour : 7
+    case MONS_GIANT_BLOWFLY:         // extracting batty behaviour : 5
+        potion_type = POT_CONFUSION;
+        break;
+
+    case MONS_RED_WASP:              // paralysis attack : 8
+    case MONS_YELLOW_WASP:           // paralysis attack : 4
+        potion_type = POT_PARALYSIS;
+        break;
+
+    case MONS_SNAKE:                 // clean meat, but poisonous attack : 2
+    case MONS_GIANT_ANT:             // clean meat, but poisonous attack : 3
+        potion_type = (power_up ? POT_POISON : POT_CONFUSION);
+        break;
+
+    case MONS_ORANGE_RAT:            // poisonous meat, but draining attack : 3
+        potion_type = (power_up ? POT_DECAY : POT_POISON);
+        break;
+
+    case MONS_SPINY_WORM:            // 12
+        potion_type = (power_up ? POT_DECAY : POT_STRONG_POISON);
+        break;
+
+    default:
+        switch (mons_corpse_thingy( mitm[corpse].plus ))
+        {
+        case CE_CLEAN:
+            potion_type = (power_up ? POT_CONFUSION : POT_WATER);
+            break;
+
+        case CE_CONTAMINATED:
+            potion_type = (power_up ? POT_DEGENERATION : POT_POISON);
+            break;
+
+        case CE_POISONOUS:
+            potion_type = (power_up ? POT_STRONG_POISON : POT_POISON);
+            break;
+
+        case CE_MUTAGEN_RANDOM:
+        case CE_MUTAGEN_GOOD:   // unused
+        case CE_RANDOM:         // unused
+            potion_type = POT_MUTATION;
+            break;
+
+        case CE_MUTAGEN_BAD:    // unused
+        case CE_ROTTEN:         // actually this only occurs via mangling
+        case CE_HCL:            // necrophage
+            potion_type = (power_up ? POT_DECAY : POT_STRONG_POISON);
+            break;
+
+        case CE_NOCORPSE:       // shouldn't occur
+        default:
+            break;
+        }
+        break;
+    }
+
+    // If not powerful enough, we downgrade the potion
+    if (random2(50) > powc + 10 * rotten)
+    {
+        switch (potion_type)
+        {
+        case POT_DECAY:
+        case POT_DEGENERATION:
+        case POT_STRONG_POISON:
+            potion_type = POT_POISON;
+            break;
+
+        case POT_MUTATION:
+        case POT_POISON:
+            potion_type = POT_CONFUSION;
+            break;
+
+        case POT_PARALYSIS:
+            potion_type = POT_SLOWING;
+            break;
+
+        case POT_CONFUSION:
+        case POT_SLOWING:
+        default:
+            potion_type = POT_WATER;
+            break;
+        }
+    }
+
+    // We borrow the corpse's object to make our potion:
+    mitm[corpse].base_type = OBJ_POTIONS;
+    mitm[corpse].sub_type = potion_type;
+    mitm[corpse].quantity = 1;
+    mitm[corpse].plus = 0;
+    mitm[corpse].plus2 = 0;
+    item_colour( mitm[corpse] );  // sets special as well
+
+    it_name( corpse, DESC_NOCAP_A, str_pass );
+    snprintf( info, INFO_SIZE, "You extract %s from the corpse.",
+              str_pass );
+    mpr( info );
+
+    // try to move the potion to the player (for convenience)
+    if (move_item_to_player( corpse, 1 ) != 1)
+    {
+        mpr( "Unfortunately, you can't carry it right now!" );
+    }
+}
 
 void make_shuggoth(int x, int y, int hp)
 {
@@ -2034,9 +2322,6 @@ static int rot_corpses(int x, int y, int pow, int garbage)
 
 void cast_rotting(int pow)
 {
-    if (pow > 150)
-        pow = 150;
-
     apply_area_visible(rot_living, pow);
     apply_area_visible(rot_undead, pow);
     apply_area_visible(rot_corpses, pow);
@@ -2095,11 +2380,8 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     bool hole = true;
     const char *what = NULL;
 
-    if (pow > 200)
-        pow = 200;
-
     mpr("Fragment what (e.g. a wall)?", MSGCH_PROMPT);
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET, TARG_ENEMY );
 
     if (!beam.isValid)
     {
@@ -2117,7 +2399,6 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
     blast.isTracer = false;
     blast.flavour = BEAM_FRAG;
 
-    // Maximum die size of 25
     // Number of dice vary... 3 is easy/common, but it can get as high as 6.
     blast.damage = dice_def( 0, 5 + pow / 10 );
 
@@ -2224,7 +2505,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
 
             // Yes, this spell does lousy damage if the
             // monster isn't susceptable. -- bwr
-            player_hurt_monster( mon, roll_dice( 1, 5 + pow / 50 ) );
+            player_hurt_monster( mon, roll_dice( 1, 5 + pow / 25 ) );
             goto do_terrain;
         }
 
@@ -2269,8 +2550,8 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         if (okay_to_dest
             && (grid == DNGN_ORCISH_IDOL
                 || grid == DNGN_GRANITE_STATUE
-                || (pow >= 25 && grid == DNGN_ROCK_WALL && one_chance_in(3))
-                || (pow >= 50 && grid == DNGN_STONE_WALL && one_chance_in(10))))
+                || (pow >= 40 && grid == DNGN_ROCK_WALL && one_chance_in(3))
+                || (pow >= 60 && grid == DNGN_STONE_WALL && one_chance_in(10))))
         {
             // terrain blew up real good:
             blast.ex_size = 2;
@@ -2298,7 +2579,7 @@ void cast_fragmentation(int pow)        // jmf: ripped idea from airstrike
         strcpy( blast.beam_name, "blast of metal fragments" );
         blast.damage.num = 4;
 
-        if (okay_to_dest && pow >= 50 && random2(500) < pow / 5)
+        if (okay_to_dest && pow >= 80 && random2(500) < pow / 5)
         {
             blast.damage.num += 2;
             grd[beam.tx][beam.ty] = DNGN_FLOOR;
@@ -2432,8 +2713,8 @@ void cast_twist(int pow)
     struct bolt tmp;    // used, but ignored
 
     // level one power cap -- bwr
-    if (pow > 30)
-        pow = 30;
+    if (pow > 25)
+        pow = 25;
 
     // Get target,  using DIR_TARGET for targetting only,
     // since we don't use beam() for this spell.
@@ -2460,7 +2741,7 @@ void cast_twist(int pow)
     // it can target any monster in LOS (high utility).  This is
     // similar to the damage done by Magic Dart (although, the
     // distribution is much more uniform). -- bwr
-    int damage = 1 + random2( 6 + pow / 4 );
+    int damage = 1 + random2( 3 + pow / 5 );
 
     // Inflict the damage
     player_hurt_monster( mons, damage );
@@ -2520,7 +2801,7 @@ void cast_far_strike(int pow)
                 speed /= 10;
             }
         }
-        else if (you.inv[ weapon ].base_type == OBJ_STAVES)
+        else if (item_is_staff( you.inv[ weapon ] ))
         {
             damage = property( you.inv[ weapon ], PWPN_DAMAGE );
             speed = property( you.inv[ weapon ], PWPN_SPEED );
@@ -2606,7 +2887,7 @@ void cast_apportation(int pow)
 
     mpr("Pull items from where?");
 
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET );
 
     if (!beam.isValid)
     {
@@ -2750,7 +3031,7 @@ void cast_shuggoth_seed(int powc)
 
     mpr("Sow seed in whom?", MSGCH_PROMPT);
 
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET, TARG_ENEMY );
 
     if (!beam.isValid)
     {
@@ -2796,17 +3077,18 @@ void cast_condensation_shield(int pow)
         canned_msg(MSG_SPELL_FIZZLES);
     else
     {
-        if (!you.duration[DUR_CONDENSATION_SHIELD])
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+            you.duration[DUR_CONDENSATION_SHIELD] += 5 + roll_dice(2, 3);
+        else
         {
             mpr("A crackling disc of dense vapour forms in the air!");
             you.redraw_armour_class = 1;
+
+            you.duration[DUR_CONDENSATION_SHIELD] = 10 + roll_dice(2, pow / 5);
         }
 
-        you.duration[DUR_CONDENSATION_SHIELD] += 10
-                                    + ((random2(pow) + random2(pow)) / 2);
-
-        if (you.duration[DUR_CONDENSATION_SHIELD] > 50)
-            you.duration[DUR_CONDENSATION_SHIELD] = 50;
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 30)
+            you.duration[DUR_CONDENSATION_SHIELD] = 30;
     }
 
     return;
@@ -2897,8 +3179,9 @@ void cast_stoneskin(int pow)
         return;
     }
 
-    if (!(you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE ||
-          you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS))
+    if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE
+        && you.attribute[ATTR_TRANSFORMATION] != TRAN_STATUE
+        && you.attribute[ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS)
     {
         mpr("This spell does not affect your current form.");
         return;
@@ -2910,13 +3193,17 @@ void cast_stoneskin(int pow)
         return;
     }
 
-    if (!you.duration[DUR_STONESKIN])
+    if (you.duration[DUR_STONESKIN])
+        mpr( "Your skin feels harder." );
+    else
     {
-        mpr("Your skin hardens.");
+        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_STATUE)
+            mpr( "Your stone body feels more resilient." );
+        else
+            mpr( "Your skin hardens." );
+
         you.redraw_armour_class = 1;
     }
-    else
-        mpr("Your skin feels harder.");
 
     you.duration[DUR_STONESKIN] += 10 + random2(pow) + random2(pow);
 

@@ -74,7 +74,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_MEPHITIC_CLOUD,
      SPELL_NO_SPELL,
      },
-    // 3 - Book of Conjurations I
+    // 3 - Book of Conjurations I - Fire and Earth
     {0,
      SPELL_MAGIC_DART,
      SPELL_THROW_FLAME,
@@ -85,7 +85,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 4 - Book of Conjurations II
+    // 4 - Book of Conjurations II - Air and Ice
     {0,
      SPELL_MAGIC_DART,
      SPELL_THROW_FROST,
@@ -102,7 +102,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_THROW_FLAME,
      SPELL_CONJURE_FLAME,
      SPELL_STICKY_FLAME,
-     SPELL_BOLT_OF_MAGMA,
+     SPELL_BOLT_OF_FIRE,
      SPELL_FIREBALL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -135,11 +135,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_EVAPORATE,
      SPELL_FIRE_BRAND,
      SPELL_SUMMON_ELEMENTAL,
+     SPELL_BOLT_OF_MAGMA,
      SPELL_DELAYED_FIREBALL,
      SPELL_IGNITE_POISON,
      SPELL_RING_OF_FLAMES,
      SPELL_FIRE_STORM,
-     SPELL_NO_SPELL,
      },
     // 9 - Book of Ice
     {0,
@@ -166,13 +166,12 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 11 - Book of Spatial Translocations
     {0,
-     SPELL_TWIST,               // replacing bend with a LOS attack
      SPELL_APPORTATION,
      SPELL_BLINK,
-     // SPELL_SWAP,
-     SPELL_CONTROL_TELEPORT,
+     SPELL_RECALL,
+     SPELL_TELEPORT_OTHER,
      SPELL_TELEPORT_SELF,
-     SPELL_NO_SPELL,
+     SPELL_CONTROL_TELEPORT,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -233,13 +232,13 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 17 - Book of Changes
     {0,
-     SPELL_DISRUPT,
+     SPELL_FULSOME_DISTILLATION,
      SPELL_STICKS_TO_SNAKES,
      SPELL_EVAPORATE,
      SPELL_SPIDER_FORM,
-     SPELL_BLADE_HANDS,
-     SPELL_DIG,
      SPELL_ICE_FORM,
+     SPELL_DIG,
+     SPELL_BLADE_HANDS,
      SPELL_NO_SPELL,
      },
     // 18 - Book of Transfigurations
@@ -417,12 +416,12 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 31 - Book of the Warp
     {0,
-     SPELL_RECALL,
      SPELL_CONTROLLED_BLINK,
-     SPELL_TELEPORT_OTHER,
      SPELL_BANISHMENT,
      SPELL_DISPERSAL,
      SPELL_PORTAL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -474,12 +473,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 36 - Book of Control
     {0,
-     SPELL_CONTROL_TELEPORT,    //jmf: added
      SPELL_ENSLAVEMENT,
      SPELL_TAME_BEASTS,         //jmf: added
      SPELL_MASS_CONFUSION,
      SPELL_MASS_SLEEP,          //jmf: added
-     // SPELL_CONTROL_UNDEAD,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -572,9 +570,9 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_CONFUSING_TOUCH,
      SPELL_ANIMATE_SKELETON,
      SPELL_SUMMON_SMALL_MAMMAL,
-     SPELL_DISRUPT,
      SPELL_DETECT_SECRET_DOORS,
      SPELL_APPORTATION,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -740,6 +738,17 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
+    // 59 - Staff of Striking -- unused like Smiting
+    {0,
+     SPELL_STRIKING,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     SPELL_NO_SPELL,
+     },
 };
 
 static void spellbook_template( int sbook_type,
@@ -769,11 +778,10 @@ int which_spell_in_book(int sbook_type, int spl)
 
 unsigned char spellbook_contents( item_def &book, int action )
 {
-    unsigned int i;
-    int already = 0;
-    FixedVector < int, SPELLBOOK_SIZE > spell_types;    // was 10 {dlb}
+    FixedVector<int, SPELLBOOK_SIZE> spell_types;    // was 10 {dlb}
     int spelcount = 0;
     char str_pass[80];
+    int i, j;
 
     const int spell_levels = player_spell_levels();
 
@@ -783,7 +791,7 @@ unsigned char spellbook_contents( item_def &book, int action )
 
     bool spell_skills = false;
 
-    for (int i = SK_SPELLCASTING; i <= SK_POISON_MAGIC; i++)
+    for (i = SK_SPELLCASTING; i <= SK_POISON_MAGIC; i++)
     {
         if (you.skills[i])
         {
@@ -801,6 +809,7 @@ unsigned char spellbook_contents( item_def &book, int action )
 #endif
 
     spellbook_template( type, spell_types );
+
     item_name( book, DESC_CAP_THE, str_pass );
 
     clrscr();
@@ -808,21 +817,21 @@ unsigned char spellbook_contents( item_def &book, int action )
     cprintf( str_pass );
     cprintf( EOL EOL " Spells                             Type                      Level" EOL );
 
-    for (int j = 1; j < SPELLBOOK_SIZE; j++)
+    for (j = 1; j < SPELLBOOK_SIZE; j++)
     {
         if (spell_types[j] == SPELL_NO_SPELL)
             continue;
 
-        const int level_diff = spell_difficulty( spell_types[j] );
-        const int levels_req = spell_levels_required( spell_types[j] );
-
         cprintf(" ");
-        bool knowsSpell = false;
 
+        bool knowsSpell = false;
         for (i = 0; i < 25 && !knowsSpell; i++)
         {
             knowsSpell = (you.spells[i] == spell_types[j]);
         }
+
+        const int level_diff = spell_difficulty( spell_types[j] );
+        const int levels_req = spell_levels_required( spell_types[j] );
 
         int colour = DARKGREY;
         if (action == RBOOK_USE_STAFF)
@@ -859,19 +868,26 @@ unsigned char spellbook_contents( item_def &book, int action )
         cprintf(strng);
         cprintf(" - ");
 
-        cprintf(spell_title(spell_types[j]));
-        gotoxy(35, wherey());
+        cprintf( spell_title(spell_types[j]) );
+        gotoxy( 35, wherey() );
 
-        already = 0;
 
-        for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
+        if (action == RBOOK_USE_STAFF)
+            cprintf( "Evocations" );
+        else
         {
-            if (spell_typematch( spell_types[j], 1 << i ))
+            bool already = false;
+
+            for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
             {
-                if (already)
-                    cprintf( "/" );
-                cprintf( spelltype_name( 1 << i ) );
-                already = 1;
+                if (spell_typematch( spell_types[j], 1 << i ))
+                {
+                    if (already)
+                        cprintf( "/" );
+
+                    cprintf( spelltype_name( 1 << i ) );
+                    already = true;
+                }
             }
         }
 
@@ -1398,3 +1414,90 @@ void learn_spell(void)
     // is learning as bad as casting, then? {dlb}
     naughty(NAUGHTY_SPELLCASTING, 2 + random2(5));
 }                               // end which_spell()
+
+int staff_spell( int staff )
+{
+    int spell;
+    unsigned char specspell;
+    int mana, diff;
+    FixedVector< int, SPELLBOOK_SIZE >  spell_list;
+
+    // converting sub_type into book index type
+    const int type = you.inv[staff].sub_type + 40;
+
+    // Spell staves are mostly for the benefit of non-spellcasters, so we're
+    // not going to involve int or Spellcasting skills for power. -- bwr
+    const int powc = 5 + you.skills[SK_EVOCATIONS]
+                       + roll_dice( 2, you.skills[SK_EVOCATIONS] );
+
+    if (you.inv[staff].sub_type < STAFF_SMITING
+        || you.inv[staff].sub_type >= STAFF_AIR)
+    {
+        //mpr("That staff has no spells in it.");
+        canned_msg(MSG_NOTHING_HAPPENS);
+        return (0);
+    }
+
+    if (item_not_ident( you.inv[staff], ISFLAG_KNOW_TYPE ))
+    {
+        set_ident_flags( you.inv[staff], ISFLAG_KNOW_TYPE );
+        you.wield_change = true;
+    }
+
+    spellbook_template( type, spell_list );
+
+    // Assuming no gaps in spell list, select 'a' if its the only choice:
+    if (spell_list[1] != SPELL_NO_SPELL && spell_list[2] == SPELL_NO_SPELL)
+        spell = 'a';
+    else
+        spell = read_book( you.inv[staff], RBOOK_USE_STAFF );
+
+    if (spell < 'A' || (spell > 'Z' && spell < 'a') || spell > 'z')
+    {
+        goto whattt;
+    }
+
+    spell = letter_to_index( spell );
+
+    if (spell > SPELLBOOK_SIZE)
+        goto whattt;
+
+    if (!is_valid_spell_in_book( staff, spell ))
+        goto whattt;
+
+    specspell = which_spell_in_book( type,  spell );
+
+    if (specspell == SPELL_NO_SPELL)
+        goto whattt;
+
+    mana = spell_mana( specspell );
+    diff = spell_difficulty( specspell );
+
+    if (you.magic_points < mana || you.experience_level < diff)
+    {
+        mpr("Your brain hurts!");
+        confuse_player( 2 + random2(4) );
+        you.turn_is_over = 1;
+        return (0);
+    }
+
+    // Exercising the spell skills doesn't make very much sense given
+    // that spell staves are largely intended to supply spells to
+    // non-spellcasters, and they don't use spell skills to determine
+    // power in the same way that spellcasting does. -- bwr
+    //
+    // exercise_spell(specspell, true, true);
+
+    your_spells(specspell, powc, false);
+
+    dec_mp(spell_mana(specspell));
+
+    you.turn_is_over = 1;
+
+    return (roll_dice( 1, 1 + spell_difficulty(specspell) / 2 ));
+
+  whattt:
+    mpr("What?");
+
+    return (0);
+}                               // end staff_spell()

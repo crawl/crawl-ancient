@@ -152,4 +152,9 @@
 #define MINIMUM( xxx, yyy )     (((xxx) < (yyy)) ? (xxx) : (yyy))
 #define MAXIMUM( xxx, yyy )     (((xxx) > (yyy)) ? (xxx) : (yyy))
 
+// Convert capital letters into mystic numbers representing
+// CTRL sequences.  This is a macro because a lot of the type
+// it wants to be used in case labels.
+#define CONTROL( xxx )          (xxx - 'A' + 1)
+
 #endif

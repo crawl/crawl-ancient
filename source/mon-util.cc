@@ -147,9 +147,8 @@ void mons_init(FixedVector < unsigned short, 1000 > &colour)
 
 int mons_flag(int mc, int bf)
 {
-    return (smc->bitfields & bf) != 0;
+    return ((smc->bitfields & bf) != 0);
 }                               // end mons_flag()
-
 
 static int scan_mon_inv_randarts( struct monsters *mon, int ra_prop )
 {
@@ -318,7 +317,6 @@ char mons_itemuse(int mc)
 {
     return (smc->gmon_use);
 }                               // end mons_itemuse()
-
 
 unsigned char mons_colour(int mc)
 {
@@ -573,9 +571,9 @@ int mons_res_negative_energy( struct monsters *mon )
 
     if (mons_holiness( mon->type ) == MH_UNDEAD
         || mons_holiness( mon->type ) == MH_DEMONIC
-        || mon->type == MONS_SHADOW_DRAGON
-        || isdigit( mons_char(mon->type) )                 // to get golems '8'
-        || mons_charclass( mon->type ) == MONS_GOLD_MIMIC) // to get mimics
+        || mons_holiness( mon->type ) == MH_NONLIVING
+        || mons_holiness( mon->type ) == MH_PLANT
+        || mon->type == MONS_SHADOW_DRAGON)
     {
         return (3);  // to match the value for players
     }
@@ -646,6 +644,18 @@ int hit_points(int hit_dice, int min_hp, int rand_hp)
 
     return (hrolled);
 }                               // end hit_points()
+
+// This function returns the standard number of hit dice for a type
+// of monster, not a pacticular monsters current hit dice. -- bwr
+int mons_type_hit_dice( int type )
+{
+    struct monsterentry *mon_class = seekmonster( &type );
+
+    if (mon_class)
+        return (mon_class->hpdice[0]);
+
+    return (0);
+}
 
 
 #if 0
@@ -779,8 +789,11 @@ int exper_value( struct monsters *monster )
     // Monsters who can use equipment (even if only the equipment
     // they are given) can be considerably enhanced because of
     // the way weapons work for monsters. -- bwr
-    if (item_usage >= MONUSE_STARTING_EQUIPMENT)
+    if (item_usage == MONUSE_STARTING_EQUIPMENT
+        || item_usage == MONUSE_WEAPONS_ARMOUR)
+    {
         diff += 30;
+    }
 
     // Set a reasonable range on the difficulty modifier...
     // Currently 70% - 200% -- bwr
@@ -971,6 +984,24 @@ void define_monster(int k)
         m2_sec = random_colour();
         break;
 
+    case MONS_GILA_MONSTER:
+        temp_rand = random2(7);
+
+        m2_sec = (temp_rand >= 5 ? LIGHTRED :                   // 2/7
+                  temp_rand >= 3 ? LIGHTMAGENTA :               // 2/7
+                  temp_rand == 2 ? RED :                        // 1/7
+                  temp_rand == 1 ? MAGENTA                      // 1/7
+                                 : YELLOW);                     // 1/7
+        break;
+
+    case MONS_HUMAN:
+    case MONS_ELF:
+        // these are supposed to only be created by polymorph
+        m2_HD += random2(10);
+        m2_AC += random2(5);
+        m2_ev += random2(5);
+        break;
+
     case MONS_WEAPON_MIMIC:
     case MONS_ARMOUR_MIMIC:
         temp_rand = random2(100);
@@ -1000,10 +1031,10 @@ void define_monster(int k)
     menv[k].speed_increment = 70;
     menv[k].number = m2_sec;
     menv[k].flags = 0;
-    // reset monster enchantments
-    for(int i=0; i<NUM_MON_ENCHANTS; i++)
-        menv[k].enchantment[i] = ENCH_NONE;
 
+    // reset monster enchantments
+    for (int i = 0; i < NUM_MON_ENCHANTS; i++)
+        menv[k].enchantment[i] = ENCH_NONE;
 }                               // end define_monster()
 
 
@@ -1251,8 +1282,7 @@ bool mons_aligned(int m1, int m2)
     else
     {
         mon1 = &menv[m1];
-        fr1 = (mon1->attitude == ATT_FRIENDLY) ||
-        mons_has_ench(mon1, ENCH_CHARM);
+        fr1 = (mon1->attitude == ATT_FRIENDLY) || mons_has_ench(mon1, ENCH_CHARM);
     }
 
     if (m2 == MHITYOU)
@@ -1260,8 +1290,7 @@ bool mons_aligned(int m1, int m2)
     else
     {
         mon2 = &menv[m2];
-        fr2 = (mon2->attitude == ATT_FRIENDLY) ||
-            mons_has_ench(mon2, ENCH_CHARM);
+        fr2 = (mon2->attitude == ATT_FRIENDLY) || mons_has_ench(mon2, ENCH_CHARM);
     }
 
     return (fr1 == fr2);

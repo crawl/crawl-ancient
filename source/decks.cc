@@ -260,10 +260,13 @@ void deck_of_cards(unsigned char which_deck)
         i = random2(NUM_CARDS);
     }
 
+    if (i == CARD_BLANK && you.skills[SK_EVOCATIONS] > random2(30))
+        i = (int) card[random2(max_card)];
+
     cards(i);
 
-    // decks of punishment aren't objects in the game,
-    // its just Nemelex's form of punishment
+    // Decks of punishment aren't objects in the game,
+    // its just Nemelex's form of punishment -- bwr
     if (which_deck != DECK_OF_PUNISHMENT)
     {
         you.inv[you.equip[EQ_WEAPON]].plus--;
@@ -298,10 +301,12 @@ void deck_of_cards(unsigned char which_deck)
 static void cards(unsigned char which_card)
 {
     FixedVector < int, 5 > dvar;
+    FixedVector < int, 5 > mvar;
     int dvar1 = 0;
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;       // for summoning messages {dlb}
     bool failMsg = true;
+    int summ_dur;
 
     if (which_card == CARD_BLANK && one_chance_in(10))
         which_card = CARD_RULES_FOR_BRIDGE;
@@ -316,8 +321,12 @@ static void cards(unsigned char which_card)
     case CARD_BUTTERFLY:
         mpr("You have drawn the Butterfly.");
 
-        if (create_monster( MONS_BUTTERFLY, ENCH_ABJ_II + random2(4), BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + random2(3) + you.skills[SK_EVOCATIONS] / 2;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_BUTTERFLY, summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("A brightly coloured insect flies from the card!");
         }
@@ -331,74 +340,90 @@ static void cards(unsigned char which_card)
         break;
 
     case CARD_EXPERIENCE:
-        mpr("You have drawn Experience.");
-
-        if (you.experience < 27)
-        {
-            you.experience = 1 + exp_needed( you.experience_level + 2 );
-            level_change();
-        }
+        mpr( "You have drawn Experience." );
+        potion_effect( POT_EXPERIENCE, 0 );
         break;
 
     case CARD_WEALTH:
         mpr("You have drawn Wealth.");
 
-        you.gold += random2avg(500, 2) + 800;
+        you.gold += roll_dice( 2, 20 * you.skills[SK_EVOCATIONS] );
         you.redraw_gold = 1;
         break;
 
     case CARD_INTELLIGENCE:
         mpr("You have drawn the Brain!");
 
-        you.max_intel += 1 + random2avg(3, 2);
+        you.intel += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+
+        if (you.max_intel < you.intel)
+            you.max_intel = you.intel;
+
         you.redraw_intelligence = 1;
         break;
 
     case CARD_STRENGTH:
         mpr("You have drawn Strength!");
 
-        you.max_strength += 1 + random2avg(3, 2);
+        you.strength += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+
+        if (you.max_strength < you.strength)
+            you.max_strength = you.strength;
+
         you.redraw_strength = 1;
         break;
 
     case CARD_QUICKSILVER:
         mpr("You have drawn the Quicksilver card.");
 
-        you.max_dex += 1 + random2avg(3, 2);
+        you.dex += 1 + random2( you.skills[SK_EVOCATIONS] / 7 );
+
+        if (you.max_dex < you.dex)
+            you.max_dex = you.dex;
+
         you.redraw_dexterity = 1;
         break;
 
     case CARD_STUPIDITY:
         mpr("You have drawn Stupidity!");
-        you.intel -= 2 + random2avg(3, 2);
+
+        you.intel -= (2 + random2avg(5, 2));
         if (you.intel < 4)
             you.intel = 0;
+
         you.redraw_intelligence = 1;
         break;
 
     case CARD_WEAKNESS:
         mpr("You have drawn Weakness.");
-        you.strength -= 2 + random2avg(3, 2);
+
+        you.strength -= (2 + random2avg(5, 2));
         if (you.strength < 4)
             you.strength = 0;
+
         you.redraw_strength = 1;
         break;
 
     case CARD_SLOTH:
         mpr("You have drawn the Slug.");
-        you.dex -= 2 + random2avg(3, 2);
+
+        you.dex -= (2 + random2avg(5, 2));
         if (you.dex < 4)
             you.dex = 0;
+
         you.redraw_dexterity = 1;
         break;
 
-    // I do not like how this works -- what if (you.foo != you.max_foo)??? {dlb}
     case CARD_SHUFFLE:          // shuffle stats
         mpr("You have drawn the Shuffle card!");
 
         dvar[STAT_STRENGTH] = you.strength;
         dvar[STAT_DEXTERITY] = you.dex;
         dvar[STAT_INTELLIGENCE] = you.intel;
+
+        mvar[STAT_STRENGTH] = you.max_strength;
+        mvar[STAT_DEXTERITY] = you.max_dex;
+        mvar[STAT_INTELLIGENCE] = you.max_intel;
 
         you.strength = 101;
         you.intel = 101;
@@ -414,20 +439,20 @@ static void cards(unsigned char which_card)
             if (you.strength == 101)
             {
                 you.strength = dvar[dvar1];
-                you.max_strength = dvar[dvar1];
+                you.max_strength = mvar[dvar1];
             }
             else if (you.intel == 101)
             {
                 you.intel = dvar[dvar1];
-                you.max_intel = dvar[dvar1];
+                you.max_intel = mvar[dvar1];
             }
             else if (you.dex == 101)
             {
                 you.dex = dvar[dvar1];
-                you.max_dex = dvar[dvar1];
+                you.max_dex = mvar[dvar1];
             }
-            dvar[dvar1] = 101;
 
+            dvar[dvar1] = 101;
         }
         while (dvar[STAT_STRENGTH] != 101 || dvar[STAT_DEXTERITY] != 101
                                            || dvar[STAT_INTELLIGENCE] != 101);
@@ -448,15 +473,15 @@ static void cards(unsigned char which_card)
         break;
 
     case CARD_DEATH:
-        strcpy(info, "Oh no! You have drawn the Death card!");
+        mpr("Oh no! You have drawn the Death card!");
 
         if (you.duration[DUR_TELEPORT])
             you_teleport();
 
         for (loopy = 0; loopy < 5; loopy++)
         {
-            create_monster( MONS_REAPER, 0, BEH_HOSTILE, you.x_pos,
-                               you.y_pos, MHITYOU, 250 );
+            create_monster( MONS_REAPER, 0, BEH_HOSTILE, you.x_pos, you.y_pos,
+                            MHITYOU, 250 );
         }
         break;
 
@@ -470,8 +495,8 @@ static void cards(unsigned char which_card)
 
     case CARD_SHADOW:
         mpr("You have drawn the Shadow.");
-        create_monster( MONS_SOUL_EATER, 0, BEH_HOSTILE, you.x_pos,
-                               you.y_pos, MHITYOU, 250 );
+        create_monster( MONS_SOUL_EATER, 0, BEH_HOSTILE, you.x_pos, you.y_pos,
+                        MHITYOU, 250 );
         break;
 
     case CARD_GATE:
@@ -488,8 +513,8 @@ static void cards(unsigned char which_card)
 
     case CARD_STATUE:
         mpr("You have drawn the Crystal Statue.");
-        create_monster( MONS_CRYSTAL_GOLEM, 0, BEH_FRIENDLY, you.x_pos,
-                           you.y_pos, you.pet_target, 250 );
+        create_monster( MONS_CRYSTAL_GOLEM, 0, BEH_FRIENDLY,
+                        you.x_pos, you.y_pos, you.pet_target, 250 );
         break;
 
     case CARD_ACQUISITION:
@@ -500,14 +525,18 @@ static void cards(unsigned char which_card)
 
     case CARD_HASTEN:
         mpr("You have drawn Haste.");
-        potion_effect(POT_SPEED, 150);
+        potion_effect( POT_SPEED, 5 * you.skills[SK_EVOCATIONS] );
         break;
 
     case CARD_DEMON_LESSER:
         mpr("On the card is a picture of a little demon.");
 
-        if (create_monster( MONS_WHITE_IMP + random2(5), ENCH_ABJ_II + random2(4),
-            BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 3;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_WHITE_IMP + random2(5), summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -516,8 +545,12 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_COMMON:
         mpr("On the card is a picture of a demon.");
 
-        if (create_monster( MONS_NEQOXEC + random2(5), ENCH_ABJ_II + random2(3),
-                    BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 4;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_NEQOXEC + random2(5), summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -526,8 +559,13 @@ static void cards(unsigned char which_card)
     case CARD_DEMON_GREATER:
         mpr("On the card is a picture of a huge demon.");
 
-        if (create_monster( MONS_NEQOXEC + random2(5), ENCH_ABJ_I + random2(3),
-                    BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_I + random2(3) + you.skills[SK_EVOCATIONS] / 6;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_NEQOXEC + random2(5),
+                            ENCH_ABJ_I + random2(3), BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -540,8 +578,9 @@ static void cards(unsigned char which_card)
 
         for (loopy = 0; loopy < 7; loopy++)
         {
-            if (create_monster( MONS_WHITE_IMP + random2(5), ENCH_ABJ_II + random2(4),
-                    BEH_HOSTILE, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+            if (create_monster( MONS_WHITE_IMP + random2(5),
+                                ENCH_ABJ_II + random2(4), BEH_HOSTILE,
+                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
             {
                  success = true;
             }
@@ -554,8 +593,12 @@ static void cards(unsigned char which_card)
     case CARD_YAK:
         mpr("On the card is a picture of a huge shaggy yak.");
 
-        if (create_monster( MONS_DEATH_YAK, ENCH_ABJ_VI, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 2;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_DEATH_YAK, summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -564,8 +607,12 @@ static void cards(unsigned char which_card)
     case CARD_FIEND:
         mpr("On the card is a picture of a huge scaly devil.");
 
-        if (create_monster( MONS_FIEND, ENCH_ABJ_II, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_FIEND, summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -574,8 +621,13 @@ static void cards(unsigned char which_card)
     case CARD_DRAGON:
         mpr("On the card is a picture of a huge scaly dragon.");
 
-        if (create_monster( (coinflip()? MONS_DRAGON : MONS_ICE_DRAGON),
-            ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_III + you.skills[SK_EVOCATIONS] / 10;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( (coinflip() ? MONS_DRAGON : MONS_ICE_DRAGON),
+                            summ_dur, BEH_FRIENDLY, you.x_pos, you.y_pos,
+                            MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -584,8 +636,13 @@ static void cards(unsigned char which_card)
     case CARD_GOLEM:
         mpr("On the card is a picture of a statue.");
 
-        if (create_monster( MONS_CLAY_GOLEM + random2(6), ENCH_ABJ_II, BEH_FRIENDLY,
-                                    you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_CLAY_GOLEM + random2(6), summ_dur,
+                            BEH_FRIENDLY, you.x_pos, you.y_pos,
+                            MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -594,8 +651,12 @@ static void cards(unsigned char which_card)
     case CARD_THING_FUGLY:
         mpr("On the card is a picture of a very ugly thing.");
 
-        if (create_monster( MONS_VERY_UGLY_THING, ENCH_ABJ_II, BEH_FRIENDLY,
-                                    you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_VERY_UGLY_THING, summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -605,8 +666,8 @@ static void cards(unsigned char which_card)
         mpr( "On the card is a picture of a very irritated-looking "
              "skeletal thing." );
 
-        if (create_monster( MONS_LICH, 0, BEH_HOSTILE,
-                                you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+        if (create_monster( MONS_LICH, 0, BEH_HOSTILE, you.x_pos, you.y_pos,
+                            MHITYOU, 250) != -1)
         {
             mpr("The picture comes to life!");
         }
@@ -618,8 +679,12 @@ static void cards(unsigned char which_card)
         else
             mpr("On the card is a picture of a hideous abomination.");
 
-        if (create_monster( MONS_UNSEEN_HORROR, ENCH_ABJ_II, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        summ_dur = ENCH_ABJ_II + you.skills[SK_EVOCATIONS] / 10;
+        if (summ_dur > ENCH_ABJ_VI)
+            summ_dur = ENCH_ABJ_VI;
+
+        if (create_monster( MONS_UNSEEN_HORROR, summ_dur, BEH_FRIENDLY,
+                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
         {
             if (player_see_invis())
             {
@@ -645,6 +710,7 @@ static void cards(unsigned char which_card)
 
     case CARD_RAGE:
         mpr("You have drawn Rage.");
+
         if (!go_berserk(false))
             canned_msg(MSG_NOTHING_HAPPENS);
         else
@@ -653,22 +719,22 @@ static void cards(unsigned char which_card)
 
     case CARD_LEVITY:
         mpr("You have drawn Levity.");
-        potion_effect(POT_LEVITATION, 100);
+        potion_effect( POT_LEVITATION, 5 * you.skills[SK_EVOCATIONS] );
         break;
 
     case CARD_VENOM:
         mpr("You have drawn Venom.");
-        poison_player( 2 + random2(3) );
+        poison_player( 2 + random2( 7 - you.skills[SK_EVOCATIONS] / 5 ) );
         break;
 
     case CARD_XOM:
         mpr("You have drawn the card of Xom!");
-        Xom_acts(true, 5 + random2(12), true);
+        Xom_acts( true, 5 + random2( you.skills[SK_EVOCATIONS] ), true );
         break;
 
     case CARD_SLOW:
         mpr("You have drawn Slowness.");
-        potion_effect(POT_SLOWING, 100);
+        potion_effect( POT_SLOWING, 100 - 2 * you.skills[SK_EVOCATIONS] );
         break;
 
     case CARD_DECAY:
@@ -679,23 +745,23 @@ static void cards(unsigned char which_card)
         else
         {
             mpr("You feel your flesh start to rot away!");
-            you.rotting += 4 + random2(5);
+            you.rotting += 4 + random2( 5 - you.skills[SK_EVOCATIONS] / 7 );
         }
         break;
 
     case CARD_HEALING:
         mpr("You have drawn the Elixir of Health.");
-        potion_effect(POT_HEALING, 100);
+        potion_effect( POT_HEALING, 5 * you.skills[SK_EVOCATIONS] );
         break;
 
     case CARD_HEAL_WOUNDS:
         mpr("You have drawn the Symbol of Immediate Regeneration.");
-        potion_effect(POT_HEAL_WOUNDS, 100);
+        potion_effect( POT_HEAL_WOUNDS, 5 * you.skills[SK_EVOCATIONS] );
         break;
 
     case CARD_TORMENT:
         mpr("You have drawn the Symbol of Torment.");
-        torment(you.x_pos, you.y_pos);
+        torment( you.x_pos, you.y_pos );
         break;
 
 // what about checking whether there are items there, too? {dlb}
@@ -746,7 +812,9 @@ static void cards(unsigned char which_card)
                     dvar[1] = 10 + random2(GYM - 20);
                 }
                 while (grd[dvar[0]][dvar[1]] != DNGN_FLOOR);
+
                 grd[dvar[0]][dvar[1]] = dvar1;
+
                 mpr( "You sense divine power!" );
             }
         }
@@ -772,22 +840,22 @@ static void cards(unsigned char which_card)
 
     case CARD_WILD_MAGIC:
         mpr("You have drawn Wild Magic.");
-        miscast_effect(SPTYP_RANDOM, random2(15) + 5, random2(250), 0);
+        miscast_effect( SPTYP_RANDOM, random2(15) + 5, random2(250), 0 );
         break;
 
     case CARD_VIOLENCE:
         mpr("You have drawn Violence.");
-        acquirement(OBJ_WEAPONS);
+        acquirement( OBJ_WEAPONS );
         break;
 
     case CARD_PROTECTION:
         mpr("You have drawn Protection.");
-        acquirement(OBJ_ARMOUR);
+        acquirement( OBJ_ARMOUR );
         break;
 
     case CARD_KNOWLEDGE:
         mpr("You have drawn Knowledge.");
-        acquirement(OBJ_BOOKS);
+        acquirement( OBJ_BOOKS );
         break;
 
     case CARD_MAZE:
@@ -795,7 +863,7 @@ static void cards(unsigned char which_card)
         more();
 
         if (you.level_type == LEVEL_DUNGEON)
-            banished(DNGN_ENTER_LABYRINTH);
+            banished( DNGN_ENTER_LABYRINTH );
         break;
 
     case CARD_PANDEMONIUM:

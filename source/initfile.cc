@@ -99,6 +99,7 @@ static short str_to_channel( const std::string &str )
         "plain", "prompt", "god", "duration", "danger", "warning", "food",
         "recovery", "talk", "intrinsic_gain", "mutation", "monster_spell",
         "monster_enchant", "monster_damage", "rotten_meat", "equipment",
+        "diagnostic",
     };
 
     for (ret = 0; ret < NUM_MESSAGE_CHANNELS; ret++)
@@ -172,26 +173,27 @@ static bool read_bool( const std::string &field, bool def_value )
 void read_init_file(void)
 {
     // Option initialization
-    Options.autopickups   = 0x0000;
-    Options.verbose_dump  = false;
-    Options.colour_map    = false;
-    Options.clean_map     = false;
-    Options.show_uncursed = true;
-    Options.always_greet  = false;
-    Options.easy_open     = true;
-    Options.easy_armour   = true;
-    Options.easy_butcher  = false;
-    Options.easy_confirm  = CONFIRM_SAFE_EASY;
-    Options.weapon        = WPN_UNKNOWN;
-    Options.random_pick   = false;
-    Options.chaos_knight  = GOD_NO_GOD;
-    Options.death_knight  = DK_NO_SELECTION;
-    Options.priest        = GOD_NO_GOD;
-    Options.hp_warning    = 10;
-    Options.hp_attention  = 25;
-    Options.race          = 0;
-    Options.cls           = 0;
-    Options.sc_entries    = 0;
+    Options.autopickups            = 0x0000;
+    Options.verbose_dump           = false;
+    Options.colour_map             = false;
+    Options.clean_map              = false;
+    Options.show_uncursed          = true;
+    Options.always_greet           = false;
+    Options.easy_open              = true;
+    Options.easy_armour            = true;
+    Options.easy_butcher           = false;
+    Options.easy_confirm           = CONFIRM_SAFE_EASY;
+    Options.easy_quit_item_prompts = false;
+    Options.weapon                 = WPN_UNKNOWN;
+    Options.random_pick            = false;
+    Options.chaos_knight           = GOD_NO_GOD;
+    Options.death_knight           = DK_NO_SELECTION;
+    Options.priest                 = GOD_NO_GOD;
+    Options.hp_warning             = 10;
+    Options.hp_attention           = 25;
+    Options.race                   = 0;
+    Options.cls                    = 0;
+    Options.sc_entries             = 0;
 
 #ifdef USE_COLOUR_OPTS
     Options.friend_brand  = CHATTR_NORMAL;
@@ -369,6 +371,12 @@ void read_init_file(void)
                 Options.easy_confirm = CONFIRM_SAFE_EASY;
             else if (field == "all")
                 Options.easy_confirm = CONFIRM_ALL_EASY;
+        }
+        else if (key == "easy_quit_item_lists")
+        {
+            // allow aborting of item lists with space
+            Options.easy_quit_item_prompts = read_bool( field,
+                                            Options.easy_quit_item_prompts );
         }
         else if (key == "easy_open")
         {

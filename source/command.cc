@@ -42,7 +42,7 @@ void quit_game(void)
 
 void version(void)
 {
-    mpr("This is Dungeon Crawl " VERSION " (Last build " BUILD_DATE ").");
+    mpr( "This is Dungeon Crawl " VERSION " (Last build " BUILD_DATE ")." );
 }                               // end version()
 
 void adjust(void)

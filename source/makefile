@@ -10,7 +10,6 @@ MAKEFILE = makefile.lnx
 #     cuts build time a lot on multi-cpu machines
 OTHER=-j2
 
-# DEBUG mode includes WIZARD mode as well as copious debugging input
 all:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS='-O2 -fno-strength-reduce'
 
@@ -30,6 +29,7 @@ distclean:
 wizard:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DWIZARD -DDEBUG -DDEBUG_ITEM_SCAN'
 
+# DEBUG mode includes WIZARD mode as well as copious debugging input
 debug:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DFULLDEBUG -DWIZARD'
 

@@ -13,7 +13,8 @@
 #ifndef SPL_UTIL_H
 #define SPL_UTIL_H
 
-#include "enum.h"    // just for NUM_SPELL_TYPES {dlb}
+#include "enum.h"    // just for NUM_SPELL_TYPES and TARG_ENEMY
+#include "direct.h"  // just for DIR_NONE
 
 struct playerspell
 {
@@ -67,12 +68,14 @@ int apply_one_neighbouring_square(int (*func) (int, int, int, int),
 int apply_area_within_radius(int (*func) (int, int, int, int),
                               int x, int y, int pow, int radius, int ctype);
 
+char spell_direction( struct dist &spelld, struct bolt &pbolt,
+                              int restrict = DIR_NONE, int mode = TARG_ENEMY );
+
 void apply_area_cloud(int (*func) (int, int, int, int), int x, int y,
                       int pow, int number, int ctype);
 
 char *spelltype_name(unsigned int which_spelltype);
 
 int spell_type2skill (unsigned int which_spelltype);
-
 
 #endif

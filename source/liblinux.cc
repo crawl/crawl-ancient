@@ -257,11 +257,11 @@ void init_key_to_command()
     key_to_command_table['B'] = CMD_RUN_DOWN_LEFT;
     key_to_command_table['C'] = CMD_EXPERIENCE_CHECK;
     key_to_command_table['D'] = CMD_BUTCHER;
-    key_to_command_table['E'] = CMD_NO_CMD;
+    key_to_command_table['E'] = CMD_EVOKE;
     key_to_command_table['F'] = CMD_NO_CMD;
     key_to_command_table['G'] = CMD_NO_CMD;
     key_to_command_table['H'] = CMD_RUN_LEFT;
-    key_to_command_table['I'] = CMD_INVOKE;
+    key_to_command_table['I'] = CMD_OBSOLETE_INVOKE;
     key_to_command_table['J'] = CMD_RUN_DOWN;
     key_to_command_table['K'] = CMD_RUN_UP;
     key_to_command_table['L'] = CMD_RUN_RIGHT;

@@ -51,7 +51,10 @@ unsigned char detect_traps( int pow )
 {
     unsigned char traps_found = 0;
 
-    const int range = 8 + stepdown_value( pow, 10, 10, 40, 45 );
+    if (pow > 50)
+        pow = 50;
+
+    const int range = 8 + random2(8) + pow;
 
     for (int count_x = 0; count_x < MAX_TRAPS; count_x++)
     {
@@ -79,8 +82,11 @@ unsigned char detect_traps( int pow )
 
 unsigned char detect_items( int pow )
 {
+    if (pow > 50)
+        pow = 50;
+
     unsigned char items_found = 0;
-    const int     map_radius = 8 + stepdown_value( pow, 10, 10, 40, 45 );
+    const int     map_radius = 8 + random2(8) + pow;
 
     mpr("You detect items!");
 
@@ -103,8 +109,11 @@ unsigned char detect_items( int pow )
 
 unsigned char detect_creatures( int pow )
 {
+    if (pow > 50)
+        pow = 50;
+
     unsigned char creatures_found = 0;
-    const int     map_radius = 8 + stepdown_value( pow, 10, 10, 40, 45 );
+    const int     map_radius = 8 + random2(8) + pow;
 
     mpr("You detect creatures!");
 
@@ -137,6 +146,8 @@ unsigned char detect_creatures( int pow )
 
 int corpse_rot(int power)
 {
+    UNUSED( power );
+
     char adx = 0;
     char ady = 0;
 
@@ -211,8 +222,6 @@ int corpse_rot(int power)
     if (you.species != SP_MUMMY)   // josh declares mummies cannot smell {dlb}
         mpr("You smell decay.");
 
-    power = 0;
-
     // should make zombies decay into skeletons
 
     return 0;
@@ -220,6 +229,8 @@ int corpse_rot(int power)
 
 int animate_dead( int power, int corps_beh, int corps_hit, int actual )
 {
+    UNUSED( power );
+
     int adx = 0;
     int ady = 0;
 
@@ -267,7 +278,6 @@ int animate_dead( int power, int corps_beh, int corps_hit, int actual )
                         {
                             number_raised += raise_corpse(objl, adx, ady,
                                                 corps_beh, corps_hit, actual);
-                            power--;
                             break;
                         }
 
@@ -394,30 +404,30 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
     }
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "Mass: %d", total_mass);
-    mpr(info);
+    snprintf( info, INFO_SIZE, "Mass for abomination: %d", total_mass);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
-    total_mass += random2(power) * 3
-                    + random2(power) + random2(power) + random2(power)
-                    + random2(power) + random2(power) + random2(power)
-                    + random2(power) + random2(power)
-            + random2(power) * 3 + random2(power) * 3 + random2(power) * 3;
+    // This is what the old statement pretty much boils down to,
+    // the average will be approximately 10 * power (or about 1000
+    // at the practical maximum).  That's the same as the mass
+    // of a hippogriff, a spiny frog, or a steam dragon.  -- bwr
+    total_mass += roll_dice( 20, power );
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "Total mass: %d", total_mass);
-    mpr(info);
+    snprintf( info, INFO_SIZE, "Mass including power bonus: %d", total_mass);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
-    if (total_mass < 401 + random2(500) + random2(500)
-                                    || number_raised < (coinflip() ? 3 : 2))
+    if (total_mass < 400 + roll_dice( 2, 500 )
+        || number_raised < (coinflip() ? 3 : 2))
     {
         mpr("The spell fails.");
         mpr("The corpses collapse into a pulpy mess.");
         return;
     }
 
-    if (total_mass > 499 + random2(700) + random2(900) + random2(1000))
+    if (total_mass > 500 + roll_dice( 3, 1000 ))
         type_resurr = MONS_ABOMINATION_LARGE;
 
     mpr("The heap of corpses melds into an agglomeration of writhing flesh!");
@@ -533,7 +543,7 @@ bool brand_weapon(int which_brand, int power)
     mpr(info);
     you.wield_change = true;
 
-    int dur_change = duration_affected + random2avg((power * 2) - 1, 2);
+    int dur_change = duration_affected + roll_dice( 2, power );
 
     you.duration[DUR_WEAPON_BRAND] += dur_change;
 
@@ -680,7 +690,7 @@ void holy_word(int pow)
         {
             simple_monster_message(monster, " convulses!");
 
-            hurt_monster(monster, random2avg(29, 2) + (random2(pow) / 3));
+            hurt_monster( monster, roll_dice( 2, 15 ) + (random2(pow) / 3) );
 
             if (monster->hit_points < 1)
             {
@@ -754,18 +764,10 @@ void cast_refrigeration(int pow)
     int hurted = 0;
     struct bolt beam;
     int toxy;
-    const int res = player_res_cold();
 
     beam.flavour = BEAM_COLD;
 
-    // another little power safety cap -- bwr
-    if (pow > 200)
-        pow = 200;
-
-    // This is the same damage as Stone Arrow, which is really good
-    // by comparison... self inflicted damage and loss of potions
-    // help balance this. -- bwr
-    const dice_def  dam_dice( 3, 5 + pow / 20 );
+    const dice_def  dam_dice( 3, 5 + pow / 10 );
 
     mpr("The heat is drained from your surroundings.");
 
@@ -774,34 +776,22 @@ void cast_refrigeration(int pow)
     more();
     mesclr();
 
+    // Do the player:
     hurted = roll_dice( dam_dice );
-
-    if (res <= 100)
-    {
-        mpr("You freeze!");
-
-        if (res < 100)
-            hurted *= 2;
-    }
-    else if (res > 100)
-    {
-        // resistance isn't fully possible given the nature of this spell
-        hurted *= 2;
-        hurted /= (2 + (res - 100));
-
-        if (hurted > 0)
-            mpr("You feel very cold.");
-    }
+    hurted = check_your_resists( hurted, beam.flavour );
 
     if (hurted > 0)
     {
+        mpr("You feel very cold.");
         ouch( hurted, 0, KILLED_BY_FREEZING );
 
-        // Note: this used to be a power of 12!... and it was applied
-        // even if the player didn't take damage from the cold.  -- bwr
+        // Note: this used to be 12!... and it was also applied even if
+        // the player didn't take damage from the cold, so we're being
+        // a lot nicer now.  -- bwr
         scrolls_burn( 5, OBJ_POTIONS );
     }
 
+    // Now do the monsters:
     for (toxy = 0; toxy < MAX_MONSTERS; toxy++)
     {
         monster = &menv[toxy];
@@ -811,24 +801,28 @@ void cast_refrigeration(int pow)
 
         if (mons_near(monster))
         {
-            strcpy(info, "You freeze ");
-            strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-            strcat(info, ".");
+            snprintf( info, INFO_SIZE, "You freeze %s.",
+                      ptr_monam( monster, DESC_NOCAP_THE ));
+
             mpr(info);
 
             hurted = roll_dice( dam_dice );
-            hurted = mons_adjust_flavoured(monster, beam, hurted);
-            hurt_monster(monster, hurted);
+            hurted = mons_adjust_flavoured( monster, beam, hurted );
 
-            if (monster->hit_points < 1)
-                monster_die(monster, KILL_YOU, 0);
-            else
+            if (hurted > 0)
             {
-                print_wounds(monster);
+                hurt_monster( monster, hurted );
 
-                //jmf: "slow snakes" finally available
-                if (mons_flag(monster->type, M_COLD_BLOOD))
-                    mons_add_ench(monster, ENCH_SLOW);
+                if (monster->hit_points < 1)
+                    monster_die(monster, KILL_YOU, 0);
+                else
+                {
+                    print_wounds(monster);
+
+                    //jmf: "slow snakes" finally available
+                    if (mons_flag(monster->type, M_COLD_BLOOD))
+                        mons_add_ench(monster, ENCH_SLOW);
+                }
             }
         }
     }
@@ -859,11 +853,8 @@ void drain_life(int pow)
         if (monster->type == -1)
             continue;
 
-        if (mons_holiness(monster->type) == MH_UNDEAD
-            || mons_holiness(monster->type) == MH_DEMONIC)
-        {
+        if (mons_res_negative_energy( monster ))
             continue;
-        }
 
         if (mons_near(monster))
         {
@@ -904,13 +895,9 @@ int vampiric_drain(int pow)
     struct monsters *monster = 0;       // NULL
     struct dist vmove;
 
-    // another spell power cap -- bwr
-    if (pow > 300)
-        pow = 300;
-
   dirc:
     mpr("Which direction?", MSGCH_PROMPT);
-    direction(vmove, DIR_DIR);
+    direction( vmove, DIR_DIR, TARG_ENEMY );
 
     if (!vmove.isValid)
     {
@@ -934,14 +921,22 @@ int vampiric_drain(int pow)
 
     monster = &menv[mgr];
 
-    if (mons_holiness(monster->type) == MH_UNDEAD
-        || mons_holiness(monster->type) == MH_DEMONIC)
+    const int holy = mons_holiness(monster->type);
+
+    if (holy == MH_UNDEAD || holy == MH_DEMONIC)
     {
         mpr("Aaaarggghhhhh!");
         dec_hp(random2avg(39, 2) + 10, false);
         return -1;
     }
 
+    if (mons_res_negative_energy( monster ))
+    {
+        canned_msg(MSG_NOTHING_HAPPENS);
+        return -1;
+    }
+
+    // The practical maiximum of this is about 25 (pow @ 100).  -- bwr
     inflicted = 3 + random2avg( 9, 2 ) + random2(pow) / 7;
 
     if (inflicted >= monster->hit_points)
@@ -973,19 +968,20 @@ int vampiric_drain(int pow)
     return 1;
 }                               // end vampiric_drain()
 
+// Note: this function is currently only used for Freeze. -- bwr
 char burn_freeze(int pow, char flavour)
 {
     int mgr = NON_MONSTER;
     struct monsters *monster = 0;       // NULL {dlb}
     struct dist bmove;
 
-    if (pow > 30)
-        pow = 30;
+    if (pow > 25)
+        pow = 25;
 
     while (mgr == NON_MONSTER)
     {
         mpr("Which direction?", MSGCH_PROMPT);
-        direction(bmove, DIR_DIR);
+        direction( bmove, DIR_DIR, TARG_ENEMY );
 
         if (!bmove.isValid)
         {
@@ -1023,7 +1019,7 @@ char burn_freeze(int pow, char flavour)
     strcat(info, ".");
     mpr(info);
 
-    int hurted = 1 + random2( random2avg( 9, 2 ) + (pow / 6) );
+    int hurted = roll_dice( 1, 3 + pow / 3 );
 
     struct bolt beam;
 
@@ -1085,7 +1081,7 @@ int summon_elemental(int pow, unsigned char restricted_type,
     {
         mpr("Summon from material in which direction?", MSGCH_PROMPT);
 
-        direction(smove, DIR_DIR);
+        direction( smove, DIR_DIR );
 
         if (!smove.isValid)
         {
@@ -1243,8 +1239,8 @@ void summon_small_mammals(int pow)
             break;
         }
 
-        create_monster(thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
-                       you.x_pos, you.y_pos, MHITNOT, 250);
+        create_monster( thing_called, ENCH_ABJ_III, BEH_FRIENDLY,
+                        you.x_pos, you.y_pos, MHITNOT, 250 );
     }
 }                               // end summon_small_mammals()
 
@@ -1259,7 +1255,7 @@ void summon_scorpions(int pow)
         if (random2(pow) <= 3)
         {
             if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_HOSTILE,
-                                you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+                                you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
             {
                 mpr("A scorpion appears. It doesn't look very happy.");
             }
@@ -1267,7 +1263,7 @@ void summon_scorpions(int pow)
         else
         {
             if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, MHITNOT, 250) != -1)
+                                you.x_pos, you.y_pos, MHITNOT, 250 ) != -1)
             {
                 mpr("A scorpion appears.");
             }
@@ -1320,7 +1316,7 @@ void summon_ice_beast_etc(int pow, int ibc)
 
     }
 
-    create_monster(ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250);
+    create_monster( ibc, numsc, beha, you.x_pos, you.y_pos, MHITNOT, 250 );
 }                               // end summon_ice_beast_etc()
 
 void summon_swarm(int pow, bool god_gift)
@@ -1388,7 +1384,7 @@ void summon_swarm(int pow, bool god_gift)
             behaviour = BEH_HOSTILE;
 
         create_monster( thing_called, ENCH_ABJ_III, behaviour, you.x_pos,
-            you.y_pos, MHITNOT, 250);
+                        you.y_pos, MHITNOT, 250 );
     }
 
     mpr("You call forth a swarm of pestilential beasts!");

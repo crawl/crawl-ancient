@@ -25,6 +25,7 @@
 #include "debug.h"
 #include "stuff.h"
 #include "itemname.h"
+#include "monstuff.h"
 #include "player.h"
 #include "spl-book.h"
 #include "view.h"
@@ -233,9 +234,9 @@ int apply_area_around_square( int (*func) (int, int, int, int),
     int x, y;
     int rv = 0;
 
-    for (x = targ_x - 1; x <= targ_y + 1; x++)
+    for (x = targ_x - 1; x <= targ_x + 1; x++)
     {
-        for (y = targ_x - 1; y <= targ_y + 1; y++)
+        for (y = targ_y - 1; y <= targ_y + 1; y++)
         {
             if (x == targ_x && y == targ_y)
                 continue;
@@ -390,7 +391,7 @@ int apply_one_neighbouring_square(int (*func) (int, int, int, int), int power)
     struct dist bmove;
 
     mpr("Which direction? [ESC to cancel]", MSGCH_PROMPT);
-    direction(bmove, DIR_DIR);
+    direction( bmove, DIR_DIR, TARG_ENEMY );
 
     if (!bmove.isValid)
     {
@@ -596,6 +597,33 @@ void apply_area_cloud( int (*func) (int, int, int, int), int x, int y,
         }
     }
 }                               // end apply_area_cloud()
+
+char spell_direction( struct dist &spelld, struct bolt &pbolt,
+                      int restrict, int mode )
+{
+    if (restrict == DIR_TARGET)
+        mpr( "Choose a target (+/- for next/prev monster)", MSGCH_PROMPT );
+    else
+        mpr( "Which direction? (*/+ to target)", MSGCH_PROMPT );
+
+    message_current_target();
+
+    direction( spelld, restrict, mode );
+
+    if (!spelld.isValid)
+    {
+        // check for user cancel
+        canned_msg(MSG_SPELL_FIZZLES);
+        return -1;
+    }
+
+    pbolt.target_x = spelld.tx;
+    pbolt.target_y = spelld.ty;
+    pbolt.source_x = you.x_pos;
+    pbolt.source_y = you.y_pos;
+
+    return 1;
+}                               // end spell_direction()
 
 char *spelltype_name(unsigned int which_spelltype)
 {

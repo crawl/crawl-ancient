@@ -178,10 +178,10 @@ unsigned char invent(int item_class_inv, bool show_price)
 
                 switch (i)
                 {
-                case OBJ_WEAPONS:    cprintf("Hand weapons");    break;
+                case OBJ_WEAPONS:    cprintf("Hand Weapons");    break;
                 case OBJ_MISSILES:   cprintf("Missiles");        break;
                 case OBJ_ARMOUR:     cprintf("Armour");          break;
-                case OBJ_WANDS:      cprintf("Magical devices"); break;
+                case OBJ_WANDS:      cprintf("Magical Devices"); break;
                 case OBJ_FOOD:       cprintf("Comestibles");     break;
                 case OBJ_UNKNOWN_I:  cprintf("Books");           break;
                 case OBJ_SCROLLS:    cprintf("Scrolls");         break;
@@ -189,7 +189,7 @@ unsigned char invent(int item_class_inv, bool show_price)
                 case OBJ_POTIONS:    cprintf("Potions");         break;
                 case OBJ_UNKNOWN_II: cprintf("Gems");            break;
                 case OBJ_BOOKS:      cprintf("Books");           break;
-                case OBJ_STAVES:     cprintf("Magical staves");  break;
+                case OBJ_STAVES:     cprintf("Magical Staves and Rods");  break;
                 case OBJ_ORBS:       cprintf("Orbs of Power");   break;
                 case OBJ_MISCELLANY: cprintf("Miscellaneous");   break;
                 case OBJ_CORPSES:    cprintf("Carrion");         break;
@@ -345,7 +345,8 @@ static unsigned char get_invent_quant( unsigned char keyin, int &quant )
 //
 // Note: This function never checks if the item is appropriate.
 int prompt_invent_item( const char *prompt, int type_expect,
-                        bool must_exist, const char other_valid_char,
+                        bool must_exist, bool allow_easy_quit,
+                        const char other_valid_char,
                         int *const count )
 {
     unsigned char  keyin = 0;
@@ -404,7 +405,10 @@ int prompt_invent_item( const char *prompt, int type_expect,
             need_prompt = false;
             need_getch  = false;
         }
-        else if (keyin == ESCAPE)
+        else if (keyin == ESCAPE
+                || (Options.easy_quit_item_prompts
+                    && allow_easy_quit
+                    && keyin == ' '))
         {
             ret = PROMPT_ABORT;
             break;
@@ -488,6 +492,7 @@ void wizard_string(char comm[50], int i)
 
     strcpy( comm,
            (i ==  10) ? "a    : acquirement"                  :
+           (i ==  13) ? "A    : set all skills to level"      :
            (i ==  15) ? "b    : controlled blink"             :
            (i ==  20) ? "B    : banish yourself to the Abyss" :
            (i ==  30) ? "g    : add a skill"                  :
@@ -500,6 +505,7 @@ void wizard_string(char comm[50], int i)
            (i ==  90) ? "o/%%  : create an object"            :
            (i == 100) ? "p    : make entrance to pandemonium" :
            (i == 110) ? "x    : gain an experience level"     :
+           (i == 115) ? "r    : change character's species"   :
            (i == 120) ? "s    : gain 20000 skill points"      :
            (i == 130) ? "S    : set skill to level"           :
            (i == 140) ? "t    : tweak object properties"      :
@@ -561,7 +567,7 @@ void command_string(char comm[50], int i)
            (i == 140) ? "A    : list abilities/mutations"         :
            (i == 141) ? "C    : check experience"                 :
            (i == 142) ? "D    : dissect a corpse"                 :
-           (i == 145) ? "I    : invoke power of wielded item"     :
+           (i == 145) ? "E    : evoke power of wielded item"      :
            (i == 150) ? "M    : memorise a spell"                 :
            (i == 155) ? "O    : view level map"                   :
            (i == 160) ? "P/R  : put on / remove jewellery"        :

@@ -36,6 +36,7 @@ bool player_light_armour(void);
  * *********************************************************************** */
 bool player_in_water(void);
 bool player_is_swimming(void);
+bool player_is_levitating(void);
 
 /* ***********************************************************************
  * called from: ability - chardump - fight - religion - spell - spells -
@@ -54,7 +55,8 @@ bool wearing_amulet(char which_am);
 /* ***********************************************************************
  * called from: acr - chardump - describe - newgame - view
  * *********************************************************************** */
-char *species_name(unsigned char speci);
+char *species_name( unsigned char speci,
+                    bool genus = false, bool adj = false, bool cap = true );
 
 
 /* ***********************************************************************
@@ -369,6 +371,7 @@ void inc_hp(int hp_gain, bool max_too);
 void rot_hp( int hp_loss );
 void unrot_hp( int hp_recovered );
 int player_rotted( void );
+void rot_mp( int mp_loss );
 
 void inc_max_hp( int hp_gain );
 void dec_max_hp( int hp_loss );

@@ -128,7 +128,7 @@ bool mons_speaks(struct monsters *monster)
                 strcat(info, " prays for help.");
                 break;
             case 1:
-                strcat(info, " screams, \" Help!\"");
+                strcat(info, " screams, \"Help!\"");
                 break;
             case 2:
                 strcat(info, " shouts, \"I'm losing control!\"");
@@ -1399,7 +1399,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 6:
                 strcat(info,
-                      " asks \" Did you write a will? You should.\".");
+                      " asks \"Did you write a will? You should.\".");
                 break;
             case 7:
                 strcat(info,
@@ -1450,7 +1450,7 @@ bool mons_speaks(struct monsters *monster)
                 break;
             case 6:
                 strcat(info,
-                       " asks \" Did you write a testament? You should.\"");
+                       " asks \"Did you write a testament? You should.\"");
                 break;
             case 7:
                 strcat(info, " says, \"You are ");
@@ -1528,10 +1528,10 @@ bool mons_speaks(struct monsters *monster)
             switch (random2(11))
             {
             case 0:
-                strcat(info, " screams, \" Submit or die!\"");
+                strcat(info, " screams, \"Submit or die!\"");
                 break;
             case 1:
-                strcat(info, " screams, \"Give me \" Entarex\"!\"");
+                strcat(info, " screams, \"Give me \"Entarex\"!\"");
                 break;
             case 2:
                 strcat(info,
@@ -1574,7 +1574,7 @@ bool mons_speaks(struct monsters *monster)
             {
             case 0:
                 strcat(info,
-                       " says, \" You've nice eyes. I could use them.\"");
+                       " says, \"You've nice eyes. I could use them.\"");
                 break;
             case 1:
                 strcat(info, " says, \"Excuse me, but I need your head.\"");
@@ -1636,7 +1636,7 @@ bool mons_speaks(struct monsters *monster)
             switch (random2(11))
             {
             case 0:
-                strcat(info, " says, \" You are a monster, aren't you?\"");
+                strcat(info, " says, \"You are a monster, aren't you?\"");
                 break;
             case 1:
                 strcat(info, " screams, \"Die, monster!\"");

@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <ctype.h>
 
 #include "externs.h"
 
@@ -107,7 +108,7 @@ void ability_increase(void);
 
 bool player_in_water(void)
 {
-    return (!you.levitation
+    return (!player_is_levitating()
             && (grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER
                 || grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER));
 }
@@ -395,7 +396,10 @@ int player_regen(void)
         rr /= 2;
     }
 
-    return rr;
+    if (rr < 1)
+        rr = 1;
+
+    return (rr);
 }
 
 int player_hunger_rate(void)
@@ -561,7 +565,7 @@ int player_res_magic(void)
 
 int player_res_fire(void)
 {
-    int rf = 100;
+    int rf = 0;
 
     /* rings of fire resistance/fire */
     rf += player_equip( EQ_RINGS, RING_PROTECTION_FROM_FIRE );
@@ -614,17 +618,17 @@ int player_res_fire(void)
         break;
     }
 
-    if (rf < 97)
-        rf = 97;
-    else if (rf > 103)
-        rf = 103;
+    if (rf < -3)
+        rf = -3;
+    else if (rf > 3)
+        rf = 3;
 
     return (rf);
 }
 
 int player_res_cold(void)
 {
-    int rc = 100;
+    int rc = 0;
 
     /* rings of fire resistance/fire */
     rc += player_equip( EQ_RINGS, RING_PROTECTION_FROM_COLD );
@@ -677,10 +681,10 @@ int player_res_cold(void)
         break;
     }
 
-    if (rc < 97)
-        rc = 97;
-    else if (rc > 103)
-        rc = 103;
+    if (rc < -3)
+        rc = -3;
+    else if (rc > 3)
+        rc = 3;
 
     return (rc);
 }
@@ -713,13 +717,14 @@ int player_res_electricity(void)
         re++;
 
     // transformations:
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_STATUE)
+        re += 1;
+
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR)
         re += 2;  // mutliple levels currently meaningless
 
-    if (re < 97)
-        re = 97;
-    else if (re > 103)
-        re = 103;
+    if (re > 3)
+        re = 3;
 
     return (re);
 }                               // end player_res_electricity()
@@ -772,17 +777,17 @@ int player_res_poison(void)
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_LICH:
-    case TRAN_DRAGON:           //jmf: monster dragons are immune to poison
+    case TRAN_ICE_BEAST:
+    case TRAN_STATUE:
+    case TRAN_DRAGON:
     case TRAN_SERPENT_OF_HELL:
     case TRAN_AIR:
         rp++;
         break;
     }
 
-    if (rp < 97)
-        rp = 97;
-    else if (rp > 103)
-        rp = 103;
+    if (rp > 3)
+        rp = 3;
 
     return (rp);
 }                               // end player_res_poison()
@@ -801,9 +806,9 @@ unsigned char player_spec_death(void)
     // species:
     if (you.species == SP_MUMMY)
     {
-        if (you.experience_level > 12)
+        if (you.experience_level >= 13)
             sd++;
-        if (you.experience_level > 25)
+        if (you.experience_level >= 26)
             sd++;
     }
 
@@ -960,12 +965,18 @@ int player_prot_life(void)
 
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
-    case TRAN_LICH:
-        pl += 3;
+    case TRAN_STATUE:
+        pl += 1;
         break;
+
     case TRAN_SERPENT_OF_HELL:
         pl += 2;
         break;
+
+    case TRAN_LICH:
+        pl += 3;
+        break;
+
     default:
         break;
     }
@@ -1024,15 +1035,10 @@ int player_movement_speed(void)
         if (player_equip_ego_type( EQ_BODY_ARMOUR, SPARM_PONDEROUSNESS ))
             mv += 2;
 
-        // Swiftness is an Air spell, it doesn't work so well in water -- bwr
-        if (!player_in_water())
-        {
-            // Now when it says "you feel a little slower" you really are:
-            if (you.duration[DUR_SWIFTNESS] > 6)
-                mv -= 2;
-            else if (you.duration[DUR_SWIFTNESS] > 0)
-                mv--;
-        }
+        // Swiftness is an Air spell, it doesn't work in water...
+        // levitating player's will move faster. -- bwr
+        if (you.duration[DUR_SWIFTNESS] > 0 && !player_in_water())
+            mv -= (player_is_levitating() ? 4 : 2);
 
         /* Mutations: -2, -3, -4 */
         if (you.mutation[MUT_FAST] > 0)
@@ -1047,7 +1053,7 @@ int player_movement_speed(void)
 
     // We'll use the old value of six as a minimum, with haste this could
     // end up as a speed of three, which is about as fast as we want
-    // the player to be able to go (since 3 is 3.33x as fast and 2 is 5x
+    // the player to be able to go (since 3 is 3.33x as fast and 2 is 5x,
     // which is a bit of a jump, and a bit too fast) -- bwr
     if (mv < 6)
         mv = 6;
@@ -1078,10 +1084,12 @@ int player_speed(void)
         ps *= 15;
         ps /= 10;
         break;
+
     case TRAN_SERPENT_OF_HELL:
         ps *= 12;
         ps /= 10;
         break;
+
     default:
         break;
     }
@@ -1171,17 +1179,25 @@ int player_AC(void)
     AC += scan_randarts(RAP_AC);
 
     if (you.duration[DUR_ICY_ARMOUR])
-        AC += 4 + you.skills[SK_ICE_MAGIC] / 3;
+        AC += 4 + you.skills[SK_ICE_MAGIC] / 3;         // max 13
 
     if (you.duration[DUR_STONEMAIL])
-        AC += 5 + you.skills[SK_EARTH_MAGIC] / 2;
+        AC += 5 + you.skills[SK_EARTH_MAGIC] / 2;       // max 18
 
-    if (you.duration[DUR_STONESKIN] > 0)
-        AC += 1 + you.skills[SK_EARTH_MAGIC] / 5;
+    if (you.duration[DUR_STONESKIN])
+        AC += 2 + you.skills[SK_EARTH_MAGIC] / 5;       // max 7
 
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE
+        || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH
         || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
     {
+        // Being a lich doesn't preclude the benefits of hide/scales -- bwr
+        //
+        // Note: Even though necromutation is a high level spell, it does
+        // allow the character full armour (so the bonus is low). -- bwr
+        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
+            AC += (3 + you.skills[SK_NECROMANCY] / 6);          // max 7
+
         //jmf: only give:
         if (player_genus(GENPC_DRACONIAN))
         {
@@ -1197,15 +1213,18 @@ int player_AC(void)
             switch (you.species)
             {
             case SP_NAGA:
-                AC += you.experience_level / 3;
+                AC += you.experience_level / 3;                 // max 9
                 break;
+
             case SP_OGRE:
                 AC++;
                 break;
+
             case SP_TROLL:
             case SP_CENTAUR:
                 AC += 3;
                 break;
+
             default:
                 break;
             }
@@ -1279,26 +1298,40 @@ int player_AC(void)
         {
         case TRAN_NONE:
         case TRAN_BLADE_HANDS:
+        case TRAN_LICH:  // can wear normal body armour (small bonus)
             break;
-        case TRAN_SPIDER:
+
+
+        case TRAN_SPIDER: // low level (small bonus)
+            AC += (3 + you.skills[SK_POISON_MAGIC] / 5);        // max 8
+            break;
+
         case TRAN_ICE_BEAST:
-            AC += 2;
+            AC += (3 + you.skills[SK_ICE_MAGIC] / 4);           // max 9
+
+            if (you.duration[DUR_ICY_ARMOUR])
+                AC += (1 + you.skills[SK_ICE_MAGIC] / 4);       // max +7
             break;
-        case TRAN_LICH:
-            AC += 3;
-            break;
+
         case TRAN_DRAGON:
-            AC += 7;
+            AC += (7 + you.skills[SK_FIRE_MAGIC] / 3);          // max 16
             break;
-        case TRAN_STATUE:
-            AC += 20;
+
+        case TRAN_STATUE: // main ability is armour (high bonus)
+            AC += (17 + you.skills[SK_EARTH_MAGIC] / 2);        // max 30
+
+            if (you.duration[DUR_STONESKIN] || you.duration[DUR_STONEMAIL])
+                AC += (1 + you.skills[SK_EARTH_MAGIC] / 4);     // max +7
             break;
+
         case TRAN_SERPENT_OF_HELL:
-            AC += 10;
+            AC += (10 + you.skills[SK_FIRE_MAGIC] / 3);         // max 19
             break;
-        case TRAN_AIR:
-            AC = 20;            // air - scales & species ought to be irrelevent
+
+        case TRAN_AIR:    // air - scales & species ought to be irrelevent
+            AC = (you.skills[SK_AIR_MAGIC] * 3) / 2;            // max 40
             break;
+
         default:
             break;
         }
@@ -1425,13 +1458,20 @@ int player_evasion(void)
     case TRAN_DRAGON:
         ev -= 3;
         break;
+
     case TRAN_STATUE:
     case TRAN_SERPENT_OF_HELL:
         ev -= 5;
         break;
+
+    case TRAN_SPIDER:
+        ev += 3;
+        break;
+
     case TRAN_AIR:
         ev += 20;
         break;
+
     default:
         break;
     }
@@ -1552,16 +1592,13 @@ unsigned char player_sust_abil(void)
 
     sa += player_equip( EQ_RINGS, RING_SUSTAIN_ABILITIES );
 
-    if (you.species == SP_MUMMY) // to balance lack of means to restore stats
-        sa++;
-
     return sa;
 }                               // end player_sust_abil()
 
 int carrying_capacity(void)
 {
     // Originally: 1000 + you.strength * 200 + ( you.levitation ? 1000 : 0 )
-    return (3500 + (you.strength * 100) + (you.levitation ? 1000 : 0));
+    return (3500 + (you.strength * 100) + (player_is_levitating() ? 1000 : 0));
 }
 
 int burden_change(void)
@@ -1639,7 +1676,7 @@ bool you_resist_magic(int power)
     snprintf( info, INFO_SIZE, "Power: %d, player's MR: %d, target: %d, roll: %d",
              ench_power, player_res_magic(), mrchance, mrch2 );
 
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (mrch2 < mrchance)
@@ -1677,7 +1714,7 @@ void gain_exp( unsigned int exp_gained )
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "gain_exp: %d", exp_gained );
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (you.experience + exp_gained > 8999999)
@@ -1889,8 +1926,15 @@ void level_change(void)
 
             case SP_MUMMY:
                 if (you.experience_level == 13 || you.experience_level == 26)
-                    mpr("You feel more in touch with the powers of death.",
-                        MSGCH_INTRINSIC_GAIN);
+                {
+                    mpr( "You feel more in touch with the powers of death.",
+                         MSGCH_INTRINSIC_GAIN );
+                }
+
+                if (you.experience_level == 13)  // level 13 for now -- bwr
+                {
+                    mpr( "You can now infuse your body with magic to restore decomposition.", MSGCH_INTRINSIC_GAIN );
+                }
                 break;
 
             case SP_NAGA:
@@ -2312,7 +2356,7 @@ int check_stealth(void)
             stealth += 20;
     }
 
-    if (you.levitation)
+    if (player_is_levitating())
         stealth += 10;
     else if (player_in_water())
     {
@@ -2335,7 +2379,7 @@ int check_stealth(void)
     if (stealth < 0)
         stealth = 0;
 
-    return stealth;
+    return (stealth);
 }                               // end check_stealth()
 
 void ability_increase(void)
@@ -2496,7 +2540,7 @@ void display_char_status(void)
     if (you.berserker)
         mpr("You are possessed by a berserker rage.");
 
-    if (you.levitation)
+    if (player_is_levitating())
         mpr("You are hovering above the floor.");
 
     if (you.poison)
@@ -2593,90 +2637,193 @@ void redraw_skill(const char your_name[kNameLen], const char class_name[40])
     cprintf(print_it2);
 }                               // end redraw_skill()
 
-char *species_name(unsigned char speci)
+// Note that this function only has the one static buffer, so if you
+// want to use the results, you'll want to make a copy.
+char *species_name( unsigned char speci, bool genus, bool adj, bool cap )
+// defaults:                             false       false     true
 {
-    // Causes minor problems with ghosts, but nevermind
-    // still the case? - 12mar200 {dlb}
-    if (player_genus(GENPC_DRACONIAN) && you.experience_level < 7)
-        return "Draconian";
+    static char species_buff[80];
+    int i;
 
-    switch (speci)
+    if (player_genus( GENPC_DRACONIAN, speci ))
     {
-    case SP_HUMAN:
-        return "Human";
-    case SP_ELF:
-        return "Elf";
-    case SP_HIGH_ELF:
-        return "High Elf";
-    case SP_GREY_ELF:
-        return "Grey Elf";
-    case SP_DEEP_ELF:
-        return "Deep Elf";
-    case SP_SLUDGE_ELF:
-        return "Sludge Elf";
-    case SP_HILL_DWARF:
-        return "Hill Dwarf";
-    case SP_MOUNTAIN_DWARF:
-        return "Mountain Dwarf";
-    case SP_HALFLING:
-        return "Halfling";
-    case SP_HILL_ORC:
-        return "Hill Orc";
-    case SP_KOBOLD:
-        return "Kobold";
-    case SP_MUMMY:
-        return "Mummy";
-    case SP_NAGA:
-        return "Naga";
-    case SP_GNOME:
-        return "Gnome";
-    case SP_OGRE:
-        return "Ogre";
-    case SP_TROLL:
-        return "Troll";
-    case SP_OGRE_MAGE:
-        return "Ogre-Mage";
-    case SP_RED_DRACONIAN:
-        return "Red Draconian";
-    case SP_WHITE_DRACONIAN:
-        return "White Draconian";
-    case SP_GREEN_DRACONIAN:
-        return "Green Draconian";
-    case SP_GOLDEN_DRACONIAN:
-        return "Yellow Draconian";
-    case SP_GREY_DRACONIAN:
-        return "Grey Draconian";
-    case SP_BLACK_DRACONIAN:
-        return "Black Draconian";
-    case SP_PURPLE_DRACONIAN:
-        return "Purple Draconian";
-    case SP_MOTTLED_DRACONIAN:
-        return "Mottled Draconian";
-    case SP_PALE_DRACONIAN:
-        return "Pale Draconian";
-    case SP_UNK0_DRACONIAN:
-    case SP_UNK1_DRACONIAN:
-    case SP_UNK2_DRACONIAN:
-        return "Draconian";
-    case SP_CENTAUR:
-        return "Centaur";
-    case SP_DEMIGOD:
-        return "Demigod";
-    case SP_SPRIGGAN:
-        return "Spriggan";
-    case SP_MINOTAUR:
-        return "Minotaur";
-    case SP_DEMONSPAWN:
-        return "Demonspawn";
-    case SP_GHOUL:
-        return "Ghoul";
-    case SP_KENKU:
-        return "Kenku";
-    case SP_MERFOLK:
-        return "Merfolk";
-    default:
-        return "Yak";
+        if (genus || adj)
+            strcpy( species_buff, "Draconian" );
+        else
+        {
+            // Causes minor problems with ghosts, but nevermind
+            // still the case? - 12mar200 {dlb}
+            if (you.experience_level < 7)
+                strcpy( species_buff, "Draconian" );
+            else
+            {
+                switch (speci)
+                {
+                case SP_RED_DRACONIAN:
+                    strcpy( species_buff, "Red Draconian" );
+                    break;
+                case SP_WHITE_DRACONIAN:
+                    strcpy( species_buff, "White Draconian" );
+                    break;
+                case SP_GREEN_DRACONIAN:
+                    strcpy( species_buff, "Green Draconian" );
+                    break;
+                case SP_GOLDEN_DRACONIAN:
+                    strcpy( species_buff, "Yellow Draconian" );
+                    break;
+                case SP_GREY_DRACONIAN:
+                    strcpy( species_buff, "Grey Draconian" );
+                    break;
+                case SP_BLACK_DRACONIAN:
+                    strcpy( species_buff, "Black Draconian" );
+                    break;
+                case SP_PURPLE_DRACONIAN:
+                    strcpy( species_buff, "Purple Draconian" );
+                    break;
+                case SP_MOTTLED_DRACONIAN:
+                    strcpy( species_buff, "Mottled Draconian" );
+                    break;
+                case SP_PALE_DRACONIAN:
+                    strcpy( species_buff, "Pale Draconian" );
+                    break;
+                case SP_UNK0_DRACONIAN:
+                case SP_UNK1_DRACONIAN:
+                case SP_UNK2_DRACONIAN:
+                default:
+                    strcpy( species_buff, "Draconian" );
+                    break;
+                }
+            }
+        }
     }
+    else if (player_genus( GENPC_ELVEN, speci ))
+    {
+        if (adj)
+            strcpy( species_buff, "Elven" );
+        else if (genus)
+            strcpy( species_buff, "Elf" );
+        else
+        {
+            switch (speci)
+            {
+            case SP_ELF:
+            default:
+                strcpy( species_buff, "Elf" );
+                break;
+            case SP_HIGH_ELF:
+                strcpy( species_buff, "High Elf" );
+                break;
+            case SP_GREY_ELF:
+                strcpy( species_buff, "Grey Elf" );
+                break;
+            case SP_DEEP_ELF:
+                strcpy( species_buff, "Deep Elf" );
+                break;
+            case SP_SLUDGE_ELF:
+                strcpy( species_buff, "Sludge Elf" );
+                break;
+            }
+        }
+    }
+    else if (player_genus( GENPC_DWARVEN, speci ))
+    {
+        if (adj)
+            strcpy( species_buff, "Dwarven" );
+        else if (genus)
+            strcpy( species_buff, "Dwarf" );
+        else
+        {
+            switch (speci)
+            {
+            case SP_HILL_DWARF:
+                strcpy( species_buff, "Hill Dwarf" );
+                break;
+            case SP_MOUNTAIN_DWARF:
+                strcpy( species_buff, "Mountain Dwarf" );
+                break;
+            default:
+                strcpy( species_buff, "Dwarf" );
+                break;
+            }
+
+        }
+    }
+    else
+    {
+        switch (speci)
+        {
+        case SP_HUMAN:
+            strcpy( species_buff, "Human" );
+            break;
+        case SP_HALFLING:
+            strcpy( species_buff, "Halfling" );
+            break;
+        case SP_HILL_ORC:
+            strcpy( species_buff, (adj) ? "Orcish" : (genus) ? "Orc"
+                                                             : "Hill Orc" );
+            break;
+        case SP_KOBOLD:
+            strcpy( species_buff, "Kobold" );
+            break;
+        case SP_MUMMY:
+            strcpy( species_buff, "Mummy" );
+            break;
+        case SP_NAGA:
+            strcpy( species_buff, "Naga" );
+            break;
+        case SP_GNOME:
+            strcpy( species_buff, (adj) ? "Gnomish" : "Gnome" );
+            break;
+        case SP_OGRE:
+            strcpy( species_buff, (adj) ? "Ogreish" : "Ogre" );
+            break;
+        case SP_TROLL:
+            strcpy( species_buff, (adj) ? "Trollish" : "Troll" );
+            break;
+        case SP_OGRE_MAGE:
+            // We've previously declared that these are radically
+            // different from Ogres... so we're not going to
+            // refer to them as Ogres.  -- bwr
+            strcpy( species_buff, "Ogre-Mage" );
+            break;
+        case SP_CENTAUR:
+            strcpy( species_buff, "Centaur" );
+            break;
+        case SP_DEMIGOD:
+            strcpy( species_buff, (adj) ? "Divine" : "Demigod" );
+            break;
+        case SP_SPRIGGAN:
+            strcpy( species_buff, "Spriggan" );
+            break;
+        case SP_MINOTAUR:
+            strcpy( species_buff, "Minotaur" );
+            break;
+        case SP_DEMONSPAWN:
+            strcpy( species_buff, (adj) ? "Demonic" : "Demonspawn" );
+            break;
+        case SP_GHOUL:
+            strcpy( species_buff, (adj) ? "Ghoulish" : "Ghoul" );
+            break;
+        case SP_KENKU:
+            strcpy( species_buff, "Kenku" );
+            break;
+        case SP_MERFOLK:
+            strcpy( species_buff, (adj) ? "Merfolkian" : "Merfolk" );
+            break;
+        default:
+            strcpy( species_buff, (adj) ? "Yakish" : "Yak" );
+            break;
+        }
+    }
+
+    if (!cap)
+    {
+        // it's easier to uncapitalize -- bwr
+        for (i = 0; species_buff[i] != '\0'; i++)
+            species_buff[i] = tolower( species_buff[i] );
+    }
+
+    return (species_buff);
 }                               // end species_name()
 
 bool wearing_amulet(char amulet)
@@ -2707,6 +2854,11 @@ bool wearing_amulet(char amulet)
 
     return false;
 }                               // end wearing_amulet()
+
+bool player_is_levitating(void)
+{
+    return (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON || you.levitation);
+}
 
 bool player_has_spell( int spell )
 {
@@ -3008,6 +3160,7 @@ void dec_mp(int mp_loss)
 
 bool enough_hp(int minimum, bool suppress_msg)
 {
+    // We want to at least keep 1 HP -- bwr
     if (you.hp < minimum + 1)
     {
         if (!suppress_msg)
@@ -3093,6 +3246,14 @@ void unrot_hp( int hp_recovered )
 int player_rotted( void )
 {
     return (5000 - you.base_hp);
+}
+
+void rot_mp( int mp_loss )
+{
+    you.base_magic_points -= mp_loss;
+    calc_mp();
+
+    you.redraw_magic_points = 1;
 }
 
 void inc_max_hp( int hp_gain )
@@ -3416,7 +3577,7 @@ void contaminate_player(int change, bool statusOnly)
         snprintf( info, INFO_SIZE, "change: %d  radiation: %d",
                  change, change + you.magic_contamination );
 
-        mpr( info );
+        mpr( info, MSGCH_DIAGNOSTIC );
     }
 #endif
 
@@ -3472,8 +3633,9 @@ void contaminate_player(int change, bool statusOnly)
         return;
 
     snprintf( info, INFO_SIZE, "You feel %s contaminated with magical energies.",
-        (change < 0)?"less":"more");
-    mpr(info, change>0?MSGCH_WARN:MSGCH_RECOVERY);
+              (change < 0) ? "less" : "more" );
+
+    mpr( info, (change > 0) ? MSGCH_WARN : MSGCH_RECOVERY );
 }
 
 void poison_player( int amount )

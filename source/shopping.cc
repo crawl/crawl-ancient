@@ -1329,6 +1329,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
         if (item_not_ident( item, ISFLAG_KNOW_TYPE ))
             valued = 120;
         else if (item.sub_type == STAFF_SMITING
+                || item.sub_type == STAFF_STRIKING
                 || item.sub_type == STAFF_WARDING
                 || item.sub_type == STAFF_DISCOVERY)
         {

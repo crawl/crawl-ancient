@@ -48,12 +48,12 @@ static char xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 static char ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
 static char dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
 static char DOSidiocy[10] = { "OPQKSMGHI" };
-static char *aim_prompt = "Aim (move cursor or select with '-','+','=', "
-    "then '.', or '>')";
+static char *aim_prompt = "Aim (move cursor or -/+/=, change mode with CTRL-F, select with . or >)";
 
 static void describe_cell(int mx, int my);
-char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
-               2 > &mfp, char direction);
+char mons_find( unsigned char xps, unsigned char yps,
+                FixedVector<char, 2> &mfp, char direction,
+                int mode = TARG_ANY );
 
 //---------------------------------------------------------------
 //
@@ -85,7 +85,7 @@ char mons_find(unsigned char xps, unsigned char yps, FixedVector < char,
 //
 // targetting mode is handled by look_around()
 //---------------------------------------------------------------
-void direction( struct dist &moves, int restrict )
+void direction( struct dist &moves, int restrict, int mode )
 {
     bool dirChosen = false;
     bool targChosen = false;
@@ -123,7 +123,7 @@ void direction( struct dist &moves, int restrict )
     }
     else
     {
-        if (strchr(dirchars, keyin) != NULL)
+        if (strchr( dirchars, keyin ) != NULL)
         {
             dirChosen = true;
             dir = (int)(strchr(dirchars, keyin) - dirchars) / 2;
@@ -132,6 +132,20 @@ void direction( struct dist &moves, int restrict )
         {
             switch (keyin)
             {
+                case CONTROL('F'):
+                    mode = (mode + 1) % TARG_NUM_MODES;
+
+                    snprintf( info, INFO_SIZE, "Targeting mode is now: %s",
+                              (mode == TARG_ANY)   ? "any" :
+                              (mode == TARG_ENEMY) ? "enemies"
+                                                   : "friends" );
+
+                    mpr( info );
+
+                    targChosen = true;
+                    dir = 0;
+                    break;
+
                 case '-':
                     targChosen = true;
                     dir = -1;
@@ -165,8 +179,7 @@ void direction( struct dist &moves, int restrict )
     }
 
     // at this point, we know exactly the input - validate
-    if (!(targChosen || dirChosen) ||
-        (targChosen && restrict == DIR_DIR))
+    if (!(targChosen || dirChosen) || (targChosen && restrict == DIR_DIR))
     {
         mpr("What an unusual direction.");
         return;
@@ -176,7 +189,7 @@ void direction( struct dist &moves, int restrict )
     if (dirChosen && restrict == DIR_TARGET)
     {
         mpr(aim_prompt);
-        look_around(moves, false, dir);
+        look_around( moves, false, dir, mode );
         return;
     }
 
@@ -186,7 +199,7 @@ void direction( struct dist &moves, int restrict )
         {
             mpr(aim_prompt);
             moves.prev_target = dir;
-            look_around(moves, false);
+            look_around( moves, false, -1, mode );
             if (moves.prev_target != -1)      // -1 means they pressed 'p'
                 return;
         }
@@ -273,7 +286,7 @@ void direction( struct dist &moves, int restrict )
 //
 //---------------------------------------------------------------
 
-void look_around(struct dist &moves, bool justLooking, int first_move)
+void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
 {
     int keyin = 0;
     bool dirChosen = false;
@@ -342,8 +355,20 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                 // handle non-directional keys
                 switch (keyin)
                 {
+                    case CONTROL('F'):
+                        mode = (mode + 1) % TARG_NUM_MODES;
+
+                        snprintf( info, INFO_SIZE, "Targeting mode is now: %s",
+                                  (mode == TARG_ANY)   ? "any" :
+                                  (mode == TARG_ENEMY) ? "enemies"
+                                                       : "friends" );
+
+                        mpr( info );
+                        targChosen = true;
+                        break;
+
                     case '-':
-                        if (mons_find(cx, cy, monsfind_pos, -1) == 1)
+                        if (mons_find( cx, cy, monsfind_pos, -1, mode ) == 1)
                         {
                             newcx = monsfind_pos[0];
                             newcy = monsfind_pos[1];
@@ -353,7 +378,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
 
                     case '+':
                     case '=':
-                        if (mons_find(cx, cy, monsfind_pos, 1) == 1)
+                        if (mons_find( cx, cy, monsfind_pos, 1, mode ) == 1)
                         {
                             newcx = monsfind_pos[0];
                             newcy = monsfind_pos[1];
@@ -376,7 +401,7 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                             break;
 
 #if (!DEBUG_DIAGNOSTICS)
-                        if (!player_monster_visible( &(menv[mid]) ))
+                        if (!player_monster_visible( &menv[mid] ))
                             break;
 #endif
 
@@ -387,7 +412,8 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
                         describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
                         break;
 
-                    case 13:
+                    case '\r':
+                    case '\n':
                     case '>':
                     case ' ':
                     case '.':
@@ -489,8 +515,8 @@ void look_around(struct dist &moves, bool justLooking, int first_move)
 // a monster, zero otherwise. If direction is -1, goes backwards.
 //
 //---------------------------------------------------------------
-char mons_find(unsigned char xps, unsigned char yps,
-                            FixedVector < char, 2 > &mfp, char direction)
+char mons_find( unsigned char xps, unsigned char yps,
+                FixedVector<char, 2> &mfp, char direction, int mode )
 {
     unsigned char temp_xps = xps;
     unsigned char temp_yps = yps;
@@ -628,8 +654,12 @@ char mons_find(unsigned char xps, unsigned char yps,
 
         const int targ_mon = mgrd[ targ_x ][ targ_y ];
 
-        if (targ_mon != NON_MONSTER && env.show[temp_xps - 8][temp_yps] != 0
-            && player_monster_visible( &(menv[ targ_mon ]) ))
+        if (targ_mon != NON_MONSTER
+            && env.show[temp_xps - 8][temp_yps] != 0
+            && player_monster_visible( &(menv[ targ_mon ]) )
+            && (mode == TARG_ANY
+                || (mode == TARG_FRIEND && mons_friendly( &menv[targ_mon] ))
+                || (mode == TARG_ENEMY && !mons_friendly( &menv[targ_mon] ))))
         {
             //mpr("Found something!");
             //more();
@@ -638,7 +668,6 @@ char mons_find(unsigned char xps, unsigned char yps,
             return 1;
         }
     }
-
 
     return 0;
 }
@@ -661,7 +690,7 @@ static void describe_cell(int mx, int my)
 
 #if DEBUG_DIAGNOSTICS
         if (!player_monster_visible( &menv[i] ))
-            mpr( "There is a non-visible monster here." );
+            mpr( "There is a non-visible monster here.", MSGCH_DIAGNOSTIC );
 #else
         if (!player_monster_visible( &menv[i] ))
             goto look_clouds;
@@ -692,20 +721,21 @@ static void describe_cell(int mx, int my)
 
                 // 2-headed ogres can wield 2 weapons
                 if ((menv[i].type == MONS_TWO_HEADED_OGRE
-                          || menv[i].type == MONS_ETTIN)
+                        || menv[i].type == MONS_ETTIN)
                     && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
                 {
-                    strcat(info, ",");
-                    mpr(info);
-                    strcpy(info, " and ");
-
-                    it_name( menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass );
-
+                    strcat( info, " and " );
+                    it_name(menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass);
                     strcat(info, str_pass);
-                }
+                    strcat(info, ".");
 
-                strcat(info, ".");
-                mpr(info);
+                    mpr(info);
+                }
+                else
+                {
+                    strcat(info, ".");
+                    mpr(info);
+                }
             }
         }
 

@@ -82,15 +82,23 @@ void calc_total_skill_points( void )
     int i;
 
     you.total_skill_points = 0;
+
     for (i = 0; i < NUM_SKILLS; i++)
     {
         you.total_skill_points += you.skill_points[i];
     }
 
-    for (i = 1; i <= 27; i++) {
-        if (you.total_skill_points < skill_cost_needed(i)) break;
+    for (i = 1; i <= 27; i++)
+    {
+        if (you.total_skill_points < skill_cost_needed(i))
+            break;
     }
+
     you.skill_cost_level = i - 1;
+
+#if DEBUG_DIAGNOSTICS
+    you.redraw_experience = 1;
+#endif
 }
 
 // skill_cost_level makes skills more expensive for more experienced characters
@@ -254,7 +262,7 @@ static void exercise2( char exsk )
 
         for (i  = SK_CONJURATIONS; i <= SK_DIVINATIONS; i++)
         {
-            if (you.skills[exsk] < you.skills[exsk])
+            if (you.skills[exsk] < you.skills[i])
                 skill_rank++;
         }
 
@@ -264,17 +272,19 @@ static void exercise2( char exsk )
             return;
     }
 
+#if 0
     // experimental class "restriction" (fighter, mage, priest class) -- bwr
     if (exsk == SK_SPELLCASTING || exsk == SK_INVOCATIONS || exsk == SK_FIGHTING)
     {
-        if (exsk < you.skills[SK_SPELLCASTING]
-            || exsk < you.skills[SK_INVOCATIONS]
-            || exsk < you.skills[SK_FIGHTING])
+        if (you.skills[exsk] < you.skills[SK_SPELLCASTING]
+            || you.skills[exsk] < you.skills[SK_INVOCATIONS]
+            || you.skills[exsk] < you.skills[SK_FIGHTING])
         {
             if (one_chance_in(6))
                 return;
         }
     }
+#endif
 
     int fraction = 0;
 
@@ -378,7 +388,7 @@ static void exercise2( char exsk )
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Exercised %s * %d for %d xp.",
              skill_name(exsk), skill_inc, skill_change );
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 */
 
@@ -396,14 +406,18 @@ static void exercise2( char exsk )
         if (exsk == SK_FIGHTING)
             calc_hp();
 
-        if (exsk == SK_INVOCATIONS || exsk == SK_SPELLCASTING)
+        if (exsk == SK_INVOCATIONS || exsk == SK_EVOCATIONS
+            || exsk == SK_SPELLCASTING)
+        {
             calc_mp();
+        }
 
         if (exsk == SK_DODGING || exsk == SK_ARMOUR)
             you.redraw_evasion = 1;
 
-        if (exsk == SK_ARMOUR || exsk == SK_SHIELDS || exsk == SK_ICE_MAGIC
-                                || exsk == SK_EARTH_MAGIC)  // checked {dlb}
+        if (exsk == SK_ARMOUR || exsk == SK_SHIELDS
+                || exsk == SK_ICE_MAGIC || exsk == SK_EARTH_MAGIC
+                || you.duration[ DUR_TRANSFORMATION ] > 0)
         {
             you.redraw_armour_class = 1;
         }
@@ -422,7 +436,7 @@ static void exercise2( char exsk )
 
         if (best != old_best_skill || old_best_skill == exsk)
         {
-            redraw_skill(you.your_name, player_title());
+            redraw_skill( you.your_name, player_title() );
         }
     }
 }                               // end exercise2()

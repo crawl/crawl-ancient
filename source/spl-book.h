@@ -19,7 +19,7 @@
 // used in dungeon.cc, it_use3.cc, spl-book.cc, spl-book.h - {dlb}
 #define SPELLBOOK_SIZE 9
 // used in spl-book.cc, spl-book.h - {dlb}
-#define NUMBER_SPELLBOOKS 59
+#define NUMBER_SPELLBOOKS 60
 
 
 // updated 24may2000 {dlb}
@@ -63,5 +63,6 @@ void learn_spell(void);
  * *********************************************************************** */
 int which_spell_in_book(int sbook_type, int spl);
 
+int staff_spell( int zap_device_2 );
 
 #endif

@@ -13,8 +13,9 @@
 #define DUNGEON_H
 
 #include "FixVec.h"
+#include "externs.h"
 
-void item_colour( int p );
+void item_colour( item_def &item );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

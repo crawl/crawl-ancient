@@ -33,20 +33,20 @@
 void start_delay( int type, int turns, int parm1, int parm2 )
 /***********************************************************/
 {
-    delay_queue_item  item;
+    delay_queue_item  delay;
 
-    item.type = type;
-    item.duration = turns;
-    item.parm1 = parm1;
-    item.parm2 = parm2;
+    delay.type = type;
+    delay.duration = turns;
+    delay.parm1 = parm1;
+    delay.parm2 = parm2;
 
-    you.delay_queue.push( item );
+    you.delay_queue.push( delay );
 }
 
 void stop_delay( void )
 /*********************/
 {
-    delay_queue_item  item = you.delay_queue.front();
+    delay_queue_item  delay = you.delay_queue.front();
 
     // At the very least we can remove any queued delays, right
     // now there is no problem with doing this... note that
@@ -59,10 +59,10 @@ void stop_delay( void )
         while (you.delay_queue.size())
             you.delay_queue.pop();
 
-        you.delay_queue.push( item );
+        you.delay_queue.push( delay );
     }
 
-    switch (item.type)
+    switch (delay.type)
     {
     case DELAY_BUTCHER:
         // Corpse keeps track of work in plus2 field, see handle_delay() -- bwr
@@ -145,11 +145,11 @@ void handle_delay( void )
 
     if (you_are_delayed())
     {
-        delay_queue_item &item = you.delay_queue.front();
+        delay_queue_item &delay = you.delay_queue.front();
 
         // First check cases where delay may no longer be valid:
         // XXX: need to handle passwall when monster digs -- bwr
-        if (item.type == DELAY_BUTCHER)
+        if (delay.type == DELAY_BUTCHER)
         {
             // A monster may have raised the corpse you're chopping up! -- bwr
             // Note that a monster could have raised the corpse and another
@@ -158,13 +158,13 @@ void handle_delay( void )
             // original and that's why we do it this way.  Note that
             // we ignore the conversion to skeleton possiblity just to
             // be nice. -- bwr
-            if (is_valid_item( mitm[item.parm1] )
-                && mitm[item.parm1].base_type == OBJ_CORPSES
-                && mitm[item.parm1].x == you.x_pos
-                && mitm[item.parm1].y == you.y_pos)
+            if (is_valid_item( mitm[ delay.parm1 ] )
+                && mitm[ delay.parm1 ].base_type == OBJ_CORPSES
+                && mitm[ delay.parm1 ].x == you.x_pos
+                && mitm[ delay.parm1 ].y == you.y_pos)
             {
                 // mark work done on the corpse in case we stop -- bwr
-                mitm[item.parm1].plus2++;
+                mitm[ delay.parm1 ].plus2++;
             }
             else
             {
@@ -175,37 +175,38 @@ void handle_delay( void )
         }
 
         // Handle delay:
-        if (item.duration > 0)
+        if (delay.duration > 0)
         {
 #if DEBUG_DIAGNOSTICS
             snprintf( info, INFO_SIZE, "Delay type: %d   duration: %d",
-                            item.type, item.duration );
-            mpr( info );
+                      delay.type, delay.duration );
+
+            mpr( info, MSGCH_DIAGNOSTIC );
 #endif
-            item.duration--;
+            delay.duration--;
         }
-        else if (item.duration <= 0)
+        else
         {
-            switch (item.type)
+            switch (delay.type)
             {
             case DELAY_AUTOPICKUP:
                 break;
 
             case DELAY_WEAPON_SWAP:
-                weapon_switch( item.parm1 );
+                weapon_switch( delay.parm1 );
                 break;
 
             case DELAY_ARMOUR_ON:
-                set_ident_flags( you.inv[item.parm1], ISFLAG_EQ_ARMOUR_MASK );
+                set_ident_flags( you.inv[ delay.parm1 ], ISFLAG_EQ_ARMOUR_MASK );
 
-                in_name( item.parm1, DESC_NOCAP_YOUR, str_pass );
+                in_name( delay.parm1, DESC_NOCAP_YOUR, str_pass );
                 snprintf( info, INFO_SIZE, "You finish putting on %s.", str_pass );
                 mpr(info);
 
-                if (you.inv[item.parm1].sub_type < ARM_SHIELD
-                    || you.inv[item.parm1].sub_type > ARM_LARGE_SHIELD)
+                if (you.inv[ delay.parm1 ].sub_type < ARM_SHIELD
+                    || you.inv[ delay.parm1 ].sub_type > ARM_LARGE_SHIELD)
                 {
-                    you.equip[EQ_BODY_ARMOUR] = item.parm1;
+                    you.equip[EQ_BODY_ARMOUR] = delay.parm1;
 
                     if (you.duration[DUR_ICY_ARMOUR] != 0)
                     {
@@ -216,7 +217,7 @@ void handle_delay( void )
                 }
                 else
                 {
-                    switch (you.inv[item.parm1].sub_type)
+                    switch (you.inv[ delay.parm1 ].sub_type)
                     {
                     case ARM_BUCKLER:
                     case ARM_LARGE_SHIELD:
@@ -226,24 +227,24 @@ void handle_delay( void )
                             mpr( "Your icy shield evaporates.", MSGCH_DURATION );
                             you.duration[DUR_CONDENSATION_SHIELD] = 0;
                         }
-                        you.equip[EQ_SHIELD] = item.parm1;
+                        you.equip[EQ_SHIELD] = delay.parm1;
                         break;
                     case ARM_CLOAK:
-                        you.equip[EQ_CLOAK] = item.parm1;
+                        you.equip[EQ_CLOAK] = delay.parm1;
                         break;
                     case ARM_HELMET:
-                        you.equip[EQ_HELMET] = item.parm1;
+                        you.equip[EQ_HELMET] = delay.parm1;
                         break;
                     case ARM_GLOVES:
-                        you.equip[EQ_GLOVES] = item.parm1;
+                        you.equip[EQ_GLOVES] = delay.parm1;
                         break;
                     case ARM_BOOTS:
-                        you.equip[EQ_BOOTS] = item.parm1;
+                        you.equip[EQ_BOOTS] = delay.parm1;
                         break;
                     }
                 }
 
-                ego = get_armour_ego_type( you.inv[item.parm1] );
+                ego = get_armour_ego_type( you.inv[ delay.parm1 ] );
                 if (ego != SPARM_NORMAL)
                 {
                     switch (ego)
@@ -327,58 +328,58 @@ void handle_delay( void )
                     }
                 }
 
-                if (is_random_artefact( you.inv[item.parm1] ))
-                    use_randart(item.parm1);
+                if (is_random_artefact( you.inv[ delay.parm1 ] ))
+                    use_randart( delay.parm1 );
 
                 you.redraw_armour_class = 1;
                 you.redraw_evasion = 1;
                 break;
 
             case DELAY_ARMOUR_OFF:
-                in_name( item.parm1, DESC_NOCAP_YOUR, str_pass );
+                in_name( delay.parm1, DESC_NOCAP_YOUR, str_pass );
                 snprintf( info, INFO_SIZE, "You finish taking off %s.", str_pass );
                 mpr(info);
 
-                if (you.inv[item.parm1].sub_type < ARM_SHIELD
-                    || you.inv[item.parm1].sub_type > ARM_LARGE_SHIELD)
+                if (you.inv[ delay.parm1 ].sub_type < ARM_SHIELD
+                    || you.inv[ delay.parm1 ].sub_type > ARM_LARGE_SHIELD)
                 {
                     you.equip[EQ_BODY_ARMOUR] = -1;
                 }
                 else
                 {
-                    switch (you.inv[item.parm1].sub_type)
+                    switch (you.inv[ delay.parm1 ].sub_type)
                     {
                     case ARM_BUCKLER:
                     case ARM_LARGE_SHIELD:
                     case ARM_SHIELD:
-                        if (item.parm1 == you.equip[EQ_SHIELD])
+                        if (delay.parm1 == you.equip[EQ_SHIELD])
                             you.equip[EQ_SHIELD] = -1;
                         break;
 
                     case ARM_CLOAK:
-                        if (item.parm1 == you.equip[EQ_CLOAK])
+                        if (delay.parm1 == you.equip[EQ_CLOAK])
                             you.equip[EQ_CLOAK] = -1;
                         break;
 
                     case ARM_HELMET:
-                        if (item.parm1 == you.equip[EQ_HELMET])
+                        if (delay.parm1 == you.equip[EQ_HELMET])
                             you.equip[EQ_HELMET] = -1;
                         break;
 
 
                     case ARM_GLOVES:
-                        if (item.parm1 == you.equip[EQ_GLOVES])
+                        if (delay.parm1 == you.equip[EQ_GLOVES])
                             you.equip[EQ_GLOVES] = -1;
                         break;
 
                     case ARM_BOOTS:
-                        if (item.parm1 == you.equip[EQ_BOOTS])
+                        if (delay.parm1 == you.equip[EQ_BOOTS])
                             you.equip[EQ_BOOTS] = -1;
                         break;
                     }
                 }
 
-                unwear_armour( item.parm1 );
+                unwear_armour( delay.parm1 );
 
                 you.redraw_armour_class = 1;
                 you.redraw_evasion = 1;
@@ -397,7 +398,7 @@ void handle_delay( void )
                         break;
                 }
 
-                you.spells[i] = item.parm1;
+                you.spells[i] = delay.parm1;
                 you.spell_no++;
                 break;
 
@@ -406,8 +407,8 @@ void handle_delay( void )
                     mpr( "You finish merging with the rock." );
                     more();  // or the above message won't be seen
 
-                    const int pass_x = item.parm1;
-                    const int pass_y = item.parm2;
+                    const int pass_x = delay.parm1;
+                    const int pass_y = delay.parm2;
 
                     if (pass_x != 0 && pass_y != 0)
                     {
@@ -454,7 +455,7 @@ void handle_delay( void )
 
                         const unsigned char grid = grd[ you.x_pos ][ you.y_pos ];
                         if ((grid == DNGN_LAVA || grid == DNGN_DEEP_WATER)
-                            && !you.levitation)
+                            && !player_is_levitating())
                         {
                             if (you.species == SP_MERFOLK && grid == DNGN_DEEP_WATER)
                             {
@@ -481,7 +482,7 @@ void handle_delay( void )
                 strcat( info, " the corpse into pieces." );
                 mpr( info );
 
-                turn_corpse_into_chunks( mitm[item.parm1] );
+                turn_corpse_into_chunks( mitm[ delay.parm1 ] );
 
                 if (you.berserker && you.berserk_penalty != NO_BERSERK_PENALTY)
                 {
@@ -493,42 +494,44 @@ void handle_delay( void )
             case DELAY_DROP_ITEM:
                 // Note:  checking if item is dropable is assumed to
                 // be done before setting up this delay... this includes
-                // quantity (item.parm2). -- bwr
+                // quantity (delay.parm2). -- bwr
 
                 // Make sure item still exists.
-                if (!is_valid_item( you.inv[item.parm1] ))
+                if (!is_valid_item( you.inv[ delay.parm1 ] ))
                     break;
 
-                if (!copy_item_to_grid( you.inv[item.parm1],
-                                        you.x_pos, you.y_pos, item.parm2 ))
+                if (!copy_item_to_grid( you.inv[ delay.parm1 ],
+                                        you.x_pos, you.y_pos, delay.parm2 ))
                 {
                     mpr("Too many items on this level, not dropping the item.");
                 }
                 else
                 {
-                    quant_name( you.inv[item.parm1], item.parm2, DESC_NOCAP_A,
-                                str_pass );
+                    quant_name( you.inv[ delay.parm1 ], delay.parm2,
+                                DESC_NOCAP_A, str_pass );
 
                     snprintf( info, INFO_SIZE, "You drop %s.", str_pass );
                     mpr(info);
 
-                    if (item.parm1 == you.equip[EQ_WEAPON])
+                    if (delay.parm1 == you.equip[EQ_WEAPON])
                     {
-                        unwield_item(item.parm1);
+                        unwield_item( delay.parm1 );
                         you.equip[EQ_WEAPON] = -1;
                         canned_msg( MSG_EMPTY_HANDED );
                     }
 
-                    dec_inv_item_quantity( item.parm1, item.parm2 );
+                    dec_inv_item_quantity( delay.parm1, delay.parm2 );
                 }
                 break;
 
             case DELAY_ASCENDING_STAIRS:
                 up_stairs();
+                untag_followers();
                 break;
 
             case DELAY_DESCENDING_STAIRS:
-                down_stairs( false, item.parm1 );
+                down_stairs( false, delay.parm1 );
+                untag_followers();
                 break;
 
             case DELAY_INTERUPTABLE:

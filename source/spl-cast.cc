@@ -234,7 +234,7 @@ int spell_fail(int spell)
     int chance = 60;
     int chance2 = 0, armour = 0;
 
-    chance -= 6 * spell_spec(spell);
+    chance -= 6 * calc_spell_power( spell, false );
     chance -= (you.intel * 2);
 
     //chance -= (you.intel - 10) * abs(you.intel - 10);
@@ -295,15 +295,9 @@ int spell_fail(int spell)
     }
 
     if (you.equip[EQ_WEAPON] != -1
-            && you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_STAVES)
+            && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS)
     {
-        int wpn_penalty = 0;
-
-        if (you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS)
-        {
-            wpn_penalty = (3 * (property( you.inv[you.equip[EQ_WEAPON]],
-                                          PWPN_SPEED ) - 12)) / 2;
-        }
+        int wpn_penalty = (3 * (property( you.inv[you.equip[EQ_WEAPON]], PWPN_SPEED ) - 12)) / 2;
 
         if (wpn_penalty > 0)
             chance += wpn_penalty;
@@ -429,22 +423,23 @@ int spell_fail(int spell)
         }
     }
 
-    return chance2;
+    return (chance2);
 }                               // end spell_fail()
 
-int spell_spec(int spell)
+
+int calc_spell_power( int spell, bool apply_intel )
 {
     unsigned int bit;
     int ndx;
     int power = (you.skills[SK_SPELLCASTING] / 2) + player_mag_abil(false);
     int enhanced = 0;
 
-    unsigned int disciplines = spell_type(spell);
+    unsigned int disciplines = spell_type( spell );
 
     //jmf: evil evil evil -- exclude HOLY bit
     disciplines &= (~SPTYP_HOLY);
 
-    int skillcount = count_bits(disciplines);
+    int skillcount = count_bits( disciplines );
     if (skillcount)
     {
         for (ndx = 0; ndx <= SPTYP_LAST_EXPONENT; ndx++)
@@ -452,14 +447,17 @@ int spell_spec(int spell)
             bit = 1 << ndx;
             if ((bit != SPTYP_HOLY) && (disciplines & bit))
             {
-                int skill = spell_type2skill(bit);
+                int skill = spell_type2skill( bit );
 
                 power += (you.skills[skill] * 2) / skillcount;
             }
         }
     }
 
-    enhanced = spell_enhancement(disciplines);
+    if (apply_intel)
+        power = (power * you.intel) / 10;
+
+    enhanced = spell_enhancement( disciplines );
 
     if (enhanced > 0)
     {
@@ -475,13 +473,15 @@ int spell_spec(int spell)
             power /= 2;
     }
 
-    return power;
-}                               // end spell_spec()
+    power = stepdown_value( power, 50, 50, 150, 200 );
+
+    return (power);
+}                               // end calc_spell_power()
 
 
-int spell_enhancement(unsigned int typeflags)
+int spell_enhancement( unsigned int typeflags )
 {
-    unsigned int enhanced = 0;
+    int enhanced = 0;
 
     if (typeflags & SPTYP_CONJURATION)
         enhanced += player_spec_conj();
@@ -512,6 +512,12 @@ int spell_enhancement(unsigned int typeflags)
 
     if (you.special_wield == SPWLD_SHADOW)
         enhanced -= 2;
+
+    // These are used in an exponential way, so we'll limit them a bit. -- bwr
+    if (enhanced > 3)
+        enhanced = 3;
+    else if (enhanced < -3)
+        enhanced = -3;
 
     return (enhanced);
 }                               // end spell_enhancement()
@@ -627,14 +633,13 @@ void cast_a_spell(void)
         return;
     }
 
-    exercise_spell( you.spells[spc2], true,
-                    your_spells(you.spells[spc2], 0, true) );
+    exercise_spell( you.spells[spc2], true, your_spells( you.spells[spc2] ) );
 
     you.turn_is_over = 1;
     naughty(NAUGHTY_SPELLCASTING, 1 + random2(5));
 }                               // end cast_a_spell()
 
-bool your_spells(int spc2, int powc, bool allow_fail)
+bool your_spells( int spc2, int powc, bool allow_fail )
 {
     int dem_hor = 0;
     int dem_hor2 = 0;
@@ -646,18 +651,10 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     // Added this so that the passed in powc can have meaning -- bwr
     if (powc == 0)
-    {
-        // determine base power: modified by skills, magic ability,
-        // enhancements {dlb}:
-        powc = spell_spec(spc2);
-    }
-
-    // further modify base power by weighting against intelligence {dlb}:
-    powc *= you.intel;
-    powc /= 10;
+        powc = calc_spell_power( spc2, true );
 
     if (you.equip[EQ_WEAPON] != -1
-        && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_STAVES
+        && item_is_staff( you.inv[you.equip[EQ_WEAPON]] )
         && item_not_ident( you.inv[you.equip[EQ_WEAPON]], ISFLAG_KNOW_TYPE ))
     {
         switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
@@ -797,8 +794,18 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     if (you.species == SP_MUMMY && spell_typematch(spc2, SPTYP_HOLY))
     {
-        mpr("You can't use this type of magic!");
+        mpr( "You can't use this type of magic!" );
         return false;
+    }
+
+    // Linley says: Condensation Shield needs some disadvantages to keep
+    // it from being a no-brainer... this isn't much, but its a start -- bwr
+    if (you.duration[DUR_CONDENSATION_SHIELD] > 0
+        && spell_typematch( spc2, SPTYP_FIRE ))
+    {
+        mpr( "Your icy shield dissipates!", MSGCH_DURATION );
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        you.redraw_armour_class = 1;
     }
 
     if (spc2 == SPELL_SUMMON_HORRIBLE_THINGS
@@ -821,7 +828,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Spell #%d, power=%d", spc2, powc );
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     switch (spc2)
@@ -855,6 +862,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_MAGIC_DART:
         if (spell_direction(spd, beam) == -1)
             return true;
+
         zapping(ZAP_MAGIC_DARTS, powc, beam);
         return true;
 
@@ -901,6 +909,13 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         }
         return true;
 
+    case SPELL_STRIKING:
+        if (spell_direction( spd, beam ) == -1)
+            return true;
+
+        zapping( ZAP_STRIKING, powc, beam );
+        return true;
+
     case SPELL_CONJURE_FLAME:
         conjure_flame(powc);
         return true;
@@ -908,6 +923,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_DIG:
         if (spell_direction(spd, beam) == -1)
             return true;
+
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
@@ -918,6 +934,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_BOLT_OF_FIRE:
         if (spell_direction(spd, beam) == -1)
+
             return true;
         zapping(ZAP_FIRE, powc, beam);
         return true;
@@ -959,7 +976,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_HASTE:
-        if (spell_direction(spd, beam) == -1)
+        if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
             return true;
         zapping(ZAP_HASTING, powc, beam);
         return true;
@@ -985,7 +1002,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_INVISIBILITY:
-        if (spell_direction(spd, beam) == -1)
+        if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
             return true;
         zapping(ZAP_INVISIBILITY, powc, beam);
         return true;            // you.invis
@@ -1011,7 +1028,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_MEPHITIC_CLOUD:
-        stinking_cloud();
+        stinking_cloud(powc);
         return true;
 
     case SPELL_RING_OF_FLAMES:
@@ -1110,7 +1127,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         break;
 
     case SPELL_LEVITATION:
-        potion_effect(POT_LEVITATION, 40);
+        potion_effect( POT_LEVITATION, powc );
         break;
 
     case SPELL_BOLT_OF_DRAINING:
@@ -1188,7 +1205,7 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_HEAL_OTHER:
-        if (spell_direction(spd, beam) == -1)
+        if (spell_direction(spd, beam, DIR_NONE, TARG_FRIEND) == -1)
             return true;
 
         if (spd.isMe)
@@ -1511,22 +1528,24 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         return true;
 
     case SPELL_ALTER_SELF:
-        if (!enough_hp(you.hp_max / 2, true))
+        if (!enough_hp( you.hp_max / 2, true ))
         {
-            mpr("Your body is in too poor a condition "
-                "for this spell to function.");
+            mpr( "Your body is in too poor a condition "
+                 "for this spell to function." );
+
             return true;
         }
+
         mpr("Your body is suffused with transfigurative energy!");
 
-        set_hp(1 + random2(you.hp), false);
+        set_hp( 1 + random2(you.hp), false );
 
         if (!mutate(100, false))
             mpr("Odd... you don't feel any different.");
         return true;
 
     case SPELL_DEBUGGING_RAY:
-        if (spell_direction(spd, beam) == -1)
+        if (spell_direction(spd, beam, DIR_NONE, TARG_ANY) == -1)
             return true;
         zapping(ZAP_DEBUGGING_RAY, powc, beam);
         return true;
@@ -1690,11 +1709,13 @@ bool your_spells(int spc2, int powc, bool allow_fail)
     case SPELL_SLEEP:
         if (spell_direction(spd, beam) == -1)
             return true;
+
         if (spd.isMe)
         {
             canned_msg(MSG_UNTHINKING_ACT);
             return true;
         }
+
         zapping(ZAP_SLEEP, powc, beam);
         return true;
 
@@ -1768,6 +1789,10 @@ bool your_spells(int spc2, int powc, bool allow_fail)
 
     case SPELL_EVAPORATE:
         cast_evaporate(powc);
+        return true;
+
+    case SPELL_FULSOME_DISTILLATION:
+        cast_fulsome_distillation(powc);
         return true;
 
     case SPELL_FRAGMENTATION:
@@ -1901,8 +1926,8 @@ void exercise_spell( int spell, bool spc, bool success )
  * effects have been made much nastier since then).
  */
 
-bool miscast_effect(unsigned int sp_type, int mag_pow,
-                    int mag_fail, int force_effect)
+bool miscast_effect( unsigned int sp_type, int mag_pow, int mag_fail,
+                     int force_effect )
 {
 /*  sp_type is the type of the spell
  *  mag_pow is overall power of the spell or effect (ie its level)
@@ -1954,7 +1979,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
     strcat(info, ", failure2: ");
     itoa(spec_effect, st_prn, 10);
     strcat(info, st_prn);
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (force_effect != 100)
@@ -2002,9 +2027,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 // josh declares mummies cannot smell {dlb}
                 if (you.species != SP_MUMMY)
                     mpr("You smell something strange.");
-                                else
-                                    mpr("Your bandages flutter.");
-                                break;
+                else
+                    mpr("Your bandages flutter.");
             }
             break;
 
@@ -2249,7 +2273,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             break;
 
         case 2:         // less harmless
-            switch (random2(6))
+            switch (random2(7))
             {
             case 0:
             case 1:
@@ -2266,7 +2290,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 else
                     random_blink(false);
                 ouch(5 + random2avg(9, 2), 0, KILLED_BY_WILD_MAGIC);
-                potion_effect(POT_CONFUSION, 10);
+                potion_effect(POT_CONFUSION, 40);
                 break;
             case 5:
                 mpr("Space twists in upon itself!");
@@ -2276,6 +2300,11 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                     create_monster(MONS_SPATIAL_VORTEX, ENCH_ABJ_III, BEH_HOSTILE,
                                    you.x_pos, you.y_pos, MHITNOT, 250);
                 }
+                break;
+            case 6:
+                mpr("You are cast into the Abyss!");
+                more();
+                banished(DNGN_ENTER_ABYSS);     // sends you to the abyss
                 break;
             }
             break;
@@ -2293,7 +2322,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("Space warps crazily around you!");
                 you_teleport2(true);
                 ouch(9 + random2avg(17, 2), 0, KILLED_BY_WILD_MAGIC);
-                potion_effect(POT_CONFUSION, 30);
+                potion_effect(POT_CONFUSION, 60);
                 break;
             case 2:
                 mpr("You are cast into the Abyss!");
@@ -2527,7 +2556,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 forget_map(10 + random2(10));
                 break;
             case 1:
-                potion_effect(POT_CONFUSION, 1);
+                potion_effect(POT_CONFUSION, 10);
                 break;
             }
             break;
@@ -2548,6 +2577,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 forget_map(40 + random2(40));
                 break;
             }
+
             potion_effect(POT_CONFUSION, 1);  // common to all cases here {dlb}
             break;
 
@@ -2571,6 +2601,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                     mpr("You have a terrible headache.");
                 break;
             }
+
             potion_effect(POT_CONFUSION, 1);  // common to all cases here {dlb}
             break;
         }
@@ -2645,7 +2676,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 potion_effect(POT_SLOWING, 15);
                 break;
             case 2:
-                // josh declares mummies cannot smell, and they do not rot{dlb}
+                // josh declares mummies cannot smell {dlb}
                 if (you.species != SP_MUMMY)
                 {
                     mpr("You smell decay."); // identical to a harmless message
@@ -2907,17 +2938,21 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             {
             case 0:
                 snprintf( info, INFO_SIZE, "Smoke pours from your %s!",
-                                                 your_hand(1));
+                                                 your_hand(1) );
                 mpr(info);
-                big_cloud(CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos,
-                          20, 7 + random2(7));
+
+                big_cloud( CLOUD_GREY_SMOKE + random2(3),
+                           you.x_pos, you.y_pos, 20, 7 + random2(7) );
                 break;
+
             case 1:
                 mpr("Flames sear your flesh.");
                 scrolls_burn(3, OBJ_SCROLLS);
 
-                if (player_res_fire() < 100)
+                if (player_res_fire() < 0)
+                {
                     ouch(2 + random2avg(13, 2), 0, KILLED_BY_WILD_MAGIC);
+                }
                 break;
             }
             break;
@@ -3043,7 +3078,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You are covered in a thin layer of ice");
                 scrolls_burn(2, OBJ_POTIONS);
 
-                if (player_res_cold() < 100)
+                if (player_res_cold() < 0)
                     ouch(4 + random2avg(5, 2), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }

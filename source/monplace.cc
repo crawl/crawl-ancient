@@ -155,9 +155,13 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
         int band = choose_band(mon_type, power, band_size);
         band_size ++;
 
-        for(i=1; i<band_size; i++)
-            band_monsters[i] = band_member(band, power);
+        for (i = 1; i < band_size; i++)
+            band_monsters[i] = band_member( band, power );
     }
+
+    // Monsters that can't move shouldn't be taking the stairs -- bwr
+    if (proximity == PROX_NEAR_STAIRS && mons_speed( mon_type ) == 0)
+        proximity = PROX_AWAY_FROM_PLAYER;
 
     // (4) for first monster, choose location.  This is pretty intensive.
     bool proxOK;
@@ -228,6 +232,10 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
             switch (proximity)
             {
                 case PROX_ANYWHERE:
+                    if (grid_distance( you.x_pos, you.y_pos, px, py ) < 2 + random2(3))
+                    {
+                        proxOK = false;
+                    }
                     break;
 
                 case PROX_CLOSE_TO_PLAYER:
@@ -446,6 +454,28 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
         menv[id].flags |= MF_BATTY;
     }
 
+    if ((mon_type == MONS_BIG_FISH
+            || mon_type == MONS_GIANT_GOLDFISH
+            || mon_type == MONS_ELECTRICAL_EEL
+            || mon_type == MONS_JELLYFISH
+            || mon_type == MONS_WATER_ELEMENTAL
+            || mon_type == MONS_SWAMP_WORM)
+        && grd[fx][fy] == DNGN_DEEP_WATER
+        && !one_chance_in(5))
+    {
+        mons_add_ench( &menv[id], ENCH_SUBMERGED );
+    }
+
+    if ((mon_type == MONS_LAVA_WORM
+            || mon_type == MONS_LAVA_FISH
+            || mon_type == MONS_LAVA_SNAKE
+            || mon_type == MONS_SALAMANDER)
+        && grd[fx][fy] == DNGN_LAVA
+        && !one_chance_in(5))
+    {
+        mons_add_ench( &menv[id], ENCH_SUBMERGED );
+    }
+
     menv[id].flags |= MF_JUST_SUMMONED;
 
     menv[id].x = fx;
@@ -457,8 +487,15 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
     if (mons_itemuse(mon_type) >= MONUSE_STARTING_EQUIPMENT
         || (mon_type == MONS_DANCING_WEAPON && extra != 1))
     {
-        give_item(id, power);
+        give_item( id, power );
+
+        // Give these monsters a second weapon -- bwr
+        if (mon_type == MONS_TWO_HEADED_OGRE || mon_type == MONS_ETTIN)
+        {
+            give_item( id, power );
+        }
     }
+
 
     // give manticores 8 to 16 spike volleys.
     // they're not spellcasters so this doesn't screw anything up.
@@ -513,15 +550,19 @@ static int choose_band( int mon_type, int power, int &band_size )
         }
         break;
 
-    case MONS_ORC_KNIGHT:
     case MONS_ORC_WARLORD:
+        band_size = 5 + random2(5);   // warlords have large bands
+        // intentional fall through
+    case MONS_ORC_KNIGHT:
         band = BAND_ORC_KNIGHT;       // orcs + knight
-        band_size = 3 + random2(4);
+        band_size += 3 + random2(4);
         break;
+
     case MONS_KILLER_BEE:
         band = BAND_KILLER_BEES;       // killer bees
         band_size = 2 + random2(4);
         break;
+
     case MONS_FLYING_SKULL:
         band = BAND_FLYING_SKULLS;       // flying skulls
         band_size = 2 + random2(4);
@@ -740,25 +781,29 @@ static int band_member(int band, int power)
 
     case BAND_ORC_KNIGHT:
     case BAND_ORC_HIGH_PRIEST:
-        temp_rand = random2(32);
-        mon_type = ((temp_rand > 18) ? MONS_ORC :          // 13 in 32
-                         (temp_rand >  8) ? MONS_ORC_WARRIOR :  // 10 in 32
-                         (temp_rand >  6) ? MONS_OGRE :         //  2 in 32
-                         (temp_rand >  4) ? MONS_TROLL :        //  2 in 32
-                         (temp_rand >  2) ? MONS_ORC_WIZARD :   //  2 in 32
-                         (temp_rand >  0) ? MONS_ORC_PRIEST     //  2 in 32
-                                          : MONS_ORC_SORCEROR); //  1 in 32
+        temp_rand = random2(30);
+        mon_type = ((temp_rand > 17) ? MONS_ORC :          // 12 in 30
+                    (temp_rand >  8) ? MONS_ORC_WARRIOR :  //  9 in 30
+                    (temp_rand >  6) ? MONS_WARG :         //  2 in 30
+                    (temp_rand >  4) ? MONS_ORC_WIZARD :   //  2 in 30
+                    (temp_rand >  2) ? MONS_ORC_PRIEST :   //  2 in 30
+                    (temp_rand >  1) ? MONS_OGRE :         //  1 in 30
+                    (temp_rand >  0) ? MONS_TROLL          //  1 in 30
+                                     : MONS_ORC_SORCEROR); //  1 in 30
         break;
 
     case BAND_KILLER_BEES:
         mon_type = MONS_KILLER_BEE;
         break;
+
     case BAND_FLYING_SKULLS:
         mon_type = MONS_FLYING_SKULL;
         break;
+
     case BAND_SLIME_CREATURES:
         mon_type = MONS_SLIME_CREATURE;
         break;
+
     case BAND_YAKS:
         mon_type = MONS_YAK;
         break;
@@ -771,24 +816,31 @@ static int band_member(int band, int power)
     case BAND_HELL_HOUNDS:
         mon_type = MONS_HELL_HOUND;
         break;
+
     case BAND_JACKALS:
         mon_type = MONS_JACKAL;
         break;
+
     case BAND_GNOLLS:
         mon_type = MONS_GNOLL;
         break;
+
     case BAND_BUMBLEBEES:
         mon_type = MONS_BUMBLEBEE;
         break;
+
     case BAND_CENTAURS:
         mon_type = MONS_CENTAUR;
         break;
+
     case BAND_YAKTAURS:
         mon_type = MONS_YAKTAUR;
         break;
+
     case BAND_INSUBSTANTIAL_WISPS:
         mon_type = MONS_INSUBSTANTIAL_WISP;
         break;
+
     case BAND_DEATH_YAKS:
         mon_type = MONS_DEATH_YAK;
         break;
@@ -796,38 +848,36 @@ static int band_member(int band, int power)
     case BAND_NECROMANCER:                // necromancer
         temp_rand = random2(13);
         mon_type = ((temp_rand > 9) ? MONS_ZOMBIE_SMALL :   // 3 in 13
-                         (temp_rand > 6) ? MONS_ZOMBIE_LARGE :   // 3 in 13
-                         (temp_rand > 3) ? MONS_SKELETON_SMALL : // 3 in 13
-                         (temp_rand > 0) ? MONS_SKELETON_LARGE   // 3 in 13
-                                         : MONS_NECROPHAGE);     // 1 in 13
+                    (temp_rand > 6) ? MONS_ZOMBIE_LARGE :   // 3 in 13
+                    (temp_rand > 3) ? MONS_SKELETON_SMALL : // 3 in 13
+                    (temp_rand > 0) ? MONS_SKELETON_LARGE   // 3 in 13
+                                    : MONS_NECROPHAGE);     // 1 in 13
         break;
 
     case BAND_BALRUG:
         mon_type = (coinflip()? MONS_NEQOXEC : MONS_ORANGE_DEMON);
         break;
+
     case BAND_CACODEMON:
         mon_type = MONS_LEMURE;
         break;
 
     case BAND_EXECUTIONER:
-        mon_type = (coinflip() ? MONS_ABOMINATION_SMALL
-                                    : MONS_ABOMINATION_LARGE);
+        mon_type = (coinflip() ? MONS_ABOMINATION_SMALL : MONS_ABOMINATION_LARGE);
         break;
 
     case BAND_HELLWING:
-        mon_type = (coinflip() ? MONS_HELLWING
-                                    : MONS_SMOKE_DEMON);
+        mon_type = (coinflip() ? MONS_HELLWING : MONS_SMOKE_DEMON);
         break;
 
     case BAND_DEEP_ELF_FIGHTER:    // deep elf fighter
         temp_rand = random2(11);
-        mon_type =
-                ((temp_rand >  4) ? MONS_DEEP_ELF_SOLDIER : // 6 in 11
-                 (temp_rand == 4) ? MONS_DEEP_ELF_FIGHTER : // 1 in 11
-                 (temp_rand == 3) ? MONS_DEEP_ELF_KNIGHT :  // 1 in 11
-                 (temp_rand == 2) ? MONS_DEEP_ELF_CONJURER :// 1 in 11
-                 (temp_rand == 1) ? MONS_DEEP_ELF_MAGE      // 1 in 11
-                                  : MONS_DEEP_ELF_PRIEST);  // 1 in 11
+        mon_type = ((temp_rand >  4) ? MONS_DEEP_ELF_SOLDIER : // 6 in 11
+                    (temp_rand == 4) ? MONS_DEEP_ELF_FIGHTER : // 1 in 11
+                    (temp_rand == 3) ? MONS_DEEP_ELF_KNIGHT :  // 1 in 11
+                    (temp_rand == 2) ? MONS_DEEP_ELF_CONJURER :// 1 in 11
+                    (temp_rand == 1) ? MONS_DEEP_ELF_MAGE      // 1 in 11
+                                     : MONS_DEEP_ELF_PRIEST);  // 1 in 11
         break;
 
     case BAND_ORCS:
@@ -889,8 +939,8 @@ static int band_member(int band, int power)
     case BAND_KOBOLD_DEMONOLOGIST:
         temp_rand = random2(13);
         mon_type = ((temp_rand > 4) ? MONS_KOBOLD :             // 8 in 13
-                         (temp_rand > 0) ? MONS_BIG_KOBOLD           // 4 in 13
-                                         : MONS_KOBOLD_DEMONOLOGIST);// 1 in 13
+                    (temp_rand > 0) ? MONS_BIG_KOBOLD           // 4 in 13
+                                    : MONS_KOBOLD_DEMONOLOGIST);// 1 in 13
         break;
 
     case BAND_NAGAS:

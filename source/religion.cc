@@ -212,7 +212,7 @@ void pray(void)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "piety: %d", you.piety );
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     // Consider a gift if we don't have a timeout and weren't
@@ -1645,7 +1645,7 @@ void lose_piety(char pgn)
     }
 }                               // end lose_piety()
 
-void divine_retribution(int god)
+void divine_retribution( int god )
 {
     ASSERT(god != GOD_NO_GOD);
 
@@ -2159,7 +2159,6 @@ void excommunication(void)
 
     you.religion = GOD_NO_GOD;
     you.piety = 0;
-    //you.gift_timeout = 0; //jmf: ought to do this?
 }                               // end excommunication()
 
 
@@ -2202,8 +2201,12 @@ void altar_prayer(void)
             strcat(info, sacrifice[you.religion - 1]);
             mpr(info);
 
-            if (mitm[i].base_type == OBJ_CORPSES || random2(value) >= 50)
+            if (mitm[i].base_type == OBJ_CORPSES
+                || random2(value) >= 50
+                || player_under_penance())
+            {
                 gain_piety(1);
+            }
 
             destroy_item(i);
             break;
@@ -2247,7 +2250,8 @@ void altar_prayer(void)
             mpr(info);
 
             if (random2(value) >= random2(50)
-                || (mitm[i].base_type == OBJ_WEAPONS && you.piety < 30))
+                || (mitm[i].base_type == OBJ_WEAPONS
+                    && (you.piety < 30 || player_under_penance())))
             {
                 gain_piety(1);
             }
@@ -2300,6 +2304,7 @@ void god_pitch(unsigned char which_god)
 
     you.religion = which_god;   //jmf: moved up so god_speaks gives right colour
     you.piety = 15;             // to prevent near instant excommunication
+    you.gift_timeout = 0;
 
     simple_god_message(" welcomes you!");
 

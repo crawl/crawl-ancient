@@ -16,6 +16,8 @@
 
 #include "externs.h"
 
+void tag_followers( void );
+void untag_followers( void );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -119,7 +121,7 @@ void canned_msg(unsigned char which_message);
  * called from: ability - acr - command - it_use3 - item_use - items -
  *              misc - ouch - religion - spl-book - spells4
  * *********************************************************************** */
-bool yesno(const char * str, bool safe = true);
+bool yesno( const char * str, bool safe = true, bool clear_after = true );
 
 
 // last updated 21may2000 {dlb}

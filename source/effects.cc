@@ -71,11 +71,9 @@ static int torment_monsters(int x, int y, int pow, int garbage)
 
     if (monster->type == -1)
         return 0;
-    if (mons_holiness(monster->type) == MH_UNDEAD
-        || mons_holiness(monster->type) == MH_DEMONIC)
-    {
+
+    if (mons_res_negative_energy( monster ) >= 3)
         return 0;
-    }
 
     monster->hit_points = 1 + (monster->hit_points / 2);
     simple_monster_message(monster, " convulses!");
@@ -96,6 +94,7 @@ void banished(unsigned char gate_type)
     grd[you.x_pos][you.y_pos] = gate_type;
 
     down_stairs(true, you.your_level);  // heh heh
+    untag_followers(); // safety
 }                               // end banished()
 
 bool forget_spell(void)
@@ -171,13 +170,19 @@ bool lose_stat(unsigned char which_stat, unsigned char stat_loss, bool force)
     // newValue is current value less modifier: {dlb}
     newValue = *ptr_stat - stat_loss;
 
-    // stats may be lowered to no less than three: {dlb}
-    if (newValue < 3)
-        newValue = 3;
+    // XXX: Death by stat loss is currently handled in the redraw code. -- bwr
+    if (newValue < 0)
+        newValue = 0;
 
     // conceivable that stat was already *at* three
     // or stat_loss zeroed by player_sust_abil(): {dlb}
-    if (newValue != *ptr_stat)
+    //
+    // Actually, that code was somewhat flawed.  Several race-class combos
+    // can start with a stat lower than three, and this block (which
+    // used to say '!=' would actually cause stat gain with the '< 3'
+    // check that used to be above.  Crawl has stat-death code and I
+    // don't see why we shouldn't be using it here.  -- bwr
+    if (newValue < *ptr_stat)
     {
         *ptr_stat = newValue;
         *ptr_redraw = 1;
@@ -186,18 +191,18 @@ bool lose_stat(unsigned char which_stat, unsigned char stat_loss, bool force)
         if (ptr_stat == &you.strength)
             burden_change();
 
-        statLowered = true;     // that is, stat changed {dlb}
+        statLowered = true;  // that is, stat was lowered (not just changed)
     }
 
-// a warning to player that s/he cut it close: {dlb}
+    // a warning to player that s/he cut it close: {dlb}
     if (!statLowered)
         strcat(info, " for a moment");
 
-// finish outputting message: {dlb}
+    // finish outputting message: {dlb}
     strcat(info, ".");
     mpr(info);
 
-    return statLowered;
+    return (statLowered);
 }                               // end lose_stat()
 
 void direct_effect(struct bolt &pbolt)
@@ -709,7 +714,7 @@ bool acquirement(unsigned char force_class)
                           "acquirement: iteration = %d, best_spell = %d",
                           iteration, best_spell );
 
-                mpr(info);
+                mpr( info, MSGCH_DIAGNOSTIC );
 #endif //jmf: debugging
 
                 switch (best_spell)
@@ -998,7 +1003,8 @@ bool acquirement(unsigned char force_class)
                         && type_wanted != STAFF_CHANNELING
                         && coinflip()))
                 {
-                    type_wanted = STAFF_SMITING + random2(9);
+                    type_wanted = (coinflip() ? STAFF_STRIKING
+                                              : STAFF_SMITING + random2(10));
                 }
                 break;
 
@@ -1198,7 +1204,7 @@ void yell(void)
 
     case 'a':
         mpr("Gang up on whom?", MSGCH_PROMPT);
-        direction(targ, DIR_TARGET);
+        direction( targ, DIR_TARGET, TARG_ENEMY );
 
         if (targ.isCancel)
         {

@@ -17,12 +17,14 @@
 const char *your_hand(int plural);
 bool backlight_monsters(int x, int y, int pow, int garbage);
 int make_a_normal_cloud(int x, int y, int pow, int ctype);
+int disperse_monsters(int x, int y, int pow, int message);
 
 void cast_bend(int pow);
 void cast_condensation_shield(int pow);
 void cast_detect_secret_doors(int pow);
 void cast_discharge(int pow);
 void cast_evaporate(int pow);
+void cast_fulsome_distillation(int powc);
 void cast_forescry(int pow);
 void cast_fragmentation(int powc);
 void cast_twist(int powc);

@@ -19,11 +19,11 @@ struct ability_def
 {
     int                 ability;
     const char *        name;
-    unsigned char       mp_cost;        // magic cost of ability
-    unsigned char       hp_cost;        // hit point cost of ability
+    unsigned int        mp_cost;        // magic cost of ability
+    unsigned int        hp_cost;        // hit point cost of ability
     unsigned int        food_cost;      // + rand2avg( food_cost, 2 )
-    unsigned char       piety_cost;     // + random2( (piety_cost + 1) / 2 + 1 )
-    unsigned char       flags;          // used for additonal cost notices
+    unsigned int        piety_cost;     // + random2( (piety_cost + 1) / 2 + 1 )
+    unsigned int        flags;          // used for additonal cost notices
 };
 
 const struct ability_def & get_ability_def( int abil );

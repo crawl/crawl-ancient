@@ -184,7 +184,7 @@ bool butchery(void)
         return (false);
     }
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
         mpr("You can't reach the floor from up here.");
         return (false);
@@ -213,7 +213,7 @@ bool butchery(void)
             //mv: check for berserk first
             if (you.berserker)
             {
-                mpr ("You are too berserk to search for butchering knife!");
+                mpr ("You are too berserk to search for a butchering knife!");
                 return (false);
             }
 
@@ -288,7 +288,10 @@ bool butchery(void)
     // Final checks and clue-giving...
     if (!barehand_butcher && you.equip[EQ_WEAPON] == -1)
     {
-        mpr("What, with your bare hands?");
+        if (you.equip[ EQ_GLOVES ] == -1)
+            mpr("What, with your bare hands?");
+        else
+            mpr("You can't use your claws with your gloves on!");
 
         // Switching back to avoid possible bug where player can use
         // this to switch weapons in zero time.
@@ -661,7 +664,7 @@ static void eat_from_inventory(int which_inventory_slot)
 
 static bool eat_from_floor(void)
 {
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
         return (false);
 
     for (int o = igrd[you.x_pos][you.y_pos]; o != NON_ITEM; o = mitm[o].link)

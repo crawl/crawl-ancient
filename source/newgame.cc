@@ -78,6 +78,7 @@
 
 #include "externs.h"
 
+#include "dungeon.h"
 #include "files.h"
 #include "fight.h"
 #include "itemname.h"
@@ -102,7 +103,6 @@ void give_basic_knowledge(int which_job);
 void give_basic_spells(int which_job);
 void give_last_paycheck(int which_job);
 void init_player(void);
-void jobs_hpmp_init(int which_job);
 void jobs_stat_init(int which_job);
 void openingScreen(void);
 void species_stat_init(unsigned char which_species);
@@ -123,62 +123,31 @@ static bool choose_class(void);
 
 int give_first_conjuration_book()
 {
-    int skill = 0;
+    // Assume the fire/earth book, as conjurations is strong with fire -- bwr
+    int book = BOOK_CONJURATIONS_I;
 
-    if (you.skills[SK_FIRE_MAGIC] > 1)  // for established spellcasters
-        skill = SK_FIRE_MAGIC;
-
-    if (you.skills[SK_ICE_MAGIC] > 1
-        && you.skills[SK_ICE_MAGIC] > you.skills[skill])
+    // Conjuration books are largely Fire or Ice, so we'll use
+    // that as the primary condition, and air/earth to break ties. -- bwr
+    if (you.skills[SK_ICE_MAGIC] > you.skills[SK_FIRE_MAGIC]
+        || (you.skills[SK_FIRE_MAGIC] == you.skills[SK_ICE_MAGIC]
+            && you.skills[SK_AIR_MAGIC] > you.skills[SK_EARTH_MAGIC]))
     {
-        skill = SK_ICE_MAGIC;
+        book = BOOK_CONJURATIONS_II;
     }
-
-    if (you.skills[SK_AIR_MAGIC] > 1
-        && you.skills[SK_AIR_MAGIC] > you.skills[skill])
+    else if (you.skills[SK_FIRE_MAGIC] == 0 && you.skills[SK_EARTH_MAGIC] == 0)
     {
-        skill = SK_AIR_MAGIC;
-    }
-
-    if (you.skills[SK_EARTH_MAGIC] > 1
-        && you.skills[SK_EARTH_MAGIC] > you.skills[skill])
-    {
-        skill = SK_EARTH_MAGIC;
-    }
-
-    if (skill != 0)
-    {
-        if (skill == SK_EARTH_MAGIC || skill == SK_FIRE_MAGIC)
-            return BOOK_CONJURATIONS_I;
-        else
-            return BOOK_CONJURATIONS_II;
-    }
-    else                        // for new conjurers and reavers
-    {
-        switch (you.species)
+        // If we're here its because we were going to default to the
+        // fire/earth book... but we don't have those skills.  So we
+        // choose randomly based on the species weighting, again
+        // ignoring air/earth which are secondary in these books.  -- bwr
+        if (random2( species_skills( SK_ICE_MAGIC, you.species ) )
+                > random2( species_skills( SK_FIRE_MAGIC, you.species ) ))
         {
-        case SP_ELF:
-        case SP_HIGH_ELF:
-        case SP_GREY_ELF:
-        // case SP_DEEP_ELF:
-        case SP_WHITE_DRACONIAN:
-        case SP_BLACK_DRACONIAN:
-            return (BOOK_CONJURATIONS_II);
-
-        case SP_HILL_DWARF:
-        case SP_MOUNTAIN_DWARF:
-        case SP_HILL_ORC:
-        case SP_GNOME:
-        case SP_OGRE:
-        case SP_TROLL:          // unlikely :-)
-        case SP_RED_DRACONIAN:
-        case SP_MOTTLED_DRACONIAN:
-            return (BOOK_CONJURATIONS_I);
-
-        default:
-            return (coinflip() ? BOOK_CONJURATIONS_I : BOOK_CONJURATIONS_II);
+            book = BOOK_CONJURATIONS_II;
         }
     }
+
+    return (book);
 }
 
 static void pick_random_species_and_class( void )
@@ -394,7 +363,6 @@ bool new_game(void)
     you.current_vision = 8;
 
     jobs_stat_init( you.char_class );
-    jobs_hpmp_init( you.char_class );
     give_last_paycheck( you.char_class );
 
     // randomly boost stats a number of times based on species
@@ -437,7 +405,6 @@ bool new_game(void)
         switch (you.species)
         {
         case SP_CENTAUR:
-        case SP_DEMIGOD:
         case SP_OGRE:
         case SP_TROLL:
             inc_max_hp(3);
@@ -447,6 +414,7 @@ bool new_game(void)
         case SP_MINOTAUR:
         case SP_NAGA:
         case SP_OGRE_MAGE:
+        case SP_DEMIGOD:
             inc_max_hp(2);
             break;
 
@@ -558,7 +526,8 @@ bool new_game(void)
                 case SP_HILL_DWARF:
                 case SP_MOUNTAIN_DWARF:
                     set_equip_race( you.inv[i], ISFLAG_DWARVEN );
-                    you.inv[i].colour = CYAN;
+                    if (you.inv[i].colour == LIGHTCYAN)
+                        you.inv[i].colour = CYAN;
                     break;
 
                 case SP_HILL_ORC:
@@ -646,8 +615,8 @@ bool new_game(void)
 
         if (i == SK_SPELLCASTING)
             you.skill_points[i] = (points * 130) / 100 + 1;
-        else if (i == SK_INVOCATIONS)
-            you.skill_points[i] = (points * 70) / 100 + 1;
+        else if (i == SK_INVOCATIONS || i == SK_EVOCATIONS)
+            you.skill_points[i] = (points * 75) / 100 + 1;
 
         // ...and find out what level that earns this character.
         const int sp_diff = species_skills( i, you.species );
@@ -670,6 +639,13 @@ bool new_game(void)
         {
             set_ident_type( you.inv[i].base_type,
                             you.inv[i].sub_type, ID_KNOWN_TYPE );
+        }
+
+        if (you.inv[i].base_type == OBJ_POTIONS
+            || you.inv[i].base_type == OBJ_WANDS
+            || you.inv[i].base_type == OBJ_JEWELLERY)
+        {
+            item_colour( you.inv[i] );  // set correct special and colour
         }
     }
 
@@ -1191,12 +1167,10 @@ bool class_allowed( unsigned char speci, int char_class )
 
         switch (speci)
         {
-        case SP_GNOME:
         case SP_HALFLING:
         case SP_HILL_DWARF:
         case SP_HILL_ORC:
         case SP_KENKU:
-        case SP_KOBOLD:
         case SP_MINOTAUR:
         case SP_OGRE:
         case SP_TROLL:
@@ -1300,10 +1274,11 @@ bool class_allowed( unsigned char speci, int char_class )
 
         switch (speci)
         {
+        case SP_CENTAUR:
         case SP_GNOME:
         case SP_HILL_ORC:
+        case SP_HALFLING:
         case SP_KENKU:
-        case SP_KOBOLD:
         case SP_MINOTAUR:
         case SP_OGRE:
         case SP_TROLL:
@@ -1555,27 +1530,28 @@ void init_player(void)
 
 void give_last_paycheck(int which_job)
 {
-
     switch (which_job)
     {
     case JOB_HEALER:
     case JOB_THIEF:
-        // normalized with random2avg 23jan2000 {dlb}
-        you.gold = random2avg(200, 2);
+        you.gold = roll_dice( 2, 100 );
         break;
+
     case JOB_WANDERER:
-        you.gold = random2avg(50, 2);
+    case JOB_WARPER:
+    case JOB_ASSASSIN:
+        you.gold = roll_dice( 2, 50 );
         break;
+
     default:
-        you.gold = 1 + random2avg(20,2);
+        you.gold = roll_dice( 2, 20 );
         break;
+
     case JOB_PALADIN:
     case JOB_MONK:
         you.gold = 0;
         break;
     }
-
-    return;
 }
 
 // requires stuff::modify_all_stats() and works because
@@ -1583,27 +1559,50 @@ void give_last_paycheck(int which_job)
 // that demonspawn & demingods get more later on {dlb}
 void species_stat_init(unsigned char which_species)
 {
-    int strength_base = 0;
-    int intellect_base = 0;
-    int dexterity_base = 0;
+    int sb = 0; // strength base
+    int ib = 0; // intelligence base
+    int db = 0; // dexterity base
 
-    switch (which_species)      // strength
+    // Note: The stats in in this list aren't intended to sum the same
+    // for all races.  The fact that Mummies and Ghouls are really low
+    // is considered acceptable (Mummies don't have to eat, and Ghouls
+    // are supposted to be a really hard race).  Also note that Demigods
+    // and Demonspawn get seven more random points added later. -- bwr
+    switch (which_species)
     {
-    case SP_TROLL:
-        strength_base = 13;
-        break;
-    case SP_OGRE:
-        strength_base = 12;
-        break;
-    case SP_MINOTAUR:
-        strength_base = 10;
-        break;
-    case SP_HILL_DWARF:
-    case SP_MOUNTAIN_DWARF:
-    case SP_HILL_ORC:
-    case SP_OGRE_MAGE:
-        strength_base = 9;
-        break;
+    default:                    sb =  6; ib =  6; db =  6;      break;  // 18
+    case SP_HUMAN:              sb =  6; ib =  6; db =  6;      break;  // 18
+    case SP_DEMIGOD:            sb =  7; ib =  7; db =  7;      break;  // 21+7
+    case SP_DEMONSPAWN:         sb =  4; ib =  4; db =  4;      break;  // 12+7
+
+    case SP_ELF:                sb =  5; ib =  8; db =  8;      break;  // 21
+    case SP_HIGH_ELF:           sb =  5; ib =  9; db =  8;      break;  // 22
+    case SP_GREY_ELF:           sb =  4; ib =  9; db =  8;      break;  // 21
+    case SP_DEEP_ELF:           sb =  3; ib = 10; db =  8;      break;  // 21
+    case SP_SLUDGE_ELF:         sb =  6; ib =  7; db =  7;      break;  // 20
+
+    case SP_HILL_DWARF:         sb = 10; ib =  3; db =  4;      break;  // 17
+    case SP_MOUNTAIN_DWARF:     sb =  9; ib =  4; db =  5;      break;  // 18
+
+    case SP_TROLL:              sb = 13; ib =  3; db =  0;      break;  // 16
+    case SP_OGRE:               sb = 12; ib =  3; db =  1;      break;  // 16
+    case SP_OGRE_MAGE:          sb =  8; ib =  6; db =  2;      break;  // 16
+    case SP_MINOTAUR:           sb = 10; ib =  3; db =  5;      break;  // 16
+    case SP_HILL_ORC:           sb =  9; ib =  3; db =  4;      break;  // 16
+    case SP_CENTAUR:            sb =  8; ib =  4; db =  3;      break;  // 15
+
+    case SP_NAGA:               sb =  7; ib =  6; db =  5;      break;  // 18
+    case SP_GNOME:              sb =  6; ib =  6; db =  7;      break;  // 19
+    case SP_MERFOLK:            sb =  6; ib =  5; db =  7;      break;  // 18
+    case SP_KENKU:              sb =  5; ib =  6; db =  7;      break;  // 18
+
+    case SP_KOBOLD:             sb =  5; ib =  4; db =  8;      break;  // 17
+    case SP_HALFLING:           sb =  4; ib =  6; db =  9;      break;  // 19
+    case SP_SPRIGGAN:           sb =  3; ib =  8; db =  9;      break;  // 18
+
+    case SP_MUMMY:              sb =  7; ib =  3; db =  3;      break;  // 13
+    case SP_GHOUL:              sb =  7; ib =  1; db =  2;      break;  // 10
+
     case SP_RED_DRACONIAN:
     case SP_WHITE_DRACONIAN:
     case SP_GREEN_DRACONIAN:
@@ -1615,380 +1614,65 @@ void species_stat_init(unsigned char which_species)
     case SP_PALE_DRACONIAN:
     case SP_UNK0_DRACONIAN:
     case SP_UNK1_DRACONIAN:
-    case SP_UNK2_DRACONIAN:
-        strength_base = 9;
-        break;
-    case SP_NAGA:
-    case SP_CENTAUR:
-        strength_base = 8;
-        break;
-    case SP_MUMMY:
-    case SP_DEMIGOD:
-    case SP_GHOUL:
-        strength_base = 7;
-        break;
-    case SP_ELF:
-    case SP_HIGH_ELF:
-    case SP_SLUDGE_ELF:
-    case SP_GNOME:
-    case SP_KENKU:
-    case SP_MERFOLK:
-        strength_base = 6;
-        break;
-    case SP_GREY_ELF:
-    case SP_DEEP_ELF:
-    case SP_HALFLING:
-    case SP_KOBOLD:
-    case SP_DEMONSPAWN:
-        strength_base = 4;
-        break;
-    case SP_SPRIGGAN:
-        strength_base = 3;
-        break;
-    default:                    // SP_HUMAN {dlb}
-        strength_base = 6;
-        break;
+    case SP_UNK2_DRACONIAN:     sb =  7; ib =  7; db =  4;      break;  // 18
     }
 
-    switch (which_species)      // intellect
-    {
-    case SP_DEEP_ELF:
-        intellect_base = 10;
-        break;
-    case SP_HIGH_ELF:
-    case SP_GREY_ELF:
-        intellect_base = 9;
-        break;
-    case SP_ELF:
-        intellect_base = 8;
-        break;
-    case SP_SLUDGE_ELF:
-    case SP_OGRE_MAGE:
-    case SP_DEMIGOD:
-        intellect_base = 7;
-        break;
-    case SP_MERFOLK:
-        intellect_base = 5;
-        break;
-    case SP_MOUNTAIN_DWARF:
-    case SP_KOBOLD:
-    case SP_CENTAUR:
-    case SP_DEMONSPAWN:
-        intellect_base = 4;
-        break;
-    case SP_HILL_DWARF:
-    case SP_HILL_ORC:
-    case SP_MUMMY:
-    case SP_OGRE:
-    case SP_TROLL:
-    case SP_MINOTAUR:
-        intellect_base = 3;
-        break;
-    case SP_GHOUL:
-        intellect_base = 1;
-        break;
-    default:                    // anything unlisted {dlb}
-        intellect_base = 6;
-        break;
-    }
-
-    switch (which_species)      // dexterity
-    {
-    case SP_HALFLING:
-        dexterity_base = 9;
-        break;
-    case SP_ELF:
-    case SP_HIGH_ELF:
-    case SP_GREY_ELF:
-    case SP_SLUDGE_ELF:
-    case SP_SPRIGGAN:
-    case SP_MERFOLK:
-        dexterity_base = 7;
-        break;
-    case SP_DEEP_ELF:
-    case SP_GNOME:
-    case SP_DEMIGOD:
-    case SP_KENKU:
-        dexterity_base = 7;
-        break;
-    case SP_MOUNTAIN_DWARF:
-    case SP_CENTAUR:
-    case SP_MINOTAUR:
-        dexterity_base = 5;
-        break;
-    case SP_HILL_DWARF:
-    case SP_HILL_ORC:
-    case SP_NAGA:
-    case SP_DEMONSPAWN:
-        dexterity_base = 4;
-        break;
-    case SP_MUMMY:
-    case SP_OGRE_MAGE:
-        dexterity_base = 3;
-        break;
-    // draconians
-    case SP_RED_DRACONIAN:
-    case SP_WHITE_DRACONIAN:
-    case SP_GREEN_DRACONIAN:
-    case SP_GOLDEN_DRACONIAN:
-    case SP_GREY_DRACONIAN:
-    case SP_BLACK_DRACONIAN:
-    case SP_PURPLE_DRACONIAN:
-    case SP_MOTTLED_DRACONIAN:
-    case SP_PALE_DRACONIAN:
-    case SP_UNK0_DRACONIAN:
-    case SP_UNK1_DRACONIAN:
-    case SP_UNK2_DRACONIAN:
-    // draconians
-    case SP_GHOUL:
-        dexterity_base = 2;
-        break;
-    case SP_OGRE:
-        dexterity_base = 1;
-        break;
-    case SP_TROLL:
-        dexterity_base = 0;
-        break;
-    default:                    // SP_HUMAN and SP_KOBOLD {dlb}
-        dexterity_base = 6;
-        break;
-    }
-
-    modify_all_stats(strength_base, intellect_base, dexterity_base);
-
-    return;
+    modify_all_stats( sb, ib, db );
 }
 
 void jobs_stat_init(int which_job)
 {
-    int strength_mod = 0;
-    int intellect_mod = 0;
-    int dexterity_mod = 0;
+    int s = 0;   // strength mod
+    int i = 0;   // intelligence mod
+    int d = 0;   // dexterity mod
+    int hp = 0;  // HP base
+    int mp = 0;  // MP base
 
+    // Note:  Wanderers are correct, they're a challenging class. -- bwr
     switch (which_job)
     {
-    case JOB_FIGHTER:
-    case JOB_BERSERKER:
-        strength_mod = 7;
-        break;
-    case JOB_GLADIATOR:
-    case JOB_PALADIN:
-        strength_mod = 6;
-        break;
-    case JOB_PRIEST:
-    case JOB_CRUSADER:
-    case JOB_DEATH_KNIGHT:
-    case JOB_CHAOS_KNIGHT:
-    case JOB_HEALER:
-    case JOB_REAVER:
-        strength_mod = 4;
-        break;
-    case JOB_THIEF:
-    case JOB_HUNTER:
-    case JOB_MONK:
-        strength_mod = 3;
-        break;
-    case JOB_ASSASSIN:
-    case JOB_STALKER:
-    case JOB_WARPER:
-        strength_mod = 2;
-        break;
-    case JOB_WANDERER:
-        strength_mod = 1;
-        break;
-    default:
-        strength_mod = 0;
-        break;
+    case JOB_FIGHTER:           s =  7; i =  0; d =  3; hp = 15; mp = 0; break;
+    case JOB_BERSERKER:         s =  7; i = -1; d =  4; hp = 15; mp = 0; break;
+    case JOB_GLADIATOR:         s =  6; i =  0; d =  4; hp = 14; mp = 0; break;
+    case JOB_PALADIN:           s =  6; i =  2; d =  2; hp = 14; mp = 0; break;
+
+    case JOB_CRUSADER:          s =  4; i =  3; d =  3; hp = 13; mp = 1; break;
+    case JOB_DEATH_KNIGHT:      s =  4; i =  3; d =  3; hp = 13; mp = 1; break;
+    case JOB_CHAOS_KNIGHT:      s =  4; i =  3; d =  3; hp = 13; mp = 1; break;
+
+    case JOB_REAVER:            s =  4; i =  4; d =  2; hp = 13; mp = 1; break;
+    case JOB_HEALER:            s =  4; i =  4; d =  2; hp = 13; mp = 1; break;
+    case JOB_PRIEST:            s =  4; i =  4; d =  2; hp = 12; mp = 1; break;
+
+    case JOB_THIEF:             s =  3; i =  2; d =  5; hp = 13; mp = 0; break;
+    case JOB_ASSASSIN:          s =  2; i =  2; d =  6; hp = 12; mp = 0; break;
+    case JOB_STALKER:           s =  2; i =  3; d =  5; hp = 12; mp = 1; break;
+
+    case JOB_HUNTER:            s =  3; i =  3; d =  4; hp = 13; mp = 0; break;
+    case JOB_WARPER:            s =  3; i =  4; d =  3; hp = 12; mp = 1; break;
+
+    case JOB_MONK:              s =  2; i =  2; d =  6; hp = 13; mp = 0; break;
+    case JOB_TRANSMUTER:        s =  2; i =  4; d =  4; hp = 12; mp = 1; break;
+
+    case JOB_WIZARD:            s = -1; i =  8; d =  3; hp =  8; mp = 4; break;
+    case JOB_CONJURER:          s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_ENCHANTER:         s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_FIRE_ELEMENTALIST: s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_ICE_ELEMENTALIST:  s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_AIR_ELEMENTALIST:  s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_EARTH_ELEMENTALIST:s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_SUMMONER:          s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_VENOM_MAGE:        s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+    case JOB_NECROMANCER:       s =  0; i =  6; d =  4; hp = 10; mp = 3; break;
+
+    case JOB_WANDERER:          s =  2; i =  2; d =  2; hp = 11; mp = 1; break;
+    default:                    s =  0; i =  0; d =  0; hp = 10; mp = 0; break;
     }
 
-    switch (which_job)
-    {
-    case JOB_WIZARD:
-        intellect_mod = 7;
-        break;
-    case JOB_NECROMANCER:
-    case JOB_CONJURER:
-    case JOB_ENCHANTER:
-    case JOB_SUMMONER:
-    case JOB_FIRE_ELEMENTALIST:
-    case JOB_ICE_ELEMENTALIST:
-    case JOB_AIR_ELEMENTALIST:
-    case JOB_EARTH_ELEMENTALIST:
-    case JOB_VENOM_MAGE:
-    case JOB_TRANSMUTER:
-        intellect_mod = 6;
-        break;
-    case JOB_WARPER:
-        intellect_mod = 5;
-        break;
-    case JOB_PRIEST:
-    case JOB_HEALER:
-    case JOB_REAVER:
-        intellect_mod = 4;
-        break;
-    case JOB_HUNTER:
-    case JOB_CRUSADER:
-    case JOB_DEATH_KNIGHT:
-    case JOB_CHAOS_KNIGHT:
-    case JOB_STALKER:
-        intellect_mod = 3;
-        break;
-    case JOB_THIEF:
-    case JOB_PALADIN:
-    case JOB_ASSASSIN:
-    case JOB_MONK:
-        intellect_mod = 2;
-        break;
-    case JOB_WANDERER:
-        intellect_mod = 1;
-        break;
-    default:
-        intellect_mod = 0;
-        break;
-    case JOB_BERSERKER:
-        intellect_mod = -1;
-        break;
-    }
+    modify_all_stats( s, i, d );
 
-    switch (which_job)
-    {
-    case JOB_ASSASSIN:
-        dexterity_mod = 6;
-        break;
-    case JOB_THIEF:
-    case JOB_STALKER:
-    case JOB_MONK:
-        dexterity_mod = 5;
-        break;
-    case JOB_GLADIATOR:
-    case JOB_NECROMANCER:
-    case JOB_BERSERKER:
-    case JOB_HUNTER:
-    case JOB_CONJURER:
-    case JOB_ENCHANTER:
-    case JOB_SUMMONER:
-    case JOB_FIRE_ELEMENTALIST:
-    case JOB_ICE_ELEMENTALIST:
-    case JOB_AIR_ELEMENTALIST:
-    case JOB_EARTH_ELEMENTALIST:
-    case JOB_VENOM_MAGE:
-    case JOB_TRANSMUTER:
-        dexterity_mod = 4;
-        break;
-    case JOB_FIGHTER:
-    case JOB_WIZARD:
-    case JOB_CRUSADER:
-    case JOB_DEATH_KNIGHT:
-    case JOB_CHAOS_KNIGHT:
-    case JOB_WARPER:
-        dexterity_mod = 3;
-        break;
-    case JOB_PRIEST:
-    case JOB_PALADIN:
-    case JOB_HEALER:
-    case JOB_REAVER:
-        dexterity_mod = 2;
-        break;
-    case JOB_WANDERER:
-        dexterity_mod = 1;
-        break;
-    default:
-        dexterity_mod = 0;
-        break;
-    }
-
-    modify_all_stats(strength_mod, intellect_mod, dexterity_mod);
-
-    return;
-}
-
-void jobs_hpmp_init(int which_job)
-{
-    int job_hp_base = 0;
-    int job_mp_base = 0;
-
-    switch (which_job)
-    {
-    case JOB_FIGHTER:
-    case JOB_BERSERKER:
-    case JOB_HEALER:
-        job_hp_base = 15;
-        break;
-    case JOB_GLADIATOR:
-    case JOB_PALADIN:
-        job_hp_base = 14;
-        break;
-    case JOB_HUNTER:
-    case JOB_CRUSADER:
-    case JOB_DEATH_KNIGHT:
-    case JOB_CHAOS_KNIGHT:
-    case JOB_REAVER:
-    case JOB_MONK:
-        job_hp_base = 13;
-        break;
-    case JOB_PRIEST:
-    case JOB_ASSASSIN:
-    case JOB_WANDERER:
-        job_hp_base = 12;
-        break;
-    case JOB_THIEF:
-    case JOB_STALKER:
-        job_hp_base = 11;
-        break;
-    case JOB_WIZARD:
-    case JOB_NECROMANCER:
-    case JOB_CONJURER:
-    case JOB_ENCHANTER:
-    case JOB_SUMMONER:
-    case JOB_FIRE_ELEMENTALIST:
-    case JOB_ICE_ELEMENTALIST:
-    case JOB_AIR_ELEMENTALIST:
-    case JOB_EARTH_ELEMENTALIST:
-    case JOB_VENOM_MAGE:
-    case JOB_TRANSMUTER:
-    case JOB_WARPER:
-        job_hp_base = 10;
-        break;
-    default:
-        job_hp_base = 0;
-        break;
-    }
-
-    switch (which_job)
-    {
-    case JOB_WIZARD:
-    case JOB_NECROMANCER:
-    case JOB_CONJURER:
-    case JOB_ENCHANTER:
-    case JOB_SUMMONER:
-    case JOB_FIRE_ELEMENTALIST:
-    case JOB_ICE_ELEMENTALIST:
-    case JOB_AIR_ELEMENTALIST:
-    case JOB_EARTH_ELEMENTALIST:
-    case JOB_VENOM_MAGE:
-    case JOB_TRANSMUTER:
-    case JOB_WARPER:
-        job_mp_base = 3;
-        break;
-    case JOB_PRIEST:
-    case JOB_CRUSADER:
-    case JOB_DEATH_KNIGHT:
-    case JOB_CHAOS_KNIGHT:
-    case JOB_HEALER:
-    case JOB_REAVER:
-    case JOB_STALKER:
-    case JOB_WANDERER:
-        job_mp_base = 1;
-        break;
-    default:
-        job_mp_base = 0;        // anything unlisted {dlb}
-        break;
-    }
-
-    set_hp( job_hp_base, true );
-    set_mp( job_mp_base, true );
-
-    return;
+    set_hp( hp, true );
+    set_mp( mp, true );
 }
 
 void give_basic_knowledge(int which_job)
@@ -2000,6 +1684,11 @@ void give_basic_knowledge(int which_job)
         set_ident_type( OBJ_POTIONS, POT_HEALING, 1 );
         break;
 
+    case JOB_HEALER:
+        set_ident_type( OBJ_POTIONS, POT_HEALING, 1 );
+        set_ident_type( OBJ_POTIONS, POT_HEAL_WOUNDS, 1 );
+        break;
+
     case JOB_ASSASSIN:
     case JOB_STALKER:
     case JOB_VENOM_MAGE:
@@ -2008,6 +1697,12 @@ void give_basic_knowledge(int which_job)
 
     case JOB_WARPER:
         set_ident_type( OBJ_SCROLLS, SCR_BLINKING, 1 );
+        break;
+
+    case JOB_TRANSMUTER:
+        set_ident_type( OBJ_POTIONS, POT_WATER, 1 );
+        set_ident_type( OBJ_POTIONS, POT_CONFUSION, 1 );
+        set_ident_type( OBJ_POTIONS, POT_POISON, 1 );
         break;
 
     default:
@@ -2042,12 +1737,6 @@ void give_basic_spells(int which_job)
     case JOB_ICE_ELEMENTALIST:
         which_spell = SPELL_FREEZE;
         break;
-    case JOB_TRANSMUTER:
-        which_spell = SPELL_DISRUPT;
-        break;
-    case JOB_WARPER:
-        which_spell = SPELL_TWIST;
-        break;
     case JOB_NECROMANCER:
         which_spell = SPELL_PAIN;
         break;
@@ -2067,6 +1756,7 @@ void give_basic_spells(int which_job)
         if (you.species == SP_DEMIGOD || you.religion != GOD_YREDELEMNUL)
             which_spell = SPELL_PAIN;
         break;
+
     default:
         break;
     }
@@ -2302,10 +1992,8 @@ static void give_random_potion( int slot )
 {
     you.inv[ slot ].quantity = 1;
     you.inv[ slot ].base_type = OBJ_POTIONS;
-    you.inv[ slot ].special = 0;
     you.inv[ slot ].plus = 0;
     you.inv[ slot ].plus2 = 0;
-    you.inv[ slot ].colour = random_colour(); // XXX not the real colour
 
     switch (random2(8))
     {
@@ -2464,7 +2152,7 @@ static void create_wanderer( void )
     const int util_skills[] =
         { SK_DARTS, SK_THROWING, SK_ARMOUR, SK_DODGING, SK_STEALTH,
           SK_STABBING, SK_SHIELDS, SK_TRAPS_DOORS, SK_UNARMED_COMBAT,
-          SK_INVOCATIONS };
+          SK_INVOCATIONS, SK_EVOCATIONS };
     const int num_util_skills = sizeof(util_skills) / sizeof(int);
 
     // Long swords is missing to increae it's rarity because we
@@ -2476,7 +2164,7 @@ static void create_wanderer( void )
           SK_MACES_FLAILS, SK_POLEARMS,
           SK_DARTS, SK_THROWING, SK_ARMOUR, SK_DODGING, SK_STEALTH,
           SK_STABBING, SK_SHIELDS, SK_TRAPS_DOORS, SK_UNARMED_COMBAT,
-          SK_INVOCATIONS };
+          SK_INVOCATIONS, SK_EVOCATIONS };
     const int num_fight_util_skills = sizeof(fight_util_skills) / sizeof(int);
 
     const int not_rare_skills[] =
@@ -2487,7 +2175,7 @@ static void create_wanderer( void )
           SK_MACES_FLAILS, SK_POLEARMS, SK_STAVES,
           SK_DARTS, SK_THROWING, SK_ARMOUR, SK_DODGING, SK_STEALTH,
           SK_STABBING, SK_SHIELDS, SK_TRAPS_DOORS, SK_UNARMED_COMBAT,
-          SK_INVOCATIONS };
+          SK_INVOCATIONS, SK_EVOCATIONS };
     const int num_not_rare_skills = sizeof(not_rare_skills) / sizeof(int);
 
     const int all_skills[] =
@@ -2500,7 +2188,7 @@ static void create_wanderer( void )
           SK_MACES_FLAILS, SK_POLEARMS, SK_STAVES,
           SK_DARTS, SK_THROWING, SK_ARMOUR, SK_DODGING, SK_STEALTH,
           SK_STABBING, SK_SHIELDS, SK_TRAPS_DOORS, SK_UNARMED_COMBAT,
-          SK_INVOCATIONS };
+          SK_INVOCATIONS, SK_EVOCATIONS };
     const int num_all_skills = sizeof(all_skills) / sizeof(int);
 
     int skill;
@@ -2555,7 +2243,7 @@ static void create_wanderer( void )
         you.skills[ all_skills[ skill ]] += 1;
     }
 
-    // Demigods can't get invocations so we'll swap it for something else
+    // Demigods can't use invocations so we'll swap it for something else
     if (you.species == SP_DEMIGOD && you.skills[ SK_INVOCATIONS ])
     {
         you.skills[ SK_INVOCATIONS ] = 0;
@@ -2742,9 +2430,9 @@ static void create_wanderer( void )
         you.inv[1].colour = BROWN;
 
         // Create default ammo template (darts) (armour is slot 2)
-        you.inv[4].quantity = 10 + random2avg(12, 2);
         you.inv[4].base_type = OBJ_MISSILES;
         you.inv[4].sub_type = MI_DART;
+        you.inv[4].quantity = 10 + roll_dice( 2, 6 );
         you.inv[4].plus = 0;
         you.inv[4].plus2 = 0;
         you.inv[4].special = 0;
@@ -2767,6 +2455,7 @@ static void create_wanderer( void )
         else if (you.skills[ SK_BOWS ])
         {
             you.inv[4].sub_type = MI_ARROW;
+            you.inv[4].colour = BROWN;
             you.inv[1].sub_type = WPN_BOW;
 
             you.inv[3].quantity = 0;            // remove potion
@@ -3230,10 +2919,9 @@ void give_items_skills()
             you.inv[1].special = 0;
             you.inv[1].colour = BROWN;
 
-            you.inv[2].quantity = 8 + random2avg(15, 2);
             you.inv[2].base_type = OBJ_MISSILES;
             you.inv[2].sub_type = MI_DART;
-
+            you.inv[2].quantity = 10 + roll_dice( 2, 10 );
             you.inv[2].plus = 0;
             you.inv[2].special = 0;
             you.inv[2].colour = LIGHTCYAN;
@@ -3275,13 +2963,24 @@ void give_items_skills()
 
         if (you.species == SP_KOBOLD)
         {
-            you.skills[SK_THROWING] = 2;
+            you.skills[SK_THROWING] = 1;
+            you.skills[SK_DARTS] = 1;
             you.skills[SK_DODGING] = 1;
             you.skills[SK_STEALTH] = 1;
             you.skills[SK_STABBING] = 1;
-            you.skills[SK_DODGING + random2(3)]++;
+            you.skills[SK_DODGING + random2(3)] += 1;
         }
-        else if (you.species != SP_OGRE && you.species != SP_TROLL)
+        else if (you.species == SP_OGRE || you.species == SP_TROLL)
+        {
+            if (you.species == SP_TROLL)  //jmf: these guys get no weapon!
+                you.skills[SK_UNARMED_COMBAT] += 3;
+            else
+                you.skills[SK_FIGHTING] += 2;
+
+            // BWR sez Ogres & Trolls should probably start w/ Dodge 2 -- GDL
+            you.skills[SK_DODGING] = 3;
+        }
+        else
         {
             // Players get dodging or armour skill depending on their
             // starting armour now (note: the armour has to be quiped
@@ -3292,17 +2991,6 @@ void give_items_skills()
             you.skills[SK_SHIELDS] = 2;
             you.skills[SK_THROWING] = 2;
             you.skills[(coinflip() ? SK_STABBING : SK_SHIELDS)]++;
-            //you.skills[SK_UNARMED_COMBAT] = 1;
-        }
-        else
-        {
-            if (you.species == SP_TROLL)  //jmf: these guys get no weapon!
-                you.skills[SK_UNARMED_COMBAT] += 3;
-            else
-                you.skills[SK_FIGHTING] += 2;
-
-            // BWR sez Ogres & Trolls should probably start w/ Dodge 2 -- GDL
-            you.skills[SK_DODGING] = 2;
         }
         break;
 
@@ -3406,10 +3094,8 @@ void give_items_skills()
 
         you.inv[2].base_type = OBJ_POTIONS;
         you.inv[2].sub_type = POT_HEALING;
-        you.inv[2].quantity = (coinflip() ? 3 : 2);
+        you.inv[2].quantity = 2;
         you.inv[2].plus = 0;
-        you.inv[2].special = 0;
-        you.inv[2].colour = random_colour();    // hmmm...
 
         you.equip[EQ_WEAPON] = 0;
 
@@ -3484,10 +3170,9 @@ void give_items_skills()
         you.inv[3].special = 0;
         you.inv[3].colour = DARKGREY;
 
-        you.inv[4].quantity = 10 + random2avg(19, 2);
         you.inv[4].base_type = OBJ_MISSILES;
         you.inv[4].sub_type = MI_DART;
-
+        you.inv[4].quantity = 10 + roll_dice( 2, 10 );
         you.inv[4].plus = 0;
         you.inv[4].special = 0;
         you.inv[4].colour = LIGHTCYAN;
@@ -3635,8 +3320,6 @@ void give_items_skills()
         you.inv[3].sub_type = POT_HEALING;
         you.inv[3].quantity = 1;
         you.inv[3].plus = 0;
-        you.inv[3].special = 0;
-        you.inv[3].colour = random_colour();
 
         you.skills[SK_FIGHTING] = 2;
         you.skills[SK_ARMOUR] = 1;
@@ -3680,9 +3363,9 @@ void give_items_skills()
         you.inv[3].special = 0;
         you.inv[3].colour = DARKGREY;
 
-        you.inv[4].quantity = random2avg(19, 2) + 10;
         you.inv[4].base_type = OBJ_MISSILES;
         you.inv[4].sub_type = MI_NEEDLE;
+        you.inv[4].quantity = 10 + roll_dice( 2, 10 );
         you.inv[4].plus = 0;
         you.inv[4].colour = WHITE;
         set_item_ego_type( you.inv[4], OBJ_MISSILES, SPMSL_POISONED );
@@ -3835,7 +3518,7 @@ void give_items_skills()
             you.inv[2].plus = 0;
             you.inv[2].plus2 = 0;
             you.inv[2].special = 0;
-            you.inv[2].colour = LIGHTCYAN;
+            you.inv[2].colour = BROWN;
 
             you.inv[1].quantity = 1;
             you.inv[1].base_type = OBJ_WEAPONS;
@@ -3893,6 +3576,7 @@ void give_items_skills()
         case SP_MOUNTAIN_DWARF:
         case SP_HILL_ORC:
             you.inv[2].sub_type = MI_BOLT;
+            you.inv[2].colour = LIGHTCYAN;
             you.inv[1].sub_type = WPN_CROSSBOW;
 
             if (you.species == SP_HILL_ORC)
@@ -3936,8 +3620,6 @@ void give_items_skills()
     case JOB_AIR_ELEMENTALIST:
     case JOB_EARTH_ELEMENTALIST:
     case JOB_VENOM_MAGE:
-    case JOB_TRANSMUTER:
-    case JOB_WARPER:
         you.inv[0].quantity = 1;
         you.inv[0].base_type = OBJ_WEAPONS;
         you.inv[0].sub_type = WPN_DAGGER;
@@ -3987,11 +3669,13 @@ void give_items_skills()
         case JOB_SUMMONER:
             you.inv[2].sub_type = BOOK_CALLINGS;
             you.inv[2].plus = 0;
+
             you.skills[SK_SUMMONINGS] = 4;
+
             // gets some darts - this class is difficult to start off with
-            you.inv[3].quantity = random2avg(9, 2) + 7;
             you.inv[3].base_type = OBJ_MISSILES;
             you.inv[3].sub_type = MI_DART;
+            you.inv[3].quantity = 8 + roll_dice( 2, 8 );
             you.inv[3].plus = 0;
             you.inv[3].special = 0;
             you.inv[3].colour = LIGHTCYAN;
@@ -4004,13 +3688,23 @@ void give_items_skills()
         case JOB_ENCHANTER:
             you.inv[2].sub_type = BOOK_CHARMS;
             you.inv[2].plus = 0;
+
             you.skills[SK_ENCHANTMENTS] = 4;
-            you.inv[3].quantity = random2avg(15, 2) + 7;
+
+            // gets some darts - this class is difficult to start off with
             you.inv[3].base_type = OBJ_MISSILES;
             you.inv[3].sub_type = MI_DART;
+            you.inv[3].quantity = 8 + roll_dice( 2, 8 );
             you.inv[3].plus = 1;
             you.inv[3].special = 0;
             you.inv[3].colour = LIGHTCYAN;
+
+            if (you.species == SP_SPRIGGAN)
+            {
+                you.inv[0].base_type = OBJ_STAVES;
+                you.inv[0].sub_type = STAFF_STRIKING;
+                you.inv[0].colour = BROWN;
+            }
             break;
 
         case JOB_FIRE_ELEMENTALIST:
@@ -4077,18 +3771,6 @@ void give_items_skills()
             you.inv[2].plus = 0;
             you.skills[SK_POISON_MAGIC] = 4;
             break;
-
-        case JOB_TRANSMUTER:
-            you.inv[2].sub_type = BOOK_CHANGES;
-            you.inv[2].plus = 0;
-            you.skills[SK_TRANSMIGRATION] = 4;
-            break;
-
-        case JOB_WARPER:
-            you.inv[2].sub_type = BOOK_SPATIAL_TRANSLOCATIONS;
-            you.inv[2].plus = 0;
-            you.skills[SK_TRANSLOCATIONS] = 4;
-            break;
         }
 
         if (you.species == SP_OGRE_MAGE)
@@ -4137,14 +3819,16 @@ void give_items_skills()
         {
             you.skills[SK_MACES_FLAILS] = 1;
         }
+        else if (you.char_class == JOB_ENCHANTER && you.species == SP_SPRIGGAN)
+        {
+            you.skills[SK_EVOCATIONS] = 1;
+        }
         else
         {
             you.skills[SK_SHORT_BLADES] = 1;
         }
 
-        if (you.char_class == JOB_TRANSMUTER)
-            you.skills[SK_UNARMED_COMBAT] += 1;
-        else if (you.species == SP_GNOME)
+        if (you.species == SP_GNOME)
             you.skills[SK_SLINGS]++;
         else
             you.skills[SK_STAVES]++;
@@ -4157,6 +3841,145 @@ void give_items_skills()
         else
             you.skills[ (coinflip() ? SK_DODGING : SK_STEALTH) ]++;
 
+        break;
+
+    case JOB_TRANSMUTER:
+        // some sticks for sticks to snakes:
+        you.inv[1].quantity = 6 + roll_dice( 3, 4 );
+        you.inv[1].base_type = OBJ_MISSILES;
+        you.inv[1].sub_type = MI_ARROW;
+        you.inv[1].plus = 0;
+        you.inv[1].plus2 = 0;
+        you.inv[1].special = 0;
+        you.inv[1].colour = BROWN;
+
+        you.inv[2].base_type = OBJ_ARMOUR;
+        you.inv[2].sub_type = ARM_ROBE;
+        you.inv[2].plus = 0;
+        you.inv[2].special = 0;
+        you.inv[2].quantity = 1;
+        you.inv[2].colour = BROWN;
+
+        you.inv[3].base_type = OBJ_BOOKS;
+        you.inv[3].sub_type = BOOK_CHANGES;
+        you.inv[3].quantity = 1;
+        you.inv[3].plus = 0;
+        you.inv[3].special = 0;
+        you.inv[3].colour = random_colour();
+
+        // A little bit of starting ammo for evaporate... don't need too
+        // much now that the character can make their own. -- bwr
+        //
+        // some ammo for evaporate:
+        you.inv[4].base_type = OBJ_POTIONS;
+        you.inv[4].sub_type = POT_CONFUSION;
+        you.inv[4].quantity = 2;
+        you.inv[4].plus = 0;
+
+        // some more ammo for evaporate:
+        you.inv[5].base_type = OBJ_POTIONS;
+        you.inv[5].sub_type = POT_POISON;
+        you.inv[5].quantity = 1;
+        you.inv[5].plus = 0;
+
+        you.equip[EQ_WEAPON] = -1;
+        you.equip[EQ_BODY_ARMOUR] = 2;
+
+        you.skills[SK_FIGHTING] = 1;
+        you.skills[SK_UNARMED_COMBAT] = 3;
+        you.skills[SK_THROWING] = 2;
+        you.skills[SK_DODGING] = 2;
+        you.skills[SK_SPELLCASTING] = 2;
+        you.skills[SK_TRANSMIGRATION] = 2;
+
+        if (you.species == SP_SPRIGGAN)
+        {
+            you.inv[0].base_type = OBJ_STAVES;
+            you.inv[0].sub_type = STAFF_STRIKING;
+            you.inv[0].quantity = 1;
+            you.inv[0].plus = 0;
+            you.inv[0].plus2 = 0;
+            you.inv[0].special = 0;
+            you.inv[0].colour = BROWN;
+
+            you.skills[SK_EVOCATIONS] = 2;
+            you.skills[SK_FIGHTING] = 0;
+
+            you.equip[EQ_WEAPON] = 0;
+        }
+        break;
+
+    case JOB_WARPER:
+        you.inv[0].quantity = 1;
+        you.inv[0].plus = 0;
+        you.inv[0].plus2 = 0;
+        you.inv[0].special = 0;
+        you.inv[0].colour = LIGHTCYAN;
+
+        if (you.species == SP_SPRIGGAN)
+        {
+            you.inv[0].base_type = OBJ_STAVES;
+            you.inv[0].sub_type = STAFF_STRIKING;
+            you.inv[0].colour = BROWN;
+
+            you.skills[SK_EVOCATIONS] = 3;
+        }
+        else
+        {
+            you.inv[0].base_type = OBJ_WEAPONS;
+            you.inv[0].sub_type = WPN_SHORT_SWORD;
+
+            if (you.species == SP_OGRE_MAGE)
+            {
+                you.inv[0].sub_type = WPN_QUARTERSTAFF;
+                you.inv[0].colour = BROWN;
+            }
+
+            weap_skill = 2;
+            you.skills[SK_FIGHTING] = 1;
+        }
+
+        you.inv[1].base_type = OBJ_ARMOUR;
+        you.inv[1].sub_type = ARM_LEATHER_ARMOUR;
+        you.inv[1].quantity = 1;
+        you.inv[1].plus = 0;
+        you.inv[1].special = 0;
+        you.inv[1].colour = BROWN;
+
+        if (you.species == SP_SPRIGGAN || you.species == SP_OGRE_MAGE)
+            you.inv[1].sub_type = ARM_ROBE;
+
+        you.inv[2].base_type = OBJ_BOOKS;
+        you.inv[2].sub_type = BOOK_SPATIAL_TRANSLOCATIONS;
+        you.inv[2].quantity = 1;
+        you.inv[2].plus = 0;
+        you.inv[2].special = 0;
+        you.inv[2].colour = random_colour();
+
+        // one free escape:
+        you.inv[3].base_type = OBJ_SCROLLS;
+        you.inv[3].sub_type = SCR_BLINKING;
+        you.inv[3].quantity = 1;
+        you.inv[3].plus = 0;
+        you.inv[3].special = 0;
+        you.inv[3].colour = WHITE;
+
+        you.inv[4].base_type = OBJ_MISSILES;
+        you.inv[4].sub_type = MI_DART;
+        you.inv[4].quantity = 10 + roll_dice( 2, 10 );
+        you.inv[4].plus = 0;
+        you.inv[4].special = 0;
+        you.inv[4].colour = LIGHTCYAN;
+
+        you.equip[EQ_WEAPON] = 0;
+        you.equip[EQ_BODY_ARMOUR] = 1;
+
+        you.skills[SK_THROWING] = 1;
+        you.skills[SK_DARTS] = 2;
+        you.skills[SK_DODGING] = 2;
+        you.skills[SK_STEALTH] = 1;
+        you.skills[SK_SPELLCASTING] = 2;
+        you.skills[SK_TRANSLOCATIONS] = 2;
         break;
 
     case JOB_CRUSADER:
@@ -4381,17 +4204,13 @@ void give_items_skills()
 
         you.inv[2].base_type = OBJ_POTIONS;
         you.inv[2].sub_type = POT_HEALING;
-        you.inv[2].quantity = (coinflip()? 3 : 2);
+        you.inv[2].quantity = 1;
         you.inv[2].plus = 0;
-        you.inv[2].special = 0;
-        you.inv[2].colour = random_colour();    // hmmm...
 
         you.inv[3].base_type = OBJ_POTIONS;
         you.inv[3].sub_type = POT_HEAL_WOUNDS;
-        you.inv[3].quantity = (coinflip()? 3 : 2);
+        you.inv[3].quantity = 1;
         you.inv[3].plus = 0;
-        you.inv[3].special = 0;
-        you.inv[3].colour = random_colour();    // hmmm...
 
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;

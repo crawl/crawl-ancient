@@ -490,6 +490,69 @@ static int debug_prompt_for_skill( const char *prompt )
 
 //---------------------------------------------------------------
 //
+// debug_change_species
+//
+//---------------------------------------------------------------
+#ifdef WIZARD
+void debug_change_species( void )
+{
+    char specs[50];
+    int i;
+
+    mpr( "What species would you like to be now? " , MSGCH_PROMPT );
+
+#if defined(LINUX)
+    echo();
+    getstr(specs);
+    noecho();
+#elif defined(MAC) || defined(WIN32CONSOLE)
+    getstr(specs, sizeof(specs));
+#else
+    gets(specs);
+#endif
+
+    if (specs[0] == '\0')
+        return;
+
+    int sp = -1;
+
+    for (int i = SP_HUMAN; i < NUM_SPECIES; i++)
+    {
+        char sp_name[50];
+        strcpy( sp_name, species_name(i) );
+
+        char *ptr = strstr( strlwr(sp_name), strlwr(specs) );
+        if (ptr != NULL)
+        {
+            if (ptr == sp_name && strlen(specs) > 0)
+            {
+                // we prefer prefixes over partial matches
+                sp = i;
+                break;
+            }
+            else
+                sp = i;
+        }
+    }
+
+    if (sp == -1)
+        mpr( "That species isn't available." );
+    else
+    {
+        for (i = 0; i < NUM_SKILLS; i++)
+        {
+            you.skill_points[i] *= species_skills( i, sp );
+            you.skill_points[i] /= species_skills( i, you.species );
+        }
+
+        you.species = sp;
+
+        redraw_screen();
+    }
+}
+#endif
+//---------------------------------------------------------------
+//
 // debug_prompt_for_int
 //
 // If nonneg, then it returns a non-negative number or -1 on fail
@@ -577,10 +640,10 @@ void cast_spec_spell_name(void)
     {
         strcpy(spname, spell_title(i));
 
-        if (strstr(strlwr(spname), strlwr(specs)) != NULL)
+        if (strstr( strlwr(spname), strlwr(specs) ) != NULL)
         {
-        your_spells(i, 0, false);
-        return;
+            your_spells(i, 0, false);
+            return;
         }
     }
 
@@ -658,6 +721,7 @@ void level_travel( int delta )
     you.your_level = new_level - 1;
     grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
     down_stairs(true, old_level);
+    untag_followers();
 }                               // end level_travel()
 #endif
 
@@ -841,27 +905,27 @@ void create_spec_object(void)
 
         if (class_wanted == OBJ_ARMOUR)
         {
-            if (strstr( "naga barding", strlwr(specs) ))
+            if (strstr( "naga barding", specs ))
             {
                 mitm[thing_created].sub_type = ARM_BOOTS;
                 mitm[thing_created].plus2 = TBOOT_NAGA_BARDING;
             }
-            else if (strstr( "centaur barding", strlwr(specs) ))
+            else if (strstr( "centaur barding", specs ))
             {
                 mitm[thing_created].sub_type = ARM_BOOTS;
                 mitm[thing_created].plus2 = TBOOT_CENTAUR_BARDING;
             }
-            else if (strstr( "wizard's hat", strlwr(specs) ))
+            else if (strstr( "wizard's hat", specs ))
             {
                 mitm[thing_created].sub_type = ARM_HELMET;
                 mitm[thing_created].plus2 = THELM_WIZARD_HAT;
             }
-            else if (strstr( "cap", strlwr(specs) ))
+            else if (strstr( "cap", specs ))
             {
                 mitm[thing_created].sub_type = ARM_HELMET;
                 mitm[thing_created].plus2 = THELM_CAP;
             }
-            else if (strstr( "helm", strlwr(specs) ))
+            else if (strstr( "helm", specs ))
             {
                 mitm[thing_created].sub_type = ARM_HELMET;
                 mitm[thing_created].plus2 = THELM_HELM;
@@ -979,7 +1043,7 @@ void create_spec_object(void)
         }
     }
 
-    item_colour( thing_created );
+    item_colour( mitm[thing_created] );
 
     move_item_to_grid( &thing_created, you.x_pos, you.y_pos );
 
@@ -1100,11 +1164,35 @@ void tweak_object(void)
 //
 //---------------------------------------------------------------
 #if DEBUG_DIAGNOSTICS
+
+static const char *enchant_names[] =
+{
+    "None",
+    "Slow", "Haste", "*BUG-3*", "Fear", "Conf", "Invis",
+    "YPois-1", "YPois-2", "YPois-3", "YPois-4",
+    "YShug-1", "YShug-2", "YShug-3", "YShug-4",
+    "YRot-1", "YRot-2", "YRot-3", "YRot-4",
+    "Summon", "Abj-1", "Abj-2", "Abj-3", "Abj-4", "Abj-5", "Abj-6",
+    "Corona-1", "Corona-2", "Corona-3", "Corona-4",
+    "Charm", "YSticky-1", "YSticky-2", "YSticky-3", "YSticky-4",
+    "*BUG-35*", "*BUG-36*", "*BUG-37*",
+    "Glow Shapeshifter", "Shapeshifter",
+    "Tele-1", "Tele-2", "Tele-3", "Tele-4",
+    "*BUG-44*", "*BUG-45*", "*BUG-46*", "*BUG-47*", "*BUG-48*", "*BUG-49*",
+    "*BUG-50*", "*BUG-51*", "*BUG-52*", "*BUG-53*", "*BUG-54*", "*BUG-55*",
+    "*BUG-56*",
+    "Pois-1", "Pois-2", "Pois-3", "Pois-4",
+    "Sticky-1", "Sticky-2", "Sticky-3", "Sticky-4",
+    "OldAbj-1", "OldAbj-2", "OldAbj-3", "OldAbj-4", "OldAbj-5", "OldAbj-6",
+    "OldCreatedFriendly", "Sleep wary", "Submerged", "Short Lived",
+    "*BUG-too big*"
+};
+
 void stethoscope(int mwh)
 {
     struct dist stth;
     int steth_x, steth_y;
-    int i;
+    int i, j;
 
     if (mwh != RANDOM_MONSTER)
         i = mwh;
@@ -1112,7 +1200,7 @@ void stethoscope(int mwh)
     {
         mpr( "Which monster?", MSGCH_PROMPT );
 
-        direction(stth);
+        direction( stth );
 
         if (!stth.isValid)
             return;
@@ -1133,13 +1221,14 @@ void stethoscope(int mwh)
             snprintf( info, INFO_SIZE, "cloud type: %d delay: %d",
                      env.cloud[ env.cgrid[steth_x][steth_y] ].type,
                      env.cloud[ env.cgrid[steth_x][steth_y] ].decay );
-            mpr(info);
+
+            mpr( info, MSGCH_DIAGNOSTIC );
         }
 
         if (mgrd[steth_x][steth_y] == NON_MONSTER)
         {
             snprintf( info, INFO_SIZE, "item grid = %d", igrd[steth_x][steth_y] );
-            mpr(info);
+            mpr( info, MSGCH_DIAGNOSTIC );
             return;
         }
 
@@ -1147,7 +1236,7 @@ void stethoscope(int mwh)
     }
 
     strcpy(info, monam( menv[i].number, menv[i].type, true, DESC_CAP_THE ));
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 
     snprintf( info, INFO_SIZE,"ID#%d type %d HD=%d HP=%d/%d AC=%d EV=%d MR=%d beh/foe=%d/%d",
              i, menv[i].type, menv[i].hit_dice,
@@ -1156,25 +1245,55 @@ void stethoscope(int mwh)
              mons_resist_magic( &menv[i] ),
              menv[i].behaviour, menv[i].foe );
 
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 
     snprintf( info, INFO_SIZE, "speed: %d, inc: %d; number: %d; flags: %02x; target: (%d,%d)",
              menv[i].speed, menv[i].speed_increment,
              menv[i].number, menv[i].flags,
              menv[i].target_x, menv[i].target_y );
 
-    mpr( info );
+    mpr( info, MSGCH_DIAGNOSTIC );
 
+    snprintf( info, INFO_SIZE, "resist: fire=%d; cold=%d; elec=%d; pois=%d; neg=%d",
+              mons_res_fire( &menv[i] ),
+              mons_res_cold( &menv[i] ),
+              mons_res_elec( &menv[i] ),
+              mons_res_poison( &menv[i] ),
+              mons_res_negative_energy( &menv[i] ) );
+    mpr( info, MSGCH_DIAGNOSTIC );
+
+#if 0
     snprintf( info, INFO_SIZE, "enchts: [ %d %d %d %d %d %d ]",
                 menv[i].enchantment[0], menv[i].enchantment[1],
                 menv[i].enchantment[2], menv[i].enchantment[3],
                 menv[i].enchantment[4], menv[i].enchantment[5] );
-    mpr( info );
+#endif
+
+    strncpy( info, "ench: ", INFO_SIZE );
+
+    for (j = 0; j < 6; j++)
+    {
+        if (menv[i].enchantment[j] >= NUM_ENCHANTMENTS)
+            strncat( info, enchant_names[ NUM_ENCHANTMENTS ], INFO_SIZE );
+        else
+            strncat( info, enchant_names[ menv[i].enchantment[j] ], INFO_SIZE );
+
+        if (strlen( info ) <= 70)
+            strncat( info, " ", INFO_SIZE );
+        else if (j < 5)
+        {
+            mpr( info, MSGCH_DIAGNOSTIC );
+            strncpy( info, "ench: ", INFO_SIZE );
+        }
+    }
+
+    mpr( info, MSGCH_DIAGNOSTIC );
 
     if (menv[i].type == MONS_PLAYER_GHOST)
     {
-        snprintf( info, INFO_SIZE, "Ghost damage: %d", ghost.values[7] );
-        mpr(info);
+        snprintf( info, INFO_SIZE, "Ghost damage: %d; brand: %d",
+                  ghost.values[7], ghost.values[8] );
+        mpr( info, MSGCH_DIAGNOSTIC );
     }
 }                               // end stethoscope()
 #endif
@@ -1214,10 +1333,11 @@ static void dump_item( const char *name, int num, const item_def &item )
 //---------------------------------------------------------------
 void debug_item_scan( void )
 {
+    int   i;
     char  name[256];
 
     // unset marks
-    for (int i = 0; i < MAX_ITEMS; i++)
+    for (i = 0; i < MAX_ITEMS; i++)
         mitm[i].flags &= (~ISFLAG_DEBUG_MARK);
 
     // First we're going to check all the stacks on the level:
@@ -1266,7 +1386,7 @@ void debug_item_scan( void )
     }
 
     // Now scan all the items on the level:
-    for (int i = 0; i < MAX_ITEMS; i++)
+    for (i = 0; i < MAX_ITEMS; i++)
     {
         if (!is_valid_item( mitm[i] ))
             continue;
@@ -1308,11 +1428,14 @@ void debug_item_scan( void )
         //
         //   -- eggplant is an illegal throwing weapon
         //
+        //   -- bola is an illegal fixed artefact
+        //
         //   -- items described as buggy (typically adjectives out of range)
         //      (note: covers buggy, bugginess, buggily, whatever else)
         //
         if (strstr( name, "questionable" ) != NULL
             || strstr( name, "eggplant" ) != NULL
+            || strstr( name, "bola" ) != NULL
             || strstr( name, "bugg" ) != NULL)
         {
             mpr( "Bad item:", MSGCH_WARN );
@@ -1342,9 +1465,30 @@ void debug_item_scan( void )
     }
 
     // Don't want debugging marks interfering with anything else.
-    for (int i = 0; i < MAX_ITEMS; i++)
+    for (i = 0; i < MAX_ITEMS; i++)
         mitm[i].flags &= (~ISFLAG_DEBUG_MARK);
 
+    // Quickly scan monsters for "program bug"s.
+    for (i = 0; i < MAX_MONSTERS; i++)
+    {
+        const struct monsters *const monster = &menv[i];
+
+        if (monster->type == -1)
+            continue;
+
+        moname( monster->type, true, DESC_PLAIN, name );
+
+        if (strcmp( name, "program bug" ) == 0)
+        {
+            mpr( "Program bug detected!", MSGCH_WARN );
+
+            snprintf( info, INFO_SIZE,
+                      "Buggy monster detected: monster #%d; position (%d,%d)",
+                      i, monster->x, monster->y );
+
+            mpr( info, MSGCH_WARN );
+        }
+    }
 }
 #endif
 
@@ -1396,10 +1540,85 @@ void debug_set_skills(void)
             you.skills[skill] = amount;
 
             calc_total_skill_points();
+
+            redraw_skill( you.your_name, player_title() );
+
+            switch (skill)
+            {
+            case SK_FIGHTING:
+                calc_hp();
+                break;
+
+            case SK_SPELLCASTING:
+            case SK_INVOCATIONS:
+            case SK_EVOCATIONS:
+                calc_mp();
+                break;
+
+            case SK_DODGING:
+                you.redraw_evasion = 1;
+                break;
+
+            case SK_ARMOUR:
+                you.redraw_armour_class = 1;
+                you.redraw_evasion = 1;
+                break;
+
+            default:
+                break;
+            }
         }
     }
 }                               // end debug_add_skills()
 #endif
+
+
+//---------------------------------------------------------------
+//
+// debug_set_all_skills
+//
+//---------------------------------------------------------------
+#ifdef WIZARD
+void debug_set_all_skills(void)
+{
+    int i;
+    int amount = debug_prompt_for_int( "Set all skills to what level? ", true );
+
+    if (amount < 0)             // cancel returns -1 -- bwr
+        canned_msg( MSG_OK );
+    else
+    {
+        if (amount > 27)
+            amount = 27;
+
+        for (i = SK_FIGHTING; i < NUM_SKILLS; i++)
+        {
+            if (i == SK_UNUSED_1
+                || (i > SK_UNARMED_COMBAT && i < SK_SPELLCASTING))
+            {
+                continue;
+            }
+
+            const int points = (skill_exp_needed( amount + 1 )
+                                * species_skills( i, you.species )) / 100;
+
+            you.skill_points[i] = points + 1;
+            you.skills[i] = amount;
+        }
+
+        redraw_skill( you.your_name, player_title() );
+
+        calc_total_skill_points();
+
+        calc_hp();
+        calc_mp();
+
+        you.redraw_armour_class = 1;
+        you.redraw_evasion = 1;
+    }
+}                               // end debug_add_skills()
+#endif
+
 
 //---------------------------------------------------------------
 //

@@ -192,12 +192,9 @@ bool cast_smiting(int power)
     struct dist beam;
     struct monsters *monster = 0;       // NULL {dlb}
 
-    if (power > 150)
-        power = 150;
-
     mpr("Smite whom?", MSGCH_PROMPT);
 
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET, TARG_ENEMY );
 
     if (!beam.isValid
         || mgrd[beam.tx][beam.ty] == NON_MONSTER
@@ -234,12 +231,9 @@ bool airstrike(int power)
     struct monsters *monster = 0;       // NULL {dlb}
     int hurted = 0;
 
-    if (power > 150)
-        power = 150;
-
     mpr("Strike whom?", MSGCH_PROMPT);
 
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET, TARG_ENEMY );
 
     if (!beam.isValid
         || mgrd[beam.tx][beam.ty] == NON_MONSTER
@@ -284,10 +278,6 @@ bool cast_bone_shards(int power)
     struct bolt beam;
     struct dist spelld;
 
-    // cap the incoming power to 150 (for a third level spell)
-    if (power > 150)
-        power = 150;
-
     if (you.equip[EQ_WEAPON] == -1
                     || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_CORPSES)
     {
@@ -297,7 +287,8 @@ bool cast_bone_shards(int power)
         mpr("The corpse collapses into a mass of pulpy flesh.");
     else if (spell_direction(spelld, beam) != -1)
     {
-        // max of 150 * 15 + 3000 = 5250
+        // practical max of 100 * 15 + 3000 = 4500
+        // actual max of    200 * 15 + 3000 = 6000
         power *= 15;
         power += mons_weight( you.inv[you.equip[EQ_WEAPON]].plus );
 
@@ -325,8 +316,10 @@ void sublimation(int power)
             mpr( "A conflicting enchantment prevents the spell from "
                  "coming into effect." );
         }
-        else if (!enough_hp(2, true))
+        else if (!enough_hp( 2, true ))
+        {
              mpr("Your attempt to draw power from your own body fails.");
+        }
         else
         {
             mpr("You draw magical energy from your own body!");
@@ -352,7 +345,7 @@ void sublimation(int power)
         mpr("The chunk of flesh you are holding crumbles to dust.");
         mpr("A flood of magical energy pours into your mind!");
 
-        inc_mp(7 + random2(7), false);
+        inc_mp( 7 + random2(7), false );
 
         dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
     }
@@ -364,7 +357,8 @@ void sublimation(int power)
 //
 // This spell extends creating undead to Ice mages, as such it's high
 // level, requires wielding of the material component, and the undead
-// aren't overly powerful (they're also vulnerable to fire).
+// aren't overly powerful (they're also vulnerable to fire).  I've put
+// back the abjuration level in order to keep down the army sizes again.
 //
 // As for what it offers necromancers considering all the downsides
 // above... it allows the turning of a single corpse into an army of
@@ -377,8 +371,8 @@ void sublimation(int power)
 void simulacrum(int power)
 {
     int max_num = 4 + random2(power) / 20;
-    if (max_num > 12)
-        max_num = 12;
+    if (max_num > 8)
+        max_num = 8;
 
     const int chunk = you.equip[EQ_WEAPON];
 
@@ -400,7 +394,7 @@ void simulacrum(int power)
 
         for (int i = 0; i < max_num; i++)
         {
-            if (create_monster( MONS_SIMULACRUM_SMALL, 0,
+            if (create_monster( MONS_SIMULACRUM_SMALL, ENCH_ABJ_VI,
                                 BEH_FRIENDLY, you.x_pos, you.y_pos,
                                 MHITNOT, mons_type ) != -1)
             {
@@ -622,6 +616,19 @@ void you_teleport2(bool allow_control)
     if (current_delay_action() == DELAY_BUTCHER)
         stop_delay();
 
+    if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+    {
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        you.redraw_armour_class = 1;
+    }
+
+    if (you.level_type == LEVEL_ABYSS)
+    {
+        abyss_teleport();
+        you.pet_target = MHITNOT;
+        return;
+    }
+
     FixedVector < int, 2 > plox;
 
     plox[0] = 1;
@@ -639,7 +646,7 @@ void you_teleport2(bool allow_control)
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-        mpr(info);
+        mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
         plox[0] += random2(3) - 1;
@@ -660,7 +667,7 @@ void you_teleport2(bool allow_control)
 
 #if DEBUG_DIAGNOSTICS
         snprintf( info, INFO_SIZE, "Scattered target square (%d,%d)", plox[0], plox[1] );
-        mpr(info);
+        mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
         if (is_controlled)
@@ -674,6 +681,11 @@ void you_teleport2(bool allow_control)
                 || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
             {
                 is_controlled = false;
+            }
+            else
+            {
+                // controlling teleport contaminates the player -- bwr
+                contaminate_player(1);
             }
         }
     }                           // end "if is_controlled"
@@ -691,12 +703,6 @@ void you_teleport2(bool allow_control)
                    && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
                || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
                || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD);
-    }
-
-    if (you.level_type == LEVEL_ABYSS)
-    {
-        abyss_teleport();
-        you.pet_target = MHITNOT;
     }
 }                               // end you_teleport()
 
@@ -854,7 +860,7 @@ bool create_noise(void)
 
 #if DEBUG_DIAGNOSTICS
     snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (!silenced(plox[0], plox[1]))
@@ -1052,6 +1058,7 @@ void portal(void)
         grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
 
         down_stairs(true, old_level);
+        untag_followers();
     }
 
     return;

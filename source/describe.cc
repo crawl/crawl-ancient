@@ -737,8 +737,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
                     "grants its wielder resistance to the "
                     "effects of poison and increases their "
                     "ability to use venomous magic, and "
-                    "carries magical powers which can "
-                    "be invoked by one skilled in the use of magic. ";
+                    "carries magical powers which can be evoked. ";
                 break;
             case SPWPN_VAMPIRES_TOOTH:
                 description += "It is lethally vampiric. ";
@@ -754,7 +753,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
         }
         else if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            // We know it's an artefact type weapon, but not what it does.
+            // We know its an artefact type weapon, but not what it does.
             description += "$This weapon may have some hidden properties.$";
         }
     }
@@ -1001,7 +1000,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
     {
         int spec_ench = get_weapon_brand( item );
 
-        if (!is_random_artefact( item ) || verbose == 0)
+        if (!is_random_artefact( item ) && verbose == 0)
             spec_ench = SPWPN_NORMAL;
 
         // special weapon descrip
@@ -1042,8 +1041,8 @@ static std::string describe_weapon( const item_def &item, char verbose)
                 description += "It poisons the flesh of those it strikes. ";
                 break;
             case SPWPN_PROTECTION:
-                description += "It protects the one who wields it "
-                    "against injury. ";
+                description += "It protects the one who wields it against "
+                    "injury (+5 to AC). ";
                 break;
             case SPWPN_DRAINING:
                 description += "A truly terrible weapon, "
@@ -1083,7 +1082,7 @@ static std::string describe_weapon( const item_def &item, char verbose)
                 description += "It warps and distorts space around it. ";
                 break;
             case SPWPN_REACHING:
-                description += "It can be invoked to extend its reach. ";
+                description += "It can be evoked to extend its reach. ";
                 break;
             }
         }
@@ -1569,16 +1568,16 @@ static std::string describe_armour( const item_def &item, char verbose )
                 "their metabolic rate by a large amount. ";
             break;
         case SPARM_STRENGTH:
-            description += "It increases the physical power of its wearer. ";
+            description += "It increases the physical power of its wearer (+3 to strength). ";
             break;
         case SPARM_DEXTERITY:
-            description += "It increases the dexterity of its wearer. ";
+            description += "It increases the dexterity of its wearer (+3 to dexterity). ";
             break;
         case SPARM_INTELLIGENCE:
-            description += "It makes you more clever. ";
+            description += "It makes you more clever (+3 to intelligence). ";
             break;
         case SPARM_PONDEROUSNESS:
-            description += "It is very cumbersome. ";
+            description += "It is very cumbersome (-2 to EV, slows movement). ";
             break;
         case SPARM_LEVITATION:
             description += "It can be activated to allow its wearer to "
@@ -1589,7 +1588,7 @@ static std::string describe_armour( const item_def &item, char verbose )
                 "to enchantments. ";
             break;
         case SPARM_PROTECTION:
-            description += "It protects its wearer from harm. ";
+            description += "It protects its wearer from harm (+3 to AC). ";
             break;
         case SPARM_STEALTH:
             description += "It enhances the stealth of its wearer. ";
@@ -1671,7 +1670,7 @@ static std::string describe_stick( const item_def &item )
 
     if (get_ident_type(OBJ_WANDS, item.sub_type) == ID_UNKNOWN_TYPE)
     {
-        description += "A stick. Maybe it's magical. ";
+        description += "A stick. Maybe its magical. ";
     }
     else
     {
@@ -1977,9 +1976,11 @@ static std::string describe_food( const item_def &item )
                 if (you.species == SP_GHOUL)
                     description += "It looks nice and ripe. ";
                 else if (you.species != SP_MUMMY)
+                {
                     description += "In fact, it is "
                         "rotting away before your eyes. "
                         "Eating it would probably be unwise. ";
+                }
             }
             break;
         }
@@ -2320,7 +2321,9 @@ static std::string describe_scroll( const item_def &item )
 
         case SCR_BLINKING:
             description += "This scroll allows its reader to teleport "
-                "a short distance, with precise control. ";
+                "a short distance, with precise control.  Be wary that "
+                "controlled teleports will cause the subject to "
+                "become contaminated with magical energy. ";
             break;
 
         case SCR_PAPER:
@@ -2562,7 +2565,9 @@ static std::string describe_jewellery( const item_def &item, char verbose)
                     "destination of any teleportation, although without "
                     "perfect accuracy.  Trying to teleport into a solid "
                     "object will result in a random teleportation, at "
-                    "least in the case of a normal teleportation.";
+                    "least in the case of a normal teleportation.  Also "
+                    "be wary that controlled teleports will contaminate "
+                    "the subject with residual magical energy.";
                 break;
 
             case AMU_RAGE:
@@ -2678,7 +2683,9 @@ static std::string describe_staff( const item_def &item )
 
     if (item_ident( item, ISFLAG_KNOW_TYPE ))
     {
-        description += "This staff ";   //NB: the leading space is here {dlb}
+        // NB: the leading space is here {dlb}
+        description += "This " + std::string( item_is_staff( item ) ? "staff "
+                                                                    : "rod " );
 
         switch (item.sub_type)
         {
@@ -2749,6 +2756,10 @@ static std::string describe_staff( const item_def &item )
                 "which costs 4 magic points. ";
             break;
 
+        case STAFF_STRIKING:
+            description += "allows its wielder to strike foes from afar. ";
+            break;
+
         case STAFF_SPELL_SUMMONING:
             description += "of spells contains spells of summoning. ";
             break;
@@ -2788,16 +2799,18 @@ static std::string describe_staff( const item_def &item )
             break;
         }
 
-        if (item.sub_type >= 10 && item.sub_type < 25)
+        if (item_is_rod( item ))
         {
             description +=
-                "Casting a spell from it consumes no food, and will not fail. ";
+                "Casting a spell from it consumes no food, and will not fail.$";
         }
+        else
+        {
+            description +=
+                "$$Damage rating: 7 $Accuracy rating: +6 $Attack delay: 120%%";
 
-        description +=
-            "$$Damage rating: 7 $Accuracy rating: +6 $Attack delay: 120%%";
-
-        description += "$$It falls into the 'staves' category. ";
+            description += "$$It falls into the 'staves' category. ";
+        }
     }
     else
     {
@@ -3337,7 +3350,9 @@ void describe_spell(int spelled)
 
     case SPELL_CONTROLLED_BLINK:
         description +=
-            "allows short-range translocation, with precise control. ";
+            "allows short-range translocation, with precise control. "
+            "Be wary that controlled teleports will cause the subject to "
+            "become contaminated with magical energy. ";
         break;
 
     case SPELL_FREEZING_CLOUD:
@@ -3355,7 +3370,7 @@ void describe_spell(int spelled)
             "This spell attunes the caster to the forces of fire, "
             "increasing their fire magic and giving protection from fire.  "
             "However, it also makes them much more susceptable to the forces "
-            "of ice. "; // well, if survive fire wall it's a risk -- bwr
+            "of ice. "; // well, if survive fire wall its a risk -- bwr
         break;
 
     case SPELL_RESTORE_STRENGTH:
@@ -3424,6 +3439,10 @@ void describe_spell(int spelled)
 
     case SPELL_MASS_CONFUSION:
         description += "causes confusion in all who gaze upon the caster. ";
+        break;
+
+    case SPELL_STRIKING:
+        description += "hurls a small bolt of force. ";
         break;
 
     case SPELL_SMITING:
@@ -3615,7 +3634,8 @@ void describe_spell(int spelled)
             "skill with Ice magic. The caster and the caster's "
             "equipment are protected from the cold, but the "
             "spell will not function for casters already wearing "
-            "heavy armour. ";
+            "heavy armour.  The effects of this spell are boosted "
+            "if the caster is in Ice Form. ";
         break;
 
     case SPELL_CALL_IMP:
@@ -3785,7 +3805,8 @@ void describe_spell(int spelled)
             "the durability of which depends on his or her "
             "skill with Earth magic. These scales can coexist "
             "with other forms of armour, but are in and of "
-            "themselves extremely heavy and cumbersome. ";
+            "themselves extremely heavy and cumbersome.  The effects "
+            "of this spell are increased if the caster is in Statue Form. ";
         break;
 
     case SPELL_SHOCK:
@@ -3794,8 +3815,8 @@ void describe_spell(int spelled)
 
     case SPELL_SWIFTNESS:
         description += "imbues its caster with the ability to achieve "
-            "great speeds. It will not increase the speed "
-            "of those who are already fleet of foot " "(such as centaurs). ";
+            "great movement speeds.  Flying spellcasters can move even "
+            "faster.";
         break;
 
     case SPELL_FLY:
@@ -3824,7 +3845,9 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_CONTROL_TELEPORT:
-        description += "allows the caster to control translocations. ";
+        description += "allows the caster to control translocations.  Be "
+            "wary that controlled teleports will cause the subject to "
+            "become contaminated with magical energy. ";
         break;
 
     case SPELL_POISON_AMMUNITION:
@@ -4018,7 +4041,7 @@ void describe_spell(int spelled)
     case SPELL_STICKS_TO_SNAKES:        // FIXME: description sucks
         description += "uses wooden items in the caster's grasp as raw "
             "material for a powerful summoning. Note that highly "
-            "enchanted items, such as wizard's staves, may not be "
+            "enchanted items, such as wizard's staves, will not be "
             "affected. ";
         // "Good examples of sticks include arrows, quarterstaves and clubs.";
         break;
@@ -4144,9 +4167,15 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_EVAPORATE:
-        description += "causes a potion held by the caster to evaporate, "
-            "spreading the liquid's magical potency into "
-            "surrounding air. ";
+        description += "heats a potion causing it to explode into a large "
+            "cloud when thrown.  The potion must be thrown immediately, "
+            "as part of the spell, for this to work. ";
+        break;
+
+    case SPELL_FULSOME_DISTILLATION:
+        description += "extracts the vile and poisonous essences from a "
+            "corpse.  A rotten corpse may produce a stronger potion."
+            "$$You probably don't want to drink the results. ";
         break;
 
 /* ******************************************************************
@@ -4212,9 +4241,10 @@ void describe_spell(int spelled)
 
     case SPELL_STONESKIN:
         description += "hardens the one's skin to a degree determined "
-            "by one's skill in Earth Magic. This enchantment only works on "
-            "relatively normal flesh; it will aid neither the undead nor "
-            "the bodily transformed.";
+            "by one's skill in Earth Magic. This only works on relatively "
+            "normal flesh; it will aid neither the undead nor the bodily "
+            "transformed.  The effects of this spell are boosted if the "
+            "caster is in Statue Form. ";
         break;
 
     case SPELL_SIMULACRUM:
@@ -4319,7 +4349,6 @@ void describe_monsters(int class_described, unsigned char which_mons)
         // mv: changed ANOTHER_LAVA_THING to SALAMANDER, added stats and
         //     description
         // (missing) case 250 - MONS_PROGRAM_BUG ??? 16jan2000 {dlb}
-
     case MONS_KILLER_BEE_LARVA:
         description += "A small, powerless larva of killer bee.";
         break;
@@ -4333,8 +4362,9 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "It's surrounded by aura of brilliant golden light. ";
         break;
 
-    case MONS_HUMAN: //mv: !!! Human is valid polymorph target.
-        description += "A common man.";
+    case MONS_HUMAN:
+        // These should only be possible from polymorphing or shapeshifting.
+        description += "A remarkably nondescript person.  How odd!";
         break;
 
     case MONS_GIANT_ANT:
@@ -4614,18 +4644,16 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ZOMBIE_SMALL:
-        description += "A corpse raised from the dead "
-            "to undeath by necromancy. ";
+        description += "A corpse raised to undeath by necromancy. ";
         break;
     case MONS_ZOMBIE_LARGE:
-        description += "A large corpse raised from the dead "
-            "to undeath by necromancy. ";
+        description += "A large corpse raised to undeath by necromancy. ";
         break;
 
     case MONS_SIMULACRUM_LARGE:
     case MONS_SIMULACRUM_SMALL:
-        description += "An ice replica of a monster animated by the powers "
-                       "of necromancy. ";
+        description += "An ice replica of a monster, that's animated by "
+            "the powers of necromancy. ";
         break;
 
     case MONS_CYCLOPS:
@@ -4875,12 +4903,36 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += "A large yellow tubular reptile.";
         break;
 
-    case MONS_GIANT_LIZARD:
-        description += "A huge lizard, with great crunching jaws.";
+    case MONS_GIANT_NEWT:
+        description += "Several times the size of a normal newt, but still "
+            "not really impressive.";
         break;
 
-    case MONS_LINDWORM: // maybe it's just me, but what *is* a lindworm?
-        description += "A very large and very fat lizard. ";
+    case MONS_GIANT_GECKO:
+        description += "A lizard with pads on its toes allowing it to cling "
+            "to walls and ceilings.  Its much larger than a normal gecko... "
+            "perhaps it has something to do with the water in this dungeon?";
+        break;
+
+    case MONS_GIANT_IGUANA:
+    case MONS_GIANT_LIZARD:
+        description += "A huge lizard with great crunching jaws.";
+        break;
+
+    case MONS_GILA_MONSTER:
+        description += "A large lizard with brightly coloured stripes and "
+            "splotches.";
+        break;
+
+    case MONS_KOMODO_DRAGON:
+        description += "An enormous monitor lizard, its more than capable "
+            "of preying on large animals.  Bits of fetid and rotting flesh "
+            "from its last few meals are stuck in its teeth.";
+        break;
+
+    case MONS_LINDWURM:
+        description += "A small serpentine dragon with a pair of strong "
+            "forelimbs.  Its thick scales give off an eerie green glow.";
         break;
 
     case MONS_TROLL:
@@ -4903,8 +4955,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_ROCK_TROLL:
         description +=
-            "An enormous and very nasty-looking humanoid creature. Its"
-            " rocky hide seems to heal almost instantaneously from most wounds.";
+            "An enormous and very nasty-looking humanoid creature. Its "
+            "rocky hide seems to heal almost instantaneously from most wounds.";
         break;
 
     case MONS_UNSEEN_HORROR:
@@ -5374,9 +5426,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description += "A hideous melting stone statue come to life.";
         break;
 
-        // I think most of the deep elven descriptions are pretty much OK now. GDL
-    case MONS_ELF: //mv: elf dummy monster. It have to be included here
-                   //because an elf is valid polymorph target
+    case MONS_ELF:
     case MONS_DEEP_ELF_SOLDIER:
     case MONS_DEEP_ELF_FIGHTER:
     case MONS_DEEP_ELF_KNIGHT:
@@ -5390,7 +5440,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_DEEP_ELF_SORCEROR:
     case MONS_DEEP_ELF_DEATH_MAGE:
         description +=
-            "One of the race of elves which inhabits this dreary cave. ";
+            "One of the race of elves which inhabits this dreary cave.$";
         switch (class_described)
         {
 
@@ -5447,6 +5497,11 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
         case MONS_DEEP_ELF_DEATH_MAGE:
             description += "A strong negative aura surrounds this one.";
+            break;
+
+        case MONS_ELF:
+            // These are only possible from polymorphing or shapeshifting.
+            description += "This one is remarkably plain looking.";
             break;
         }
         break;
@@ -5707,8 +5762,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_ORB_OF_FIRE:
-        description += "An globe of raw primordial fire, capable of "
-                      "impressive pyrotechnics.";
+        description += "A globe of raw primordial fire, capable of "
+                       "impressive pyrotechnics.";
         break;
 
     // the quokka is no more ... {dlb}
@@ -5908,11 +5963,12 @@ void describe_monsters(int class_described, unsigned char which_mons)
             "covered in thick red scales and thorns.";
         break;
 
+    case MONS_PROGRAM_BUG:
     default:
-        DEBUGSTR("Missing monster description");
-        description += "A monster whose description has yet to be written. ";
+        description += "If this monster is a \"program bug\", its recomended "
+            "that you save your game and reload.  Please report any instances "
+            "of program bug monsters or missing descriptions.";
         break;
-
         // onocentaur - donkey
     }
 
@@ -6268,7 +6324,7 @@ void describe_god( int which_god )
 
         // mv: these gods protects you during your prayer (not mentioning XOM)
         // chance for doing so is (random2(you.piety) >= 30)
-        // Note that it's not depending on penance.
+        // Note that its not depending on penance.
         // Btw. I'm not sure how to explain such divine protection
         // because god isn't really protecting player - he only sometimes
         // saves his life (probably it shouldn't be displayed at all).

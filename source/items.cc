@@ -30,6 +30,7 @@
 #include "externs.h"
 
 #include "beam.h"
+#include "cloud.h"
 #include "debug.h"
 #include "delay.h"
 #include "effects.h"
@@ -41,6 +42,7 @@
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
+#include "mstuff2.h"
 #include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
@@ -814,7 +816,7 @@ void pickup(void)
     unsigned char keyin = 0;
     int next;
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
         mpr("You can't reach the floor from up here.");
         return;
@@ -1326,7 +1328,7 @@ void drop(void)
     }
 
     // XXX: Need to handle quantities:
-    item_dropped = prompt_invent_item( "Drop which item?", -1, true, '$',
+    item_dropped = prompt_invent_item( "Drop which item?", -1, true, true, '$',
                                        &quant_drop );
 
     if (item_dropped == PROMPT_ABORT || quant_drop == 0)
@@ -1480,6 +1482,8 @@ static bool shift_monster( struct monsters *mon, int x, int y )
         const int mon_index = mgrd[mon->x][mon->y];
         mgrd[mon->x][mon->y] = NON_MONSTER;
         mgrd[nx][ny] = mon_index;
+        mon->x = nx;
+        mon->y = ny;
     }
 
     return (found_move);
@@ -1496,7 +1500,7 @@ static bool shift_monster( struct monsters *mon, int x, int y )
 //---------------------------------------------------------------
 void update_corpses(double elapsedTime)
 {
-    int cx,cy;
+    int cx, cy;
 
     if (elapsedTime <= 0.0)
         return;
@@ -1581,6 +1585,169 @@ void update_corpses(double elapsedTime)
     }
 }
 
+static bool remove_enchant_levels( struct monsters *mon, int slot, int min,
+                                   int levels )
+{
+    const int new_level = mon->enchantment[slot] - levels;
+
+    if (new_level < min)
+    {
+        mons_del_ench( mon,
+                       mon->enchantment[slot], mon->enchantment[slot], true );
+        return (true);
+    }
+    else
+    {
+        mon->enchantment[slot] = new_level;
+    }
+
+    return (false);
+}
+
+//---------------------------------------------------------------
+//
+// update_enchantments
+//
+// Update a monster's enchantments when the player returns
+// to the level.
+//
+// Management for enchantments... problems with this are the oddities
+// (monster dying from poison several thousands of turns later), and
+// game balance.
+//
+// Consider: Poison/Sticky Flame a monster at range and leave, monster
+// dies but can't leave level to get to player (implied game balance of
+// the delayed damage is that the monster could be a danger before
+// it dies).  This could be fixed by keeping some monsters active
+// off level and allowing them to take stairs (a very serious change).
+//
+// Compare this to the current abuse where the player gets
+// effectively extended duration of these effects (although only
+// the actual effects only occur on level, the player can leave
+// and heal up without having the effect disappear).
+//
+// This is a simple compromise between the two... the enchantments
+// go away, but the effects don't happen off level.  -- bwr
+//
+//---------------------------------------------------------------
+static void update_enchantments( struct monsters *mon, int levels )
+{
+    int i;
+
+    for (i = 0; i < NUM_MON_ENCHANTS; i++)
+    {
+        switch (mon->enchantment[i])
+        {
+        case ENCH_YOUR_POISON_I:
+        case ENCH_YOUR_POISON_II:
+        case ENCH_YOUR_POISON_III:
+        case ENCH_YOUR_POISON_IV:
+            remove_enchant_levels( mon, i, ENCH_YOUR_POISON_I, levels );
+            break;
+
+        case ENCH_YOUR_SHUGGOTH_I:
+        case ENCH_YOUR_SHUGGOTH_II:
+        case ENCH_YOUR_SHUGGOTH_III:
+        case ENCH_YOUR_SHUGGOTH_IV:
+            remove_enchant_levels( mon, i, ENCH_YOUR_SHUGGOTH_I, levels );
+            break;
+
+        case ENCH_YOUR_ROT_I:
+        case ENCH_YOUR_ROT_II:
+        case ENCH_YOUR_ROT_III:
+        case ENCH_YOUR_ROT_IV:
+            remove_enchant_levels( mon, i, ENCH_YOUR_ROT_I, levels );
+            break;
+
+        case ENCH_BACKLIGHT_I:
+        case ENCH_BACKLIGHT_II:
+        case ENCH_BACKLIGHT_III:
+        case ENCH_BACKLIGHT_IV:
+            remove_enchant_levels( mon, i, ENCH_BACKLIGHT_I, levels );
+            break;
+
+        case ENCH_YOUR_STICKY_FLAME_I:
+        case ENCH_YOUR_STICKY_FLAME_II:
+        case ENCH_YOUR_STICKY_FLAME_III:
+        case ENCH_YOUR_STICKY_FLAME_IV:
+            remove_enchant_levels( mon, i, ENCH_YOUR_STICKY_FLAME_I, levels );
+            break;
+
+        case ENCH_POISON_I:
+        case ENCH_POISON_II:
+        case ENCH_POISON_III:
+        case ENCH_POISON_IV:
+            remove_enchant_levels( mon, i, ENCH_POISON_I, levels );
+            break;
+
+        case ENCH_STICKY_FLAME_I:
+        case ENCH_STICKY_FLAME_II:
+        case ENCH_STICKY_FLAME_III:
+        case ENCH_STICKY_FLAME_IV:
+            remove_enchant_levels( mon, i, ENCH_STICKY_FLAME_I, levels );
+            break;
+
+        case ENCH_FRIEND_ABJ_I:
+        case ENCH_FRIEND_ABJ_II:
+        case ENCH_FRIEND_ABJ_III:
+        case ENCH_FRIEND_ABJ_IV:
+        case ENCH_FRIEND_ABJ_V:
+        case ENCH_FRIEND_ABJ_VI:
+            if (remove_enchant_levels( mon, i, ENCH_FRIEND_ABJ_I, levels ))
+            {
+                monster_die( mon, KILL_RESET, 0 );
+            }
+            break;
+
+        case ENCH_ABJ_I:
+        case ENCH_ABJ_II:
+        case ENCH_ABJ_III:
+        case ENCH_ABJ_IV:
+        case ENCH_ABJ_V:
+        case ENCH_ABJ_VI:
+            if (remove_enchant_levels( mon, i, ENCH_ABJ_I, levels ))
+            {
+                monster_die( mon, KILL_RESET, 0 );
+            }
+            break;
+
+
+        case ENCH_SHORT_LIVED:
+            monster_die( mon, KILL_RESET, 0 );
+            break;
+
+        case ENCH_TP_I:
+        case ENCH_TP_II:
+        case ENCH_TP_III:
+        case ENCH_TP_IV:
+            monster_teleport( mon, true );
+            break;
+
+        case ENCH_CONFUSION:
+            monster_blink( mon );
+            break;
+
+        case ENCH_GLOWING_SHAPESHIFTER:
+        case ENCH_SHAPESHIFTER:
+        case ENCH_CREATED_FRIENDLY:
+        case ENCH_SUBMERGED:
+        default:
+            // don't touch these
+            break;
+
+        case ENCH_SLOW:
+        case ENCH_HASTE:
+        case ENCH_FEAR:
+        case ENCH_INVIS:
+        case ENCH_CHARM:
+        case ENCH_SLEEP_WARY:
+            // delete enchantment (using function to get this done cleanly)
+            mons_del_ench(mon, mon->enchantment[i], mon->enchantment[i], true);
+            break;
+        }
+    }
+}
+
 
 //---------------------------------------------------------------
 //
@@ -1591,33 +1758,35 @@ void update_corpses(double elapsedTime)
 //---------------------------------------------------------------
 void update_level( double elapsedTime )
 {
-    const int turns = (int) (elapsedTime / 10.0);
+    int m, i;
+    int turns = (int) (elapsedTime / 10.0);
+
+#if DEBUG_DIAGNOSTICS
+    int mons_total = 0;
+
+    snprintf( info, INFO_SIZE, "turns: %d", turns );
+    mpr( info, MSGCH_DIAGNOSTIC );
+#endif
 
     update_corpses( elapsedTime );
 
-    for (int m = 0; m < MAX_MONSTERS; m++)
+    for (m = 0; m < MAX_MONSTERS; m++)
     {
         struct monsters *mon = &menv[m];
 
         if (mon->type == -1)
             continue;
 
-        // XXX: This is some pretty crude code to make the monsters
-        // appear to do things when the player is off level.  It
-        // could certainly use some improvement since it allows for
-        // a number of impossible things to happen, because it currently
-        // uses blinking instead of A* search or some other method
-        // of really deciding what the monster does.  -- bwr
-        //
-        // XXX: Could also use some way to keep monsters in the
-        // maps that "guard" or belond to a particular room from
-        // blinking around.
-        const int dist = grid_distance( you.x_pos, you.y_pos, mon->x, mon->y );
-        const int range = (turns * mon->speed) / 10;
-        const bool healthy = (mon->hit_points * 2 > mon->max_hit_points);
+#if DEBUG_DIAGNOSTICS
+        mons_total++;
+#endif
 
-        const bool short_time = (range >= 5 + random2(10));
-        const bool long_time  = (range >= 250 + roll_dice( 2, 500 ));
+        // following monsters don't get movement
+        if (mon->flags & MF_JUST_SUMMONED)
+            continue;
+
+        // XXX: Allow some spellcasting (like Healing and Teleport)? -- bwr
+        // const bool healthy = (mon->hit_points * 2 > mon->max_hit_points);
 
         // This is the monster healing code, moved here from tag.cc:
         if (monster_descriptor( mon->type, MDSC_REGENERATES )
@@ -1630,122 +1799,105 @@ void update_level( double elapsedTime )
             heal_monster( mon, (turns / 10), false );
         }
 
+        if (turns >= 10)
+            update_enchantments( mon, turns / 10 );
+
         // Don't move water or lava monsters around
         if (monster_habitat( mon->type ) != DNGN_FLOOR)
             continue;
 
-#if 0
-        // probably too annoying even for DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "mon #%d: dist %d; turns: %d range %d; healthy %d; short_time %d; long_time %d",
-                      m, dist, turns, range, healthy, short_time, long_time );
+        // Let sleeping monsters lie
+        if (mon->behaviour == BEH_SLEEP)
+            continue;
 
-        mpr( info );
+        const int range = (turns * mon->speed) / 10;
+        const int moves = (range > 50) ? 50 : range;
+        // const bool short_time = (range >= 5 + random2(10));
+        const bool long_time  = (range >= (500 + roll_dice( 2, 500 )));
+
+#if DEBUG_DIAGNOSTICS
+        // probably too annoying even for DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE,
+                  "mon #%d: range %d; long %d; pos (%d,%d); targ %d(%d,%d); flags %d",
+                  m, range, long_time, mon->x, mon->y,
+                  mon->foe, mon->target_x, mon->target_y, mon->flags );
+
+        mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
-        switch (mon->behaviour)
+        if (range <= 0)
+            continue;
+
+        if (long_time
+            && (mon->behaviour == BEH_FLEE
+                || mon->behaviour == BEH_CORNERED
+                || coinflip()))
         {
-        case BEH_SLEEP:
-            // Let sleeping monsters lie
-            break;
-
-        case BEH_WANDER:
-            if (dist > 10)
+            if (mon->behaviour != BEH_WANDER)
             {
-                if (one_chance_in(3) && range > long_time)
-                    mon->behaviour = BEH_SLEEP;
+                mon->behaviour = BEH_WANDER;
+                mon->foe = MHITNOT;
+                mon->target_x = 10 + random2( GXM - 10 );
+                mon->target_y = 10 + random2( GYM - 10 );
             }
-            else if (range > short_time)
-                monster_blink( mon );
             else
-                shift_monster( mon, mon->x, mon->y );
-            break;
-
-        case BEH_FLEE:
-        case BEH_CORNERED:
-            if (dist <= 10)
             {
-                if (range > short_time)
-                    monster_blink( mon );
-                else
-                    shift_monster( mon, mon->x, mon->y );
+                // monster will be sleeping after we move it
+                mon->behaviour = BEH_SLEEP;
             }
-            break;
+        }
 
-        case BEH_SEEK:
-        default:
-            // We'll only bother with monsters near the stairwell for now.
-            if (dist > 10)
+        int pos_x = mon->x, pos_y = mon->y;
+
+        // dirt simple movement:
+        for (i = 0; i < moves; i++)
+        {
+            int mx = (pos_x > mon->target_x) ? -1 :
+                     (pos_x < mon->target_x) ?  1
+                                             :  0;
+
+            int my = (pos_y > mon->target_y) ? -1 :
+                     (pos_y < mon->target_y) ?  1
+                                             :  0;
+
+            if (mon->behaviour == BEH_FLEE)
+            {
+                mx *= -1;
+                my *= -1;
+            }
+
+            if (pos_x + mx < 0 || pos_x + mx >= GXM)
+                mx = 0;
+
+            if (pos_y + my < 0 || pos_y + my >= GXM)
+                my = 0;
+
+            if (mx == 0 && my == 0)
                 break;
 
-            if (you.x_pos == mon->target_x && you.y_pos == mon->target_y)
-            {
-                // Monster was heading for that staircase when player left.
-                // Assuming this means that the monster can get to the
-                // stairway (which might not be correct).
-                if (dist <= range && healthy)
-                {
-                    if (range < long_time)
-                        shift_monster( mon, you.x_pos, you.y_pos );
-                    else
-                    {
-                        mon->behaviour = BEH_WANDER;
+            if (grd[pos_x + mx][pos_y + my] < DNGN_FLOOR)
+                break;
 
-                        if (!shift_monster( mon, 0, 0 ))
-                            monster_blink( mon );
-                    }
-                }
-                else if (healthy)
-                {
-                    const int dx = you.x_pos - mon->target_x;
-                    const int dy = you.y_pos - mon->target_y;
-
-                    const int tx = (range * dx) / dist;
-                    const int ty = (range * dy) /  dist;
-
-                    if (tx != mon->x && ty != mon->y)
-                    {
-                        if (!shift_monster( mon, tx, ty ))
-                        {
-                            if (range > short_time)
-                                monster_blink( mon );
-                            else
-                                shift_monster( mon, mon->x, mon->y );
-                        }
-                    }
-                }
-                else
-                {
-                    // Monster wasn't healty when player left, so they
-                    // "run" away. -- bwr
-
-                    // check the HPs after healing to see if we've stopped
-                    if (mon->hit_points * 2 > mon->max_hit_points)
-                    {
-                        mon->behaviour = (one_chance_in(3) ? BEH_SLEEP
-                                                           : BEH_WANDER);
-                    }
-
-                    if (range > long_time)
-                        shift_monster( mon, 0, 0 );
-                    else if (range > short_time)
-                        monster_blink( mon );
-                    else
-                        shift_monster( mon, mon->x, mon->y );
-                }
-            }
-            else
-            {
-                // Monster wasn't tracking to that square but is near stairwell
-                if (range > long_time)
-                    shift_monster( mon, 0, 0 );
-                else if (range > short_time)
-                    monster_blink( mon );
-                else
-                    shift_monster( mon, mon->x, mon->y );
-            }
-            break;
+            pos_x += mx;
+            pos_y += my;
         }
+
+        if (!shift_monster( mon, pos_x, pos_y ))
+            shift_monster( mon, mon->x, mon->y );
+
+#if DEBUG_DIAGNOSTICS
+        snprintf( info, INFO_SIZE, "moved to (%d,%d)", mon->x, mon->y );
+        mpr( info, MSGCH_DIAGNOSTIC );
+#endif
     }
+
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "total monsters on level = %d", mons_total );
+    mpr( info, MSGCH_DIAGNOSTIC );
+#endif
+
+    for (i = 0; i < MAX_CLOUDS; i++)
+        delete_cloud( i );
 }
 
 
@@ -1937,11 +2089,11 @@ void handle_time( long time_delta )
     // about 1.5 points on average,  so they can corrupt the player
     // quite quickly.  Wielding one for a short battle is OK,  which is
     // as things should be.   -- GDL
-    if (you.invis) //  && random2(10) < 6)
-        added_contamination ++;
+    if (you.invis && random2(10) < 6)
+        added_contamination++;
 
-    if (you.haste && !you.berserker)  // && random2(10) < 6)
-        added_contamination ++;
+    if (you.haste && !you.berserker && random2(10) < 6)
+        added_contamination++;
 
     // randarts are usually about 20x worse than running around invisible
     // or hasted.. this seems OK.
@@ -1956,7 +2108,7 @@ void handle_time( long time_delta )
     // only check for badness once every other turn
     if (coinflip())
     {
-        if (you.magic_contamination > 3
+        if (you.magic_contamination >= 5
             && random2(150) <= you.magic_contamination)
         {
             mpr("Your body shudders with the violent release of wild energies!", MSGCH_WARN);
@@ -1972,12 +2124,16 @@ void handle_time( long time_delta )
                 boom.target_y = you.y_pos;
                 boom.damage = dice_def( 3, (you.magic_contamination / 2) );
                 boom.thrower = KILL_YOU;
-                boom.ex_size = (you.magic_contamination / 15);
-                boom.ench_power = (you.magic_contamination * 5);
                 boom.beam_source = NON_MONSTER;
                 boom.isBeam = false;
                 boom.isTracer = false;
                 strcpy(boom.beam_name, "magical storm");
+
+                boom.ench_power = (you.magic_contamination * 5);
+                boom.ex_size = (you.magic_contamination / 15);
+                if (boom.ex_size > 9)
+                    boom.ex_size = 9;
+
                 explosion(boom);
             }
 
@@ -2161,7 +2317,7 @@ void handle_time( long time_delta )
             mpr( ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "Smell of rotting flesh makes you more hungry." :
                   (temp_rand == 6) ? "You smell decay. Yum-yum."
-                                   :  "Wow ! There is something tasty in your inventory."),
+                                   : "Wow! There is something tasty in your inventory."),
                 MSGCH_ROTTEN_MEAT );
             break;
 
@@ -2173,7 +2329,7 @@ void handle_time( long time_delta )
             mpr( ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "You smell rotting flesh." :
                   (temp_rand == 6) ? "You smell decay."
-                                   :  "There is something rotten in your inventory."),
+                                   : "There is something rotten in your inventory."),
                 MSGCH_ROTTEN_MEAT );
             break;
 
@@ -2182,7 +2338,7 @@ void handle_time( long time_delta )
             mpr( ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "Smell of rotting flesh makes you sick." :
                   (temp_rand == 6) ? "You smell decay. Yuk..."
-                                   : "Ugh ! There is something really disgusting in your inventory."),
+                                   : "Ugh! There is something really disgusting in your inventory."),
                 MSGCH_ROTTEN_MEAT );
             break;
         }
@@ -2231,7 +2387,7 @@ static void autopickup(void)
     if (autopickup_on == 0 || Options.autopickups == 0L)
         return;
 
-    if (you.levitation && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
         return;
 
     o = igrd[you.x_pos][you.y_pos];

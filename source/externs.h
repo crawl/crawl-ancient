@@ -444,6 +444,7 @@ struct game_options
     bool        easy_armour;    // allow auto-removing of armour
     bool        easy_butcher;   // open doors with movement
     int         easy_confirm;   // make yesno() confirming easier
+    int         easy_quit_item_prompts; // make item prompts quitable on space
     int         colour[16];     // macro fg colours to other colours
     int         background;     // select default background colour
     int         channels[NUM_MESSAGE_CHANNELS];  // msg channel colouring

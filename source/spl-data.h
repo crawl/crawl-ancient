@@ -333,7 +333,7 @@
 {
     SPELL_TELEPORT_OTHER, "Teleport Other",
      SPTYP_TRANSLOCATION,
-     5
+     4
 },
 
 {
@@ -793,8 +793,8 @@
 
 {
     SPELL_TOMB_OF_DOROKLOHE, "Tomb of Doroklohe",
-     SPTYP_TRANSMIGRATION | SPTYP_EARTH,
-     7 // jmf: was SPTYP_CONJURATION instead of SPTYP_TRANSMIGRATION
+     SPTYP_CONJURATION | SPTYP_EARTH, // conj makes more sense than tmig -- bwr
+     7
 }
 ,
 
@@ -850,7 +850,7 @@
 {
     SPELL_CONTROL_TELEPORT, "Control Teleport",
      SPTYP_ENCHANTMENT | SPTYP_TRANSLOCATION,
-     4
+     6
 },
 
 {
@@ -929,19 +929,19 @@
 {
     SPELL_BLADE_HANDS, "Blade Hands",
      SPTYP_TRANSMIGRATION,
-     4
+     5  // only removes weapon, so I raised this from 4 -- bwr
 },
 
 {
     SPELL_STATUE_FORM, "Statue Form",
      SPTYP_TRANSMIGRATION | SPTYP_EARTH,
-     5
+     6
 },
 
 {
     SPELL_ICE_FORM, "Ice Form",
      SPTYP_ICE | SPTYP_TRANSMIGRATION,
-     5
+     4 // doesn't allow for equipment, so I lowered this from 5 -- bwr
 },
 
 {
@@ -1169,7 +1169,7 @@
 {
     SPELL_EVAPORATE, "Evaporate",
      SPTYP_FIRE | SPTYP_TRANSMIGRATION,
-     2
+     2   // XXX: level 2 or 3, what should it be now? -- bwr
 },
 
 {
@@ -1228,7 +1228,7 @@
 
 {
   SPELL_STONESKIN, "Stoneskin",
-    SPTYP_EARTH | SPTYP_ENCHANTMENT,
+    SPTYP_EARTH | SPTYP_TRANSMIGRATION, // was ench -- bwr
     2
 },
 
@@ -1254,6 +1254,18 @@
   SPELL_DELAYED_FIREBALL, "Delayed Fireball",
     SPTYP_FIRE | SPTYP_CONJURATION,
     7
+},
+
+{
+  SPELL_FULSOME_DISTILLATION, "Fulsome Distillation",
+    SPTYP_TRANSMIGRATION | SPTYP_NECROMANCY,
+    1
+},
+
+{
+  SPELL_STRIKING, "Striking",
+    0,
+    1
 },
 
 {

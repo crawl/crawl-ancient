@@ -52,15 +52,6 @@ char cast_lesser_healing(void);
  * *********************************************************************** */
 char cast_healing(int power);
 
-
-// last updated 06mar2001 {gdl}
-/* ***********************************************************************
- * called from: ability - spell - spells3 - spells4
- * *********************************************************************** */
-char spell_direction(struct dist &spelld, struct bolt &pbolt,
-    int restrict = DIR_NONE);
-
-
 // last updated 24may2000 {dlb}
 /* ***********************************************************************
  * called from: beam - it_use3 - spells - spells1
@@ -90,7 +81,7 @@ void cast_ring_of_flames(int power);
 void conjure_flame(int pow);
 void extension(int pow);
 void fireball(int power);
-void stinking_cloud(void);
+void stinking_cloud(int pow);
 void abjuration(int pow);
 
 // last updated 24may2000 {dlb}

@@ -30,7 +30,6 @@
 #ifndef ENUM_H
 #define ENUM_H
 
-
 enum ABILITIES
 {
     ABIL_NON_ABILITY = -1,
@@ -45,7 +44,7 @@ enum ABILITIES
     ABIL_BREATHE_LIGHTNING,
     ABIL_SPIT_ACID,                    //   10
     ABIL_BREATHE_POWER,
-    ABIL_GO_BERSERK,
+    ABIL_EVOKE_BERSERK,
     ABIL_BREATHE_STICKY_FLAME,
     ABIL_BREATHE_STEAM,
     ABIL_FLY,                          //   15
@@ -61,12 +60,16 @@ enum ABILITIES
     ABIL_THROW_FROST,                  //   25
     ABIL_BOLT_OF_DRAINING,
     ABIL_BREATHE_HELLFIRE,
-    ABIL_FLY_II,                       //   28
-    ABIL_DELAYED_FIREBALL,             //   29
-    ABIL_TURN_INVISIBLE = 51,          //   51
-    ABIL_TURN_VISIBLE,
-    ABIL_LEVITATE,
-    ABIL_STOP_LEVITATING,
+    ABIL_FLY_II,
+    ABIL_DELAYED_FIREBALL,
+    ABIL_MUMMY_RESTORATION,            //   30
+    ABIL_EVOKE_MAPPING,
+    ABIL_EVOKE_TELEPORTATION,
+    ABIL_EVOKE_BLINK,                  //   33
+    ABIL_EVOKE_TURN_INVISIBLE = 51,    //   51
+    ABIL_EVOKE_TURN_VISIBLE,
+    ABIL_EVOKE_LEVITATE,
+    ABIL_EVOKE_STOP_LEVITATING,
     ABIL_END_TRANSFORMATION,           //   55
     ABIL_ZIN_REPEL_UNDEAD = 110,       //  110
     ABIL_ZIN_HEALING,
@@ -113,12 +116,14 @@ enum ABILITIES
 
 enum ABILITY_FLAGS
 {
-    ABFLAG_NONE         = 0x00,
-    ABFLAG_BREATH       = 0x01,       // ability uses DUR_BREATH_WEAPON
-    ABFLAG_DELAY        = 0x02,       // ability has its own delay (ie glamour)
-    ABFLAG_PAIN         = 0x04,       // ability must hurt player (ie torment)
-    ABFLAG_EXHAUSTION   = 0x08,       // fails if you.exhausted
-    ABFLAG_INSTANT      = 0x10        // doesn't take time to use
+    ABFLAG_NONE         = 0x00000000,
+    ABFLAG_BREATH       = 0x00000001, // ability uses DUR_BREATH_WEAPON
+    ABFLAG_DELAY        = 0x00000002, // ability has its own delay (ie glamour)
+    ABFLAG_PAIN         = 0x00000004, // ability must hurt player (ie torment)
+    ABFLAG_EXHAUSTION   = 0x00000008, // fails if you.exhausted
+    ABFLAG_INSTANT      = 0x00000010, // doesn't take time to use
+    ABFLAG_PERMANENT_HP = 0x00000020, // costs permanent HPs
+    ABFLAG_PERMANENT_MP = 0x00000040  // costs permanent MPs
 };
 
 enum AMMUNITION_DESCRIPTIONS
@@ -267,12 +272,13 @@ enum BEAMS                        // beam[].flavour
     BEAM_EXPLOSION = 10,          //   10
     BEAM_SPORE,                   //   11
     BEAM_HELLFIRE = 13,           //   13 - found 11jan2000 {dlb}
+    BEAM_ENERGY = 17,
     BEAM_HOLY = 18,               //   18 - aka beam of cleansing, golden flame
     BEAM_FRAG,
     BEAM_LAVA,                    //   20
     BEAM_BACKLIGHT,
     BEAM_SLEEP,
-    BEAM_ICE = 23,                //   23
+    BEAM_ICE,                     //   23
     BEAM_NUKE = 27,               //   27
     BEAM_RANDOM,                  //   currently translates into FIRE..ACID
 
@@ -293,7 +299,19 @@ enum BEAMS                        // beam[].flavour
     BEAM_PAIN,                  // LIGHTMAGENTA
     BEAM_DISPEL_UNDEAD,         // YELLOW
     BEAM_DISINTEGRATION,        // WHITE
-    BEAM_ENSLAVE_DEMON          // colour "16"
+    BEAM_ENSLAVE_DEMON,         // colour "16"
+
+    // new beams for evaporate
+    BEAM_POTION_STINKING_CLOUD,
+    BEAM_POTION_POISON,
+    BEAM_POTION_MIASMA,
+    BEAM_POTION_STEAM,
+    BEAM_POTION_FIRE,
+    BEAM_POTION_COLD,
+    BEAM_POTION_BLACK_SMOKE,
+    BEAM_POTION_BLUE_SMOKE,
+    BEAM_POTION_PURP_SMOKE,
+    BEAM_POTION_RANDOM
 };
 
 enum BOOKS
@@ -479,7 +497,7 @@ enum COMMANDS
     CMD_BUTCHER,
     CMD_INSPECT_FLOOR,
     CMD_EXAMINE_OBJECT,
-    CMD_INVOKE,
+    CMD_EVOKE,
     CMD_WIELD_WEAPON,
     CMD_WEAPON_SWAP,
     CMD_THROW,                         // 1000 +  40
@@ -524,7 +542,8 @@ enum COMMANDS
     CMD_SAVE_GAME_NOW,
     CMD_SUSPEND_GAME,                  // 1000 +  80
     CMD_QUIT,
-    CMD_WIZARD
+    CMD_WIZARD,
+    CMD_OBSOLETE_INVOKE
 };
 
 enum CONFIRM_LEVEL
@@ -1176,6 +1195,7 @@ enum KILLBY
     KILLED_BY_SHUGGOTH,
     KILLED_BY_SOMETHING,
     KILLED_BY_FALLING_DOWN_STAIRS,
+    KILLED_BY_ACID,
     NUM_KILLBY
 };
 
@@ -1198,6 +1218,13 @@ enum LEVEL_TYPES                       // you.level_type
     LEVEL_LABYRINTH,
     LEVEL_ABYSS,
     LEVEL_PANDEMONIUM
+};
+
+enum LOAD_MODE
+{
+    LOAD_START_GAME,
+    LOAD_RESTART_GAME,
+    LOAD_ENTER_LEVEL
 };
 
 enum MAP_SECTIONS                      // see maps.cc and dungeon.cc {dlb}
@@ -1230,6 +1257,7 @@ enum MESSAGE_CHANNEL
     MSGCH_MONSTER_DAMAGE, // monster damage reports (param is level)
     MSGCH_ROTTEN_MEAT,    // messages about chunks/corpses becoming rotten
     MSGCH_EQUIPMENT,      // equipment listing messages
+    MSGCH_DIAGNOSTIC,     // various diagnostic messages
     NUM_MESSAGE_CHANNELS  // always last
 };
 
@@ -1289,6 +1317,14 @@ enum MISSILES                          // (unsigned char)
     MI_LARGE_ROCK, //jmf: it'd be nice to move MI_LARGE_ROCK to DEBRIS_ROCK
     NUM_MISSILES,
     MI_EGGPLANT
+};
+
+enum MON_TARG_MODE
+{
+    TARG_ANY,
+    TARG_ENEMY,
+    TARG_FRIEND,
+    TARG_NUM_MODES
 };
 
 enum MONSTERS                          // (int) menv[].type
@@ -1433,7 +1469,7 @@ enum MONSTERS                          // (int) menv[].type
     MONS_TITAN,                        //  145
     MONS_GOLDEN_DRAGON,
     MONS_ELF,
-    MONS_LINDWORM,
+    MONS_LINDWURM,
     MONS_ELEPHANT_SLUG,
     MONS_WAR_DOG,                      //  150
     MONS_GREY_RAT,
@@ -1570,13 +1606,17 @@ enum MONSTERS                          // (int) menv[].type
     MONS_MARGERY,
     MONS_BORIS,                        //  310
 // BCR - end second batch of uniques.
+
+    // The Lords of Hell:
     MONS_GERYON = 340,                 //  340
     MONS_DISPATER,
     MONS_ASMODEUS,
     MONS_ANTAEUS,
     MONS_ERESHKIGAL,                   //  344
+
     MONS_ANCIENT_LICH = 356,           //  356
     MONS_OOZE,                         //  357
+
     MONS_VAULT_GUARD = 360,            //  360
     MONS_CURSE_SKULL,
     MONS_VAMPIRE_KNIGHT,
@@ -1600,6 +1640,8 @@ enum MONSTERS                          // (int) menv[].type
     MONS_BALL_LIGHTNING, // replacing the dorgi -- bwr
     MONS_ORB_OF_FIRE,    // Swords renamed to fit -- bwr
     MONS_QUOKKA,         // Quokka are a type of wallaby, returned -- bwr 382
+
+
     MONS_EYE_OF_DEVASTATION = 385,     //  385
     MONS_MOTH_OF_WRATH,
     MONS_DEATH_COB,
@@ -1614,16 +1656,23 @@ enum MONSTERS                          // (int) menv[].type
     MONS_BOGGART,
     MONS_QUICKSILVER_DRAGON,
     MONS_IRON_DRAGON,
-    MONS_SKELETAL_WARRIOR, // last possible outcome of polymorph spell {dlb}
-                           // mv: It's not true now. Monsters can be
-                           // polymorphed even to NUM_MONSTERS
-
+    MONS_SKELETAL_WARRIOR,             //  399
     MONS_PLAYER_GHOST,                 //  400
     MONS_PANDEMONIUM_DEMON,            //  401
+
+    MONS_GIANT_NEWT,                   //  402
+    MONS_GIANT_GECKO,                  //  403
+    MONS_GIANT_IGUANA,                 //  404
+    MONS_GILA_MONSTER,                 //  405
+    MONS_KOMODO_DRAGON,                //  406
+
+    // Lava monsters:
     MONS_LAVA_WORM = 420,              //  420
     MONS_LAVA_FISH,
     MONS_LAVA_SNAKE,
     MONS_SALAMANDER,                   //  423 mv: was another lava thing
+
+    // Water monsters:
     MONS_BIG_FISH = 430,               //  430
     MONS_GIANT_GOLDFISH,
     MONS_ELECTRICAL_EEL,
@@ -1631,7 +1680,7 @@ enum MONSTERS                          // (int) menv[].type
     MONS_WATER_ELEMENTAL,
     MONS_SWAMP_WORM,                   //  435
 
-    NUM_MONSTERS,
+    NUM_MONSTERS,                      // used for polymorph
     RANDOM_MONSTER = 1000, // used to distinguish between a random monster and using program bugs for error trapping {dlb}
     WANDERING_MONSTER = 2500 // only used in monster placement routines - forced limit checks {dlb}
 
@@ -1679,12 +1728,19 @@ enum MONSTER_CATEGORIES
 };
 #endif
 
+// Note: These are currently stored in chars!!!
+// Need to fix struct monsters and the savefile if you want more.
 enum MONSTER_FLAGS
 {
-    MF_CREATED_FRIENDLY = 0x01,
-    MF_GOD_GIFT         = 0x02,
-    MF_BATTY            = 0x04,
-    MF_JUST_SUMMONED    = 0x08
+    MF_CREATED_FRIENDLY   = 0x01,  // no benefit from killing
+    MF_GOD_GIFT           = 0x02,  // player not penalized by its death
+    MF_BATTY              = 0x04,  // flutters like a bat
+    MF_JUST_SUMMONED      = 0x08,  // monster skips next available action
+    MF_TAKING_STAIRS      = 0x10,  // is following player through stairs
+
+    MF_UNUSED_I           = 0x20,
+    MF_UNUSED_II          = 0x40,
+    MF_UNUSED_III         = 0x80
 };
 
 enum MONSTER_DAMAGE
@@ -1710,7 +1766,9 @@ enum MONSTER_HOLINESS // matches (char) H_foo in mon-util.h, see: monster_holine
     MH_HOLY,                           //    0 - was -1
     MH_NATURAL,                        //    1 - was 0
     MH_UNDEAD,                         //    2 - was 1
-    MH_DEMONIC                         //    3 - was 2
+    MH_DEMONIC,                        //    3 - was 2
+    MH_NONLIVING,                      //    golems and other constructs
+    MH_PLANT                           //    plants
 };
 
 enum MONSTER_INVENTORY_SLOTS           // (int) menv[].inv[]
@@ -1729,6 +1787,7 @@ enum MONSTER_INVENTORY_SLOTS           // (int) menv[].inv[]
 enum MONSTER_ITEM_USE
 {
     MONUSE_NOTHING,
+    MONUSE_EATS_ITEMS,
     MONUSE_OPEN_DOORS,
     MONUSE_STARTING_EQUIPMENT,
     MONUSE_WEAPONS_ARMOUR
@@ -2236,6 +2295,7 @@ enum SKILLS
     SK_EARTH_MAGIC,
     SK_POISON_MAGIC,
     SK_INVOCATIONS,
+    SK_EVOCATIONS,
     NUM_SKILLS                         // must remain last member {dlb}
 };
 
@@ -2418,12 +2478,13 @@ enum SPELLS
     SPELL_APPORTATION,
     SPELL_TWIST,
     SPELL_FAR_STRIKE,                  //   10
-    SPELL_DELAYED_FIREBALL,            //   10
-    SPELL_CONJURE_FLAME = 13,          //   13
+    SPELL_DELAYED_FIREBALL,
+    SPELL_STRIKING,
+    SPELL_CONJURE_FLAME,
     SPELL_DIG,
     SPELL_BOLT_OF_FIRE,                //   15
     SPELL_BOLT_OF_COLD,
-    SPELL_LIGHTNING_BOLT,              //   17
+    SPELL_LIGHTNING_BOLT,
     SPELL_BOLT_OF_MAGMA,               //   18
     SPELL_POLYMORPH_OTHER = 20,        //   20
     SPELL_SLOW,
@@ -2497,7 +2558,8 @@ enum SPELLS
     SPELL_FLAME_OF_CLEANSING,
     SPELL_SHINING_LIGHT,               //   90
     SPELL_SUMMON_DAEVA,
-    SPELL_ABJURATION_II,               //   92
+    SPELL_ABJURATION_II,
+    SPELL_FULSOME_DISTILLATION,        //   93
     SPELL_TWISTED_RESURRECTION = 110,  //  110
     SPELL_REGENERATION,
     SPELL_BONE_SHARDS,
@@ -2649,6 +2711,7 @@ enum STAVES
     STAFF_WARDING,
     STAFF_DISCOVERY,
     STAFF_DEMONOLOGY,                  //   18
+    STAFF_STRIKING,                    //   19
     STAFF_AIR = 25,                    //   25
     STAFF_EARTH,
     STAFF_CHANNELING,
@@ -2657,7 +2720,7 @@ enum STAVES
 
 enum SYMBOLS // beam[].type - note that this (and its variants) also accepts values from other enums - confusing {dlb}
 {
-    SYM_MISSILE = '`',                 //   ?? - is this 39 or 96 ??? {dlb}
+    SYM_SPACE = ' ',                   //   32
     SYM_FLASK = '!',                   //   33
     SYM_BOLT = '#',                    //   35
     SYM_CHUNK = '%',                   //   37
@@ -2669,7 +2732,8 @@ enum SYMBOLS // beam[].type - note that this (and its variants) also accepts val
     SYM_TRINKET = '=',                 //   61
     SYM_SCROLL = '?',                  //   63
     SYM_DEBUG = 'X',                   //   88
-    SYM_ARMOUR = '['                   //   91
+    SYM_ARMOUR = '[',                  //   91
+    SYM_MISSILE = '`'                  //   96
 };
 
 enum TAGS   // used during save/load process to identify data blocks
@@ -2756,6 +2820,8 @@ enum VORPAL_DESCRIPTIONS
     DVORP_CHOPPING
 };
 
+// NOTE:  This order is very special!  Its basically the same as ZAP_*,
+// and there are bits of the code that still use that fact.. see zap_wand().
 enum WANDS                             // mitm[].subtype
 {
     WAND_FLAME,                        //    0
@@ -2899,7 +2965,7 @@ enum ZAPS                              // zapping(), zappy()
     ZAP_STING,
     ZAP_HELLFIRE,                      //   30
     ZAP_IRON_BOLT,
-    ZAP_PEBBLE,
+    ZAP_STRIKING,
     ZAP_STONE_ARROW,
     ZAP_ELECTRICITY,
     ZAP_ORB_OF_ELECTRICITY,            //   35

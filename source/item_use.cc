@@ -91,7 +91,7 @@ void wield_weapon(bool auto_wield)
 
     if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
     {
-        if (!can_equip(0))
+        if (!can_equip( EQ_WEAPON ))
         {
             mpr("You can't wield anything in your present form.");
             return;
@@ -125,7 +125,7 @@ void wield_weapon(bool auto_wield)
     if (!auto_wield || !is_valid_item( you.inv[item_slot] ))
     {
         item_slot = prompt_invent_item( "Wield which item (- for none)?",
-                                        OBJ_WEAPONS, true, '-' );
+                                        OBJ_WEAPONS, true, true, '-' );
 
         if (item_slot == PROMPT_ABORT)
         {
@@ -673,7 +673,7 @@ bool do_wear_armour( int item, bool quiet )
     {
         // caps & wiz hats always fit, unless your head's too big (ogres &c)
     }
-    else if (!can_equip(wh_equip))
+    else if (!can_equip( wh_equip ))
     {
         if (!quiet)
            mpr("You can't wear that in your present form.");
@@ -1036,7 +1036,7 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
     message_current_target();
 
-    direction(thr);
+    direction( thr, DIR_NONE, TARG_ENEMY );
 
     if (!thr.isValid)
     {
@@ -1520,12 +1520,13 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     }
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%dd%d",
-        baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
-        baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
-        pbolt.hit, pbolt.damage.num, pbolt.damage.size );
+    snprintf( info, INFO_SIZE,
+              "H:%d+%d;a%dl%d.  D:%d+%d;a%dl%d -> %d,%dd%d",
+              baseHit, exHitBonus, ammoHitBonus, lnchHitBonus,
+              baseDam, exDamBonus, ammoDamBonus, lnchDamBonus,
+              pbolt.hit, pbolt.damage.num, pbolt.damage.size );
 
-    mpr(info);
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     // create message
@@ -1975,8 +1976,11 @@ void zap_wand(void)
 {
     struct bolt beam;
     struct dist zap_wand;
-
     int item_slot;
+
+    // Unless the character knows the type of the wand, the targeting
+    // system will default to cycling through all monsters. -- bwr
+    int targ_mode = TARG_ANY;
 
     beam.obviousEffect = false;
 
@@ -2007,9 +2011,25 @@ void zap_wand(void)
         return;
     }
 
+    if (item_ident( you.inv[item_slot], ISFLAG_KNOW_TYPE ))
+    {
+        if (you.inv[item_slot].sub_type == WAND_HASTING
+            || you.inv[item_slot].sub_type == WAND_HEALING
+            || you.inv[item_slot].sub_type == WAND_INVISIBILITY)
+        {
+            targ_mode = TARG_FRIEND;
+        }
+        else
+        {
+            targ_mode = TARG_ENEMY;
+        }
+    }
+
     mpr("Which direction? (*/+ to target)", MSGCH_PROMPT);
     message_current_target();
-    direction(zap_wand);
+
+    direction( zap_wand, DIR_NONE, targ_mode );
+
     if (!zap_wand.isValid)
     {
         if (zap_wand.isCancel)
@@ -2051,7 +2071,7 @@ void zap_wand(void)
     beam.target_x = zap_wand.tx;
     beam.target_y = zap_wand.ty;
 
-    zapping(type_zapped, 40, beam);
+    zapping( type_zapped, 30 + roll_dice(2, you.skills[SK_EVOCATIONS]), beam );
 
     if (beam.obviousEffect == 1 || you.inv[item_slot].sub_type == WAND_FIREBALL)
     {
@@ -2080,11 +2100,11 @@ void zap_wand(void)
     if (get_ident_type( you.inv[item_slot].base_type,
                         you.inv[item_slot].sub_type ) == ID_KNOWN_TYPE
         && (item_ident( you.inv[item_slot], ISFLAG_KNOW_PLUSES )
-            || you.skills[SK_ENCHANTMENTS] > 5 + random2(15)))
+            || you.skills[SK_EVOCATIONS] > 5 + random2(15)))
     {
         if (item_not_ident( you.inv[item_slot], ISFLAG_KNOW_PLUSES ))
         {
-            mpr("Your skill with enchantments lets you calculate the power of this device...");
+            mpr("Your skill with magical items lets you calculate the power of this device...");
         }
 
         snprintf( info, INFO_SIZE, "This wand has %d charge%s left.",
@@ -2094,6 +2114,8 @@ void zap_wand(void)
         mpr(info);
         set_ident_flags( you.inv[item_slot], ISFLAG_KNOW_PLUSES );
     }
+
+    exercise( SK_EVOCATIONS, 1 );
 
     you.turn_is_over = 1;
     alert();

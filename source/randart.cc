@@ -1550,7 +1550,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SINGING_SWORD:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_LONG_SWORD;
-        item.special = SPWPN_SINGING_SWORD;
         item.plus  = 7;
         item.plus2 = 6;
         break;
@@ -1558,7 +1557,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_WRATH_OF_TROG:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_BATTLEAXE;
-        item.special = SPWPN_WRATH_OF_TROG;
         item.plus  = 3;
         item.plus2 = 11;
         break;
@@ -1566,7 +1564,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SCYTHE_OF_CURSES:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_SCYTHE;
-        item.special = SPWPN_SCYTHE_OF_CURSES;
         item.plus  = 11;
         item.plus2 = 11;
         break;
@@ -1574,7 +1571,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_MACE_OF_VARIABILITY:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_MACE;
-        item.special = SPWPN_MACE_OF_VARIABILITY;
         item.plus  = random2(12) - 4;
         item.plus2 = random2(12) - 4;
         break;
@@ -1582,7 +1578,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_GLAIVE_OF_PRUNE:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_GLAIVE;
-        item.special = SPWPN_GLAIVE_OF_PRUNE;
         item.plus  = 0;
         item.plus2 = 12;
         break;
@@ -1590,7 +1585,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SCEPTRE_OF_TORMENT:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_MACE;
-        item.special = SPWPN_SCEPTRE_OF_TORMENT;
         item.plus  = 7;
         item.plus2 = 6;
         break;
@@ -1598,7 +1592,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SWORD_OF_ZONGULDROK:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_LONG_SWORD;
-        item.special = SPWPN_SWORD_OF_ZONGULDROK;
         item.plus  = 9;
         item.plus2 = 9;
         break;
@@ -1608,7 +1601,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
         {
             item.base_type = OBJ_WEAPONS;
             item.sub_type = WPN_GREAT_SWORD;
-            item.special = SPWPN_SWORD_OF_POWER;
             item.plus  = 0; // set on wield
             item.plus2 = 0; // set on wield
         }
@@ -1621,7 +1613,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_KNIFE_OF_ACCURACY:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_DAGGER;
-        item.special = SPWPN_KNIFE_OF_ACCURACY;
         item.plus  = 27;
         item.plus2 = -1;
         break;
@@ -1629,7 +1620,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_STAFF_OF_OLGREB:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_QUARTERSTAFF;
-        item.special = SPWPN_STAFF_OF_OLGREB;
         item.plus  = 0; // set on wield
         item.plus2 = 0; // set on wield
         break;
@@ -1637,7 +1627,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_VAMPIRES_TOOTH:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_DAGGER;
-        item.special = SPWPN_VAMPIRES_TOOTH;
         item.plus  = 3;
         item.plus2 = 4;
         break;
@@ -1645,7 +1634,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_STAFF_OF_WUCAD_MU:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_QUARTERSTAFF;
-        item.special = SPWPN_STAFF_OF_WUCAD_MU;
         item.plus  = 0; // set on wield
         item.plus2 = 0; // set on wield
         break;
@@ -1653,7 +1641,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SWORD_OF_CEREBOV:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_GREAT_SWORD;
-        item.special = SPWPN_STAFF_OF_WUCAD_MU;
         item.plus  = 6;
         item.plus2 = 6;
         item.colour = YELLOW;
@@ -1663,7 +1650,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_STAFF_OF_DISPATER:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_QUARTERSTAFF;
-        item.special = SPWPN_STAFF_OF_WUCAD_MU;
         item.plus  = 4;
         item.plus2 = 4;
         item.colour = YELLOW;
@@ -1672,7 +1658,6 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     case SPWPN_SCEPTRE_OF_ASMODEUS:
         item.base_type = OBJ_WEAPONS;
         item.sub_type = WPN_QUARTERSTAFF;
-        item.special = SPWPN_STAFF_OF_WUCAD_MU;
         item.plus  = 7;
         item.plus2 = 7;
         item.colour = RED;
@@ -1684,6 +1669,7 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which )
     }
 
     // If we get here, we've made the artefact
+    item.special = which;
     item.quantity = 1;
 
     // Items originally generated in the abyss and not found will be

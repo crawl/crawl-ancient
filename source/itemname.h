@@ -116,6 +116,9 @@ int get_weapon_brand( const item_def &item );
 int get_ammo_brand( const item_def &item );
 int get_armour_ego_type( const item_def &item );
 
+bool item_is_rod( const item_def &item );
+bool item_is_staff( const item_def &item );
+
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */

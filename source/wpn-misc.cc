@@ -182,8 +182,11 @@ char weapon_skill(unsigned char wclass, unsigned char wtype)
 {
     char skill2use = SK_FIGHTING;
 
-    if (wclass == OBJ_STAVES)
+    if (wclass == OBJ_STAVES
+        && (wtype < STAFF_SMITING || wtype > STAFF_AIR))
+    {
         skill2use = SK_STAVES;
+    }
     else if (wclass != OBJ_WEAPONS)
         skill2use = SK_FIGHTING;
     else

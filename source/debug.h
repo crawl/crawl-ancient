@@ -105,6 +105,7 @@ void tweak_object(void);
  * *********************************************************************** */
 void debug_add_skills(void);
 void debug_set_skills(void);
+void debug_set_all_skills(void);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
@@ -141,5 +142,6 @@ void stethoscope(int mwh);
 
 void debug_item_scan( void );
 void debug_get_religion( void );
+void debug_change_species( void );
 
 #endif

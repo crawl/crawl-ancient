@@ -371,6 +371,10 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         strcat(buf, " fell down a flight of stairs");
         break;
 
+    case KILLED_BY_ACID:
+        strcat(buf, " killed by acid");
+        break;
+
     default:
         strcat(buf, " nibbled to death by software bugs");
         break;

@@ -23,6 +23,7 @@
 #include "direct.h"
 #include "effects.h"
 #include "fight.h"
+#include "food.h"
 #include "items.h"
 #include "it_use2.h"
 #include "itemname.h"
@@ -42,13 +43,12 @@
 #include "view.h"
 #include "wpn-misc.h"
 
-static void ball_of_energy(void);
-static void ball_of_fixation(void);
-static void ball_of_seeing(void);
-static void box_of_beasts(void);
-static void disc_of_storms(void);
-static void efreet_flask(void);
-static void staff_spell(int zap_device_2);
+static bool ball_of_energy(void);
+static bool ball_of_fixation(void);
+static bool ball_of_seeing(void);
+static bool box_of_beasts(void);
+static bool disc_of_storms(void);
+static bool efreet_flask(void);
 
 void special_wielded(void)
 {
@@ -258,7 +258,7 @@ static void reaching_weapon_attack(void)
 
     mpr("Attack whom?", MSGCH_PROMPT);
 
-    direction(beam, DIR_TARGET);
+    direction( beam, DIR_TARGET, TARG_ENEMY );
     if (!beam.isValid)
         return;
 
@@ -327,7 +327,7 @@ static void reaching_weapon_attack(void)
     return;
 }                               // end reaching_weapon_attack()
 
-void invoke_wielded(void)
+void evoke_wielded(void)
 {
     char opened_gates = 0;
     unsigned char spell_casted = random2(21);
@@ -335,11 +335,13 @@ void invoke_wielded(void)
     int temp_rand = 0;          // for probability determination {dlb}
     int power = 0;
 
+    int pract = 0;
+
     int wield = you.equip[EQ_WEAPON];
 
     if (you.berserker)
     {
-        canned_msg(MSG_TOO_BERSERK);
+        canned_msg( MSG_TOO_BERSERK );
         return;
     }
     else if (wield == -1)
@@ -351,9 +353,14 @@ void invoke_wielded(void)
     switch (you.inv[wield].base_type)
     {
     case OBJ_WEAPONS:
-        if (get_weapon_brand( you.inv[wield] ) == SPWPN_REACHING)
+        if (get_weapon_brand( you.inv[wield] ) == SPWPN_REACHING
+            && enough_mp(1, false))
         {
+            // needed a cost to prevent evocation training abuse -- bwr
+            dec_mp(1);
+            make_hungry( 50, false );
             reaching_weapon_attack();
+            pract = (one_chance_in(5) ? 1 : 0);
         }
         else if (is_fixed_artefact( you.inv[wield] ))
         {
@@ -361,18 +368,20 @@ void invoke_wielded(void)
             {
             case SPWPN_STAFF_OF_DISPATER:
                 if (you.deaths_door || !enough_hp(11, true)
-                                                || !enough_mp(5, true))
+                    || !enough_mp(5, true))
                 {
                     goto nothing_hap;
                 }
 
                 mpr("You feel the staff feeding on your energy!");
 
-                dec_hp(5 + random2avg(19, 2), false);
-                dec_mp(2 + random2avg(5, 2));
+                dec_hp( 5 + random2avg(19, 2), false );
+                dec_mp( 2 + random2avg(5, 2) );
+                make_hungry( 100, false );
 
-                power = you.experience_level + you.skills[SK_SPELLCASTING] * 5;
+                power = you.skills[SK_EVOCATIONS] * 8;
                 your_spells( SPELL_HELLFIRE, power, false );
+                pract = (coinflip() ? 2 : 1);
                 break;
 
             // let me count the number of ways spell_casted is
@@ -384,13 +393,16 @@ void invoke_wielded(void)
                 if (spell_casted == 0)
                     goto nothing_hap;
 
+                make_hungry( 200, false );
+                pract = 1;
+
                 if (spell_casted < 2)   // summon devils, maybe a Fiend
                 {
-                    spell_casted = (one_chance_in(4) ? MONS_FIEND
-                                                  : MONS_HELLION + random2(10));
 
-                    bool good_summon =
-                            (create_monster( spell_casted, ENCH_ABJ_VI, BEH_HOSTILE,
+                    spell_casted = (one_chance_in(4) ? MONS_FIEND
+                                                 : MONS_HELLION + random2(10));
+
+                    bool good_summon = (create_monster(spell_casted, ENCH_ABJ_VI, BEH_HOSTILE,
                                     you.x_pos, you.y_pos, MHITNOT, 250) != -1);
 
                     if (good_summon)
@@ -417,38 +429,44 @@ void invoke_wielded(void)
                 else
                     spell_casted = SPELL_HELLFIRE;          //  12 in 240
 
-                power = you.experience_level + you.skills[SK_SPELLCASTING] * 5;
+                power = you.skills[SK_EVOCATIONS] * 8;
                 your_spells( spell_casted, power, false );
                 break;
 
             case SPWPN_STAFF_OF_OLGREB:
-                if (!enough_mp(4, true)
-                            || you.skills[SK_SPELLCASTING] <= random2(11))
+                if (!enough_mp( 4, true )
+                    || you.skills[SK_EVOCATIONS] < random2(11))
                 {
                     goto nothing_hap;
                 }
 
                 dec_mp(4);
+                make_hungry( 50, false );
+                pract = 1;
 
-                your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 0, false);
-                your_spells(SPELL_VENOM_BOLT, 0, false);
+                power = you.skills[SK_EVOCATIONS] * 8;
+
+                your_spells( SPELL_OLGREBS_TOXIC_RADIANCE, power, false );
+                your_spells( SPELL_VENOM_BOLT, power, false );
                 break;
 
             case SPWPN_STAFF_OF_WUCAD_MU:
                 if (you.magic_points == you.max_magic_points
-                        || one_chance_in(4))
+                    || you.skills[SK_EVOCATIONS] < random2(25))
                 {
                     goto nothing_hap;
                 }
 
                 mpr("Magical energy flows into your mind!");
 
-                inc_mp(3 + random2(5), false);
+                inc_mp( 3 + random2(5) + you.skills[SK_EVOCATIONS] / 3, false );
+                make_hungry( 50, false );
+                pract = 1;
 
                 if (one_chance_in(3))
                 {
                     miscast_effect( SPTYP_DIVINATION, random2(9),
-                                                            random2(70), 100 );
+                                    random2(70), 100 );
                 }
                 break;
 
@@ -461,15 +479,23 @@ void invoke_wielded(void)
         break;
 
     case OBJ_STAVES:
-        switch (you.inv[wield].sub_type)
+        if (item_is_rod( you.inv[wield] ))
         {
-        case STAFF_CHANNELING:
-            if (you.magic_points == you.max_magic_points || one_chance_in(4))
+            pract = staff_spell( wield );
+        }
+        else if (you.inv[wield].sub_type == STAFF_CHANNELING)
+        {
+            if (you.magic_points == you.max_magic_points
+                || you.skills[SK_EVOCATIONS] < random2(30))
+            {
                 canned_msg(MSG_NOTHING_HAPPENS);
+            }
             else
             {
                 mpr("You channel some magical energy.");
-                inc_mp(1 + random2(3), false);
+                inc_mp( 1 + random2(3), false );
+                make_hungry( 50, false );
+                pract = (one_chance_in(5) ? 1 : 0);
 
                 if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
                                     ISFLAG_KNOW_TYPE ))
@@ -477,86 +503,94 @@ void invoke_wielded(void)
                     set_ident_flags( you.inv[you.equip[EQ_WEAPON]],
                                      ISFLAG_KNOW_TYPE );
 
-                    strcpy(info, "You are wielding ");
-                    in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
-                    strcat(info, str_pass);
-                    strcat(info, ".");
+                    strcpy( info, "You are wielding " );
+                    in_name( you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass );
+                    strcat( info, str_pass );
+                    strcat( info, "." );
 
-                    mpr(info);
+                    mpr( info );
                     more();
 
                     you.wield_change = true;
                 }
             }
-            break;
+        }
+        break;
 
+#if 0
         case STAFF_SMITING:
-            if (enough_mp(4, true))
+            if (!enough_mp(4, true) || you.skills[SK_EVOCATIONS] < random2(10))
             {
-                dec_mp(4);
-
-                power = 20 + you.experience_level * 3;
-                your_spells(SPELL_SMITING, power, false);
-
-                if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
-                                    ISFLAG_KNOW_TYPE ))
-                {
-                    set_ident_flags( you.inv[you.equip[EQ_WEAPON]],
-                                     ISFLAG_KNOW_TYPE );
-
-                    strcpy(info, "You are wielding ");
-                    in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
-                    strcat(info, str_pass);
-                    strcat(info, ".");
-
-                    mpr(info);
-                    more();
-
-                    you.wield_change = true;
-                }
+                miscast_effect(SPTYP_CONJURATION, random2(5), random2(50), 100);
+                pract = (one_chance_in(5) ? 1 : 0);
             }
             else
             {
-                miscast_effect( SPTYP_CONJURATION, random2(5), random2(50), 100 );
+                dec_mp(4);
+                make_hungry( 200, false );
+                pract = (coinflip() ? 1 : 0);
+
+                power = 5 + roll_dice( 3, you.skills[SK_EVOCATIONS] );
+                your_spells( SPELL_SMITING, power, false );
+                ident = true;
             }
             break;
 
-        default:
-            staff_spell( wield );
+        case STAFF_STRIKING:
+            if (enough_mp(1, true))
+            {
+                dec_mp(1);
+                make_hungry( 50, false );
+                pract = (coinflip() ? 1 : 0);
+
+                power = 5 + roll_dice( 1, you.skills[SK_EVOCATIONS] );
+                your_spells( SPELL_MAGIC_DART, power, false );
+                ident = true;
+            }
             break;
-        }
-        break;
+#endif
 
     case OBJ_MISCELLANY:
         switch (you.inv[wield].sub_type)
         {
         case MISC_BOTTLED_EFREET:
-            efreet_flask();
+            if (efreet_flask())
+                pract = 2;
             break;
 
         case MISC_CRYSTAL_BALL_OF_SEEING:
-            ball_of_seeing();
+            if (ball_of_seeing())
+                pract = 1;
             break;
 
         case MISC_AIR_ELEMENTAL_FAN:
-            if (coinflip())
+            if (you.skills[SK_EVOCATIONS] <= random2(30))
                 canned_msg(MSG_NOTHING_HAPPENS);
             else
+            {
                 summon_elemental(100, MONS_AIR_ELEMENTAL, 4);
+                pract = (one_chance_in(5) ? 1 : 0);
+            }
             break;
 
         case MISC_LAMP_OF_FIRE:
-            if (coinflip())
+            if (you.skills[SK_EVOCATIONS] <= random2(30))
                 canned_msg(MSG_NOTHING_HAPPENS);
             else
+            {
                 summon_elemental(100, MONS_FIRE_ELEMENTAL, 4);
+                pract = (one_chance_in(5) ? 1 : 0);
+            }
             break;
 
         case MISC_STONE_OF_EARTH_ELEMENTALS:
-            if (coinflip())
+            if (you.skills[SK_EVOCATIONS] <= random2(30))
                 canned_msg(MSG_NOTHING_HAPPENS);
             else
+            {
                 summon_elemental(100, MONS_EARTH_ELEMENTAL, 4);
+                pract = (one_chance_in(5) ? 1 : 0);
+            }
             break;
 
         case MISC_HORN_OF_GERYON:
@@ -594,11 +628,15 @@ void invoke_wielded(void)
                 }
 
                 if (opened_gates)
+                {
                     mpr("Your way has been unbarred.");
+                    pract = 1;
+                }
             }
             else
             {
                 mpr("You produce a hideous howling noise!");
+                pract = (one_chance_in(3) ? 1 : 0);
                 create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE, you.x_pos,
                                                you.y_pos, MHITYOU, 250 );
             }
@@ -606,34 +644,42 @@ void invoke_wielded(void)
 
         case MISC_DECK_OF_WONDERS:
             deck_of_cards(DECK_OF_WONDERS);
+            pract = 1;
             break;
 
         case MISC_DECK_OF_SUMMONINGS:
             deck_of_cards(DECK_OF_SUMMONING);
+            pract = 1;
             break;
 
         case MISC_DECK_OF_TRICKS:
             deck_of_cards(DECK_OF_TRICKS);
+            pract = 1;
             break;
 
         case MISC_DECK_OF_POWER:
             deck_of_cards(DECK_OF_POWER);
+            pract = 1;
             break;
 
         case MISC_BOX_OF_BEASTS:
-            box_of_beasts();
+            if (box_of_beasts())
+                pract = 1;
             break;
 
         case MISC_CRYSTAL_BALL_OF_ENERGY:
-            ball_of_energy();
+            if (ball_of_energy())
+                pract = 1;
             break;
 
         case MISC_CRYSTAL_BALL_OF_FIXATION:
-            ball_of_fixation();
+            if (ball_of_fixation())
+                pract = 1;
             break;
 
         case MISC_DISC_OF_STORMS:
-            disc_of_storms();
+            if (disc_of_storms())
+                pract = (coinflip() ? 2 : 1);
             break;
 
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
@@ -663,42 +709,47 @@ void invoke_wielded(void)
         break;
     }
 
-    you.turn_is_over = 1;
-}                               // end invoke_wielded()
+    if (pract > 0)
+        exercise( SK_EVOCATIONS, pract );
 
-static void efreet_flask(void)
+    you.turn_is_over = 1;
+}                               // end evoke_wielded()
+
+static bool efreet_flask(void)
 {
-    int behaviour = (!one_chance_in(5) ? BEH_FRIENDLY : BEH_HOSTILE);
+    const int behaviour = ((you.skills[SK_EVOCATIONS] > random2(20))
+                                ? BEH_FRIENDLY : BEH_HOSTILE);
 
     mpr("You open the flask...");
 
     dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
 
     if (create_monster( MONS_EFREET, ENCH_ABJ_V, behaviour, you.x_pos,
-        you.y_pos, MHITYOU, 250 ) != -1)
+                        you.y_pos, MHITYOU, 250 ) != -1)
     {
         mpr( "...and a huge efreet comes out." );
 
         mpr( (behaviour == BEH_FRIENDLY) ? "\"Thank you for releasing me!\""
-                                        : "It howls insanely!" );
+                                         : "It howls insanely!" );
     }
     else
         canned_msg(MSG_NOTHING_HAPPENS);
 
-    return;
+    return (true);
 }                               // end efreet_flask()
 
-static void ball_of_seeing(void)
+static bool ball_of_seeing(void)
 {
     int use = 0;
+    bool ret = false;
 
     mpr("You gaze into the crystal ball.");
 
-    use = ((!you.conf) ? random2(you.intel * 6) : 0);
+    use = ((!you.conf) ? random2(you.skills[SK_EVOCATIONS] * 6) : random2(5));
 
     if (use < 2)
     {
-        lose_stat(STAT_INTELLIGENCE, 1);
+        lose_stat( STAT_INTELLIGENCE, 1 );
     }
     else if (use < 5 && enough_mp(1, true))
     {
@@ -718,31 +769,34 @@ static void ball_of_seeing(void)
     else
     {
         mpr("You see a map of your surroundings!");
-        magic_mapping( 15, 50 + random2( you.intel ) );
+        magic_mapping( 15, 50 + random2( you.skills[SK_EVOCATIONS] ) );
+        ret = true;
     }
 
-    return;
+    return (ret);
 }                               // end ball_of_seeing()
 
-static void disc_of_storms(void)
+static bool disc_of_storms(void)
 {
     int temp_rand = 0;          // probability determination {dlb}
     struct bolt beam;
     int disc_count = 0;
-    int fail_rate = (28 - you.skills[SK_AIR_MAGIC]);
     unsigned char which_zap = 0;
 
-    if (player_res_electricity() || (random2(90) < fail_rate))
+    const int fail_rate = (30 - you.skills[SK_EVOCATIONS]);
+    bool ret = false;
+
+    if (player_res_electricity() || (random2(100) < fail_rate))
         canned_msg(MSG_NOTHING_HAPPENS);
-    else if (random2(90) < fail_rate)
+    else if (random2(100) < fail_rate)
         mpr("The disc glows for a moment, then fades.");
-    else if (random2(90) < fail_rate)
+    else if (random2(100) < fail_rate)
         mpr("Little bolts of electricity crackle over the disc.");
     else
     {
         mpr("The disc erupts in an explosion of electricity!");
 
-        disc_count = 2 + random2(4);
+        disc_count = roll_dice( 2, 1 + you.skills[SK_EVOCATIONS] / 7 );
 
         while (disc_count)
         {
@@ -757,102 +811,23 @@ static void disc_of_storms(void)
             beam.target_x = you.x_pos + random2(13) - 6;
             beam.target_y = you.y_pos + random2(13) - 6;
 
-            zapping(which_zap, 30 + random2(20), beam);
+            zapping( which_zap, 30 + you.skills[SK_EVOCATIONS] * 2, beam );
 
             disc_count--;
         }
+
+        ret = true;
     }
 
-    return;
+    return (ret);
 }                               // end disc_of_storms()
-
-static void staff_spell(int zap_device_2)
-{
-    int sc_read_1, sc_read_2, powc;
-    unsigned char specspell;
-
-    if (you.inv[zap_device_2].sub_type < STAFF_SMITING
-        || you.inv[zap_device_2].sub_type >= STAFF_AIR)
-    {
-        //mpr("That staff has no spells in it.");
-        canned_msg(MSG_NOTHING_HAPPENS);
-        return;
-    }
-
-    set_ident_flags( you.inv[zap_device_2], ISFLAG_KNOW_TYPE );
-    you.wield_change = true;
-
-    powc = player_mag_abil(false) + random2avg( you.experience_level + 10, 2 );
-
-    powc *= you.intel;
-    powc /= 10;
-
-    if (powc > 100)
-        powc = 100;
-
-    sc_read_1 = read_book( you.inv[zap_device_2], RBOOK_USE_STAFF );
-
-    if (sc_read_1 < 'A' || (sc_read_1 > 'Z' && sc_read_1 < 'a')
-        || sc_read_1 > 'z')
-    {
-        goto whattt;
-    }
-
-    sc_read_2 = letter_to_index(sc_read_1);
-
-    if (sc_read_2 > SPELLBOOK_SIZE)
-        goto whattt;
-
-    if (!is_valid_spell_in_book( zap_device_2, sc_read_2 ))
-        goto whattt;
-
-    specspell = which_spell_in_book( you.inv[zap_device_2].sub_type + 40,
-                                     sc_read_2 );
-
-    if (specspell == SPELL_NO_SPELL)
-        goto whattt;
-
-    if (you.magic_points < spell_mana(specspell)
-        || you.experience_level < spell_difficulty(specspell))
-    {
-        mpr("Your brain hurts!");
-        confuse_player( 2 + random2(4) );
-        you.turn_is_over = 1;
-        return;
-    }
-
-    // Exercising the spell skills doesn't make very much sense given
-    // that spell staves are largely intended to supply spells to
-    // non-spellcasters, and they don't use spell skills to determine
-    // power in the same way that spellcasting does. -- bwr
-    //
-    // exercise_spell(specspell, true, true);
-
-    your_spells(specspell, powc, false);
-
-    dec_mp(spell_mana(specspell));
-
-    you.turn_is_over = 1;
-    return;
-
-  whattt:
-    mpr("What?");
-
-    return;
-}                               // end staff_spell()
 
 void tome_of_power(char sc_read_2)
 {
     int temp_rand = 0;          // probability determination {dlb}
 
-    int powc = player_mag_abil(false) + you.experience_level
-                                      + you.skills[SK_SPELLCASTING];
-
-    powc *= you.intel;
-    powc /= 10;
-
-    if (powc > 300)
-        powc = 300;
+    int powc = 5 + you.skills[SK_EVOCATIONS]
+                 + roll_dice( 5, you.skills[SK_EVOCATIONS] );
 
     int spell_casted = 0;
     struct bolt beam;
@@ -880,10 +855,36 @@ void tome_of_power(char sc_read_2)
     }
 
     mpr("You find yourself reciting the magical words!");
+    exercise( SK_EVOCATIONS, 1 );
+
+    temp_rand = random2(50) + random2( you.skills[SK_EVOCATIONS] / 3 );
 
     switch (random2(50))
     {
     case 0:
+    case 3:
+    case 4:
+    case 6:
+    case 7:
+    case 8:
+    case 9:
+        mpr("A cloud of weird smoke pours from the book's pages!");
+        big_cloud( CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 20,
+                                                          10 + random2(8) );
+        return;
+    case 1:
+    case 14:
+        mpr("A cloud of choking fumes pours from the book's pages!");
+        big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20, 7 + random2(5));
+        return;
+
+    case 2:
+    case 13:
+        mpr("A cloud of freezing gas pours from the book's pages!");
+        big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20, 8 + random2(5));
+        return;
+
+    case 5:
     case 11:
     case 12:
         if (one_chance_in(5))
@@ -898,7 +899,7 @@ void tome_of_power(char sc_read_2)
         beam.flavour = BEAM_FIRE;
         beam.target_x = you.x_pos;
         beam.target_y = you.y_pos;
-        strcpy(beam.beam_name, "fiery explosion");
+        strcpy( beam.beam_name, "fiery explosion" );
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
         beam.thrower = KILL_YOU;
@@ -908,34 +909,10 @@ void tome_of_power(char sc_read_2)
         explosion(beam);
         return;
 
-    case 1:
-    case 14:
-        mpr("A cloud of choking fumes pours from the book's pages!");
-        big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20, 7 + random2(5));
-        return;
-
-    case 2:
-    case 13:
-        mpr("A cloud of freezing gas pours from the book's pages!");
-        big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20, 8 + random2(5));
-        return;
-
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-    case 7:
-    case 8:
-    case 9:
-        mpr("A cloud of weird smoke pours from the book's pages!");
-        big_cloud( CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 20,
-                                                          10 + random2(8) );
-        return;
 
     case 10:
-        if (create_monster
-            (MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_HOSTILE, you.x_pos, you.y_pos,
-             MHITNOT, 250) != -1)
+        if (create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_HOSTILE,
+                            you.x_pos, you.y_pos, MHITNOT, 250 ) != -1)
         {
             mpr("A horrible Thing appears!");
             mpr("It doesn't look too friendly.");
@@ -945,27 +922,29 @@ void tome_of_power(char sc_read_2)
 
     viewwindow(1, false);
 
-    temp_rand = random2(23);
+    temp_rand = random2(23) + random2( you.skills[SK_EVOCATIONS] / 3 );
 
-    spell_casted = ((temp_rand > 19) ? SPELL_FIREBALL :         // 3 in 23 {dlb}
-                    (temp_rand > 16) ? SPELL_BOLT_OF_FIRE :     // 3 in 23 {dlb}
-                    (temp_rand > 13) ? SPELL_BOLT_OF_COLD :     // 3 in 23 {dlb}
-                    (temp_rand > 11) ? SPELL_LIGHTNING_BOLT :   // 2 in 23 {dlb}
-                    (temp_rand > 10) ? SPELL_MAGIC_DART :       // 1 in 23 {dlb}
-                    (temp_rand >  9) ? SPELL_POLYMORPH_OTHER :  // 1 in 23 {dlb}
-                    (temp_rand >  8) ? SPELL_THROW_FLAME :      // 1 in 23 {dlb}
-                    (temp_rand >  7) ? SPELL_THROW_FROST :      // 1 in 23 {dlb}
-                    (temp_rand >  6) ? SPELL_MEPHITIC_CLOUD :   // 1 in 23 {dlb}
-                    (temp_rand >  5) ? SPELL_VENOM_BOLT :       // 1 in 23 {dlb}
-                    (temp_rand >  4) ? SPELL_BOLT_OF_DRAINING : // 1 in 23 {dlb}
-                    (temp_rand >  3) ? SPELL_LEHUDIBS_CRYSTAL_SPEAR : // 1 in 23
-                    (temp_rand >  2) ? SPELL_BOLT_OF_INACCURACY :// 1 in 23
-                    (temp_rand >  1) ? SPELL_STICKY_FLAME :      // 1 in 23
-                    (temp_rand >  0) ? SPELL_CIGOTUVIS_DEGENERATION // 1 in 23
-                                     : SPELL_TELEPORT_SELF);     // 1 in 23
+    if (temp_rand > 25)
+        temp_rand = 25;
 
-    // note: no exercise!!!  -- good (bwr)
-    your_spells(spell_casted, powc, false);
+    spell_casted = ((temp_rand > 19) ? SPELL_FIREBALL :
+                    (temp_rand > 16) ? SPELL_BOLT_OF_FIRE :
+                    (temp_rand > 13) ? SPELL_BOLT_OF_COLD :
+                    (temp_rand > 11) ? SPELL_LIGHTNING_BOLT :
+                    (temp_rand > 10) ? SPELL_LEHUDIBS_CRYSTAL_SPEAR :
+                    (temp_rand >  9) ? SPELL_VENOM_BOLT :
+                    (temp_rand >  8) ? SPELL_BOLT_OF_DRAINING :
+                    (temp_rand >  7) ? SPELL_BOLT_OF_INACCURACY :
+                    (temp_rand >  6) ? SPELL_STICKY_FLAME :
+                    (temp_rand >  5) ? SPELL_TELEPORT_SELF :
+                    (temp_rand >  4) ? SPELL_CIGOTUVIS_DEGENERATION :
+                    (temp_rand >  3) ? SPELL_POLYMORPH_OTHER :
+                    (temp_rand >  2) ? SPELL_MEPHITIC_CLOUD :
+                    (temp_rand >  1) ? SPELL_THROW_FLAME :
+                    (temp_rand >  0) ? SPELL_THROW_FROST
+                                     : SPELL_MAGIC_DART);
+
+    your_spells( spell_casted, powc, false );
 }                               // end tome_of_power()
 
 void skill_manual(char sc_read_2)
@@ -991,7 +970,7 @@ void skill_manual(char sc_read_2)
     strcat(info, ".");
     mpr(info);
 
-    exercise(you.inv[sc_read_2].plus, 500);
+    exercise( you.inv[sc_read_2].plus, 500 );
 
     if (one_chance_in(10))
     {
@@ -1004,21 +983,16 @@ void skill_manual(char sc_read_2)
     }
 }                               // end skill_manual()
 
-static void box_of_beasts(void)
+static bool box_of_beasts(void)
 {
     int beasty = MONS_PROGRAM_BUG;      // error trapping {dlb}
     int temp_rand = 0;          // probability determination {dlb}
 
+    int ret = false;
+
     mpr("You open the lid...");
 
-    if (random2(5) < 2)         // 40% chance {dlb}
-    {
-        mpr("...but nothing happens.");
-
-        if (one_chance_in(6))
-            you.inv[you.equip[EQ_WEAPON]].sub_type = MISC_EMPTY_EBONY_CASKET;
-    }
-    else                        // 60% chance {dlb}
+    if (random2(100) < 60 + you.skills[SK_EVOCATIONS])
     {
         temp_rand = random2(11);
 
@@ -1031,27 +1005,42 @@ static void box_of_beasts(void)
                   (temp_rand == 6) ? MONS_YAK :
                   (temp_rand == 7) ? MONS_BUTTERFLY :
                   (temp_rand == 8) ? MONS_HELL_HOUND :
-                  (temp_rand == 9) ? MONS_BROWN_SNAKE : MONS_GIANT_LIZARD);
+                  (temp_rand == 9) ? MONS_BROWN_SNAKE
+                                   : MONS_GIANT_LIZARD);
 
-        if (create_monster( beasty, ENCH_ABJ_II + random2(4), BEH_FRIENDLY,
-                                you.x_pos, you.y_pos, you.pet_target, 250 )
-                != -1)
+        int beh = (one_chance_in(you.skills[SK_EVOCATIONS] + 5) ? BEH_HOSTILE
+                                                                : BEH_FRIENDLY);
+
+        if (create_monster( beasty, ENCH_ABJ_II + random2(4), beh,
+                            you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
         {
             mpr("...and something leaps out!");
         }
     }
+    else
+    {
+        if (!one_chance_in(6))
+            mpr("...but nothing happens.");
+        else
+        {
+            mpr("...but the box appears empty.");
+            you.inv[you.equip[EQ_WEAPON]].sub_type = MISC_EMPTY_EBONY_CASKET;
+        }
+    }
 
-    return;
+    return (ret);
 }                               // end box_of_beasts()
 
-static void ball_of_energy(void)
+static bool ball_of_energy(void)
 {
     int use = 0;
     int proportional = 0;
 
+    bool ret = false;
+
     mpr("You gaze into the crystal ball.");
 
-    use = ((!you.conf) ? random2(you.intel * 6) : 0);
+    use = ((!you.conf) ? random2(you.skills[SK_EVOCATIONS] * 6) : random2(6));
 
     if (use < 2 || you.max_magic_points == 0)
     {
@@ -1060,8 +1049,8 @@ static void ball_of_energy(void)
     else if ((use < 4 && enough_mp(1, true))
              || you.magic_points == you.max_magic_points)
     {
-        mpr("You feel your power drain away!");
-        set_mp(0, false);
+        mpr( "You feel your power drain away!" );
+        set_mp( 0, false );
     }
     else if (use < 6)
     {
@@ -1072,26 +1061,31 @@ static void ball_of_energy(void)
         proportional = you.magic_points * 100;
         proportional /= you.max_magic_points;
 
-        if (random2avg(67, 4) > proportional || one_chance_in(25))
+        if (random2avg(77 - you.skills[SK_EVOCATIONS] * 2, 4) > proportional
+            || one_chance_in(25))
         {
-            mpr("You feel your power drain away!");
-            set_mp(0, false);
+            mpr( "You feel your power drain away!" );
+            set_mp( 0, false );
         }
         else
         {
-            mpr("You are suffused with power!");
-            inc_mp(12 + random2avg(23, 2), false);
+            mpr( "You are suffused with power!" );
+            inc_mp( 6 + roll_dice( 2, you.skills[SK_EVOCATIONS] ), false );
+
+            ret = true;
         }
     }
 
-    return;
+    return (ret);
 }                               // end ball_of_energy()
 
-static void ball_of_fixation(void)
+static bool ball_of_fixation(void)
 {
     mpr("You gaze into the crystal ball.");
     mpr("You are mesmerised by a rainbow of scintillating colours!");
 
     you.paralysis = 100;
     you.slow = 100;
+
+    return (true);
 }                               // end ball_of_fixation()

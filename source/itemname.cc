@@ -259,6 +259,18 @@ int get_armour_ego_type( const item_def &item )
     return (item.special);
 }
 
+bool item_is_rod( const item_def &item )
+{
+    return (item.base_type == OBJ_STAVES
+            && item.sub_type >= STAFF_SMITING && item.sub_type < STAFF_AIR);
+}
+
+bool item_is_staff( const item_def &item )
+{
+    // Isn't De Morgan's law wonderful. -- bwr
+    return (item.base_type == OBJ_STAVES
+            && (item.sub_type < STAFF_SMITING || item.sub_type >= STAFF_AIR));
+}
 
 // it_name() and in_name() are now somewhat obsolete now that itemname
 // takes item_def, so consider them depricated.
@@ -436,7 +448,7 @@ char item_name( const item_def &item, char descrip, char glag[80] )
         if (item.link == you.equip[EQ_WEAPON])
         {
             if (you.inv[ you.equip[EQ_WEAPON] ].base_type == OBJ_WEAPONS
-                || you.inv[ you.equip[EQ_WEAPON] ].base_type == OBJ_STAVES)
+                || item_is_staff( you.inv[ you.equip[EQ_WEAPON] ] ))
             {
                 strcat( glag, " (weapon)" );
             }
@@ -727,7 +739,7 @@ static char item_name_2( const item_def &item, char glog[80] )
 
             strcat(glog, (dwpn == ISFLAG_ORCISH) ? "orcish " :
                    (dwpn == ISFLAG_ELVEN) ? "elven " :
-                   (dwpn == ISFLAG_DWARVEN) ? "dwarven " : "buggy");
+                   (dwpn == ISFLAG_DWARVEN) ? "dwarven " : "buggy ");
         }
 
         strcat(glog, (item_typ == MI_STONE) ? "stone" :
@@ -744,12 +756,12 @@ static char item_name_2( const item_def &item, char glog[80] )
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
-            strcat( glog, (brand == SPMSL_FLAME)       ? "of flame" :
-                          (brand == SPMSL_ICE)         ? "of ice" :
+            strcat( glog, (brand == SPMSL_FLAME)       ? " of flame" :
+                          (brand == SPMSL_ICE)         ? " of ice" :
                           (brand == SPMSL_NORMAL)      ? "" :
                           (brand == SPMSL_POISONED)    ? "" :
                           (brand == SPMSL_POISONED_II) ? ""
-                                                       : "of bugginess" );
+                                                       : " of bugginess" );
         }
         break;
 
@@ -1807,22 +1819,7 @@ static char item_name_2( const item_def &item, char glog[80] )
             strcat(glog, " ");
         }
 
-        if (item_ident( item, ISFLAG_KNOW_TYPE ))
-        {
-                   strcat(glog, (
-                          // confusing that II is spell and I is not {dlb}
-                             item_typ == STAFF_SPELL_SUMMONING
-                          || item_typ == STAFF_DESTRUCTION_I
-                          || item_typ == STAFF_DESTRUCTION_II
-                          || item_typ == STAFF_DESTRUCTION_III
-                          || item_typ == STAFF_DESTRUCTION_IV
-                          || item_typ == STAFF_WARDING
-                          || item_typ == STAFF_DISCOVERY
-                          || item_typ == STAFF_DEMONOLOGY) ? "spell " : "");
-                          // hope this does not cause problems {dlb}
-        }
-
-        strcat(glog, "staff");
+        strcat( glog, (item_is_rod( item ) ? "rod" : "staff") );
 
         if (item_ident( item, ISFLAG_KNOW_TYPE ))
         {
@@ -1838,6 +1835,7 @@ static char item_name_2( const item_def &item, char glog[80] )
                    (item_typ == STAFF_CONJURATION) ? "conjuration" :
                    (item_typ == STAFF_ENCHANTMENT) ? "enchantment" :
                    (item_typ == STAFF_SMITING) ? "smiting" :
+                   (item_typ == STAFF_STRIKING) ? "striking" :
                    (item_typ == STAFF_WARDING) ? "warding" :
                    (item_typ == STAFF_DISCOVERY) ? "discovery" :
                    (item_typ == STAFF_DEMONOLOGY) ? "demonology" :
@@ -2043,7 +2041,12 @@ int property( const item_def &item, int prop_type )
         return (prop[ item.base_type ][ item.sub_type ][ prop_type ]);
 
     case OBJ_STAVES:
-        return (prop[ OBJ_WEAPONS ][ WPN_QUARTERSTAFF ][ prop_type ]);
+        if (item_is_staff( item ))
+            return (prop[ OBJ_WEAPONS ][ WPN_QUARTERSTAFF ][ prop_type ]);
+        else if (prop_type == PWPN_SPEED) // item is rod
+            return (10);                  // extra protection against speed 0
+        else
+            return (0);
 
     default:
         return (0);
@@ -2226,6 +2229,12 @@ void init_properties(void)
         mss[OBJ_ORBS][i] = 300;
         mss[OBJ_MISCELLANY][i] = 100;
         mss[OBJ_CORPSES][i] = 100;
+    }
+
+    // rods are lighter than staves
+    for (i = STAFF_SMITING; i < STAFF_AIR; i++)
+    {
+        mss[OBJ_STAVES][i] = 70;
     }
 
     // this is food, right?

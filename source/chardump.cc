@@ -847,9 +847,9 @@ bool dump_char(char show_prices, char fname[30])        // $$$ a try block?
     FILE *handle = fopen(file_name, "wb");
 
 #if DEBUG_DIAGNOSTICS
-    strcpy(info, "File name: ");
-    strcat(info, file_name);
-    mpr(info);
+    strcpy( info, "File name: " );
+    strcat( info, file_name );
+    mpr( info, MSGCH_DIAGNOSTIC );
 #endif
 
     if (handle != NULL)

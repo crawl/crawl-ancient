@@ -265,18 +265,12 @@ static void write_tagged_file( FILE *dataFile, char majorVersion,
     }
 }
 
-
-void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
-           char old_level, bool want_followers, bool is_new_game,
-           char where_were_you2 )
+void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
+           char old_level, char where_were_you2 )
 {
     int j = 0;
     int i = 0, count_x = 0, count_y = 0;
     char cha_fil[kFileNameSize];
-
-    // bool already_saved = false;
-
-    bool just_created_level = false;
 
     int foll_class[8];
     int foll_hp[8];
@@ -305,6 +299,8 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int imn = 0;
     int val;
 
+    bool just_created_level = false;
+
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
@@ -330,7 +326,8 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int fmenv = 0;     // not used again until after found_stair label {dlb}
     int minvc = 0;
 
-    if (moving_level)
+    // Don't delete clouds just because the player saved and restarted.
+    if (load_mode != LOAD_RESTART_GAME)
     {
         for (int clouty = 0; clouty < MAX_CLOUDS; ++clouty)
         {
@@ -340,7 +337,8 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         ASSERT( env.cloud_no == 0 );
     }
 
-    if (want_followers && !is_new_game)
+    // This block is to grab followers and save the old level to disk.
+    if (load_mode == LOAD_ENTER_LEVEL)
     {
         for (count_x = you.x_pos - 1; count_x < you.x_pos + 2; count_x++)
         {
@@ -365,36 +363,15 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                     continue;
                 }
 
-                if ((fmenv->type == MONS_PANDEMONIUM_DEMON)
-                    || (fmenv->type == MONS_PLANT)
-                    || (fmenv->type == MONS_FUNGUS)
-                    || (fmenv->type == MONS_OKLOB_PLANT)
-                    || (fmenv->type == MONS_CURSE_SKULL)
-                    || (fmenv->type == MONS_PLAYER_GHOST)  // cdl
-                    || (fmenv->type == MONS_CURSE_TOE)
-                    || (fmenv->type == MONS_POTION_MIMIC)
-                    || (fmenv->type == MONS_WEAPON_MIMIC)
-                    || (fmenv->type == MONS_ARMOUR_MIMIC)
-                    || (fmenv->type == MONS_SCROLL_MIMIC)
-                    || (fmenv->type == MONS_GOLD_MIMIC)
-                    || (fmenv->type == -1))
-                {
-                    continue;
-                }
-
-                if (monster_habitat(fmenv->type) != DNGN_FLOOR)
+                // monster has to be already tagged in order to follow:
+                if (!testbits( fmenv->flags, MF_TAKING_STAIRS ))
                     continue;
 
-                if (fmenv->speed_increment < 50)
-                    continue;
-
-                // only friendly monsters,  or those actively seeking the
-                // player,  will follow up/down stairs.
-                if (!(mons_friendly(fmenv) ||
-                    (fmenv->behaviour == BEH_SEEK && fmenv->foe == MHITYOU)))
-                {
-                    continue;
-                }
+#if DEBUG_DIAGNOSTICS
+                snprintf( info, INFO_SIZE, "%s is following.",
+                          ptr_monam( fmenv, DESC_CAP_THE ) );
+                mpr( info, MSGCH_DIAGNOSTIC );
+#endif
 
                 foll_class[following] = fmenv->type;
                 //itoa(foll_class[following], st_prn, 10);
@@ -431,13 +408,14 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                 foll_att[following] = fmenv->attitude;
                 foll_sec[following] = fmenv->number;
                 foll_hit[following] = fmenv->foe;
-                foll_flags[following] = fmenv->flags;
 
-                for(j=0; j<NUM_MON_ENCHANTS; j++)
+                for (j = 0; j < NUM_MON_ENCHANTS; j++)
                 {
                     foll_ench[following][j] = fmenv->enchantment[j];
                     fmenv->enchantment[j] = ENCH_NONE;
                 }
+
+                foll_flags[following] = fmenv->flags;
 
                 fmenv->flags = 0;
                 fmenv->type = -1;
@@ -452,11 +430,10 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
 
         if (!was_a_labyrinth)
-            save_level(old_level, false, where_were_you2);
+            save_level( old_level, false, where_were_you2 );
 
-        // already_saved = true;
         was_a_labyrinth = false;
-    }                           // end if level_type == LEVEL_DUNGEON
+    }
 
     strcpy(ghost.name, "");
 
@@ -511,7 +488,9 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
-        if (!is_new_game)
+        // This next block is for cases where we want to look
+        // for a stairs to place the player.
+        if (load_mode != LOAD_RESTART_GAME)
         {
             if (stair_taken == DNGN_ENTER_HELL
                 || stair_taken == DNGN_ENTER_LABYRINTH)
@@ -569,7 +548,7 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         }
 
       found_stair:
-        if (!is_new_game)
+        if (load_mode != LOAD_RESTART_GAME)
         {
             you.x_pos = count_x;
             you.y_pos = count_y;
@@ -588,10 +567,10 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
         following = 0;
         fmenv = -1;
 
+        // actually "move" the followers if applicable
         if ((you.level_type == LEVEL_DUNGEON
                 || you.level_type == LEVEL_PANDEMONIUM)
-            && want_followers
-            && !is_new_game)
+            && load_mode == LOAD_ENTER_LEVEL)
         {
             for (ic = 0; ic < 2; ic++)
             {
@@ -677,10 +656,11 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
                             menv[following].number = foll_sec[fmenv];
                             menv[following].foe = foll_hit[fmenv];
 
-                            for(j=0; j<NUM_MON_ENCHANTS; j++)
+                            for (j = 0; j < NUM_MON_ENCHANTS; j++)
                                 menv[following].enchantment[j]=foll_ench[fmenv][j];
-
                             menv[following].flags = foll_flags[fmenv];
+                            menv[following].flags |= MF_JUST_SUMMONED;
+
                             mgrd[count_x][count_y] = following;
                             break;
                         }
@@ -691,7 +671,7 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
       out_of_foll:
         redraw_all();
-        moving_level = false;
+        // moving_level = false;
 
         for (i = 0; i < MAX_MONSTERS; i++)
         {
@@ -738,22 +718,31 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
             }
         }
 
-        // update corpses and fountains
-        if (env.elapsed_time != 0.0)
-            update_level( you.elapsed_time - env.elapsed_time );
-
-        // Now monsters get a chance to react to the player coming
-        // out of the stairs... the amount of time they get is based
-        // on how stealthy the character is,, but we give an additional
-        // break to newly created levels to be a bit easier on the
-        // character. -- bwr
-        val = (just_created_level ? 5 : 15)
-                - (you.skills[SK_STEALTH] * you.dex) / 10;
-
-        if (val > 0)
+        if (load_mode == LOAD_ENTER_LEVEL)
         {
-            you.time_taken = val;
-            handle_monsters();
+            // update corpses and fountains
+            if (env.elapsed_time != 0.0)
+                update_level( you.elapsed_time - env.elapsed_time );
+
+            // Centaurs have difficulty with stairs
+            val = ((you.species != SP_CENTAUR) ? player_movement_speed() : 15);
+
+            // new levels have less wary monsters:
+            if (just_created_level)
+                val /= 2;
+
+            val -= (stepdown_value( check_stealth(), 50, 50, 150, 150 ) / 10);
+
+#if DEBUG_DIAGNOSTICS
+                snprintf( info, INFO_SIZE, "arrival time: %d", val );
+                mpr( info, MSGCH_DIAGNOSTIC );
+#endif
+
+            if (val > 0)
+            {
+                you.time_taken = val;
+                handle_monsters();
+            }
         }
 
         save_level( you.your_level, (you.level_type != LEVEL_DUNGEON),
@@ -763,7 +752,7 @@ void load( unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 
     // BEGIN -- must load the old level : pre-load tasks
 
-    moving_level = false;
+    // moving_level = false;
 
     // LOAD various tags
     char majorVersion;

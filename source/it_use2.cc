@@ -36,7 +36,8 @@
 #include "stuff.h"
 #include "view.h"
 
-bool potion_effect(char pot_eff, int pow)
+// From an actual potion, pow == 40 -- bwr
+bool potion_effect( char pot_eff, int pow )
 {
     bool effect = true;  // current behaviour is all potions id on quaffing
 
@@ -52,7 +53,8 @@ bool potion_effect(char pot_eff, int pow)
         mpr("You feel better.");
         inc_hp(5 + random2(7), false);
 
-        if (you.hp >= you.hp_max)
+        // only fix rot when healed to full
+        if (you.hp == you.hp_max)
         {
             unrot_hp(1);
             set_hp(you.hp_max, false);
@@ -68,7 +70,8 @@ bool potion_effect(char pot_eff, int pow)
         mpr("You feel much better.");
         inc_hp(10 + random2avg(28, 3), false);
 
-        if (you.hp >= you.hp_max)
+        // only fix rot when healed to full
+        if (you.hp == you.hp_max)
         {
             unrot_hp( 2 + random2avg(5, 2) );
             set_hp(you.hp_max, false);
@@ -76,78 +79,62 @@ bool potion_effect(char pot_eff, int pow)
         break;
 
     case POT_SPEED:
-        if (you.haste > 90)
-            mpr("You already have as much speed as you can handle.");
-        else if (wearing_amulet(AMU_RESIST_SLOW))
         {
-            mpr("Your amulet glows brightly and you gain speed.");
+            bool amu_eff = wearing_amulet( AMU_RESIST_SLOW );
+
+            if (amu_eff)
+                mpr( "Your amulet glows brightly." );
+
+            if (you.haste == 0 || you.slow)
+                mpr( "You feel yourself speed up." );
+            else if (you.haste > 80 + 20 * amu_eff)
+                mpr( "You already have as much speed as you can handle." );
+            else
+            {
+                mpr( "You feel as though your hasted speed will last longer." );
+                contaminate_player(1);
+            }
 
             if (you.slow)
             {
                 you.slow = 0;
-                you.haste = 10;
+
+                if (you.haste == 0)
+                    you.haste = 20 * amu_eff;
             }
-            else if (!you.haste)
-                you.haste = 50 + random2(pow);
             else
-                you.haste += (5 + random2(6));
-        }
-        else if (!you.haste)
-        {
-            mpr("You feel yourself speed up.");
+            {
+                you.haste += 40 + random2(pow);
+            }
 
-            if (you.slow)
-                you.slow = 0;
-            else
-                you.haste = 40 + random2(pow);
-        }
-        else
-        {
-            mpr("You feel as though your speed will last longer.");
-            you.haste += (1 + random2(6));
-        }
+            if (you.haste > 80 + 20 * amu_eff)
+                you.haste = 80 + 20 * amu_eff;
 
-        if (wearing_amulet(AMU_RESIST_SLOW))
-        {
-            if (you.haste > 100)
-                you.haste = 100;
+            naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         }
-        else
-        {
-            if (you.haste > 90)
-                you.haste = 90;
-        }
-
-        // now some radiation is given for each cast -- bwr
-        // note that berserk handles hasting itself -- bwr
-        contaminate_player( 1 + random2(3) );
-
-        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         break;
 
     case POT_MIGHT:
         {
-            bool were_mighty = you.might > 0;
+            bool were_mighty = (you.might > 0);
 
-            strcpy(info, "You feel ");
-            strcat(info, (you.might) ? "pretty" : "very");
-            strcat(info, " mighty");
-            strcat(info, (you.might) ? ", still" : " all of a sudden");
-            strcat(info, ".");
-            mpr(info);
+            if (!were_mighty)
+                mpr( "You feel very mighty all of a sudden." );
+            else
+            {
+                mpr( "You still feel pretty mighty." );
+                contaminate_player(1);
+            }
 
             // conceivable max gain of +184 {dlb}
-            if (!you.might)
-                you.might = 35 + random2(pow);
-            else
-                you.might += (5 + random2(10));
+            you.might += 35 + random2(pow);
 
             if (!were_mighty)
                 modify_stat(STAT_STRENGTH, 5, true);
 
             // files.cc permits values up to 215, but ... {dlb}
-            if (you.might > 75)
-                you.might = 75;
+            if (you.might > 80)
+                you.might = 80;
 
             naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
         }
@@ -167,11 +154,11 @@ bool potion_effect(char pot_eff, int pow)
 
     case POT_LEVITATION:
         strcpy(info, "You feel");
-        strcat(info, (!you.levitation) ? " very" : " more");
+        strcat(info, (!player_is_levitating()) ? " very" : " more");
         strcat(info, " buoyant.");
         mpr(info);
 
-        if (!you.levitation)
+        if (!player_is_levitating())
             mpr("You gently float upwards from the floor.");
 
         you.levitation += 25 + random2(pow);
@@ -206,7 +193,7 @@ bool potion_effect(char pot_eff, int pow)
     case POT_SLOWING:
         if (wearing_amulet(AMU_RESIST_SLOW))
             mpr("You feel momentarily lethargic.");
-        else if (you.slow > 90)
+        else if (you.slow >= 100)
             mpr("You already are as slow as you could be.");
         else
         {
@@ -217,8 +204,8 @@ bool potion_effect(char pot_eff, int pow)
 
             you.slow += 10 + random2(pow);
 
-            if (you.slow > 90)
-                you.slow = 90;
+            if (you.slow > 100)
+                you.slow = 100;
         }
         break;
 
@@ -249,10 +236,7 @@ bool potion_effect(char pot_eff, int pow)
         if (!you.invis)
             you.invis = 15 + random2(pow);
         else
-            you.invis += (3 + random2(6));
-
-        // now some radiation is given for each cast -- bwr
-        contaminate_player( 1 + random2(3) );
+            you.invis += random2(pow);
 
         if (you.invis > 100)
             you.invis = 100;
@@ -304,6 +288,7 @@ bool potion_effect(char pot_eff, int pow)
         mpr( "You feel magical!" );
         new_value = 5 + random2avg(19, 2);
 
+        // increase intrinsic MP points
         if (you.magic_points + new_value > you.max_magic_points)
         {
             new_value = (you.max_magic_points - you.magic_points)
