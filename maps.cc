@@ -2467,7 +2467,7 @@ char slime_pit(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[24], "xxxxxxxxxxxxxx...................cc|cc..cc|cc....................xxxxxxxxxxxxxxx");
     strcpy(vgrid[25], "xxxxxxxxxxxxxx..................cc|||cc.cc||cc..................xxxxxxxxxxxxxxxx");
     strcpy(vgrid[26], "xxxxxxxxxxxxx..................cc|||cc..cc|||cc..................xxxxxxxxxxxxxxx");
-    strcpy(vgrid[27], "xxxxxxxxxxxxx.................cc||O|cc.cc||O||cc.................xxxxxxxxxxxxxxx");
+    strcpy(vgrid[27], "xxxxxxxxxxxxx.................cc||P|cc.cc||P||cc.................xxxxxxxxxxxxxxx");
     strcpy(vgrid[28], "xxxxxxxxxxxxx.................cc||||cc..cc||||cc....................xxxxxxxxxxxx");
     strcpy(vgrid[29], "xxxxxxxxxxxx..................cccc|c.cc.ccc|cccc...................xxxxxxxxxxxxx");
     strcpy(vgrid[30], "xxxxxxxxxxxx..................cccccccc..cccccccc....................xxxxxxxxxxxx");
@@ -2476,7 +2476,7 @@ char slime_pit(char vgrid[81][81], int mons_array[7])
     strcpy(vgrid[33], "xxxxxxxxxxx..........)........cccccccc..cccccccc.....................xxxxxxxxxxx");
     strcpy(vgrid[34], "xxxxxxxxxxx...................cc|ccc|cc.c|ccc|cc.....................xxxxxxxxxxx");
     strcpy(vgrid[35], "xxxxxxxxxx....................cc||||cc..cc||||cc....................xxxxxxxxxxxx");
-    strcpy(vgrid[36], "xxxxxxxxxx....................cc||O|cc.cc||O||cc....................xxxxxxxxxxxx");
+    strcpy(vgrid[36], "xxxxxxxxxx....................cc||P|cc.cc||P||cc....................xxxxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxx.....................cc|||cc..cc|||cc....................xxxxxxxxxxxxx");
     strcpy(vgrid[38], "xxxxxxxxxxx.....................cc|||cc.cc||cc.....................xxxxxxxxxxxxx");
     strcpy(vgrid[39], "xxxxxxxxxxxx.....................cc|cc..cc|cc......................xxxxxxxxxxxxx");

@@ -1657,7 +1657,7 @@ int which_spellbook()
 {
     unsigned char nthing = 0;
 
-    if (you.spell_levels <= 0)
+    if (player_spell_levels() <= 0)
     {
         mpr("You can't memorise any more spells yet.");
         return 0;
@@ -1671,7 +1671,7 @@ int which_spellbook()
 
 query:
     strcpy(info, "You can memorise ");
-    itoa(you.spell_levels, st_prn, 10);
+    itoa(player_spell_levels(), st_prn, 10);
     strcat(info, st_prn);
     strcat(info, " more level");
     if (!(st_prn[0] == '1' && st_prn[1] == 0))
@@ -1875,7 +1875,8 @@ whatt:
 
     levels_needed = spell_value(specspell);
 
-    if (you.spell_levels < levels_needed)
+
+    if (player_spell_levels() < levels_needed)
     {
 too_high:
 #ifdef PLAIN_TERM
@@ -1992,7 +1993,7 @@ too_high:
 
     you.spells[i] = specspell;
 
-    you.spell_levels -= levels_needed;
+    // you.spell_levels -= levels_needed;
     you.spell_no++;
 
     you.delay_t = spell_value(you.spells[i]);

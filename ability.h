@@ -1,5 +1,3 @@
-#ifndef ABILITY_H
-#define ABILITY_H
 /*
  *  File:       ability.cc
  *  Summary:    Functions related to special abilities.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef ABILITY_H
+#define ABILITY_H
 
 char show_abilities(int ability[120], int ability_fail[120]);
 void species_ability(void);     /* Now handles all special abilities */

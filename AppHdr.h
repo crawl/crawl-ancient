@@ -1,5 +1,3 @@
-#ifndef APPHDR_H
-#define APPHDR_H
 /*
  *  File:       AppHdr.h
  *  Summary:    Precompiled header used by Crawl.
@@ -29,6 +27,8 @@
  *                          linuxlib.cc
  *       <1>     5/30/99    JDJ     Created (from config.h)
  */
+#ifndef APPHDR_H
+#define APPHDR_H
 
 #if _MSC_VER >= 1100        // note that we can't just check for _MSC_VER: most compilers will wind up defining this in order to work with the SDK headers...
     #pragma message("Compiling AppHeader.h (this message should only appear once)")
@@ -50,11 +50,17 @@
     #define USE_CURSES
     #define EOL "\n"
 
-    // This is used for BSD tchars type ioctl, Posix should probably
-    // be added and used here instead.
-    #define USE_TCHARS_IOCTL
+    // This is used for Posix termios.
+    #define USE_POSIX_TERMIOS
 
-    // This uses Unix signal control to block some things.
+    // This is used for BSD tchars type ioctl, use this if you can't
+    // use the Posix support above.
+    // #define USE_TCHARS_IOCTL
+    //
+    // This uses Unix signal control to block some things, may be
+    // useful in conjunction with USE_TCHARS_IOCTL, but not required
+    // with USE_POSIX_TERMIOS
+    //
     #define USE_UNIX_SIGNALS
 
     // This is for systems with no usleep... uncomment if you have it.
@@ -152,9 +158,7 @@
 
 // Define MACRO if you want to use the macro patch in macro.cc.
 // *BCR* Macros aren't working in Linux right now...
-#ifndef LINUX
-  #define MACROS
-#endif
+#define MACROS
 
 // Set this to the number of runes that will be required to enter Zot's
 // domain.  You shouldn't set this really high unless you want to
@@ -202,6 +206,12 @@
     #define LOAD_UNPACKAGE_CMD  "/opt/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
 
     #define PACKAGE_SUFFIX      ".zip"
+
+    // This provides some rudimentary protection against people using
+    // save file cheats on multi-user systems.
+    #define DO_ANTICHEAT_CHECKS
+    #include "/opt/include/gdbm.h"
+
 #endif
 
 

@@ -1,5 +1,3 @@
-#ifndef MONS_LEV_H
-#define MONS_LEV_H
 /*
  *  File:       mons_lev.cc
  *  Summary:    Functions used to help determine which monsters should appear.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef MONS_LEV_H
+#define MONS_LEV_H
 
 int mons_rarity(int mcls);
 int mons_level(int mcls);

@@ -1,5 +1,3 @@
-#ifndef MESSAGE_H
-#define MESSAGE_H
 /*
  *  File:       message.cc
  *  Summary:    Functions used to print messages.
@@ -11,6 +9,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef MESSAGE_H
+#define MESSAGE_H
 
 void mpr(const char *inf);
 void mesclr();

@@ -1699,7 +1699,7 @@ unknown:
             zapping(ZAP_ORB_OF_ELECTRICITY, you.skills[SK_INVOCATIONS] * 5, beam);
             break;
         case 7:
-            you.attribute[ATTR_RESIST_LIGHTNING]++;
+            you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
             mpr("Makhleb hurls a blast of lightning!");
             beam[0].beam_source = MNG;
             beam[0].type = 43;
@@ -1711,7 +1711,7 @@ unknown:
             beam[0].colour = LIGHTCYAN;
             beam[0].thing_thrown = 1;   /* your expl */
             explosion(1, beam);
-            you.attribute[ATTR_RESIST_LIGHTNING]--;
+            you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
             break;
         }
         lose_piety(1 + random2(2));

@@ -1,5 +1,3 @@
-#ifndef ITEMS_H
-#define ITEMS_H
 /*
  *  File:       items.cc
  *  Summary:    Misc (mostly) inventory related functions.
@@ -11,6 +9,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef ITEMS_H
+#define ITEMS_H
 
 void item_check(char keyin);
 int add_item(int item_got);

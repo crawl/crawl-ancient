@@ -6,6 +6,8 @@
  *  Change History (most recent first):
  *
  *
+ *      <5>      8/08/99        BWR             Upped rarity of unique artefacts
+ *      <4>      7/13/99        BWR             Made pole arms of speed.
  *      <3>      5/22/99        BWR             Made named artefact weapons
  *                                              rarer, Sword of Power esp.
  *      <2>      5/09/99        LRH             Replaced some sanity checking code in
@@ -889,21 +891,23 @@ int builder(unsigned int lev_numb, char level_type)
 
     }
 
-    if (level_type == 1)
+    if (level_type == LEVEL_LABYRINTH)
     {
         labyrinth_level();
         return 0;
     }
 
-    if (level_type == 2)
+    if (level_type == LEVEL_ABYSS)
     {
         generate_abyss();
         goto skip_level;
     }
 
-    if (level_type == 3)
+    if (level_type == LEVEL_PANDEMONIUM)
     {
-        // Could do spotty_level, but that doesn't always put all paired stairs reachable from each other which isn't a problem in normal dungeon but could be in Pandemonium
+        // Could do spotty_level, but that doesn't always put all paired
+        // stairs reachable from each other which isn't a problem in normal
+        // dungeon but could be in Pandemonium
         if (random() % 7 == 0)
         {
             char which_demon = 0;
@@ -942,95 +946,116 @@ normal_pan:
     done_city = 0;
 
 
-    if (you.where_are_you == 11 && many_many == you.branch_stairs[1] + branch_depth(1))
+    if (you.where_are_you == BRANCH_HIVE
+                    && many_many == you.branch_stairs[STAIRS_HIVE]
+                                    + branch_depth(STAIRS_HIVE))
     {
         build_vaults(80);
         goto skip_level;
     }
 
-    if (you.where_are_you == 13 && many_many == you.branch_stairs[3] + branch_depth(3))
+    if (you.where_are_you == BRANCH_SLIME_PITS
+                    && many_many == you.branch_stairs[STAIRS_SLIME_PITS]
+                                    + branch_depth(STAIRS_SLIME_PITS))
     {
         build_vaults(81);
         goto skip_level;
     }
 
-    if (you.where_are_you == 14 && many_many == you.branch_stairs[4] + branch_depth(4))
+    if (you.where_are_you == BRANCH_VAULTS
+                    && many_many == you.branch_stairs[STAIRS_VAULTS]
+                                    + branch_depth(STAIRS_VAULTS))
     {
         build_vaults(82);
         goto skip_level;
     }
 
-    if (you.where_are_you == 16 && many_many == you.branch_stairs[6] + branch_depth(6))
+    if (you.where_are_you == BRANCH_HALL_OF_BLADES
+                    && many_many == you.branch_stairs[STAIRS_HALL_OF_BLADES]
+                                    + branch_depth(STAIRS_HALL_OF_BLADES))
     {
         build_vaults(83);
         goto skip_level;
     }
 
-    if (you.where_are_you == 17 && many_many == you.branch_stairs[7] + branch_depth(7))
+    if (you.where_are_you == BRANCH_HALL_OF_ZOT
+                    && many_many == you.branch_stairs[STAIRS_HALL_OF_ZOT]
+                                    + branch_depth(STAIRS_HALL_OF_ZOT))
     {
         build_vaults(84);
         goto skip_level;
     }
 
-    if (you.where_are_you == 18 && many_many == you.branch_stairs[8] + branch_depth(8))
+    if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE
+                    && many_many == you.branch_stairs[STAIRS_ECUMENICAL_TEMPLE]
+                                    + branch_depth(STAIRS_ECUMENICAL_TEMPLE))
     {
         build_vaults(85);
         goto skip_level;
     }
 
-    if (you.where_are_you == 19 && many_many == you.branch_stairs[9] + branch_depth(9))
+    if (you.where_are_you == BRANCH_SNAKE_PIT
+                    && many_many == you.branch_stairs[STAIRS_SNAKE_PIT]
+                                    + branch_depth(STAIRS_SNAKE_PIT))
     {
         build_vaults(86);
         goto skip_level;
     }
 
-    if (you.where_are_you == 20 && many_many == you.branch_stairs[10] + branch_depth(10))
+    if (you.where_are_you == BRANCH_ELVEN_HALLS
+                    && many_many == you.branch_stairs[STAIRS_ELVEN_HALLS]
+                                    + branch_depth(STAIRS_ELVEN_HALLS))
     {
         build_vaults(87);
         goto skip_level;
     }
 
-    if (you.where_are_you == 21 && many_many == you.branch_stairs[11] + 1)
+    if (you.where_are_you == BRANCH_TOMB)
     {
-        build_vaults(88);
-        goto skip_level;
+        if (many_many == you.branch_stairs[STAIRS_TOMB] + 1)
+        {
+            build_vaults(88);
+            goto skip_level;
+        }
+        else if (many_many == you.branch_stairs[STAIRS_TOMB] + 2)
+        {
+            build_vaults(89);
+            goto skip_level;
+        }
+        else if (many_many == you.branch_stairs[STAIRS_TOMB] + 3)
+        {
+            build_vaults(90);
+            goto skip_level;
+        }
     }
 
-    if (you.where_are_you == 21 && many_many == you.branch_stairs[11] + 2)
-    {
-        build_vaults(89);
-        goto skip_level;
-    }
-
-    if (you.where_are_you == 21 && many_many == you.branch_stairs[11] + 3)
-    {
-        build_vaults(90);
-        goto skip_level;
-    }
-
-    if (you.where_are_you == 22 && many_many == you.branch_stairs[12] + branch_depth(12))
+    if (you.where_are_you == BRANCH_SWAMP
+                    && many_many == you.branch_stairs[STAIRS_SWAMP]
+                                    + branch_depth(STAIRS_SWAMP))
     {
         build_vaults(91);
         goto skip_level;
     }
 
 
-    if (you.where_are_you == 13 || you.where_are_you == 10 || you.where_are_you == 11 || (you.where_are_you == 12 && random3(3) != 0))  // orcish mines, the hive, the lair, slime pits
-
+    if (you.where_are_you == BRANCH_SLIME_PITS
+                || you.where_are_you == BRANCH_ORCISH_MINES
+                || you.where_are_you == BRANCH_HIVE
+                || (you.where_are_you == BRANCH_LAIR && random3(3) != 0))
     {
         spotty_level(0, 100 + random3(500), 0);
         done_city = 1;
         goto skip_level;
     }
 
-    if (you.where_are_you == 3)
+    if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
     {
         build_vaults(50);
         link_items();
         return 0;
     }
 
-    if (you.where_are_you == 22)        // The Swamp
+    if (you.where_are_you == BRANCH_SWAMP)        // The Swamp
 
     {
         goto basic_level;
@@ -1044,22 +1069,25 @@ normal_pan:
    where_are_you == 5 Tartarus 90 - 94 */
 
 //      if (many_many == 84 || many_many == 79 || many_many == 89 || many_many == 94)
-    if (many_many == 33 && (you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5))
+    if (many_many == 33 && (you.where_are_you == BRANCH_DIS
+                            || you.where_are_you == BRANCH_GEHENNA
+                            || you.where_are_you == BRANCH_COCYTUS
+                            || you.where_are_you == BRANCH_TARTARUS))
     {
         char which_v = 0;
 
         switch (you.where_are_you)
         {
-        case 1:
+        case BRANCH_DIS:
             which_v = 51;
             break;
-        case 2:
+        case BRANCH_GEHENNA:
             which_v = 52;
             break;
-        case 4:
+        case BRANCH_COCYTUS:
             which_v = 53;
             break;
-        case 5:
+        case BRANCH_TARTARUS:
             which_v = 54;
             break;
         }
@@ -1067,7 +1095,9 @@ normal_pan:
         goto skip_level;
     }
 
-    if (many_many > 7 && many_many < 23 && random() % 7 == 0 && level_type == 0 && you.where_are_you == 0)
+    if (many_many > 7 && many_many < 23 && random() % 7 == 0
+                                && level_type == LEVEL_DUNGEON
+                                && you.where_are_you == BRANCH_MAIN_DUNGEON)
     {
         /* Can't have vaults on you.where_are_you != 0 levels */
         build_vaults(100);
@@ -1078,10 +1108,9 @@ normal_pan:
     if (random3(3) == 0 && many_many != 65)
         skipped = 1;
 
-    if (you.where_are_you == 1 || you.where_are_you == 14)
+    if (you.where_are_you == BRANCH_DIS || you.where_are_you == BRANCH_VAULTS)
     {
-        goto do_city;           // Dis or the vaults
-
+        goto do_city;
     }
 
     if (random3(18) == 0 && many_many > 7 && many_many < 23)
@@ -1117,7 +1146,9 @@ normal_pan:
 
         roguey_level();
 
-        if (random3(4) == 0 && many_many > 6 && you.where_are_you == 0 && you.level_type == 0)
+        if (random3(4) == 0 && many_many > 6
+                        && you.where_are_you == BRANCH_MAIN_DUNGEON
+                        && you.level_type == LEVEL_DUNGEON)
         {
             build_minivaults(200);
             done_city = 1;
@@ -1129,7 +1160,11 @@ normal_pan:
     }
     else
     {
-        if (random3(8) == 0 && skipped == 0 && many_many > 13 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5))
+        if (random3(8) == 0 && skipped == 0 && many_many > 13
+                    && !(you.where_are_you == BRANCH_DIS
+                            || you.where_are_you == BRANCH_GEHENNA
+                            || you.where_are_you == BRANCH_COCYTUS
+                            || you.where_are_you == BRANCH_TARTARUS))
         {
           do_city:
             if (many_many == 33 && you.where_are_you == 1)
@@ -1141,8 +1176,6 @@ normal_pan:
             else
                 plan_main(4);
 
-
-            done_city = 1;
             done_city = 1;
         }
     }
@@ -1150,7 +1183,12 @@ normal_pan:
 
 
 // is_a_specroom: 0 = none, 2 = in roguey_level (no need for specr_2), 1 = special_room (vault)
-    if (random3(5) == 0 && is_a_specroom != 2 && many_many > 5 && done_city == 0 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5))
+    if (random3(5) == 0 && is_a_specroom != 2 && many_many > 5
+            && done_city == 0
+                    && !(you.where_are_you == BRANCH_DIS
+                            || you.where_are_you == BRANCH_GEHENNA
+                            || you.where_are_you == BRANCH_COCYTUS
+                            || you.where_are_you == BRANCH_TARTARUS))
     {
         is_a_specroom = 1;
         special_room();
@@ -1173,7 +1211,6 @@ basic_level:
 
     if (done_city == 0)
     {
-
         do
         {
             x_start = random3(30) + 35;
@@ -1860,11 +1897,9 @@ finished_monsters:
 
 
 
-int place_monster(
-                     unsigned char plus_seventy,
-     int typed, int type_place, int px, int py, char behaviour, int hitting,
-                     char allow_bands,
-                     int many_many, int passed[2])
+int place_monster( unsigned char plus_seventy, int typed, int type_place,
+                    int px, int py, char behaviour, int hitting,
+                    char allow_bands, int many_many, int passed[2])
 {
 
     unsigned char grid_ok = 67;
@@ -1902,7 +1937,8 @@ start_here:
         menv[bk].inv[inv_delete] = 501;
     }
 
-    if (typed == 250 && you.where_are_you == 16)        /* hall of blades */
+    /* hall of blades */
+    if (typed == 250 && you.where_are_you == 16 && you.level_type == 0)
         typed = 144;
 
     lev_mons = many_many;
@@ -1929,7 +1965,10 @@ monster_cla:
         }
 
 
-        if (lev_mons == 51 || you.level_type == 3)      /* Abyss or Pandemonium. Almost never called from Pan; probably only if a rand demon gets summon anything spell */
+        /* Abyss or Pandemonium. Almost never called from Pan;
+           probably only if a rand demon gets summon anything spell */
+        if (lev_mons == 51 || you.level_type == LEVEL_PANDEMONIUM
+                                        || you.level_type == LEVEL_ABYSS)
         {
             do
             {
@@ -1941,7 +1980,7 @@ monster_cla:
 //                      if (mons_level_abyss(menv [bk].type) == 0) continue;
             }
             while (random3(50) + random3(51) >
-                   mons_rare_abyss(menv[bk].type));
+                                       mons_rare_abyss(menv[bk].type));
         }
         else
         {
@@ -1969,7 +2008,7 @@ monster_cla:
 
     }
     else
-        (menv[bk].type = typed);
+        menv[bk].type = typed;
 
 
     if (menv[bk].type == 19)
@@ -3710,11 +3749,11 @@ int items(unsigned char allow_uniques,
         {
             // Note there is nothing to stop randarts being reproduced,
             // except vast improbability.
-
-            if (mitm.sub_type[bp] > 0 && random3(2000) <= 100 + many_many * 3 && random() % 2 == 0 && many_many > 2)
+            if (mitm.sub_type[bp] > 0 && random3(2000) <= 100 + many_many * 3
+                                        && random3(2) == 0 && many_many > 2)
             {
-
-                if (random3(50) == 0 && you.level_type != 2 && you.level_type != 3)
+                if (random3(50) == 0 && you.level_type != LEVEL_ABYSS
+                                    && you.level_type != LEVEL_PANDEMONIUM)
                 {
                     icky = find_okay_unrandart(OBJ_WEAPONS);
                     if (icky != -1)
@@ -3723,40 +3762,55 @@ int items(unsigned char allow_uniques,
                         make_item_unrandart(icky, bp);
                         break;
                     }
-                }               /* not in Abyss or pan */
+                }
 
                 mitm.special[bp] = 26 + random3(4);
                 mitm.pluses[bp] = 50;
                 mitm.pluses2[bp] = 50;
                 mitm.pluses[bp] += random3(7);
                 mitm.pluses2[bp] += random3(7);
+
                 if (random3(3) == 0)
                     mitm.pluses[bp] += random3(7);
+
                 if (random3(3) == 0)
                     mitm.pluses2[bp] += random3(7);
+
                 if (random3(9) == 0)
                     mitm.pluses[bp] -= random3(7);
+
                 if (random3(9) == 0)
                     mitm.pluses2[bp] -= random3(7);
+
                 quant = 1;
+
                 if (random3(4) == 0)
                 {
                     mitm.pluses[bp] = 150 - random3(6);
                     mitm.pluses2[bp] = 50 - random3(6);
                 }
-                else if (random3(3) != 0 && (mitm.pluses[bp] < 50 || mitm.pluses2[bp] < 50))
+                else if (random3(3) != 0 && (mitm.pluses[bp] < 50
+                                                    || mitm.pluses2[bp] < 50))
+                {
                     mitm.pluses[bp] += 100;     /* cursed! nasty */
+                }
                 break;
             }
 
-            if (random3(3000) <= 30 + many_many * 3 && random() % 4 && many_many > 6)   // == 0) // 4300
-
+            if (random3(3000) <= 30 + many_many * 3
+                                    && random3(20) == 0 && many_many > 6)
             {
                 no_unique = random3(12);
                 if (no_unique <= 6)
                 {
-                    if (you.unique_items[no_unique] == 1 || (many_many == 51 && you.unique_items[no_unique] == 0) || (you.unique_items[no_unique] == 2 && many_many != 51))
+                    if (you.unique_items[no_unique] == 1
+                            || (many_many == 51
+                                    && you.unique_items[no_unique] == 0)
+                            || (you.unique_items[no_unique] == 2
+                                    && many_many != 51))
+                    {
                         goto out_of_uniques;
+                    }
                 }
                 else if (you.unique_items[24 + no_unique - 7] == 1
                          || (many_many == 51
@@ -3857,11 +3911,14 @@ int items(unsigned char allow_uniques,
                     mitm.pluses2[bp] += 0;
                     break;
                 }
+
                 quant = 1;
+
                 if (no_unique <= 6)
                     you.unique_items[no_unique] = 1;
                 else
                     you.unique_items[24 + no_unique - 7] = 1;
+
                 break;
             }
         }
@@ -3869,7 +3926,10 @@ int items(unsigned char allow_uniques,
 out_of_uniques:
         if (force_type != 250)
             mitm.sub_type[bp] = force_type;
-        if (many_many == 351 && (mitm.sub_type[bp] == 0 || mitm.sub_type[bp] == 13))
+
+        if (many_many == 351 && (mitm.sub_type[bp] == 0
+                                            || mitm.sub_type[bp] == 13))
+
             mitm.sub_type[bp] = 6;
         quant = 1;
 
@@ -4061,8 +4121,12 @@ out_of_uniques:
         }
 
 
-        if ((random3(200) <= 50 + many_many || many_many == 351 || mitm.sub_type[bp] == 32 || mitm.sub_type[bp] == 33) && mitm.sub_type[bp] != 0 && mitm.sub_type[bp] != 19 && mitm.sub_type[bp] != 20 && mitm.sub_type[bp] != 21)      // nobody would bother enchanting a club
-
+        if ((random3(200) <= 50 + many_many || many_many == 351
+                        || mitm.sub_type[bp] == 32 || mitm.sub_type[bp] == 33)
+                // nobody would bother enchanting a club
+                && mitm.sub_type[bp] != WPN_CLUB
+                && mitm.sub_type[bp] != WPN_GIANT_CLUB
+                && mitm.sub_type[bp] != WPN_GIANT_SPIKED_CLUB)
         {
             if (many_many == 351)
                 many_many = 200;
@@ -4095,18 +4159,16 @@ out_of_uniques:
                 // note: even this doesn't guarantee special enchantment
                 switch (mitm.sub_type[bp])
                 {
-                case 0:
+                case WPN_CLUB:
                     break;      // nothing for clubs. Can they even get this far?
 
 /* 23 - quick blade and 24 - katana aren't here - no specials */
 
-                case 22:        // eveningstar
-
+                case WPN_EVENINGSTAR:        // eveningstar
                     if (random() % 2 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // drain
 
-                case 4: // morningstar
-
+                case WPN_MORNINGSTAR: // morningstar
                     if (random() % 4 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
 
@@ -4116,15 +4178,13 @@ out_of_uniques:
                     if (random() % 20 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vamp
 
-                case 1:
+                case WPN_MACE:
                     // mace of disruption
                     if (mitm.sub_type[bp] == 1 && random() % 4 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 14;   // disruption
 
-                case 2: // maces & flails
-
-                case 28:        // hammer
-
+                case WPN_FLAIL:          // maces & flails
+                case WPN_HAMMER:        // hammer
                     if (random() % 15 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
 
@@ -4142,39 +4202,30 @@ out_of_uniques:
 
                     if (random() % 3 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // crush
-
                     break;
-                    break;      // ??
 
-                case 3: // dagger
-
+                case WPN_DAGGER: // dagger
                     if (random() % 3 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
 
                     if (random() % 10 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
 
-                case 5: // short sword
-
+                case WPN_SHORT_SWORD: // short sword
                     if (random() % 8 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
 
-                case 8: // scimitar
-
+                case WPN_SCIMITAR: // scimitar
                     if (random() % 7 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
 
-                case 6: // long sword
-
+                case WPN_LONG_SWORD: // long sword
                     if (random() % 12 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
 
-                case 7: // great sword
-
-                case 26:        // double blade
-
-                case 27:        // triple blade
-
+                case WPN_GREAT_SWORD:         // great sword
+                case WPN_DOUBLE_SWORD:        // double blade
+                case WPN_TRIPLE_SWORD:        // triple blade
                     if (random() % 10 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
 
@@ -4207,18 +4258,15 @@ out_of_uniques:
 
                     break;
 
-                case 10:        // battleaxe
-
-                case 25:        // exec axe
-
+                case WPN_BATTLEAXE:         // battleaxe
+                case WPN_EXECUTIONERS_AXE:  // exec axe
                     if (random() % 25 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy
 
                     if (random() % 14 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // drain
 
-                case 9: // h-axe
-
+                case WPN_HAND_AXE: // h-axe
                     if (random() % 10 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
 
@@ -4245,18 +4293,19 @@ out_of_uniques:
 
                     break;
 
-                case 12:        // halberd
-
-                case 17:        // glaive
-
+                case WPN_HALBERD:       // halberd
+                case WPN_GLAIVE:        // glaive
                     if (random() % 30 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy
 
                     if (random() % 4 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 7;    // prot
 
-                case 11:        // spear
+                case WPN_SCYTHE:
+                    if (random() % 10 == 0)
+                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
 
+                case WPN_SPEAR:        // spear
                     if (random() % 10 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
 
@@ -4277,27 +4326,26 @@ out_of_uniques:
 
                     if (random() % 3 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // chop/pierce
-
                     break;
 
-                case 13:        // sling
+                case WPN_SLING:        // sling
 
                     if (random() % 4 != 0)
                         break;
-                case 16:        // hand xbow
 
+                case WPN_HAND_CROSSBOW:        // hand xbow
                     if (random() % 2 != 0)
                         break;
-                case 14:        // bow
 
-                case 15:        // crossbow
-
+                case WPN_BOW:        // bow
+                case WPN_CROSSBOW:        // crossbow
                     if (random() % 2 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 11 + random() % 2;
                     break;
 
-                case 18:        // quarterstaff - not powerful, as this would make the 'staves' skill just too good
-
+                case WPN_QUARTERSTAFF:
+                // quarterstaff - not powerful, as this would make
+                // the 'staves' skill just too good
                     if (random() % 15 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
 
@@ -4309,13 +4357,10 @@ out_of_uniques:
 
                     if (random() % 5 == 0)
                         mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
-
                     break;
 
-                case 32:        // demon blade
-
-                case 33:        // demon whip
-
+                case WPN_DEMON_BLADE:        // demon blade
+                case WPN_DEMON_WHIP:        // demon whip
                     if (mitm.special[bp] >= 90)
                         mitm.special[bp] = mitm.special[bp] % 30;
                     if (random() % 5 == 0)
@@ -4962,7 +5007,8 @@ out_of_uniques:
 
     case OBJ_JEWELLERY: // rings
 
-        if (random3(50) == 0 && you.level_type != 2 && you.level_type != 3)
+        if (random3(2000) <= 100 + many_many * 3 && random() % 2 == 0
+                && many_many > 2 && you.level_type != 2 && you.level_type != 3)
         {
             icky = find_okay_unrandart(OBJ_JEWELLERY);
             if (icky != -1)
@@ -5049,23 +5095,35 @@ out_of_uniques:
 create_book:
         do
         {
-            mitm.sub_type[bp] = random() % 44;
+            mitm.sub_type[bp] = random3(44);
             if (book_rarity(mitm.sub_type[bp]) == 100)
                 continue;
-            if (mitm.sub_type[bp] != 35 && mitm.sub_type[bp] != 41)
+
+            if (mitm.sub_type[bp] != BOOK_DESTRUCTION
+                                        && mitm.sub_type[bp] != BOOK_MANUAL)
             {
                 if (random3(10) == 0)
-                    mitm.sub_type[bp] = 42 + random3(2);
-                if (random3(many_many + 1) + 1 >= book_rarity(mitm.sub_type[bp]) || random() % 100 == 0)
+                {
+                    if (random3(2) == 0)
+                        mitm.sub_type[bp] = BOOK_WIZARDRY;
+                    else
+                        mitm.sub_type[bp] = BOOK_POWER;
+                }
+
+                if (random3(many_many + 1) + 1 >= book_rarity(mitm.sub_type[bp])
+                                                    || random3(100) == 0)
+                {
                     break;
+                }
                 else
                 {
-                    mitm.sub_type[bp] = 35;
+                    mitm.sub_type[bp] = BOOK_DESTRUCTION;
                     continue;
                 }
             }
         }
-        while (mitm.sub_type[bp] == 35 || mitm.sub_type[bp] == 41);     // tomes and manuals
+        while (mitm.sub_type[bp] == BOOK_DESTRUCTION
+                                        || mitm.sub_type[bp] == BOOK_MANUAL);
 
         if (book_rarity(mitm.sub_type[bp]) == 100)
             goto create_book;
@@ -5095,6 +5153,7 @@ create_book:
         {
             if (strungy[xj] != '1' && strungy[xj] != '0')
                 continue;
+
             if (strungy[xj] == '0')
             {
                 multip *= 2;
@@ -5115,14 +5174,23 @@ create_book:
         mitm.special[bp] = random3(5);
         if (random3(10) == 0)
             mitm.special[bp] += random3(8) * 10;
+
         quant = 1;
-        if (force_type == 35 || (random() % 7000 <= many_many + 20 && many_many > 10 && force_type == 250))
-            mitm.sub_type[bp] = 35;
+
         // tome of destruction : rare!
-        if (force_type == 41 || (random() % 4000 <= many_many + 20 && many_many > 6 && force_type == 250))
-            // skill manuals - also rare
+        if (force_type == BOOK_DESTRUCTION
+                || (random() % 7000 <= many_many + 20 && many_many > 10
+                                                    && force_type == 250))
         {
-            mitm.sub_type[bp] = 41;
+            mitm.sub_type[bp] = BOOK_DESTRUCTION;
+        }
+
+        // skill manuals - also rare
+        if (force_type == BOOK_MANUAL
+                || (random() % 4000 <= many_many + 20 && many_many > 6
+                                                    && force_type == 250))
+        {
+            mitm.sub_type[bp] = BOOK_MANUAL;
             mitm.pluses[bp] = random3(19);
             if (random3(4) == 0)
                 mitm.pluses[bp] = 25 + random3(12);
@@ -5191,28 +5259,43 @@ create_book:
     case OBJ_ORBS:
         if (force_type != 250)
             mitm.sub_type[bp] = force_type;
+
         quant = 1;
+
         if (mitm.sub_type[bp] >= 4 && mitm.sub_type[bp] <= 19)
             you.unique_items[mitm.sub_type[bp] + 3] = 1;
         break;
 
     case OBJ_MISCELLANY:
         mitm.sub_type[bp] = random3(6);
-        if (random() % 6 == 0)
-            mitm.sub_type[bp] = 7 + random() % 10;
-        if (mitm.sub_type[bp] == 14)
-            mitm.sub_type[bp] = 15;
-        if (random3(7) == 0)
-            mitm.sub_type[bp] = 15 + random3(2);
+
+        if (random3(6) == 0)
+            mitm.sub_type[bp] = MISC_BOX_OF_BEASTS + random3(10);
+
+        if (mitm.sub_type[bp] == MISC_RUNE_OF_ZOT)
+            mitm.sub_type[bp] = MISC_CRYSTAL_BALL_OF_FIXATION;
+
+        if (mitm.sub_type[bp] == MISC_DECK_OF_POWER)
+            if (random3(4) == 0)
+                mitm.sub_type[bp] = MISC_DECK_OF_POWER;
+            else
+                mitm.sub_type[bp] = MISC_DECK_OF_TRICKS;
+
         if (random3(20) == 0)
-            mitm.sub_type[bp] = 9;
+            mitm.sub_type[bp] = MISC_DECK_OF_SUMMONINGS;
+
         if (force_type != 250)
             mitm.sub_type[bp] = force_type;
-        if (mitm.sub_type[bp] == 8 || mitm.sub_type[bp] == 9 || mitm.sub_type[bp] == 15)
-            mitm.pluses[bp] = 4 + random() % 10;
-        if (mitm.sub_type[bp] == 15)
-            mitm.pluses[bp] = 6 + random() % 8 + random() % 8;
-        if (mitm.sub_type[bp] == 14)
+
+        if (mitm.sub_type[bp] == MISC_DECK_OF_WONDERS
+                        || mitm.sub_type[bp] == MISC_DECK_OF_SUMMONINGS
+                        || mitm.sub_type[bp] == MISC_DECK_OF_POWER)
+            mitm.pluses[bp] = 4 + random3(10);
+
+        if (mitm.sub_type[bp] == MISC_DECK_OF_TRICKS)
+            mitm.pluses[bp] = 6 + random3(8) + random3(8);
+
+        if (mitm.sub_type[bp] == MISC_RUNE_OF_ZOT)
         {
             mitm.pluses[bp] = you.where_are_you;
             if (you.level_type == 3)
@@ -5226,7 +5309,6 @@ create_book:
         break;
 
     default:                    // money - class = 15
-
         mitm.base_type[bp] = 15;
         quant = random3(10) + random3(10) + 1 + random3(many_many);     // + random3(many_many) + random3(many_many);
 
@@ -6039,8 +6121,8 @@ void give_item(void)
     mitm.pluses2[bp] = 50;
     mitm.special[bp] = 0;
     mitm.base_type[bp] = 101;
-    mitm.x[thing_created] = 1;
-    mitm.y[thing_created] = 1;
+    mitm.x[bp] = 1;
+    mitm.y[bp] = 1;
 
     if (menv[bk].type == 144 && you.where_are_you == 16 && random3(3) == 0)
         give_level = 351;
@@ -10084,11 +10166,16 @@ int vault_grid(int vx, int vy, int altar_count, char acq_item_class[7], int mons
 
     case 'P':                   // maybe rune of Zot
 
-        if (random3(2) == 0)
+        if (random3(3) != 0)
         {
             grd[vx][vy] = 67;
+            item_made = items(1, acq_item_class[random() % 7], 250, 1, 351, 250);
+            mitm.x[item_made] = vx;
+            mitm.y[item_made] = vy;
             break;
         }
+        // fall through
+
     case 'O':                   // rune of zot
 
         grd[vx][vy] = 67;

@@ -176,7 +176,7 @@ int dir_cursor(char rng)
 {
     char mve_x = 0, mve_y = 0;
     char bk = 0;
-    char keyy;
+    int keyy;
 
     if (rng == 100)
         return -9999;
@@ -184,53 +184,76 @@ int dir_cursor(char rng)
 getkey:
     keyy = getch();
 
+#ifdef LINUX
+    keyy = translate_keypad( keyy );
+#endif
+
     if (keyy != 0 && keyy != '*' && keyy != '.')
     {
         switch (keyy)
         {
         case 'b':
+        case '1':
             mve_x = -1;
             mve_y = 1;
             break;
+
         case 'j':
+        case '2':
             mve_y = 1;
             mve_x = 0;
             break;
+
         case 'u':
+        case '9':
             mve_x = 1;
             mve_y = -1;
             break;
+
         case 'k':
+        case '8':
             mve_y = -1;
             mve_x = 0;
             break;
+
         case 'y':
+        case '7':
             mve_y = -1;
             mve_x = -1;
             break;
+
         case 'h':
+        case '4':
             mve_x = -1;
             mve_y = 0;
             break;
+
         case 'n':
+        case '3':
             mve_y = 1;
             mve_x = 1;
             break;
+
         case 'l':
+        case '6':
             mve_x = 1;
             mve_y = 0;
             break;
+
         case 't':
         case 'p':
             return 253;
+
         case 27:
             return 254;
+
         default:
             goto getkey;
         }
         return mve_x * 100 + mve_y + 707 + 10000;
 
     }
+
 
     if (keyy != '*' && keyy != '.')
         keyy = getch();
@@ -317,8 +340,9 @@ int look_around(struct dist moves[1])
 {
     int xps = 17;
     int yps = 9;
-    char gotch;
-    char mve_x, mve_y;
+    int gotch;
+    char mve_x = 0;
+    char mve_y = 0;
     int trf = 0;
 
     if (you.prev_targ != MHITNOT && you.prev_targ < MNST)
@@ -342,6 +366,10 @@ int look_around(struct dist moves[1])
     {
         gotch = getch();
 
+#ifdef LINUX
+        gotch = translate_keypad( gotch );
+#endif
+
         if (gotch != 0 && gotch != 13)
         {
             switch (gotch)
@@ -349,74 +377,89 @@ int look_around(struct dist moves[1])
             case '.':
             case ' ':
             case '\n':
+            case '5':
                 mve_x = 0;
                 mve_y = 0;
                 gotch = 'S';
                 goto thingy;
+
             case 'b':
+            case '1':
                 mve_x = -1;
                 mve_y = 1;
                 break;
+
             case 'j':
+            case '2':
                 mve_y = 1;
                 mve_x = 0;
                 break;
+
             case 'u':
+            case '9':
                 mve_x = 1;
                 mve_y = -1;
                 break;
+
             case 'k':
+            case '8':
                 mve_y = -1;
                 mve_x = 0;
                 break;
+
             case 'y':
+            case '7':
                 mve_y = -1;
                 mve_x = -1;
                 break;
+
             case 'h':
+            case '4':
                 mve_x = -1;
                 mve_y = 0;
                 break;
+
             case 'n':
+            case '3':
                 mve_y = 1;
                 mve_x = 1;
                 break;
+
             case 'l':
+            case '6':
                 mve_x = 1;
                 mve_y = 0;
                 break;
+
             case '?':
                 mve_x = 0;
                 mve_y = 0;
                 if (mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9] == MNG)
                     continue;
-                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == 6 && player_see_invis() ==
-                    0)
+
+                if (menv[mgrd[you.x_pos + xps - 17][you.y_pos + yps - 9]].enchantment[2] == 6 && player_see_invis() == 0)
                     continue;
-                if (menv
-                    [mgrd
-                     [you.x_pos + xps - 17]
-                     [you.y_pos + yps - 9]].type >= MLAVA0 && menv
-                    [mgrd
-                   [you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
+
+                if (menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type >= MLAVA0 && menv [mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]].number == 1)
                     continue;
-                describe_monsters(menv
-                                  [mgrd
-                                   [you.x_pos + xps - 17]
-                                   [you.y_pos + yps - 9]].type, mgrd
-                               [you.x_pos + xps - 17][you.y_pos + yps - 9]);
+
+                describe_monsters(menv [mgrd [you.x_pos + xps - 17] [you.y_pos + yps - 9]].type, mgrd [you.x_pos + xps - 17][you.y_pos + yps - 9]);
+
 #ifdef PLAIN_TERM
                 redraw_screen();
 #endif
-
                 break;
+
             case 'p':
                 goto finished_looking;
+
             case '>':
                 goto finished_looking;
+
             default:
                 return -1;
             }
+
             goto gotchy;
         }
 
@@ -432,38 +475,47 @@ thingy:
         case 13:
             gotch = 'S';
             break;
+
         case 'O':
             mve_x = -1;
             mve_y = 1;
             break;
+
         case 'P':
             mve_y = 1;
             mve_x = 0;
             break;
+
         case 'I':
             mve_x = 1;
             mve_y = -1;
             break;
+
         case 'H':
             mve_y = -1;
             mve_x = 0;
             break;
+
         case 'G':
             mve_y = -1;
             mve_x = -1;
             break;
+
         case 'K':
             mve_x = -1;
             mve_y = 0;
             break;
+
         case 'Q':
             mve_y = 1;
             mve_x = 1;
             break;
+
         case 'M':
             mve_x = 1;
             mve_y = 0;
             break;
+
         case 'S':
             break;
             // need <, > etc

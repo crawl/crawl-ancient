@@ -1,5 +1,3 @@
-#ifndef SKILLS2_H
-#define SKILLS2_H
 /*
  *  File:       skills2.cc
  *  Summary:    More skill related functions.
@@ -10,6 +8,8 @@
  *               <2>     -/--/--        WL              Extensive mods from Wladimir van der Laan.
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef SKILLS2_H
+#define SKILLS2_H
 
 void show_skills(void);
 

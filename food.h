@@ -1,5 +1,3 @@
-#ifndef FOOD_H
-#define FOOD_H
 /*
  *  File:       food.cc
  *  Summary:    Functions for eating and butchering.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef FOOD_H
+#define FOOD_H
 
 void food_change(void);
 void eaten(int food_eat_2, int food_eat_3);

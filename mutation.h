@@ -1,5 +1,3 @@
-#ifndef MUTATION_H
-#define MUTATION_H
 /*
  *  File:       mutation.cc
  *  Summary:    Functions for handling player mutations.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef MUTATION_H
+#define MUTATION_H
 
 char mutate(int which_mutation);
 void display_mutations(void);

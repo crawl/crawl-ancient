@@ -151,7 +151,7 @@
 
 {
     1, 'b', 8, "giant bat", M_FLIES | M_SEE_INVIS,
-        150, 10, 1, H_NORMAL, -3,
+        150, 4, 1, H_NORMAL, -3,
     {
         1, 0, 0, 0
     }
@@ -814,7 +814,7 @@
     {
         6, 3, 5, 0
     }
-    ,10, 10, 10, 7, 40, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
+    ,10, 10, 10, 7, 40, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 3
 }
 ,
 
@@ -1476,7 +1476,7 @@
     {
         12, 3, 5, 0
     }
-    ,4, 8, 8, 7, 250, C_MUTATE, Z_BIG, S_SHOUT, I_NORMAL, 3
+    ,4, 8, 8, 7, 250, C_MUTATE, Z_BIG, S_SHOUT, I_NORMAL, 1
 }
 ,
 
@@ -2108,13 +2108,13 @@
     147, 'e', DARKGREY, "elf", M_NO_FLAGS,
         450, 10, 147, H_NORMAL, -3,
     {
-        0, 0, 0, 0
+        6, 0, 0, 0
     }
     ,
     {
-        0, 0, 0, 0
+        3, 3, 3, 0
     }
-    ,0, 0, 0, 0, 250, C_CONTAMINATED, Z_SMALL, S_SILENT, I_PLANT, 3
+    ,0, 12, 10, 7, 250, C_CONTAMINATED, Z_SMALL, S_SILENT, I_PLANT, 3
 }
 ,
 
@@ -2750,7 +2750,7 @@
     {
         13, 3, 5, 0
     }
-    ,5, 7, 12, 7, 80, C_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_HIGH, 3
+    ,5, 7, 12, 7, 80, C_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_HIGH, 1
 }
 ,
 
@@ -2764,7 +2764,7 @@
     {
         12, 3, 5, 0
     }
-    ,10, 10, 10, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 3
+    ,10, 10, 10, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_HIGH, 1
 }
 ,
 
@@ -2821,7 +2821,7 @@
     {
         10, 3, 5, 0
     }
-    ,10, 12, 12, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 3
+    ,10, 12, 12, 7, 250, C_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
 }
 ,
 
@@ -2976,7 +2976,7 @@
     {
         4, 3, 5, 0
     }
-    ,18, 6, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+    ,18, 6, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
 }
 ,
 
@@ -2991,7 +2991,7 @@
     {
         8, 3, 5, 0
     }
-    ,20, 4, 7, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 0
+    ,20, 4, 7, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_HIGH, 1
 }
 ,
 
@@ -3006,7 +3006,7 @@
     {
         5, 3, 5, 0
     }
-    ,14, 7, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 0
+    ,14, 7, 10, 7, 250, C_NOCORPSE, Z_NOZOMBIE, S_SILENT, I_NORMAL, 1
 }
 ,
 
@@ -3808,7 +3808,7 @@
     {
         15, 0, 0, 240
     }
-    ,15, 6, 10, 7, 83, C_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_NORMAL, 3
+    ,15, 6, 10, 7, 83, C_CONTAMINATED, Z_NOZOMBIE, S_ROAR, I_NORMAL, 1
 }
 ,
 
@@ -4389,7 +4389,7 @@
     {
         16, 3, 5, 0
     }
-    ,10, 15, 15, 7, 126, C_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 3
+    ,10, 15, 15, 7, 126, C_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 1
 }
 ,
 
@@ -4403,7 +4403,7 @@
     {
         18, 5, 3, 0
     }
-    ,20, 6, 8, 7, 127, C_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 3
+    ,20, 6, 8, 7, 127, C_CONTAMINATED, Z_SMALL, S_ROAR, I_HIGH, 1
 }
 ,
 

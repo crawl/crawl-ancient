@@ -108,7 +108,7 @@ struct player
     int y_pos;
 
     int hunger;
-    char hunger_inc;
+    // char hunger_inc;         // this is now handled by player_hunger_rate
     char equip[NO_EQUIP];
     /* list in player.cc */
 
@@ -169,7 +169,7 @@ struct player
     char burden_state;
     unsigned char spells[25];
     char spell_no;
-    char spell_levels;
+    // char spell_levels;       // handled in player.cc now
     unsigned char char_direction;
     // 0 = going down
     // 1 = going up!

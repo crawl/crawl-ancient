@@ -87,10 +87,9 @@ extern char wield_change;       /* defined in output.cc */
 /* NOTE: DOES NOT check for hellfire!!! */
 int check_your_resists(int hurted, int flavour)
 {
-
     switch (flavour)
     {
-    case 2:                     /* fire */
+    case BEAM_FIRE:
         if (player_res_fire() > 100)
         {
             mpr("You resist.");
@@ -104,7 +103,7 @@ int check_your_resists(int hurted, int flavour)
         }
         break;
 
-    case 3:                     /* cold */
+    case BEAM_COLD:
         if (player_res_cold() > 100)
         {
             mpr("You resist.");
@@ -118,37 +117,34 @@ int check_your_resists(int hurted, int flavour)
         }
         break;
 
-    case 5:                     /* electricity */
-        if (you.attribute[ATTR_RESIST_LIGHTNING] > 0)
+    case BEAM_ELECTRICITY:
+        if (player_res_electricity() > 0)
         {
             mpr("You resist.");
-            hurted = 0;
+            hurted /= 3;
         }
         break;
 
 
-    case 6:                     /* poison */
+    case BEAM_POISON:
         if (player_res_poison() > 0)
         {
             mpr("You resist.");
-            hurted = 0;
+            hurted /= 3;
         }
         else
             you.poison += random() % 2 + 1;
         break;
 
-    case 7:                     /* negativity */
-        if (player_prot_life() != 0)
+    case BEAM_NEG:
+        if (player_prot_life() > 0)
         {
-            mpr("You resist.");
-            hurted = 0;
-            break;
+            hurted -= (player_prot_life() * hurted) / 3;
         }
-        mpr("You feel drained!");
         drain_exp();
         break;
 
-    case 23:                    /* ice */
+    case BEAM_ICE:
         if (player_res_cold() > 100)
         {
             mpr("You partially resist.");
@@ -165,8 +161,8 @@ int check_your_resists(int hurted, int flavour)
 
     }                           /* end switch */
 
-//      if (stricmp(beam_name, "hellfire") == 0 || beam[0].flavour == 20) // 20 is lava
-    if (flavour == 20)
+    // 20 is lava
+    if (flavour == BEAM_LAVA)
     {
         if (player_res_fire() > 100)
         {
@@ -385,22 +381,22 @@ void scrolls_burn(char burn_strength, char target_class)
 
     if (burn_no == 1)
     {
-        if (target_class == 6)
+        if (target_class == OBJ_SCROLLS)
             strcpy(info, "A scroll you are carrying catches fire!");
-        if (target_class == 8)
+        if (target_class == OBJ_POTIONS)
             strcpy(info, "A potion you are carrying freezes and shatters!");
-        if (target_class == 4)
+        if (target_class == OBJ_FOOD)
             strcpy(info, "Some of your food is covered with spores!");
         mpr(info);
     }
 
     if (burn_no > 1)
     {
-        if (target_class == 6)
+        if (target_class == OBJ_SCROLLS)
             strcpy(info, "Some of the scrolls you are carrying catch fire!");
-        if (target_class == 8)
+        if (target_class == OBJ_POTIONS)
             strcpy(info, "Some of the potions you are carrying freeze and shatter!");
-        if (target_class == 4)
+        if (target_class == OBJ_FOOD)
             strcpy(info, "Some of your food is covered with spores!");
         mpr(info);
     }
@@ -504,6 +500,7 @@ void ouch(int dam, char death_source, char death_type)
 
     if (points > 99999999)
         points = 99999999;
+
     itoa(points, point_print, 10);
 
     strcpy(death_string, point_print);
@@ -923,6 +920,29 @@ void end_game(char end_status)
         }
     }
 
+#ifdef PACKAGE_SUFFIX
+    // this is to catch the game package if it still exists.
+    del_file[point] = '\0';
+
+#ifdef DO_ANTICHEAT_CHECKS
+    GDBM_FILE  dbf = gdbm_open( SAVE_DIR_PATH "savegame.db", 0, GDBM_WRITER,
+                                                            0660, NULL );
+
+    if (dbf) {
+        datum  key;
+
+        key.dsize = point;
+        key.dptr = del_file;
+
+        gdbm_delete( dbf, key );
+        gdbm_close(dbf);
+    }
+#endif
+
+    strcat( del_file, PACKAGE_SUFFIX );
+    unlink(del_file);
+#endif
+
 /*int fi = 0;
 
    for (fi = 0; fi < 100; fi ++)
@@ -1114,7 +1134,7 @@ out_of_inner:
     for (hc = 0; hc < SCORE_FILE_ENTRIES; hc++)
     {
         multip = 1;
-        for (hc2 = 6; hc2 >= 0; hc2--)
+        for (hc2 = 7; hc2 >= 0; hc2--)
         {
             if (high_scores[hc][hc2] == 32)
                 continue;
@@ -1127,7 +1147,8 @@ out_of_ready:
     int placed = 0;
     char has_printed = 0;
 
-        int numEntries = NUMBER_OF_LINES - 7;
+    int numEntries = NUMBER_OF_LINES - 7;
+
     for (hc = 0; hc < numEntries; hc++)
     {
         placed++;
@@ -1140,35 +1161,30 @@ out_of_ready:
                 cprintf("- ");
             else
                 cprintf("-");
-            for (hc2 = 0; hc2 < 80; hc2++)
-            {
-                 if (death_string[hc2] == 32 && death_string[hc2 + 1] == 32 && hc2 > numEntries)
-                {
-                    cprintf(EOL);
-                    break;
-                }
+
+            for (hc2 = 0; hc2 < 75; hc2++)
                 putch(death_string[hc2]);
-            }
+
+            cprintf(EOL);
+
             has_printed = 1;
             hc--;
             textcolor(LIGHTGREY);
             continue;
         }
+
         itoa(placed, ready, 10);
         cprintf(ready);
+
         if (strlen(ready) == 1)
             cprintf("- ");
         else
             cprintf("-");
-        for (hc2 = 0; hc2 < 80; hc2++)
-        {
-            if (high_scores[hc][hc2] == 32 && high_scores[hc][hc2 + 1] == 32 && hc2 > numEntries)
-            {
-                cprintf(EOL);
-                break;
-            }
+
+        for (hc2 = 0; hc2 < 75; hc2++)
             putch(high_scores[hc][hc2]);
-        }
+
+        cprintf(EOL);
     }
 
     close(handle);
@@ -1273,13 +1289,14 @@ void lose_level(void)
     you.magic_points -= 1;
     you.base_magic_points2--;
 
-    you.spell_levels--;
+    // you.spell_levels--;
 
     calc_hp();
     calc_ep();
 
-    if (you.spell_levels < -40)
-        you.spell_levels = -40;
+    // if (you.spell_levels < -40)
+    //    you.spell_levels = -40;
+
     if (you.magic_points < 0)
         you.magic_points = 0;
 
@@ -1294,8 +1311,13 @@ void lose_level(void)
 
 void drain_exp(void)
 {
+    int protection = player_prot_life();
 
-    if (you.duration[DUR_PRAYER] != 0 && (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE || you.religion == GOD_ELYVILON) && random2(150) < you.piety)
+    if (you.duration[DUR_PRAYER] != 0
+                    && (you.religion == GOD_ZIN
+                        || you.religion == GOD_SHINING_ONE
+                        || you.religion == GOD_ELYVILON)
+                    && random2(150) < you.piety)
     {
         strcpy(info, god_name(you.religion));
         strcat(info, " protects your life force!");
@@ -1303,6 +1325,11 @@ void drain_exp(void)
         return;
     }
 
+    if (protection >= 3 || you.is_undead)
+    {
+        mpr( "You fully resist." );
+        return;
+    }
 
     if (you.experience == 0)
     {
@@ -1320,23 +1347,37 @@ void drain_exp(void)
 
     exp_drained /= 100;
 
-    you.experience -= exp_drained;
-
-#ifdef WIZARD
-    strcpy(info, "You lose ");
-    itoa(exp_drained, temp_quant, 10);
-    strcat(info, temp_quant);
-    strcat(info, " experience points.");
-    mpr(info);
-#endif
-
-    you.redraw_experience = 1;
-
-    if (you.experience < exp_needed(you.experience_level + 1, you.species))
+    if (protection > 0)
     {
-        lose_level();
+        exp_drained -= (protection * exp_drained) / 3;
+        mpr( "You partially resist." );
     }
 
+    if (exp_drained > 0)
+    {
+        mpr( "You feel drained." );
+
+        you.experience -= exp_drained;
+        you.exp_available -= exp_drained;
+
+        if (you.exp_available < 0)
+            you.exp_available = 0;
+
+#ifdef WIZARD
+        strcpy(info, "You lose ");
+        itoa(exp_drained, temp_quant, 10);
+        strcat(info, temp_quant);
+        strcat(info, " experience points.");
+        mpr(info);
+#endif
+
+        you.redraw_experience = 1;
+
+        if (you.experience < exp_needed(you.experience_level + 1, you.species))
+        {
+            lose_level();
+        }
+    }
 }
 
 

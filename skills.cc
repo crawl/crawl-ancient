@@ -5,7 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *       <3>     8/08/99        BWR             Increased skill cost in midgame
+ *
+ *       <2>     7/31/99        BWR             Inc skill_point granularity,
+ *                                                  added MAX_SPENDING_LIMIT
+ *       <1>     -/--/--        LRH             Created
  */
 
 #include "AppHdr.h"
@@ -24,6 +28,8 @@
   #include "macro.h"
 #endif
 
+#define MAX_SPENDING_LIMIT       100
+
 #ifdef CLASSES
 void exercise2(char exsk, char deg, char cutting);
 
@@ -33,7 +39,7 @@ void exercise2(char exsk, char deg);
 #endif
 
 
-void exercise(char exsk, char deg)
+void exercise(char exsk, int deg)
 {
 
     while (deg > 0)
@@ -57,6 +63,7 @@ void exercise2(char exsk, char deg)
 {
 
     int skill_change = deg * (you.skills[exsk] + 1);    // + 3;
+    int bonus = 0;
 
     char title[40];
     char old_best_skill = best_skill(0, 50, 99);
@@ -72,8 +79,8 @@ void exercise2(char exsk, char deg)
         goto cut_through;
 #endif
 
-// does not yet allow for loss of skill levels.
-    if (you.exp_available <= 0 && (exsk != SK_SPELLCASTING || you.skills[SK_SPELLCASTING] > 0))
+    // does not yet allow for loss of skill levels.
+    if (you.exp_available <= 0)
         return;
     if (you.skills[exsk] == 27)
         return;                 // already maximum
@@ -82,14 +89,12 @@ void exercise2(char exsk, char deg)
         return;
 
     if (you.skills[exsk] >= 10)
-        skill_change *= (you.skills[exsk] - 9) / 3;
-//if (you.skills [exsk] >= 20) skill_change *= you.skills [exsk] - 19;
-    //if (you.experience_level >= 25) skill_change *= you.experience_level - 24;
+        skill_change *= (you.skills[exsk] - 7) / 3;
 
     if (you.experience_level > 4)
         skill_change += you.experience_level - 4;
     if (you.experience_level > 7)
-        skill_change += you.experience_level - 8;
+        skill_change += you.experience_level - 7;
     if (you.experience_level > 9)
         skill_change += you.experience_level - 9;
     if (you.experience_level > 10)
@@ -97,18 +102,10 @@ void exercise2(char exsk, char deg)
     if (you.experience_level > 11)
         skill_change += you.experience_level - 11;
 
-    if (you.experience_level >= 12)
-        skill_change *= (you.experience_level - 10) / 2;
-/* if (you.experience_level > 10) skill_change ++;
-   if (you.experience_level > 13) skill_change += 2;
-   if (you.experience_level > 15) skill_change += 5;
-   if (you.experience_level > 17) skill_change += 10;
-   if (you.experience_level > 19) skill_change ++;
-   if (you.experience_level > 20) skill_change ++;
-   if (you.experience_level > 21) skill_change ++;
-   if (you.experience_level > 22) skill_change ++; */
-// if (you.skills [exsk] >= 4) skill_change ++;
-    // if (you.skills [exsk] >= 6) skill_change ++;
+    // Used to be 12 -- bwross
+    if (you.experience_level >= 8)
+        skill_change *= (you.experience_level - 6) / 2;
+
     if (you.skills[exsk] >= 8)
         skill_change += 1;
     if (you.skills[exsk] >= 10)
@@ -122,10 +119,6 @@ void exercise2(char exsk, char deg)
 
     if (skill_change > 500)
         skill_change = 500;
-
-    if (exsk == SK_SPELLCASTING && you.skills[SK_SPELLCASTING] < 1)
-        skill_change = 0;       /* makes it easier for non-spellcasters to learn
-                                   spellcasting by reading scrolls. */
 
 // being good at some weapons makes others easier to learn:
     if (exsk < SK_SLINGS)
@@ -143,7 +136,7 @@ void exercise2(char exsk, char deg)
                )
             )
         {
-            deg += random2(3);
+            bonus += random2(3);
         }
 
         /* Axes and Polearms */
@@ -155,7 +148,7 @@ void exercise2(char exsk, char deg)
                )
             )
         {
-            deg += random2(3);
+            bonus += random2(3);
         }
 
         /* Polearms and Staves */
@@ -167,7 +160,7 @@ void exercise2(char exsk, char deg)
                )
             )
         {
-            deg += random2(3);
+            bonus += random2(3);
         }
 
         /* Axes and Maces */
@@ -179,13 +172,23 @@ void exercise2(char exsk, char deg)
                )
             )
         {
-            deg += random2(3);
+            bonus += random2(3);
         }
     }
 
     if (exsk >= SK_SPELLCASTING)
     {
-        skill_change /= 2;
+        // Removed, not sure it was needed -- bwross
+        // skill_change /= 2;
+
+        // Added this interference -- bwross
+        if (exsk == SK_SPELLCASTING || exsk == SK_INVOCATIONS
+           && (you.skills[SK_SPELLCASTING] > you.skills[exsk]
+                || you.skills[SK_INVOCATIONS] > you.skills[exsk]))
+        {
+            if (random2(3) == 0)
+                return;
+        }
 
         // being good at elemental magic makes other elements harder to learn:
         if (exsk >= SK_FIRE_MAGIC && exsk <= SK_EARTH_MAGIC
@@ -196,7 +199,6 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-//   mpr("Bad element 1.");
             if (random2(3) == 0)
                 return;
         }
@@ -208,10 +210,9 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-//   mpr("Bad element 2.");
+            // of course, this is cumulative with the one above.
             if (random2(3) != 0)
-                return;         // of course, this is cumulative with the one above.
-
+                return;
         }
 
         if ((exsk == SK_AIR_MAGIC || exsk == SK_EARTH_MAGIC)
@@ -220,33 +221,63 @@ void exercise2(char exsk, char deg)
             )
             )
         {
-//   mpr("Bad element 3.");
             if (random2(3) != 0)
                 return;
         }
-
     }
+
+    int fraction = 0;
+
+    // Have to be careful not to cause skills to become stagnant here.  The
+    // limit of 500 (250 for spells) above for skill_change will make the
+    // limit of 100 count for more than 1/10 so the spending_limit should
+    // never result in a skill never being able to advance.
+    int spending_limit = (you.exp_available < MAX_SPENDING_LIMIT) ?
+                                        you.exp_available : MAX_SPENDING_LIMIT;
+
+    if (skill_change > spending_limit)
+    {
+        // This system is a bit hard on missile weapons in the late game
+        // since they require expendable ammo in order to practise.
+        // Increasing the "deg"ree of exercise would make missile
+        // weapons too easy earlier on, so instead we're giving them
+        // a special case here.
+        if ((exsk != SK_DARTS && exsk != SK_BOWS && exsk != SK_CROSSBOWS)
+                                        || skill_change > you.exp_available)
+        {
+            fraction = (spending_limit * 10) / skill_change;
+            skill_change = (skill_change * fraction) / 10;
+
+            deg = (deg * fraction) / 10;
+            if (deg == 0)
+                bonus = (bonus * fraction) / 10;
+        }
+        else
+        {
+            if ((skill_change / 2) > MAX_SPENDING_LIMIT)
+            {
+                deg = 0;
+                fraction = 5;
+            }
+            else
+            {
+                deg = 1;
+            }
+
+            skill_change = spending_limit;
+        }
+    }
+
     skill_change -= random2(5);
-
-/*                itoa(skill_change, st_prn, 10);
-   strcpy(info, "skill_change (2): ");
-   strcat(info, st_prn);
-   mpr(info); */
-
 
     if (skill_change <= 0)
         skill_change = 0;
 
 // Can safely return at any stage before this
 
-    you.skill_points[exsk] += deg;
+    you.skill_points[exsk] += (deg + bonus) * 10 + fraction;
     you.exp_available -= skill_change;
     you.redraw_experience = 1;
-/*                itoa(skill_change, st_prn, 10);
-   strcpy(info, "skill_change (3): ");
-   strcat(info, st_prn);
-   mpr(info);
- */
 
 #ifdef CLASSES
 cut_through:
@@ -271,15 +302,20 @@ cut_through:
             you.redraw_evasion = 1;
 
         if (exsk == SK_SHIELDS || exsk == SK_ARMOUR
-            || exsk == SK_ICE_MAGIC || exsk == SK_EARTH_MAGIC
-            )
+            || exsk == SK_ICE_MAGIC || exsk == SK_EARTH_MAGIC)
         {
             you.redraw_armor_class = 1;
         }                       /* ice and earth magic because this can change effects of the
                                    armour spells. */
+        if (exsk == SK_INVOCATIONS)
+        {
+            you.redraw_magic_points = 1;
+            calc_ep();
+        }
+
         if (exsk == SK_SPELLCASTING)
         {
-            you.spell_levels += 2;
+            // you.spell_levels += 2;
             you.redraw_magic_points = 1;
             calc_ep();
             if (you.skills[exsk] == 1 && best_skill(SK_SPELLCASTING, SK_POISON_MAGIC, 99) == SK_SPELLCASTING)

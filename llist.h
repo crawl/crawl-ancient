@@ -1,5 +1,3 @@
-#ifndef LLIST_H
-#define LLIST_H
 /*
  *  File:       llist.cc
  *  Summary:    Linked list implementation
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef LLIST_H
+#define LLIST_H
 
 typedef struct node_s
 {

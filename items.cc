@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <8>     8/07/99         BWR             Added Rune stacking
  *      <7>     6/13/99         BWR             Added auto staff detection
  *      <6>     6/12/99         BWR             Fixed time system.
  *      <5>     6/9/99          DML             Autopickup
@@ -274,6 +275,7 @@ void item_check(char keyin)
             strcpy(item_show[counter], "Too many items.");
             break;
         }
+
         if (mitm.base_type[objl] == 15)
         {
             itoa(mitm.quantity[objl], temp_quant, 10);
@@ -285,9 +287,11 @@ void item_check(char keyin)
             goto linking;       //continue;
 
         }
+
         it_name(objl, 3, str_pass);
         strcpy(item_show[counter], str_pass);
-      linking:
+
+linking:
         hrg = mitm.link[objl];
         objl = hrg;
     }
@@ -327,11 +331,9 @@ void item_check(char keyin)
 
 void pickup()
 {
-//int gloggo = 0;
     int items_here = 0;
     int counter = 0;
 
-//int counter_max = 0;
     int item_got = 0;
     int o = 0;
     int k = 0;
@@ -353,6 +355,7 @@ void pickup()
             mpr("There is a portable altar here, but you can't carry anything else.");
             return;
         }
+
         mpr("There is a portable altar here. Pick it up?");
         keyin = get_ch();
         if (keyin == 'y' || keyin == 'Y')
@@ -550,52 +553,52 @@ int add_item(int item_got, int quant_got)
         return ING;
     }
 
-    if (mitm.base_type[item_got] < 3 || mitm.base_type[item_got] == 4 || mitm.base_type[item_got] == 13)
+    if (mitm.base_type[item_got] <= OBJ_ARMOUR
+                || mitm.base_type[item_got] == OBJ_FOOD
+                || mitm.base_type[item_got] == OBJ_MISCELLANY)
     {
-        unit_mass = mass(mitm.base_type[item_got], mitm.sub_type[item_got]);    // * mitm.quantity [item_got];
-
+        unit_mass = mass(mitm.base_type[item_got], mitm.sub_type[item_got]);
     }
     else
+    {
         switch (mitm.base_type[item_got])
         {
-        case 3:
-            unit_mass = 100;
-            break;
-        case 4:
+        case OBJ_WANDS:
             unit_mass = 100;
             break;
         case 5:
             unit_mass = 200;
             break;
-        case 6:
+        case OBJ_SCROLLS:
             unit_mass = 50;
             break;
-        case 7:
+        case OBJ_JEWELLERY:
             unit_mass = 20;
             break;
-        case 8:
+        case OBJ_POTIONS:
             unit_mass = 60;
             break;
         case 9:
             unit_mass = 5;
             break;
-        case 10:
+        case OBJ_BOOKS:
             unit_mass = 250;
             break;
-        case 11:
+        case OBJ_STAVES:
             unit_mass = 130;
             break;
-        case 14:
+        case OBJ_CORPSES:
             if (mitm.sub_type[item_got] == 0)
                 unit_mass = mons_weight(mitm.pluses[item_got]);
             if (mitm.sub_type[item_got] == 1)
                 unit_mass = mons_weight(mitm.pluses[item_got]) / 2;
             break;
-        case 15:
+        case OBJ_GOLD:
             unit_mass = 0;
             break;              // For now!
 
         }
+    }
 
     item_mass = unit_mass * mitm.quantity[item_got];
 
@@ -633,7 +636,7 @@ int add_item(int item_got, int quant_got)
 
     brek = 0;
 
-    if (mitm.base_type[item_got] == 15)
+    if (mitm.base_type[item_got] == OBJ_GOLD)
     {
         you.gold += quant_got;
         you.redraw_gold = 1;
@@ -650,16 +653,36 @@ int add_item(int item_got, int quant_got)
     for (m = 0; m < 52; m++)
     {
 
-        if ((mitm.base_type[item_got] == 1 || (mitm.base_type[item_got] == 4 && mitm.sub_type[item_got] != 21) || mitm.base_type[item_got] == 6 || mitm.base_type[item_got] == 8 || mitm.base_type[item_got] == 9) && you.inv_class[m] == mitm.base_type[item_got] && you.inv_type[m] == mitm.sub_type[item_got] && (((mitm.base_type[item_got] == 4 && mitm.sub_type[item_got] != 21) || mitm.base_type[item_got] == 6 || mitm.base_type[item_got] == 8) || (you.inv_plus[m] == mitm.pluses[item_got] && you.inv_plus2[m] == mitm.pluses2[item_got] && you.inv_dam[m] == mitm.special[item_got])) && you.inv_quantity[m] > 0)
-        {
-            if (mitm.id[item_got] == you.inv_ident[m] || mitm.base_type[item_got] == 4 || mitm.base_type[item_got] == 6 || mitm.base_type[item_got] == 8)
-            {
-                you.inv_quantity[m] += quant_got;       //mitm.quantity [item_got];
+        if ((mitm.base_type[item_got] == OBJ_MISSILES
+                || (mitm.base_type[item_got] == OBJ_FOOD
+                    && mitm.sub_type[item_got] != FOOD_CHUNK)
+                || mitm.base_type[item_got] == OBJ_SCROLLS
+                || mitm.base_type[item_got] == OBJ_POTIONS
+                || (mitm.base_type[item_got] == OBJ_MISCELLANY
+                    && mitm.sub_type[item_got] == MISC_RUNE_OF_ZOT)
+                || mitm.base_type[item_got] == 9)
 
+            && you.inv_class[m] == mitm.base_type[item_got]
+            && you.inv_type[m] == mitm.sub_type[item_got]
+
+            && (((mitm.base_type[item_got] == OBJ_FOOD
+                            && mitm.sub_type[item_got] != FOOD_CHUNK)
+                    || mitm.base_type[item_got] == OBJ_SCROLLS
+                    || mitm.base_type[item_got] == OBJ_POTIONS)
+                || (you.inv_plus[m] == mitm.pluses[item_got]
+                    && you.inv_plus2[m] == mitm.pluses2[item_got]
+                    && you.inv_dam[m] == mitm.special[item_got]))
+
+            && you.inv_quantity[m] > 0)
+        {
+            if (mitm.id[item_got] == you.inv_ident[m]
+                    || mitm.base_type[item_got] == OBJ_FOOD
+                    || mitm.base_type[item_got] == OBJ_SCROLLS
+                    || mitm.base_type[item_got] == OBJ_POTIONS)
+            {
+                you.inv_quantity[m] += quant_got;
                 burden_change();
 
-//              strcpy(info, " ");
-                /*                      strncpy(info, letters [m], 1); */
                 if (m <= 25)
                     info[0] = m + 97;
                 else
@@ -714,19 +737,11 @@ int add_item(int item_got, int quant_got)
             {
                 mpr("Now all you have to do is get back out of the dungeon!");
                 you.char_direction = 1;
-// env.grid [you.x_pos] [you.y_pos] = 137;
-                // not in the abyss or pandemonium
             }
 
-            you.num_inv_items++;        // increases number of items in inventory
-
-
+            you.num_inv_items++;
             break;
         }
-
-
-
-
     }                           // end of for m loopy thing.
 
     // This is here to catch when the count gets out of sync.
@@ -740,7 +755,7 @@ int add_item(int item_got, int quant_got)
 
     you.turn_is_over = 1;
 
-  change_igrid:
+change_igrid:
     mitm.quantity[item_got] -= quant_got;       //= 0;
 
     if (mitm.quantity[item_got] == 0)
@@ -753,12 +768,9 @@ int add_item(int item_got, int quant_got)
         {
             mitm.link[last_item] = mitm.link[item_got];
         }
-/*              it_no --; */
     }
 
-
     return retval;
-
 }                               // end of int add_item() function
 
 
@@ -1252,11 +1264,11 @@ void handle_time(int time_delta)
     }
 
     // Random change to identify staff in hand based off of Spellcasting
-    // and an appropriate other spell skill... is 1/100 too slow?
+    // and an appropriate other spell skill... is 1/20 too fast?
     if (you.equip[EQ_WEAPON] != -1
         && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-        && you.inv_ident[you.equip[EQ_WEAPON]] < 3
-        && random2(100) == 0)
+        && you.inv_ident[you.equip[EQ_WEAPON]] == 0
+        && random2(20) == 0)
     {
         int total_skill = you.skills[SK_SPELLCASTING];
 
@@ -1268,11 +1280,31 @@ void handle_time(int time_delta)
             break;
 
         case STAFF_FIRE:
-            total_skill += you.skills[SK_FIRE_MAGIC];
+            if (you.skills[SK_FIRE_MAGIC] > you.skills[SK_ICE_MAGIC])
+                total_skill += you.skills[SK_FIRE_MAGIC];
+            else
+                total_skill += you.skills[SK_ICE_MAGIC];
             break;
 
         case STAFF_COLD:
-            total_skill += you.skills[SK_ICE_MAGIC];
+            if (you.skills[SK_ICE_MAGIC] > you.skills[SK_FIRE_MAGIC])
+                total_skill += you.skills[SK_ICE_MAGIC];
+            else
+                total_skill += you.skills[SK_FIRE_MAGIC];
+            break;
+
+        case STAFF_AIR:
+            if (you.skills[SK_AIR_MAGIC] > you.skills[SK_EARTH_MAGIC])
+                total_skill += you.skills[SK_AIR_MAGIC];
+            else
+                total_skill += you.skills[SK_EARTH_MAGIC];
+            break;
+
+        case STAFF_EARTH:
+            if (you.skills[SK_EARTH_MAGIC] > you.skills[SK_AIR_MAGIC])
+                total_skill += you.skills[SK_EARTH_MAGIC];
+            else
+                total_skill += you.skills[SK_AIR_MAGIC];
             break;
 
         case STAFF_POISON:
@@ -1289,14 +1321,6 @@ void handle_time(int time_delta)
 
         case STAFF_ENCHANTMENT:
             total_skill += you.skills[SK_ENCHANTMENTS];
-            break;
-
-        case STAFF_AIR:
-            total_skill += you.skills[SK_AIR_MAGIC];
-            break;
-
-        case STAFF_EARTH:
-            total_skill += you.skills[SK_EARTH_MAGIC];
             break;
 
         case STAFF_SUMMONING_I:
@@ -1464,8 +1488,8 @@ void handle_time(int time_delta)
         exercise(SK_ARMOUR, 1);
 
     // also skills:
-  practise_stealth:
-    if (you.burden_state != 0)
+practise_stealth:
+    if (you.burden_state != 0 || you.berserker)
         return;
 
     if (you.equip[EQ_BODY_ARMOUR] != -1)
@@ -1493,8 +1517,9 @@ int autopickup_on = 1;
 void autopickup()
 {
     //David Loewenstern 6/99
-    int items_here = 0;
-    int result, o, hrg;
+    int  items_here = 0;
+    int  result, o, hrg;
+    bool did_pickup = false;
 
     if (autopickup_on == 0 || autopickups == 0L)
         return;
@@ -1527,6 +1552,8 @@ void autopickup()
 
             if (result != 1)    //item still there?
                 last_item = o;
+
+            did_pickup = true;
         }
 
         if (items_here > 1000)
@@ -1547,9 +1574,9 @@ void autopickup()
         o = hrg;
     }
 
-    if (items_here > 0 && you.delay_t == 0)
+    if (did_pickup && you.delay_t == 0)
     {
-        you.delay_t = 1;
+        you.delay_t = 3;
         you.delay_doing = DELAY_AUTOPICKUP;
     }
 }

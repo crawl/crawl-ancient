@@ -1,5 +1,3 @@
-#ifndef COMMAND_H
-#define COMMAND_H
 /*
  *  File:       command.cc
  *  Summary:    Misc commands.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef COMMAND_H
+#define COMMAND_H
 void stethoscope(int mwh);
 void quit_game(void);
 void version(void);

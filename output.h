@@ -1,5 +1,3 @@
-#ifndef OUTPUT_H
-#define OUTPUT_H
 /*
  *  File:       output.cc
  *  Summary:    Functions used to print player related info.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef OUTPUT_H
+#define OUTPUT_H
 
 void print_stats();
 #endif

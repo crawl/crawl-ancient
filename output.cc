@@ -309,4 +309,7 @@ void print_stats()
         wield_change = 0;
     }
 
+#ifdef USE_CURSES
+    refresh();
+#endif
 }

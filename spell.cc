@@ -175,7 +175,7 @@ char your_spells(int spc2, int powc, char allow_fail)
 
     if (you.equip[EQ_WEAPON] != -1
                 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES
-                && you.inv_ident[you.equip[EQ_WEAPON]] < 3)
+                && you.inv_ident[you.equip[EQ_WEAPON]] == 0)
     {
 
         int   total_skill = 0;
@@ -184,7 +184,6 @@ char your_spells(int spc2, int powc, char allow_fail)
         {
         case STAFF_WIZARDRY:
         case STAFF_ENERGY:
-        case STAFF_CHANNELING:
             total_skill = you.skills[SK_SPELLCASTING];
             break;
 
@@ -193,12 +192,42 @@ char your_spells(int spc2, int powc, char allow_fail)
             {
                 total_skill = you.skills[SK_FIRE_MAGIC];
             }
+            else if (spell_type(spc2, SPTYP_ICE) == 1)
+            {
+                total_skill = you.skills[SK_ICE_MAGIC];
+            }
             break;
 
         case STAFF_COLD:
             if (spell_type(spc2, SPTYP_ICE) == 1)
             {
                 total_skill = you.skills[SK_ICE_MAGIC];
+            }
+            else if (spell_type(spc2, SPTYP_FIRE) == 1)
+            {
+                total_skill = you.skills[SK_FIRE_MAGIC];
+            }
+            break;
+
+        case STAFF_AIR:
+            if (spell_type(spc2, SPTYP_AIR) == 1)
+            {
+                total_skill = you.skills[SK_AIR_MAGIC];
+            }
+            else if (spell_type(spc2, SPTYP_EARTH) == 1)
+            {
+                total_skill = you.skills[SK_EARTH_MAGIC];
+            }
+            break;
+
+        case STAFF_EARTH:
+            if (spell_type(spc2, SPTYP_EARTH) == 1)
+            {
+                total_skill = you.skills[SK_EARTH_MAGIC];
+            }
+            else if (spell_type(spc2, SPTYP_AIR) == 1)
+            {
+                total_skill = you.skills[SK_AIR_MAGIC];
             }
             break;
 
@@ -230,20 +259,6 @@ char your_spells(int spc2, int powc, char allow_fail)
             }
             break;
 
-        case STAFF_AIR:
-            if (spell_type(spc2, SPTYP_AIR) == 1)
-            {
-                total_skill = you.skills[SK_AIR_MAGIC];
-            }
-            break;
-
-        case STAFF_EARTH:
-            if (spell_type(spc2, SPTYP_EARTH) == 1)
-            {
-                total_skill = you.skills[SK_EARTH_MAGIC];
-            }
-            break;
-
         case STAFF_SUMMONING_I:
             if (spell_type(spc2, SPTYP_SUMMONING) == 1)
             {
@@ -251,6 +266,9 @@ char your_spells(int spc2, int powc, char allow_fail)
             }
             break;
         }
+
+        if (you.skills[SK_SPELLCASTING] > total_skill)
+            total_skill = you.skills[SK_SPELLCASTING];
 
         if (random2(100) < total_skill)
         {
@@ -711,11 +729,11 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case 75:                    // burn
-        burn_freeze(powc, 2);
+        burn_freeze(powc, BEAM_FIRE);
         return 1;
 
     case 76:                    // freeze
-        burn_freeze(powc, 3);
+        burn_freeze(powc, BEAM_COLD);
         return 1;
 
     case 77:                    // summon elemental
@@ -914,7 +932,7 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case SPELL_CRUSH:           // crush
-        burn_freeze(powc, 0);
+        burn_freeze(powc, BEAM_MISSILE);
         return 1;
 
     case 128:                   // bolt of iron
@@ -1110,7 +1128,7 @@ char your_spells(int spc2, int powc, char allow_fail)
         return 1;
 
     case SPELL_ARC:             /* electric version of burn/freeze/crush */
-        burn_freeze(powc, 5);
+        burn_freeze(powc, BEAM_ELECTRICITY);
         return 1;
 
     case SPELL_AIRSTRIKE:

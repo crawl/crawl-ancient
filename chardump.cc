@@ -270,51 +270,51 @@ static void dump_location(string & text)
     if (you.your_level != -1)
         text += "You are ";
 
-    if (you.level_type == 3)
+    if (you.level_type == LEVEL_PANDEMONIUM)
         text += "in Pandemonium";
-    else if (you.level_type == 2)
+    else if (you.level_type == LEVEL_ABYSS)
         text += "in the Abyss";
-    else if (you.level_type == 1)
+    else if (you.level_type == LEVEL_LABYRINTH)
         text += "in a labyrinth";
-    else if (you.where_are_you == 1)
+    else if (you.where_are_you == BRANCH_DIS)
         text += "in Dis";
-    else if (you.where_are_you == 2)
+    else if (you.where_are_you == BRANCH_GEHENNA)
         text += "in Gehenna";
-    else if (you.where_are_you == 3)
+    else if (you.where_are_you == BRANCH_VESTIBULE_OF_HELL)
         text += "in the Vestibule of Hell";
-    else if (you.where_are_you == 4)
+    else if (you.where_are_you == BRANCH_COCYTUS)
         text += "in Cocytus";
-    else if (you.where_are_you == 5)
+    else if (you.where_are_you == BRANCH_TARTARUS)
         text += "in Tartarus";
-    else if (you.where_are_you == 6)
+    else if (you.where_are_you == BRANCH_INFERNO)
         text += "in the Inferno";
-    else if (you.where_are_you == 7)
+    else if (you.where_are_you == BRANCH_THE_PIT)
         text += "in the Pit";
-    else if (you.where_are_you == 10)
+    else if (you.where_are_you == BRANCH_ORCISH_MINES)
         text += "in the Mines";
-    else if (you.where_are_you == 11)
+    else if (you.where_are_you == BRANCH_HIVE)
         text += "in the Hive";
-    else if (you.where_are_you == 12)
+    else if (you.where_are_you == BRANCH_LAIR)
         text += "in the Lair";
-    else if (you.where_are_you == 13)
+    else if (you.where_are_you == BRANCH_SLIME_PITS)
         text += "in the Slime Pits";
-    else if (you.where_are_you == 14)
+    else if (you.where_are_you == BRANCH_VAULTS)
         text += "in the Vaults";
-    else if (you.where_are_you == 15)
+    else if (you.where_are_you == BRANCH_CRYPT)
         text += "in the Crypt";
-    else if (you.where_are_you == 16)
+    else if (you.where_are_you == BRANCH_HALL_OF_BLADES)
         text += "in the Hall of Blades";
-    else if (you.where_are_you == 17)
+    else if (you.where_are_you == BRANCH_HALL_OF_ZOT)
         text += "in the Hall of Zot";
-    else if (you.where_are_you == 18)
+    else if (you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
         text += "in the Ecumenical Temple";
-    else if (you.where_are_you == 19)
+    else if (you.where_are_you == BRANCH_SNAKE_PIT)
         text += "in the Snake Pit";
-    else if (you.where_are_you == 20)
+    else if (you.where_are_you == BRANCH_ELVEN_HALLS)
         text += "in the Elven Halls";
-    else if (you.where_are_you == 21)
+    else if (you.where_are_you == BRANCH_TOMB)
         text += "in the Tomb";
-    else if (you.where_are_you == 22)
+    else if (you.where_are_you == BRANCH_SWAMP)
         text += "in the Swamp";
     else
     {
@@ -672,14 +672,16 @@ static void dump_spells(string & text)
         0
     };
 
-    if (you.spell_levels == 1)
+    int spell_levels = player_spell_levels();
+
+    if (spell_levels == 1)
         text += "You have one spell level left.";
-    else if (you.spell_levels == 0)
+    else if (spell_levels == 0)
         text += "You cannot memorise any spells.";
     else
     {
         text += "You have ";
-        itoa(you.spell_levels, strng, 10);
+        itoa(spell_levels, strng, 10);
         text += strng;
         text += " spell levels left.";
     }

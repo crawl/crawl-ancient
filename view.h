@@ -1,5 +1,3 @@
-#ifndef VIEW_H
-#define VIEW_H
 /*
  *  File:       view.cc
  *  Summary:    Misc function used to render the dungeon.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef VIEW_H
+#define VIEW_H
 
 #include "externs.h"
 

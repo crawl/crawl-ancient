@@ -1366,38 +1366,38 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
                 charge_value += 5;
                 break;          //strcat(glog, "wand of fireball"); break;
 
-            case 13:
-                valued += WAND_INVISIBILITY;
+            case WAND_TELEPORTATION:
+                valued += 10;
                 charge_value += 2;
                 break;          //strcat(glog, "wand of teleportation"); break;
 
-            case 14:
+            case WAND_LIGHTNING:
                 valued += 20;
                 charge_value += 5;
                 break;          //strcat(glog, "wand of lightning"); break;
 
-            case 15:
-                valued += WAND_POLYMORPH_OTHER;
+            case WAND_POLYMORPH_OTHER:
+                valued += 15;
                 charge_value += 4;
                 break;          //strcat(glog, "wand of polymorph"); break;
 
-            case 16:
-                valued += WAND_POLYMORPH_OTHER;
+            case WAND_ENSLAVEMENT:
+                valued += 15;
                 charge_value += 3;
                 break;          //strcat(glog, "wand of enslavement"); break;
 
-            case 17:
+            case WAND_DRAINING:
                 valued += 20;
                 charge_value += 4;
                 break;          //strcat(glog, "wand of draining"); break;
 
-            case 18:
-                valued += WAND_TELEPORTATION;
+            case WAND_RANDOM_EFFECTS:
+                valued += 13;
                 charge_value += 3;
                 break;          //strcat(glog, "wand of random effects"); break;
 
-            case 19:
-                valued += WAND_DRAINING;
+            case WAND_DISINTEGRATION:
+                valued += 17;
                 charge_value += 4;
                 break;          //strcat(glog, "wand of disintegration"); break;
 
@@ -1741,7 +1741,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
 
         if (ident_lev > 0)
         {
-            if (it_plus >= 80)
+            if (it_plus >= 130)
             {
                 valued -= 10;
             }
@@ -2051,7 +2051,6 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
     valued *= item_quant;
     return valued;
 
-//}
 }
 
 
@@ -2065,130 +2064,87 @@ char book_rarity(char which_book)
     case BOOK_MINOR_MAGIC_I:
     case BOOK_MINOR_MAGIC_II:
     case BOOK_MINOR_MAGIC_III:
-//  case 3:
-        //  case 4:
+    case BOOK_SURVEYANCES:
+    case BOOK_POISONINGS:
+    case BOOK_HINDERANCE:
         return 1;
+
+    case BOOK_CHANGES:
+    case BOOK_CHARMS:
+        return 2;
 
     case BOOK_CONJURATIONS_I:
     case BOOK_CONJURATIONS_II:
+    case BOOK_USEFUL_MAGIC:
+    case BOOK_NECROMANCY:
+    case BOOK_SUMMONINGS:
+    case BOOK_WIZARDRY:
         return 3;
 
     case BOOK_FLAMES:
     case BOOK_FROST:
+    case BOOK_AIR:
+    case BOOK_GEOMANCY:
         return 4;
-
-    case BOOK_INVOCATIONS:
-        return 18;
-
-    case BOOK_FIRE:
-    case BOOK_ICE:
-        return 10;
-
-    case BOOK_SURVEYANCES:
-        return 1;
 
     case BOOK_SPATIAL_TRANSLOCATIONS:
         return 5;
 
+    case BOOK_CLOUDS:
+    case BOOK_WARP:
+    case BOOK_POWER:
+        return 6;
+
     case BOOK_ENCHANTMENTS:
         return 7;
 
-    case BOOK_POISONINGS:
-        return 1;
+    case BOOK_TRANSFIGURATIONS:
+    case BOOK_DIVINATIONS:
+        return 8;
+
+    case BOOK_FIRE:
+    case BOOK_ICE:
+    case BOOK_SKY:
+    case BOOK_EARTH:
+    case BOOK_UNLIFE:
+    case BOOK_CONTROL:
+        return 10;
 
     case BOOK_STORMS_AND_FIRE:
     case BOOK_DEATH:
         return 11;
 
-    case BOOK_HINDERANCE:
-        return 1;
-
-    case BOOK_CHANGES:
-        return 2;
-
-    case BOOK_TRANSFIGURATIONS:
-        return 8;
-
-    case BOOK_USEFUL_MAGIC:
-        return 3;
-
-    case BOOK_CLOUDS:
-        return 6;
-
-    case BOOK_HEALING:
-        return 100;
-
-    case BOOK_NECROMANCY:
-        return 3;
-
-    case BOOK_NECRONOMICON:
-        return 20;
-
-    case BOOK_SUMMONINGS:
-        return 3;
-
-    case BOOK_CHARMS:
-        return 2;
+    case BOOK_ENVENOMATIONS:
+    case BOOK_MUTATIONS:
+        return 12;
 
     case BOOK_DEMONOLOGY:
         return 15;
 
-    case BOOK_AIR:
-        return 4;
-
-    case BOOK_SKY:
-        return 10;
-
-    case BOOK_DIVINATIONS:
-        return 8;
-
-    case BOOK_WARP:
-        return 6;
-
-    case BOOK_ENVENOMATIONS:
-        return 12;
+    case BOOK_TUKIMA:
+        return 16;
 
     case BOOK_ANNIHILATIONS:
         return 17;
 
-    case BOOK_UNLIFE:
-        return 10;
+    case BOOK_INVOCATIONS:
+        return 18;
 
-    case BOOK_DESTRUCTION:      // tome of destruction
-
-        return 30;
-
-    case BOOK_CONTROL:
-        return 10;
-
-    case BOOK_MUTATIONS:
-        return 12;
-
-    case BOOK_TUKIMA:
-        return 16;
-
-    case BOOK_GEOMANCY:
-        return 4;
-
-    case BOOK_EARTH:
-        return 10;
-
-    case BOOK_MANUAL:           // manuals
-
+    case BOOK_NECRONOMICON:
         return 20;
 
-    case BOOK_WIZARDRY: // wizardry
+    case BOOK_MANUAL:           // manuals
+        return 20;
 
-        return 3;
+    case BOOK_DESTRUCTION:      // tome of destruction
+        return 30;
 
-    case BOOK_POWER:            // power
-
-        return 6;
+    case BOOK_HEALING:          // never created naturally
+        return 100;
 
     }
 
     return 1;
-
 }
 
 void shop(void)

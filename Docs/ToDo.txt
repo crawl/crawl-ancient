@@ -1,5 +1,18 @@
 Enhancements:
 
+* miscast effects too weak?  Not enough of a threat, especial when used by
+  gods, Zot traps, or mummies as a form of punishment.
+
+* add toggled stealthy mode?
+
+* make rings of fire/ice (and others?) auto identify with use
+
+* print out '@' status in character dumps (might be nice to have the
+  chacters status in the dump... method of death might be good as well).
+
+* fix green crystal room so its not boring (pretty vault, just no real
+   point to it currently)
+
 * fix the summoning abuse problem properly.  Ideally, the player should
   not get piety for killing things he summoned, but should get piety
   for things that are summoned against him.

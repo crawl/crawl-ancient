@@ -1,5 +1,3 @@
-#ifndef MONPLACE_H
-#define MONPLACE_H
 /*
  *  File:       monsplace.cc
  *  Summary:    Functions used when placing monsters in the dungeon.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef MONPLACE_H
+#define MONPLACE_H
 
 int mons_place(int typed, int type_place, int px, int py, char behaviour, int hitting, unsigned char plus_seventy, int lev_mons);
 int create_monster(int cls, int dur, int beha, int cr_x, int cr_y, int hitting, int zsec);

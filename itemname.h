@@ -1,5 +1,3 @@
-#ifndef ITEMNAME_H
-#define ITEMNAME_H
 /*
  *  File:       itemname.cc
  *  Summary:    Misc functions.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef ITEMNAME_H
+#define ITEMNAME_H
 
 char item_name(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char descrip, char glag[60]);
 char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsigned char item_da, unsigned char it_plus, unsigned int it_quant, char ident_lev, char glog[60]);

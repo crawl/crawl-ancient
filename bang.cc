@@ -199,7 +199,7 @@ beam[0].type = 43;
 beam[0].flavour = 0;
 }
 */
-explosion(exsize, beam);
+    explosion(exsize, beam);
 }
 
 
@@ -215,224 +215,232 @@ corners.
 void explosion(char ex_size, struct bolt beam[1])
 {
 
-char clouty = 0;
-char empty[5][5];
-int n = 0;
-int q = 0;
+    char clouty = 0;
+    char empty[5][5];
+    int n = 0;
+    int q = 0;
 
-for (n = 0; n < 5; n++)
-{
-    for (q = 0; q < 5; q++)
-    {
-        empty[n][q] = 0;
-    }
-}
-
-int hurted = 0;
-
-beam[0].source_x = beam[0].bx;
-beam[0].source_y = beam[0].by;
-
-
-for (n = 0; n < 5; n++)     // x
-
-{
-    for (q = 0; q < 5; q++) // y
-
-    {
-        empty[n][q] = 1;
-        if (grd[beam[0].source_x - 2 + n][beam[0].source_y - 2 + q] < 10)
-            empty[n][q] = 0;
-    }
-}
-
-if (ex_size == 0)
-{
     for (n = 0; n < 5; n++)
     {
-        empty[n][0] = 0;
-        empty[n][4] = 0;
-        empty[0][n] = 0;
-        empty[4][n] = 0;
+        for (q = 0; q < 5; q++)
+        {
+            empty[n][q] = 0;
+        }
     }
-}
 
-if (empty[1][2] == 0)
-    empty[0][2] = 0;
-if (empty[3][2] == 0)
-    empty[3][2] = 0;
+    int hurted = 0;
 
-if (empty[2][3] == 0)
-    empty[4][3] = 0;
-if (empty[2][1] == 0)
-    empty[4][1] = 0;
+    beam[0].source_x = beam[0].bx;
+    beam[0].source_y = beam[0].by;
 
-if (empty[1][1] == 0)
+
+    for (n = 0; n < 5; n++)     // x
+    {
+        for (q = 0; q < 5; q++) // y
+        {
+            empty[n][q] = 1;
+            if (grd[beam[0].source_x - 2 + n][beam[0].source_y - 2 + q] < 10)
+                empty[n][q] = 0;
+        }
+    }
+
+    if (ex_size == 0)
+    {
+        for (n = 0; n < 5; n++)
+        {
+            empty[n][0] = 0;
+            empty[n][4] = 0;
+            empty[0][n] = 0;
+            empty[4][n] = 0;
+        }
+    }
+
+    if (empty[1][2] == 0)
+        empty[0][2] = 0;
+    if (empty[3][2] == 0)
+        empty[3][2] = 0;
+
+    if (empty[2][3] == 0)
+        empty[4][3] = 0;
+    if (empty[2][1] == 0)
+        empty[4][1] = 0;
+
+    if (empty[1][1] == 0)
+        empty[0][0] = 0;
+    if (empty[3][3] == 0)
+        empty[4][4] = 0;
+
+    if (empty[1][3] == 0)
+        empty[0][4] = 0;
+    if (empty[3][1] == 0)
+        empty[4][0] = 0;
+
+    if (empty[1][3] == 0)
+        empty[0][3] = 0;
+    if (empty[1][3] == 0)
+        empty[1][4] = 0;
+
+    if (empty[1][1] == 0)
+        empty[1][0] = 0;
+    if (empty[1][1] == 0)
+        empty[0][1] = 0;
+
+    if (empty[3][1] == 0)
+        empty[3][0] = 0;
+    if (empty[3][1] == 0)
+        empty[4][1] = 0;
+
+    if (empty[3][3] == 0)
+        empty[4][3] = 0;
+    if (empty[3][3] == 0)
+        empty[3][4] = 0;
+
     empty[0][0] = 0;
-if (empty[3][3] == 0)
+    empty[4][0] = 0;
+    empty[0][4] = 0;
     empty[4][4] = 0;
 
-if (empty[1][3] == 0)
-    empty[0][4] = 0;
-if (empty[3][1] == 0)
-    empty[4][0] = 0;
-
-if (empty[1][3] == 0)
-    empty[0][3] = 0;
-if (empty[1][3] == 0)
-    empty[1][4] = 0;
-
-if (empty[1][1] == 0)
-    empty[1][0] = 0;
-if (empty[1][1] == 0)
-    empty[0][1] = 0;
-
-if (empty[3][1] == 0)
-    empty[3][0] = 0;
-if (empty[3][1] == 0)
-    empty[4][1] = 0;
-
-if (empty[3][3] == 0)
-    empty[4][3] = 0;
-if (empty[3][3] == 0)
-    empty[3][4] = 0;
-
-empty[0][0] = 0;
-empty[4][0] = 0;
-empty[0][4] = 0;
-empty[4][4] = 0;
-
-//      brek = 1;
-//      viewwindow(); // this resets the window so that eg dragons don't appear to do weird things.
-//      brek = 0;
+    //      brek = 1;
+    //      viewwindow(); // this resets the window so that eg dragons don't appear to do weird things.
+    //      brek = 0;
 
 
-for (n = -2; n < 3; n++)    // x
-
-{
-
-    for (q = -2; q < 3; q++)        // y
-
+    for (n = -2; n < 3; n++)    // x
     {
-
-        beam[0].bx = beam[0].source_x + n;
-        beam[0].by = beam[0].source_y + q;
-
-        if (empty[n + 2][q + 2] == 0)
-            continue;
-
-        if (grd[beam[0].bx][beam[0].by] < 10)
-            continue;
-
-//      if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9 && (show [beam[0].bx - you.x_pos + 9] [beam[0].by - you.y_pos + 9] != 0 || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)))// && beam[0].type != 0)
-        if (see_grid(beam[0].bx, beam[0].by) == 1 || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos))
+        for (q = -2; q < 3; q++)        // y
         {
-            //viewwindow;
-            //window(2,2,34,17);
-            textcolor(beam[0].colour);
-            //show [beam[0].bx - you.x_pos + 7] [beam[0].by - you.y_pos + 7] = 35;
-            gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
-            putch(35);
-        }
 
-    }
-}
+            beam[0].bx = beam[0].source_x + n;
+            beam[0].by = beam[0].source_y + q;
 
-//delay(500);
-// test relay_message();
+            if (empty[n + 2][q + 2] == 0)
+                continue;
 
-//scrloc = 0;
-more();
+            if (grd[beam[0].bx][beam[0].by] < 10)
+                continue;
 
-for (n = -2; n < 3; n++)    // x
-
-{
-
-    for (q = -2; q < 3; q++)        // y
-
-    {
-
-        beam[0].bx = beam[0].source_x + n;
-        beam[0].by = beam[0].source_y + q;
-
-        if (empty[n + 2][q + 2] == 0)
-            continue;
-
-
-
-//      }
-
-        if (grd[beam[0].bx][beam[0].by] < 10)
-            continue;
-
-        if (igrd[beam[0].bx][beam[0].by] != 501)
-        {
-            if (mitm.base_type[igrd[beam[0].bx][beam[0].by]] == 6)
+    //      if (beam[0].bx > you.x_pos - 9 && beam[0].bx < you.x_pos + 9 && beam[0].by > you.y_pos - 9 && beam[0].by < you.y_pos + 9 && (show [beam[0].bx - you.x_pos + 9] [beam[0].by - you.y_pos + 9] != 0 || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)))// && beam[0].type != 0)
+            if (see_grid(beam[0].bx, beam[0].by) == 1 || (beam[0].bx == you.x_pos && beam[0].by == you.y_pos))
             {
-                if (beam[0].flavour == 2 || stricmp(beam[0].beam_name, "hellfire") == 0)
+                //viewwindow;
+                //window(2,2,34,17);
+                textcolor(beam[0].colour);
+                //show [beam[0].bx - you.x_pos + 7] [beam[0].by - you.y_pos + 7] = 35;
+                gotoxy(beam[0].bx - you.x_pos + 18, beam[0].by - you.y_pos + 9);
+                putch(35);
+            }
+        }
+    }
+
+    //delay(500);
+    // test relay_message();
+
+    //scrloc = 0;
+    more();
+
+    int objs_vulnerable = -1;
+    switch (beam[0].flavour)
+    {
+    case BEAM_FIRE:
+        objs_vulnerable = OBJ_SCROLLS;
+        break;
+
+    case BEAM_COLD:
+        objs_vulnerable = OBJ_POTIONS;
+        break;
+
+    case BEAM_SPORE:
+        objs_vulnerable = OBJ_FOOD;
+        break;
+    }
+
+    if (stricmp(beam[0].beam_name, "hellfire") == 0)
+        objs_vulnerable = OBJ_SCROLLS;
+
+    for (n = -2; n < 3; n++)    // x
+    {
+        for (q = -2; q < 3; q++)        // y
+        {
+
+            beam[0].bx = beam[0].source_x + n;
+            beam[0].by = beam[0].source_y + q;
+
+            if (empty[n + 2][q + 2] == 0)
+                continue;
+
+            if (grd[beam[0].bx][beam[0].by] < 10)
+                continue;
+
+            if (igrd[beam[0].bx][beam[0].by] != 501)
+            {
+                if (objs_vulnerable != -1 &&
+                            mitm.base_type[igrd[beam[0].bx][beam[0].by]]
+                                                        == objs_vulnerable)
                 {
                     destroy_item(igrd[beam[0].bx][beam[0].by]);
                     if (see_grid(beam[0].bx, beam[0].by) == 1)
                     {
-                        strcpy(info, "You see a puff of smoke.");
-                        mpr(info);
+                        switch (beam[0].flavour)
+                        {
+                        case BEAM_FIRE:
+                            mpr("You see a puff of smoke.");
+                            break;
+                        }
                     }
                 }
             }
-        }
 
+            if (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)
+            // && beam[0].colour != 6) // have to do something about enchantments here.
+            {                   // ^^^ digging
 
-        if (beam[0].bx == you.x_pos && beam[0].by == you.y_pos)     // && beam[0].colour != 6) // have to do something about enchantments here.
+                if (beam[0].colour == 200)
+                {
+                    beam[0].tracer = 1;
+                    return;
+                }
 
-        {                   // ^^^ digging
+                strcpy(info, "The ");
+                strcat(info, beam[0].beam_name);
+                strcat(info, " engulfs you!");
+                mpr(info);
 
-            if (beam[0].colour == 200)
-            {
-                beam[0].tracer = 1;
-                return;
-            }
-
-
-
-            strcpy(info, "The ");
-            strcat(info, beam[0].beam_name);
-            strcat(info, " engulfs you!");
-            mpr(info);
-
-            hurted = 0;
-
-            if (beam[0].damage > 100)
-            {
-                hurted += random2(beam[0].damage - 100);
-                hurted += random2(beam[0].damage - 100);
-                hurted += random2(beam[0].damage - 100);
-            }
-            else
-                hurted += random2(beam[0].damage);
-
-            hurted = check_your_resists(hurted, beam[0].flavour);
-
-            hurted -= random2(player_AC() + 1);
-            if (beam[0].flavour == 19)      // shrapnel
-
-            {
-                hurted -= random2(player_AC() + 1);
-                hurted -= random2(player_AC() + 1);
-            }
-            if (you.equip[EQ_BODY_ARMOUR] != -1)
-                if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 4 == 0)
-                    exercise(SK_ARMOUR, 1);
-
-            if (hurted <= 0)
                 hurted = 0;
-            strcat(info, "!");
 
-            if (beam[0].flavour == 2 || stricmp(beam[0].beam_name, "hellfire") == 0)
-                scrolls_burn(5, 6);
-                if (beam[0].flavour == 3)
-                    scrolls_burn(5, 8);
+                if (beam[0].damage > 100)
+                {
+                    hurted += random2(beam[0].damage - 100);
+                    hurted += random2(beam[0].damage - 100);
+                    hurted += random2(beam[0].damage - 100);
+                }
+                else
+                    hurted += random2(beam[0].damage);
+
+                hurted = check_your_resists(hurted, beam[0].flavour);
+                hurted -= random2(player_AC() + 1);
+
+                if (beam[0].flavour == 19)      // shrapnel
+                {
+                    hurted -= random2(player_AC() + 1);
+                    hurted -= random2(player_AC() + 1);
+                }
+
+                if (you.equip[EQ_BODY_ARMOUR] != -1)
+                    if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 4 == 0)
+                        exercise(SK_ARMOUR, 1);
+
+                if (hurted <= 0)
+                    hurted = 0;
+
+                strcat(info, "!");
+
+                if (beam[0].flavour == BEAM_FIRE
+                            || stricmp(beam[0].beam_name, "hellfire") == 0)
+                    scrolls_burn(5, OBJ_SCROLLS);
+                if (beam[0].flavour == BEAM_COLD)
+                    scrolls_burn(5, OBJ_POTIONS);
                 if (beam[0].flavour == BEAM_SPORE)
-                    scrolls_burn(2, 4);         // spores!
+                    scrolls_burn(2, OBJ_FOOD);         // spores!
 
                 if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
                     ouch(hurted, 0, 22);
@@ -440,13 +448,11 @@ for (n = -2; n < 3; n++)    // x
                     ouch(hurted, beam[0].beam_source, 3);
 
                 you.redraw_hit_points = 1;
-
-                //n++; // reduces beam's range
+                    //n++; // reduces beam's range
             }
 
 
             if (env.cgrid[beam[0].bx][beam[0].by] != CNG)       // hit a cloud
-
             {
 
                 clouty = env.cgrid[beam[0].bx][beam[0].by];
@@ -472,8 +478,6 @@ for (n = -2; n < 3; n++)    // x
             {
                 place_cloud(3, beam[0].bx, beam[0].by, 2 + random2(3) + random2(3));
             }
-
-
 
             int o = 0;
 
@@ -554,10 +558,6 @@ for (n = -2; n < 3; n++)    // x
                     }
                 }
             }
-
         }                       // end of for q
-
     }                           // end of for n
-
-
 }                               // end of void explosion

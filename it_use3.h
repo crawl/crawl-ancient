@@ -1,5 +1,3 @@
-#ifndef IT_USE3_H
-#define IT_USE3_H
 /*
  *  File:       it_use3.cc
  *  Summary:    Functions for using some of the wackier inventory items.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef IT_USE3_H
+#define IT_USE3_H
 
 void ball_of_energy(void);
 void box_of_beasts(void);

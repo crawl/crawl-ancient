@@ -1,5 +1,3 @@
-#ifndef DESCRIBE_H
-#define DESCRIBE_H
 
 /*
  *  File:       describe.h
@@ -11,6 +9,8 @@
  *      <2>      5/21/99        BWR             Changed from is_artifact to is_dumpable_artifact
  *      <1>      4/20/99        JDJ             Added get_item_description and is_artifact.
  */
+#ifndef DESCRIBE_H
+#define DESCRIBE_H
 
 #include <string>
 

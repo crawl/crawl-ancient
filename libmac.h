@@ -1,5 +1,3 @@
-#ifndef LIBMAC_H
-#define LIBMAC_H
 /*
  *  File:       libmac.h
  *  Summary:    Mac specific routines used by Crawl.
@@ -9,6 +7,8 @@
  *
  *               <1>     3/23/99        JDJ             Created
  */
+#ifndef LIBMAC_H
+#define LIBMAC_H
 
 #if macintosh
 

@@ -1,9 +1,9 @@
-#ifndef FUN_H
-#define FUN_H
 /*
    This is a list of the various .h files. Functions which are not in .h files
    are not listed, and this file may well be out of date.
  */
+#ifndef FUN_H
+#define FUN_H
 
 
 /* bang.cc */

@@ -1,5 +1,3 @@
-#ifndef INITFILE_H
-#define INITFILE_H
 /*
  *  File:       initfile.h
  *  Summary:    Simple reading of init file.
@@ -9,6 +7,8 @@
  *
  *               <1>     6/9/99        DML             Created
  */
+#ifndef INITFILE_H
+#define INITFILE_H
 
 extern char* obj_syms;
 extern int obj_syms_len;

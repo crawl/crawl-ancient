@@ -1,5 +1,3 @@
-#ifndef FIGHT_H
-#define FIGHT_H
 /*
  *  File:       fight.cc
  *  Summary:    Functions used during combat.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef FIGHT_H
+#define FIGHT_H
 
 void monster_die(int monster_killed, char killer, int i);
 void you_attack(int monster_attacked);

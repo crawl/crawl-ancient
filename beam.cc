@@ -223,7 +223,8 @@ void beam(struct bolt beam[1])
    beam[0].aim_down = 0;
    return;
    } */
-            if ((beam[0].colour == WHITE && beam[0].hit >= 15) || beam[0].flavour == BEAM_NUKE)
+            if ((beam[0].colour == WHITE && beam[0].flavour != BEAM_COLD
+                        && beam[0].hit >= 15) || beam[0].flavour == BEAM_NUKE)
                  /* disintegration (or powerful disruption), eye of devastation */
             {
                 if ((grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_ROCK_WALL || grd[beam[0].bx + beam[0].move_x][beam[0].by + beam[0].move_y] == DNGN_WAX_WALL) && !(beam[0].bx <= 6 || beam[0].by <= 6 || beam[0].bx >= GXM - 6 || beam[0].by >= GYM - 6))
@@ -369,15 +370,20 @@ out_of_cloud_bit:
             if (beam[0].beam_name[0] != '0')     // ie enchantments always hit
 
             {
-                if ((you.equip[EQ_BODY_ARMOUR] == -1 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 2 || (you.inv_type[you.equip[EQ_BODY_ARMOUR]] >= 22 && you.inv_type[you.equip[EQ_BODY_ARMOUR]] <= 25) || you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 == 4) && random() % 2 == 0 && beam[0].move_x != 0 || beam[0].move_y != 0)
+                if (player_light_armour() && random() % 2 == 0
+                                && beam[0].move_x != 0 && beam[0].move_y != 0)
                     exercise(SK_DODGING, 1);
 
-                if (you.duration[DUR_REPEL_MISSILES] != 0 || you.mutation[MUT_REPULSION_FIELD] == 3)
-                    beam[0].hit -= random2(beam[0].hit / 4);
-                if (you.duration[DUR_DEFLECT_MISSILES] != 0)
+                if (you.duration[DUR_REPEL_MISSILES] != 0
+                                    || you.mutation[MUT_REPULSION_FIELD] == 3)
                     beam[0].hit -= random2(beam[0].hit / 2);
 
-                if (beam[0].hit < random2(player_evasion()) + random2(you.dex) / 3 - 2 && (beam[0].move_x != 0 || beam[0].move_y != 0))
+                if (you.duration[DUR_DEFLECT_MISSILES] != 0)
+                    beam[0].hit = random2(beam[0].hit / 2);
+
+                if (beam[0].hit < random2(player_evasion())
+                                            + random2(you.dex) / 3 - 2
+                            && (beam[0].move_x != 0 || beam[0].move_y != 0))
                 {
                     strcpy(info, "The ");
                     strcat(info, beam[0].beam_name);
@@ -513,8 +519,8 @@ out_of_cloud_bit:
             hurted -= random2(player_AC() + 1);
             hurted -= random2(player_shield_class());   // don't bother with + 1 here
 
-            if (beam[0].flavour == BEAM_FRAG)  // shrapnel
-
+            // shrapnel
+            if (beam[0].flavour == BEAM_FRAG && !player_light_armour())
             {
                 hurted -= random2(player_AC() + 1);
                 hurted -= random2(player_AC() + 1);
@@ -1269,13 +1275,16 @@ void missile(struct bolt beam[1], int throw_2)
                         break;
                     }           // end of block
 
-                    if ((you.equip[EQ_BODY_ARMOUR] == -1 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 2 || (you.inv_type[you.equip[EQ_BODY_ARMOUR]] >= 22 && you.inv_type[you.equip[EQ_BODY_ARMOUR]] <= 25) || you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 == 4) && random() % 2 == 0 && beam[0].move_x != 0 || beam[0].move_y != 0)
+                    if (player_light_armour() && random() % 2 == 0
+                                && beam[0].move_x != 0 && beam[0].move_y != 0)
                         exercise(SK_DODGING, 1);
 
                     if (you.duration[DUR_REPEL_MISSILES] != 0 || you.mutation[MUT_REPULSION_FIELD] == 3)
                         beam[0].hit = random2(beam[0].hit);
 
-                    if (beam[0].hit >= random2(player_evasion()) + random2(you.dex) / 3 - 2 && you.duration[DUR_DEFLECT_MISSILES] == 0)
+                    if (beam[0].hit >= random2(player_evasion())
+                                                + random2(you.dex) / 3 - 2
+                                    && you.duration[DUR_DEFLECT_MISSILES] == 0)
                     {
 
                         strcpy(info, "The ");
@@ -1313,8 +1322,14 @@ void missile(struct bolt beam[1], int throw_2)
                             you.poison += 1 + random2(3);
                         }
 
-                        if (beam[0].flavour == BEAM_20 || (beam[0].flavour == BEAM_FIRE && strcmp(beam[0].beam_name, "ball of steam") != 0) || stricmp(beam[0].beam_name, "hellfire") == 0)
+                        if (beam[0].flavour == BEAM_LAVA
+                            || (beam[0].flavour == BEAM_FIRE
+                            && strcmp(beam[0].beam_name, "ball of steam") != 0)
+                            || stricmp(beam[0].beam_name, "hellfire") == 0)
+                        {
                             scrolls_burn(2, 6);
+                        }
+
                         if (beam[0].flavour == BEAM_COLD)
                             scrolls_burn(2, 8);
 
@@ -1554,12 +1569,14 @@ landed:
 
 
     if (beam[0].thing_thrown == KILL_YOU)      // ie if you threw it.
-
     {
         if (grd[beam[0].bx][beam[0].by] != 61 && grd[beam[0].bx][beam[0].by] != DNGN_DEEP_WATER)
         {
-            if (you.inv_class[throw_2] != 1 || random2(2) == 0)
+            if (you.inv_class[throw_2] != 1
+                || random2((you.inv_type[throw_2] == MI_STONE) ? 3 : 2) != 0)
+            {
                 item_place(throw_2, beam[0].bx, beam[0].by, 1);
+            }
         }
 
         if (throw_2 == you.equip[EQ_WEAPON])
@@ -1820,7 +1837,8 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
     }                           /* end of switch */
 
 
-    if (stricmp(beam[0].beam_name, "hellfire") == 0 || beam[0].flavour == BEAM_20)
+    if (stricmp(beam[0].beam_name, "hellfire") == 0
+                                            || beam[0].flavour == BEAM_LAVA)
     {
         if (mons_res_fire(menv[o].type) == 2)
         {
@@ -2013,8 +2031,8 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         {
             if (menv[o].enchantment[p] == 1)
             {
-                strcpy(info, "Nothing appears to happen.");
-                mpr(info);
+                if (is_near)
+                    mpr("Nothing appears to happen.");
                 return 1;
             }
             if (menv[o].enchantment[p] == 2)
@@ -2051,11 +2069,16 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
             }
 
 
-        /* put in an exception for fungi, plants and other things you won't notice slow down. */
-        strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-        strcat(info, " seems to slow down.");
-        mpr(info);
-        func_pass[1] = 1;
+        // put in an exception for fungi, plants and other things you won't
+        // notice slow down.
+        if (is_near)
+        {
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
+            strcat(info, " seems to slow down.");
+            mpr(info);
+            func_pass[1] = 1;
+        }
         return 1;
 
     case BLUE:                     // haste
@@ -2099,11 +2122,16 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         if (p == 2 && menv[o].enchantment[p] != 0)
             goto nothinghap;
 
-        /* put in an exception for fungi, plants and other things you won't notice speed up. */
-        strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-        strcat(info, " seems to speed up.");
-        mpr(info);
-        func_pass[1] = 1;
+        // put in an exception for fungi, plants and other things you won't
+        // notice speed up.
+        if (is_near)
+        {
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                            menv[o].enchantment[2], 0));
+            strcat(info, " seems to speed up.");
+            mpr(info);
+            func_pass[1] = 1;
+        }
         return 1;
 
 
@@ -2116,34 +2144,50 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         if (menv[o].hit_points >= menv[o].max_hit_points)
         {
             menv[o].hit_points = menv[o].max_hit_points;
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, "'s wounds heal themselves!");
-            mpr(info);
-            func_pass[1] = 1;
+            if (is_near)
+            {
+                strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
+                strcat(info, "'s wounds heal themselves!");
+                mpr(info);
+                func_pass[1] = 1;
+            }
             return 1;
         }
-        strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-        strcat(info, " is healed somewhat.");   /* is a little less battered */
-        mpr(info);
-        func_pass[1] = 1;
+
+        if (is_near)
+        {
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                    menv[o].enchantment[2], 0));
+            strcat(info, " is healed somewhat.");
+            mpr(info);
+            func_pass[1] = 1;
+        }
         return 1;
 
     case CYAN:                     /* paralysis */
         menv[o].speed_increment = 0;
+
         if (is_near == 1)
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
             strcat(info, " suddenly stops moving!");
             mpr(info);
             func_pass[1] = 1;
         }
-        if (grd[menv[o].x][menv[o].y] == DNGN_LAVA_X || grd[menv[o].x][menv[o].y] == DNGN_WATER_X)
+
+        if (grd[menv[o].x][menv[o].y] == DNGN_LAVA_X
+                                || grd[menv[o].x][menv[o].y] == DNGN_WATER_X)
         {
             if (mons_flies(menv[o].type) == 1)
             {
-                if (is_near == 1)       /* don't worry about invisibility - you should be able to see if something has fallen into the lava */
+                // don't worry about invisibility - you should be able to
+                // see if something has fallen into the lava
+                if (is_near == 1)
                 {
-                    strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));       //monam (menv [o].type, menv [o].enchantment [2], 0, you.see_invis)); //gmon_name [menv [o].type]);
+                    strcpy(info, monam(menv[o].number, menv[o].type,
+                                                    menv[o].enchantment[2], 0));
 
                     if (grd[menv[o].x][menv[o].y] == DNGN_WATER_X)
                     {
@@ -2153,6 +2197,7 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
                         strcat(info, " falls into the lava!");
                     mpr(info);
                 }
+
                 switch (beam[0].thing_thrown)
                 {
                 case KILL_YOU:
@@ -2175,17 +2220,22 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
         }                       /* end of for p */
         for (p = 0; p < 3; p++)
         {
-            if (menv[o].enchantment[p] == 0 || p == 2)  /* replaces 3rd enchantment if all full. */
+            /* replaces 3rd enchantment if all full. */
+            if (menv[o].enchantment[p] == 0 || p == 2)
             {
                 menv[o].enchantment[p] = 5;
                 menv[o].enchantment1 = 1;
                 break;
             }
         }
-        /* put in an exception for fungi, plants and other things you won't notice you.slow down. */
+
+        // put in an exception for fungi, plants and other things you won't
+        // notice you.slow down.
         if (is_near == 1)
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
+
             strcat(info, " appears confused.");
             mpr(info);
             func_pass[1] = 1;
@@ -2199,17 +2249,21 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
 
         if (menv[o].enchantment[2] != 0)
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
-            strcat(info, " flickers for a moment.");
-            mpr(info);
-            func_pass[1] = 1;
+            if (is_near)
+            {
+                strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
+                strcat(info, " flickers for a moment.");
+                mpr(info);
+                func_pass[1] = 1;
+            }
             return 1;
         }
 
         if (is_near == 1)
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));       //monam (menv [o].type, menv [o].enchantment [2], 0, you.see_invis)); //gmon_name [menv [o].type]);
-
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
             strcat(info, " flickers and vanishes!");
             mpr(info);
             func_pass[1] = 1;
@@ -2238,10 +2292,13 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
                 break;
             }
         }
-        /* put in an exception for fungi, plants and other things you won't notice slow down. */
+
+        // put in an exception for fungi, plants and other things you won't
+        // notice slow down.
         if (is_near == 1)
         {
-            strcpy(info, monam(menv[o].number, menv[o].type, menv[o].enchantment[2], 0));
+            strcpy(info, monam(menv[o].number, menv[o].type,
+                                                menv[o].enchantment[2], 0));
             strcat(info, " is charmed.");
             mpr(info);
             func_pass[1] = 1;
@@ -2252,8 +2309,11 @@ int mons_ench_f2(int o, char is_near, int func_pass[10], struct bolt beam[1])
     goto somethinghap;
 
 nothinghap:
-    strcpy(info, "Nothing appears to happen.");
-    mpr(info);
+    if (is_near)
+    {
+        strcpy(info, "Nothing appears to happen.");
+        mpr(info);
+    }
 
 somethinghap:
     return 1;

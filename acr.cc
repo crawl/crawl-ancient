@@ -80,6 +80,10 @@
   #include "macro.h"
 #endif
 
+#ifdef WIZARD
+  #include "spells1.h"
+#endif
+
 #include "message.h"
 #include "misc.h"
 #include "monplace.h"
@@ -204,30 +208,22 @@ extern unsigned char your_colour;
 
 extern char wield_change;       /* defined in output.cc */
 
+#ifdef LINUX
+static bool Use_No_Black = false;
+#endif
+
 /*
    It all starts here. Some initialisations are run first, then straight to
    new_game and then input.
  */
 int main(int argc, char *argv[])
 {
-#ifdef LINUX
-    lincurses_startup();
-#endif
-
-#ifdef MAC
-    init_mac();
-#endif
 
     // Load in the system environment variables
     get_system_environment();
 
     // Read the init file
     read_init_file();
-
-#ifdef MACROS
-    // Load macros
-    macro_init();
-#endif
 
 #ifdef USE_ASCII_CHARACTERS
     // Default to the non-ibm set when it makes sense.
@@ -243,27 +239,52 @@ int main(int argc, char *argv[])
 
     if (argc > 1)
     {
-        if (stricmp(argv[1], "-c") == 0 || stricmp(argv[1], "-nc") == 0)
+        if (stricmp(argv[1], "-c") == 0 || stricmp(argv[1], "-nc") == 0
+                                           || stricmp(argv[1], "-nb") == 0)
         {
             viewwindow = &viewwindow3;
             mapch = &mapchar3;
             mapch2 = &mapchar4;
+
             if (stricmp(argv[1], "-nc") == 0)
             {
                 use_colour = 0; /* this is global to this function, so can either be
                                    passed eg to lincurses_startup or defined as an
                                    extern in another module */
             }
+#ifdef LINUX
+            else if (stricmp(argv[1], "-nb") == 0)
+            {
+                Use_No_Black = true;
+            }
+#endif
         }
         else
         {
-            cprintf(EOL "Crawl accepts the following arguments only:" EOL);
-            cprintf(" -c   Use non-ibm character set" EOL);
-            cprintf(" -nc  Use non-ibm character set, but no colour" EOL);
-            cprintf(EOL "Any others will cause this message to be printed again." EOL);
-            end(0);
+            printf(EOL "Crawl accepts the following arguments only:" EOL);
+            printf(" -c   Use non-ibm character set" EOL);
+            printf(" -nc  Use non-ibm character set, but no colour" EOL);
+#ifdef LINUX
+            printf(" -nb  Use colour and non-ibm charater set, but no "
+                                        "black/dark grey characters" EOL);
+#endif
+            printf(EOL "Any others will cause this message to be printed again." EOL);
+            exit(1);
         }
     }
+
+#ifdef LINUX
+    lincurses_startup( Use_No_Black );
+#endif
+
+#ifdef MAC
+    init_mac();
+#endif
+
+#ifdef MACROS
+    // Load macros
+    macro_init();
+#endif
 
 //new_game();
 
@@ -304,8 +325,14 @@ void input()
     char move_x = 0;
     char move_y = 0;
 
-    char keyin = 0;
+    int keyin = 0;
     char str_pass[50];
+
+#ifdef LINUX
+    // Stuff for the Unix keypad kludge
+    bool running = false;
+    bool opening = false;
+#endif
 
     you.time_taken = player_speed();
 
@@ -395,8 +422,29 @@ void input()
 
             mesclr();
 
-            if (keyin == 0)     // alternate ("alt") also works - see ..\KEYTEST.CPP
+#ifdef LINUX
+            // Kludging running and opening as two character sequences
+            // for Unix systems.  This is an easy way out... all the
+            // player has to do is find a termcap and numlock setting
+            // that will get curses the numbers from the keypad.  This
+            // will hopefully be easy.
+            if (keyin == '*')
+            {
+                opening = true;
+                keyin = getch();
+            }
+            else if (keyin == '/')
+            {
+                running = true;
+                keyin = getch();
+            }
 
+            // Translate keypad codes into numeric chars
+            keyin = translate_keypad( keyin );
+
+#else
+            // Old DOS keypad support
+            if (keyin == 0)     // ALT also works - see ..\KEYTEST.CPP
             {
                 keyin = getch();
                 switch (keyin)
@@ -484,6 +532,7 @@ void input()
 
                 keyin = 125;
             }
+#endif
         }
         else
             keyin = '.';
@@ -504,7 +553,7 @@ get_keyin_again:
 
     char save_key;
 #ifdef WIZARD
-    char wiz_command;
+    int wiz_command, i, j;
 #endif
 
     switch (keyin)
@@ -623,6 +672,69 @@ get_keyin_again:
         you.running = 2;
         break;
 
+#ifdef LINUX
+    // Nex Unix keypad support
+    case '1':
+        move_x = -1;
+        move_y = 1;
+        break;
+
+    case '2':
+        move_y = 1;
+        move_x = 0;
+        break;
+
+    case '9':
+        move_x = 1;
+        move_y = -1;
+        break;
+
+    case '8':
+        move_y = -1;
+        move_x = 0;
+        break;
+
+    case '7':
+        move_y = -1;
+        move_x = -1;
+        break;
+
+    case '4':
+        move_x = -1;
+        move_y = 0;
+        break;
+
+    case '3':
+        move_y = 1;
+        move_x = 1;
+        break;
+
+    case '6':
+        move_x = 1;
+        move_y = 0;
+        break;
+
+    case '5':
+        // Yes this is backwards, but everyone here is used to using
+        // straight 5s for long rests... might need to a roguelike
+        // rest key and get people switched over.
+
+        if (!running && !opening)
+        {
+            you.run_x = 0;
+            you.run_y = 0;
+            you.running = 100;
+        }
+        else
+        {
+            search_around();
+            move_x = 0;
+            move_y = 0;
+            you.turn_is_over = 1;
+        }
+        break;
+#else
+    // Old DOS keypad support
     case '1':
         you.run_x = -1;
         you.run_y = 1;
@@ -668,6 +780,7 @@ get_keyin_again:
         you.run_y = 0;
         you.running = 100;
         break;
+#endif
 
     case '':
       autopickup_on = !autopickup_on;
@@ -864,7 +977,7 @@ get_keyin_again:
         clrscr();
         lincurses_shutdown();
         kill(0, SIGTSTP);
-        lincurses_startup();
+        lincurses_startup( Use_No_Black );
         redraw_screen();
         break;
 #endif
@@ -1076,7 +1189,7 @@ get_keyin_again:
             mpr("19");
             mpr("20");
             break;
-        case ')':
+        case 'x':
             you.experience += 500;
             you.exp_available += 500;
             you.redraw_experience = 1;
@@ -1094,29 +1207,35 @@ get_keyin_again:
             break;
     //  case '^': shop(); //in_a_shop(-1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [0], you.armour [0], you.armour [5], you.armour [2], you.armour [1], you.armour [3], you.armour [4], you.ring, it, igrid, you);
             //  break;
-        case '|':
+        case 'a':
             acquirement(250);
             break;                  //animate_dead(5, 7, you.pet_target, 1); break;
 
-        case '-':
+        case 'h':
             you.hp = you.hp_max;
             you.redraw_hit_points = 1;
             break;
         case '~':
             level_travel();
             break;
-        case '%':
+        case 'o':
             create_spec_object2();
             break;
-        case '+':
+        case 'm':
             create_spec_monster();
             break;
-        case '*':
+        case 'd':
             grd[you.x_pos][you.y_pos] = 82;
             break;
     //  case '#': grid [you.x_pos] [you.y_pos] = 100; break;
-        case '(':
+        case 'p':
             grd[you.x_pos][you.y_pos] = 99;
+            break;
+        case 'l':
+            grd[you.x_pos][you.y_pos] = 81;
+            break;
+        case 'i':
+            identify(0);
             break;
         case '_':
             j = 0;
@@ -1141,41 +1260,34 @@ get_keyin_again:
        }
        mpr(info);
        break; */
-        case '`':
-            itoa(OUTPUT_NO, st_prn, 10);
-            strcpy(info, st_prn);
-            mpr(info);
-            move_x = 0;
-            move_y = 0;
-            break;
 
         case '\'':
             for (i = 0; i < ITEMS; i++)
             {
-                if (it[0].link[i] == ING)
+                if (mitm.link[i] == ING)
                     continue;
                 itoa(i, st_prn, 10);
                 strcpy(info, st_prn);
                 strcat(info, " is linked to ");
-                itoa(it[0].link[i], st_prn, 10);
+                itoa(mitm.link[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " c:");
-                itoa(it[0].base_type[i], st_prn, 10);
+                itoa(mitm.base_type[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " t:");
-                itoa(it[0].sub_type[i], st_prn, 10);
+                itoa(mitm.sub_type[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " p:");
-                itoa(it[0].pluses[i], st_prn, 10);
+                itoa(mitm.pluses[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " p2:");
-                itoa(it[0].pluses2[i], st_prn, 10);
+                itoa(mitm.pluses2[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " d:");
-                itoa(it[0].special[i], st_prn, 10);
+                itoa(mitm.special[i], st_prn, 10);
                 strcat(info, st_prn);
                 strcat(info, " q: ");
-                itoa(it[0].quantity[i], st_prn, 10);
+                itoa(mitm.quantity[i], st_prn, 10);
                 strcat(info, st_prn);
                 mpr(info);
             }
@@ -1185,9 +1297,9 @@ get_keyin_again:
             {
                 for (j = 0; j < GYM; j++)
                 {
-                    if (igrid[i][j] != ING)
+                    if (env.igrid[i][j] != ING)
                     {
-                        itoa(igrid[i][j], st_prn, 10);
+                        itoa(env.igrid[i][j], st_prn, 10);
                         strcpy(info, st_prn);
                         strcat(info, " at ");
                         itoa(i, st_prn, 10);
@@ -1196,27 +1308,28 @@ get_keyin_again:
                         itoa(j, st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " c:");
-                        itoa(it[0].base_type[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.base_type[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " t:");
-                        itoa(it[0].sub_type[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.sub_type[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " p:");
-                        itoa(it[0].pluses[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.pluses[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " p2:");
-                        itoa(it[0].pluses2[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.pluses2[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " d:");
-                        itoa(it[0].special[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.special[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         strcat(info, " q: ");
-                        itoa(it[0].quantity[igrid[i][j]], st_prn, 10);
+                        itoa(mitm.quantity[env.igrid[i][j]], st_prn, 10);
                         strcat(info, st_prn);
                         mpr(info);
                     }
                 }
             }
+            break;
 
         default:
             mpr( "Not a Wizard Command." );
@@ -1250,7 +1363,23 @@ get_keyin_again:
 
     }
 
-
+#ifdef LINUX
+    // New Unix keypad stuff
+    if (running)
+    {
+        you.run_x = move_x;
+        you.run_y = move_y;
+        you.running = 2;
+        move_x = 0;
+        move_y = 0;
+    }
+    else if (opening)
+    {
+        open_door(move_x, move_y);
+        move_x = 0;
+        move_y = 0;
+    }
+#endif
 
     if (move_x != 0 || move_y != 0)
     {
@@ -1296,10 +1425,14 @@ get_keyin_again:
 
 
 
+// paradox: it both lasts longer & does more damage overall if you're
+//          moving slower.
+// rationalisation: I guess it gets rubbed off/falls off/etc if you
+//          move around more.
+
     if (you.duration[DUR_LIQUID_FLAMES] > 0)
         you.duration[DUR_LIQUID_FLAMES]--;
-// paradox: it both lasts longer & does more damage overall if you're moving slower.
-    // rationalisation: I guess it gets rubbed off/falls off/etc if you move around more.
+
     if (you.duration[DUR_LIQUID_FLAMES] != 0)
     {
         mpr("You are covered in liquid flames!");
@@ -1317,11 +1450,14 @@ get_keyin_again:
             ouch(((random2(5) + random2(5) + 1) * you.time_taken) / 10, 0, 17);
 
     }
+
+
     if (you.duration[DUR_ICY_ARMOUR] > 1)
     {
         you.duration[DUR_ICY_ARMOUR]--;
 //              scrolls_burn(4, 8);
     }
+
     if (you.duration[DUR_ICY_ARMOUR] == 1)
     {
         mpr("Your icy armour evaporates.");
@@ -1345,7 +1481,7 @@ get_keyin_again:
         you.duration[DUR_REPEL_MISSILES] = 0;
     }
 
-    if (you.duration[DUR_REPEL_MISSILES] > 0)
+    if (you.duration[DUR_DEFLECT_MISSILES] > 0)
     {
         you.duration[DUR_DEFLECT_MISSILES]--;
         if (you.duration[DUR_DEFLECT_MISSILES] == 6)
@@ -1372,8 +1508,8 @@ get_keyin_again:
         {
             mpr("Your skin stops crawling.");
             you.duration[DUR_REGENERATION] = 0;
-/* you.rate_regen -= 100; */
-            you.hunger_inc -= 4;
+            /* you.rate_regen -= 100; */
+            // you.hunger_inc -= 4;
         }
     }
 
@@ -1507,7 +1643,8 @@ get_keyin_again:
         mpr("You feel conductive.");    // insulation (lightning resistance) wore off
 
         you.duration[DUR_INSULATION] = 0;
-        you.attribute[ATTR_RESIST_LIGHTNING]--;
+        // Handled in player_res_electricity() now
+        // you.attribute[ATTR_RESIST_LIGHTNING]--;
     }
 
     if (you.duration[DUR_STONEMAIL] > 1)
@@ -1586,12 +1723,6 @@ get_keyin_again:
 
         you.duration[DUR_DEATH_CHANNEL] = 0;
     }
-
-
-
-
-    if (you.duration[DUR_LIQUID_FLAMES] > 0)
-        you.duration[DUR_LIQUID_FLAMES]--;
 
     if (you.duration[DUR_TELEPORT] > 1)
         you.duration[DUR_TELEPORT]--;
@@ -1706,7 +1837,7 @@ get_keyin_again:
             if (!random2(5) || random2( you.berserk_penalty ) > 4)
             {
                 mpr( "You pass out from exhaustion." );
-                you.paralysis += 2 + random2(2);
+                you.paralysis += 2 + random2(3);
             }
             else if (!random2(15 - you.berserk_penalty))
             {
@@ -1868,7 +1999,7 @@ get_keyin_again:
 
     if (you.is_undead != 2)
     {
-        int total_food = you.hunger_inc + you.burden_state;
+        int total_food = player_hunger_rate() + you.burden_state;
 
         if (total_food > 0 && you.hunger >= 40)
         {
@@ -2573,8 +2704,7 @@ void move_player(char move_x, char move_y)
 //char move_x, move_y;
     char info[200];
     int i;
-    int trap_known, trapped;
-    struct bolt beam[1];
+    int trap_known;
 
     if (you.conf > 0)
     {
@@ -2739,70 +2869,9 @@ break_out:
             if (you.levitation != 0 && (env.trap_type[i] < 4 || env.trap_type[i] == 6 || env.trap_type[i] == 7))
                 goto out_of_traps;      /* Can fly over mechanical traps */
 
-            switch (env.trap_type[i])
-            {
-
-            case 0:
-                strcpy(beam[0].beam_name, " dart");
-                beam[0].damage = 4;
-                trapped = i;
-                dart_trap(trap_known, i, beam);
-                break;
-
-            case 1:
-                strcpy(beam[0].beam_name, "n arrow");
-                beam[0].damage = 7;
-                trapped = i;
-                dart_trap(trap_known, i, beam);
-                break;
-
-            case 2:
-                strcpy(beam[0].beam_name, " spear");
-                beam[0].damage = 10;
-                trapped = i;
-                dart_trap(trap_known, i, beam);
-                break;
-
-            case 3:
-                strcpy(beam[0].beam_name, "n axe");
-                beam[0].damage = 15;
-                trapped = i;
-                dart_trap(trap_known, i, beam);
-                break;
-
-            case 4:
-                mpr("You enter a teleport trap!");
-                if (scan_randarts(RAP_PREVENT_TELEPORTATION))
-                {
-                    mpr("You feel a weird sense of stasis.");
-                    break;
-                }
-                you_teleport2(1);
-                break;
-
-            case 5:
-                mpr("You feel momentarily disoriented.");
-                forget_map(random2(50) + random2(50) + 2);
-                break;
-
-            case 7:
-                strcpy(beam[0].beam_name, " bolt");
-                beam[0].damage = 13;
-                trapped = i;
-                dart_trap(trap_known, i, beam);
-                break;
-
-
-
-            default:
-                handle_traps(env.trap_type[i], trap_known);
-                break;
-
-
-            }                   // end of switch
+            handle_traps(env.trap_type[i], i, trap_known);
 
         }                       // end of if another grd == trap
-
     }
 
 
@@ -2819,7 +2888,7 @@ out_of_traps:
     if (you.running == 2)
         you.running = 1;
 
-    if (you.level_type == 2 && (you.x_pos <= 21 || you.x_pos >= 61 || you.y_pos <= 15 || you.y_pos >= 54))
+    if (you.level_type == 2 && (you.x_pos <= 21 || you.x_pos >= 59 || you.y_pos <= 15 || you.y_pos >= 54))
     {
         env.cloud_no = area_shift();
         you.pet_target = MHITNOT;
@@ -2830,7 +2899,7 @@ out_of_traps:
 
         for (igly = 0; igly < ITEMS; igly++)
         {
-            if (it[0].quantity[igly] != 0)
+            if (mitm.quantity[igly] != 0)
                 ig2++;
         }
         strcpy(info, "No of items present: ");
@@ -2840,7 +2909,7 @@ out_of_traps:
         ig2 = 0;
         for (igly = 0; igly < MNST; igly++)
         {
-            if (mons[igly].type != -1)
+            if (menv[igly].type != -1)
                 ig2++;
         }
         strcpy(info, "No of monsters present: ");
@@ -2848,7 +2917,7 @@ out_of_traps:
         strcat(info, st_prn);
         mpr(info);
         strcpy(info, "No of clouds present: ");
-        itoa(cloud_no, st_prn, 10);
+        itoa(env.cloud_no, st_prn, 10);
         strcat(info, st_prn);
         mpr(info);
 

@@ -5,7 +5,8 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *      <2>     8/05/99        BWR             Added allow_control_teleport
+ *      <1>     -/--/--        LRH             Created
  */
 
 #include "AppHdr.h"
@@ -26,6 +27,7 @@
 #include "monplace.h"
 #include "monstuff.h"
 #include "mstruct.h"
+#include "mons_lev.h"
 #include "player.h"
 #include "abyss.h"
 #include "randart.h"
@@ -94,12 +96,14 @@ unknown:
 
     spc2 = conv_lett(spc);
 
-    if (you.spells[spc2] == 210)
+    if (spc2 >= 25 || you.spells[spc2] == 210)
     {
         goto unknown;
     }
 
-    if (random2(25) == 0)
+    if (you.religion != GOD_SIF_MUNA
+                    && random2(you.skills[SK_SPELLCASTING])
+                                < random2(spell_value(you.spells[spc2])))
     {
         strcpy(info, "Oops! This spell sure is a blunt instrument.");
         mpr(info);
@@ -118,12 +122,11 @@ unknown:
 
     mpr(info);
 
-    you.spell_levels += ep_gain;
+    // you.spell_levels += ep_gain;
     you.redraw_magic_points = 1;
     you.spell_no--;
 
     you.spells[spc2] = 210;
-
 }                               /* end of cast_selective_amn */
 
 
@@ -139,7 +142,7 @@ void remove_curse(void)
 
     if (you.equip[EQ_LEFT_RING] != -1)
     {
-        if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 80)
+        if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
             you.inv_plus[you.equip[EQ_LEFT_RING]] -= 100;
     }
 
@@ -212,7 +215,9 @@ void cast_smiting(int pow)
 
     direction(100, beam);
 
-    if (beam[0].nothing == -1 || mgrd[beam[0].target_x][beam[0].target_y] == MNG)
+    if (beam[0].nothing == -1
+        || mgrd[beam[0].target_x][beam[0].target_y] == MNG
+        || (beam[0].target_x == you.x_pos && beam[0].target_y == you.y_pos))
     {
         strcpy(info, "The spell fizzles.");
         mpr(info);
@@ -227,10 +232,10 @@ void cast_smiting(int pow)
     mpr(info);
 
     menv[i].hit_points -= random2(8) + random2(pow) / 3;
-    menv[i].hit_points -= random2(8) + random2(pow) / 3;
 
-    // Now slightly reduces -- bwross
-    //menv[i].hit_points -= random2(8) + random2(pow) / 3;
+    // Now reduced -- bwross
+    // menv[i].hit_points -= random2(8) + random2(pow) / 3;
+    // menv[i].hit_points -= random2(8) + random2(pow) / 3;
 
     if (menv[i].hit_points <= 0)
         monster_die(i, 1, 0);
@@ -476,6 +481,73 @@ failed_spell:
     menv[summs].number = mitm.colour[i];
 }
 
+bool monster_on_level(int monster)
+{
+    for (int i = 0; i < MNST; i++)
+    {
+        if (menv[i].type == monster)
+           return true;
+    }
+
+    return false;
+}
+
+//
+// This function returns true if the player can used controlled
+// teleport here.
+//
+bool allow_control_teleport()
+{
+    bool ret = true;
+
+    if (you.level_type == LEVEL_ABYSS)
+    {
+        ret = false;
+    }
+    else
+    {
+        switch (you.where_are_you) {
+        case BRANCH_TOMB:
+            // The tomb is a layed out maze, it'd be a shame if the player
+            // just teleports through any of it.
+            ret = false;
+            break;
+
+        case BRANCH_SLIME_PITS:
+            // Cannot teleport into the slime pit vaults until the royal
+            // jelly is gone.
+            if (monster_on_level(MONS_ROYAL_JELLY))
+            {
+                ret = false;
+            }
+            break;
+
+        case BRANCH_ELVEN_HALLS:
+            // Cannot raid the elven halls vaults with teleport
+            if (you.branch_stairs[STAIRS_ELVEN_HALLS]
+                        + branch_depth(STAIRS_ELVEN_HALLS) == you.your_level)
+            {
+                ret = false;
+            }
+            break;
+
+        case BRANCH_HALL_OF_ZOT:
+            // Cannot teleport to the Orb
+            if (you.branch_stairs[STAIRS_HALL_OF_ZOT]
+                        + branch_depth(STAIRS_HALL_OF_ZOT) == you.your_level)
+            {
+                ret = false;
+            }
+            break;
+        }
+    }
+
+    // Tell the player why if they have teleport control.
+    if (ret == false && you.attribute[ATTR_CONTROL_TELEPORT] != 0)
+        mpr("A powerful magic prevents you from controlling you teleport.");
+
+    return ret;
+}
 
 void you_teleport()
 {
@@ -499,7 +571,8 @@ void you_teleport()
 
 void you_teleport2(char allow_control)
 {
-    if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && you.level_type != 2 && you.conf == 0 && allow_control == 1)
+    if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && allow_control_teleport()
+                                        && you.conf == 0 && allow_control == 1)
     {
         mpr("You may choose your destination (press '.' or delete to select).");
         mpr("Expect minor deviation; teleporting into an open area is recommended.");
@@ -542,7 +615,10 @@ void you_teleport2(char allow_control)
         you.x_pos = plox[0];
         you.y_pos = plox[1];
 
-        if ((grd[you.x_pos][you.y_pos] != 67 && grd[you.x_pos][you.y_pos] != 65) || mgrd[you.x_pos][you.y_pos] != MNG || env.cgrid[you.x_pos][you.y_pos] != CNG)
+        if ((grd[you.x_pos][you.y_pos] != 67
+                                    && grd[you.x_pos][you.y_pos] != 65)
+                    || mgrd[you.x_pos][you.y_pos] != MNG
+                    || env.cgrid[you.x_pos][you.y_pos] != CNG)
         {
             mpr("Oops!");
             goto random_teleport;
@@ -559,7 +635,10 @@ random_teleport:
             you.x_pos = random2(70) + 10;
             you.y_pos = random2(60) + 10;
         }
-        while ((grd[you.x_pos][you.y_pos] != 67 && grd[you.x_pos][you.y_pos] != 65) || mgrd[you.x_pos][you.y_pos] != MNG || env.cgrid[you.x_pos][you.y_pos] != CNG);
+        while ((grd[you.x_pos][you.y_pos] != 67
+                                    && grd[you.x_pos][you.y_pos] != 65)
+                        || mgrd[you.x_pos][you.y_pos] != MNG
+                        || env.cgrid[you.x_pos][you.y_pos] != CNG);
     }
 
     if (you.level_type == 2)
@@ -680,6 +759,10 @@ void create_noise2()
     more();
     plox[0] = 1;
     show_map(plox);
+
+#ifdef PLAIN_TERM
+    redraw_screen();
+#endif
 
 #ifdef WIZARD
     strcpy(info, "Target square: ");

@@ -1,5 +1,3 @@
-#ifndef UNRAND_H
-#define UNRAND_H
 /*
  *  File:       unrand.cc
  *  Summary:    Definitions for unrandom artifacts.
@@ -11,6 +9,8 @@
  *                                                                      resistances.
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef UNRAND_H
+#define UNRAND_H
 
 #include "defines.h"
 

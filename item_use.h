@@ -1,5 +1,3 @@
-#ifndef ITEM_USE_H
-#define ITEM_USE_H
 /*
  *  File:       item_use.cc
  *  Summary:    Functions for making use of inventory items.
@@ -10,6 +8,8 @@
  *              <2>             5/26/99         JDJ             Exposed armour_prompt. takeoff_armour takes an index argument.
  *              <1>             -/--/--         LRH             Created
  */
+#ifndef ITEM_USE_H
+#define ITEM_USE_H
 
 #include <string>
 

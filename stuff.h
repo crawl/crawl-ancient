@@ -1,5 +1,3 @@
-#ifndef STUFF_H
-#define STUFF_H
 /*
  *  File:       stuff.cc
  *  Summary:    Misc stuff.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef STUFF_H
+#define STUFF_H
 
 int random2(unsigned int randmax);
 unsigned char get_ch(void);

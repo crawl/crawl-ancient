@@ -1,5 +1,3 @@
-#ifndef MSTUFF2_H
-#define MSTUFF2_H
 /*
  *  File:       mstuff2.h
  *  Summary:    Misc monster related functions.
@@ -9,6 +7,8 @@
  *
  *               <1>     4/24/99        JDJ             mons_spells returns an SBeam instead of using func_pass.
  */
+#ifndef MSTUFF2_H
+#define MSTUFF2_H
 
 #include <string>
 #include "externs.h"
@@ -23,8 +23,7 @@ struct SBeam {
         int             type;
         int             flavour;
         int             thrown;
-        int             missileType;
-        bool    isBeam;
+        bool            isBeam;
 };
 /*
 beam_colour = func_pass [0];

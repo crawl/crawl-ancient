@@ -1,5 +1,3 @@
-#ifndef MACHDR_H
-#define MACHDR_H
 /*
  *  File:       MacHdr.h
  *  Summary:    OS specific stuff for inclusion into AppHdr.h.
@@ -11,6 +9,8 @@
  *
  *               <1>     5/30/99        JDJ             Created.
  */
+#ifndef MACHDR_H
+#define MACHDR_H
 
 #pragma check_header_flags on
 

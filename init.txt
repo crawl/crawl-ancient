@@ -1,10 +1,19 @@
 #
 # Crawl Init file
 #
+# Uncomment and change appropriate lines
+#
 
 # Player name
+#
+#name=kernel
+#
 
-name=foo
+# Directory for reading macro.txt and init.txt, and dumping characters.
+# It should end with the path delimiter.
+#
+#crawl_dir=/u/bwross/crawl/
+#
 
 # Here's a list of autopickup types:
 #
@@ -22,5 +31,5 @@ name=foo
 #    }          Misc items
 #    X          Corpses
 #    $          Gold
-
-autopickup=$?!:"/0
+#
+#autopickup=$?!:"/0

@@ -1,5 +1,3 @@
-#ifndef BEAM_H
-#define BEAM_H
 /*
  *  File:       beam.cc
  *  Summary:    Functions related to ranged attacks.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef BEAM_H
+#define BEAM_H
 
 #include "externs.h"
 

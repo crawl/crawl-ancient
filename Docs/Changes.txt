@@ -1,4 +1,294 @@
 Brent Ross (bwross@csclub.uwaterloo.ca)
+8/08/99
+
+-- bug fix: Orange Brains could hang game (MS_SUMMON_LEVEL spell in abyss)
+
+-- bug fix: monsters should no longer occur "under" the player
+
+-- bug fix: portals weren't closed on the way out, but hell gates were removed
+            ... now all are closed.
+
+-- bug fix: cannot unlearn spells outside the array bounds.
+
+-- bug fix: manuals should auto identify on the first read
+
+-- bug fix: Healing book was available from acquirement/Sif Muna
+
+-- fixed it so that missile launchers don't train/use the missile skill when
+   used in melee (bows/xbows now train/use maces/flails, slings uses no skill)
+
+-- bug fix: Zot traps should no longer give messages involving their effects
+            on monsters, unless the monster is within line of sight.
+
+-- bug fix: liquid flame could wrap around and last a long time
+
+-- bug fix: that caused "program bugs" to occur in the abyss
+
+-- bug fix: fixed number of cards in Decks of Power (it defaulted to zero
+   and thus was giving 255 cards)
+
+-- bug fix: fixed Nemelex to give cards instead of Bone Lanterns and
+            Geryon Horns
+
+-- bug fix: food not updating with cards
+
+-- bug fix: quick blades were getting free actions
+
+-- bug fix: spell points now update when you gain Invocations.
+
+-- upped granularity of skill gain to reduce stage three
+    -- upped number of learns from manuals to accomidate
+    -- put reductions on XP values of monsters to try and reduce the
+       "stage two" effect
+
+-- downed the power of smiting again... it seems reasonable now.
+
+-- teleport control restrictions (some areas don't allow controlled
+   teleport now).
+
+-- added stacking of runes
+
+-- made invocations and spellcasting learning interfer like elemental magic
+
+-- increased rate of skill cost per level
+
+-- removed division by two for cost of spellcasting skills
+
+-- upped the rarity of unique artefacts (all of these seem to come quickly
+   into any game... except the Sword of Power, for which the 50% chance
+   of not creating it probably kept it out of my last game for a while
+
+-- evasion/shields are too good
+    - raised shield blocking difficulty a bit (base 10 to 15)
+    - made player's evasion rolled in the monster to hit check (so that
+      a player with an EV of 30+ can still be hit)... added a 1/15
+      chance of hitting regardless (players already got this advantage).
+
+-- Moved the .h guards to after the headers (cosmetic)
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+7/30/99
+
+-- fixed bug: visiting the abyss from the hall of blades results in the
+   abyss being populated by blades
+
+-- fixed problems with the highscore board running off the end of the line
+
+-- resist electricity and resist poison are not absolute anymore, you
+   now take 1/3 damage if you resist (you still don't get poisoned if you
+   have poison resistance though)
+
+-- fixed bug: storm dragon breath can now be resisted
+
+-- draining drains available xp pool as well now
+
+-- moved spell levels to a function to fix a bug where you could end up
+   with a large number of negative spells (forgot spell that didn't
+   exist).
+
+-- made spellcasting more difficult to get
+
+-- fixed plants stalking stairs
+
+-- reverted dragon armours to original values... the resistances and benefits
+   they give are good enough, its really the basic heavy armours that needed
+   a bit of improvement.
+
+-- fix for Distortion weapons (from Jesse).
+
+-- deflect missiles status wasn't listed on '@'
+
+-- slime pit runes are now only "possible" runes so you're unlikely to
+   get four of them
+
+-- added stats to "elf" dummy monster to allow elf zombies to live.
+
+-- added redraw after projected noise
+
+-- fixed bug where objects (runes, orb) were clobbered by items given to
+   monsters.
+
+-- fixed some monster descriptions that had huge gaps in them
+
+-- bug fix: shapeshifters shouldn't polymorph into dancing blades (numbers
+   for names)
+
+-- acquirement is better for jewellery than before
+
+-- fixed it so the skills screen can handle more than 26 skills.
+
+-- levels of poison shown for '@'
+
+-- traps get harder to disarm with dungeon level
+
+-- traps can now go off when disarming
+
+-- traps all handled by handle_traps now.
+
+-- are the new traps too hard on monsters?
+   -- probably yes, so they take the old damage for now.
+
+-- made player_light_armour() which returns true if the player is in
+   light or no armour.
+
+-- fixed monsters interacting with traps bug... non-flying monsters were
+   flying over them.
+
+-- made polymorphed monsters not so much of an easy xp trick.
+
+-- added monsters speed to the xp calculation
+
+-- put cap on plant learning (no more than the first two levels of fighting
+   skills)
+
+-- added some support for destroying potions/food on ground from
+   explosions... are only the correct things being destroyed? check
+   bang.cc and destroy_item.
+
+-- wearing heavy armour now gives a minium percentage of damage reduction.
+    -- the percent is (skill + base AC of body armour)
+    -- still needs to be applied to monsters, but monsters don't have
+       a convienient way of knowing if they have hard armour (let alone
+       an armour skill) so this can probably weight.
+
+-- only heavy armour gives the extra protection from shrapnel attacks
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+7/13/99
+
+-- blocked entrance to the labyrinth until its debugged
+
+-- fixed the wizard code in acr.cc, changed some commands to easier
+   to remember letters... added an identify.
+
+-- fixed some cases where cursed jewellery plusses are assumed to
+   be based off of 100, the creation code suggests that its 150 as
+   does many other cases in the code.
+
+-- random weapons, armour, and jewellery from acquirement() are now
+   uncursed.
+
+-- smoothed out the demonspawn horns so its possible to get twwo levels.
+
+-- changed ranger to hunter
+
+-- changed some gmon_use values (from Linley)
+
+-- changed life protection descriptions
+
+-- moved hunger_inc and ATTR_LIGHTNING_RESIST into functions in player(),
+   the attribute is now replaced with ATTR_DIVINE_LIGHTNING_PROTECTION
+   which is used to mark Makleb or Xom protecting the player from a
+   lightning attack.
+
+-- added checks for the curses keypad enums
+
+-- lowered throwing weapon learning curve
+
+-- lowered power of hand crossbows
+
+-- lowered traps and doors learning curve
+
+-- played with spellcasting staff identification
+
+-- fix player ghosts
+    -- monsters now regenerate hps while the player is off level
+    -- ghosts regenerate and teleport away when the player leaves the level
+
+-- changed assassins from ninja types to hand crossbow types... gave
+   an enchanted dagger as well to help hand to hand.
+
+-- added throwing exercise to darts, hand axes, daggers, and spears... and
+   added throwing skill bonus for them as well (item_use.cc).
+
+-- gave scythes, halberds, and glaives a chance at being weapons of speed.
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
+7/07/99
+
+-- fixed ice breathing dragon breath so it doesn't destroy walls
+
+-- made life protection a level/3 chance
+
+-- fixed the 120/150 hp ghost thing
+
+-- anticheat code and security db for multiuser systems (requires gdbm)
+
+-- made it so that only picking up items has delay with autopickup, walking
+   over uninteresting stacks should cost no extra time now.
+
+-- made berserk players fail the check_awaken test with monsters, and not
+   spend experience on stealth.
+
+-- added dexterity to stealth
+
+-- gave ogre magi short swords instead of daggers.
+
+-- toned down stabbing stun
+-- toned down stabbing dex bonus - now limited by stabbing
+
+-- assassins now start with a dagger, thieves start with short sword and dagger
+-- reversed stats for thief and assassin, gave assassins unarmed combat
+
+-- change wizards to be +7 int/+3 dex, thus making them smarter than
+   the other spellcasters
+
+-- draconian rangers no longer start with leather armour
+
+-- toned down stealth a bit in player.cc:check_stealth(), and again
+
+-- reduced to hit for throw fire/frost and sting (it_use2.cc:zappy())
+
+-- fixed repel/deflect missiles problem -- changed bad REPEL reference in
+   acr.cc
+
+-- added message to unwielding vampiric weapons.
+
+-- hacked up new keypad support for Unix
+
+-- shots now are used up 1 in 3 times
+
+-- added bonus to hit and dam for crossbows (item_use.cc)
+
+-- added magic resistance for elves (player.cc)
+
+-- upped autopickup delay to 3.  One and two seem to not be a delay at all.
+
+-- opposing elemental staves now can be identified (items.cc, spell.cc)
+
+-- added remove of zip file to ouch.cc to prevent cheating
+
+-- STABBING check should be STEALTH in view.cc for the no yell check,
+   lowered it to a straight percentage check
+
+-- gave Dwarven/Orc rangers Dodging 1, because they were a bit short
+   on skills
+
+-- HOrs get orcish bolts (newgame.cc)
+    - added MISSILES check in HILL_ORC check
+
+-- Gladiator/Fighter changes (newgame.cc)
+    - fighters are now: fighting 3, weapon 2, dodging/armour 2, shields 2,
+                        stabbing/stealth 1, throwing 2, str + 7, dex + 3.
+    - kobold/troll/ogre fighters are the same as before
+
+    - gladiators are now: fighting 3, weapon 3, dodging/armour 2, shields 1,
+                          unarmed combat 2, str + 6, dex + 4.
+
+    - diffs:
+        - fighters   - lost unarmed combat
+                     - gained a level of shields, and a level of throwing
+
+        - gladiators - lost 1 dodging/armour and 1 shield
+                     - gained 2 unarmed combat
+
+        - stat bonuses were swapped
+        - switched gladiator and fighter armour
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
 6/22/99
 
 -- Ranger weapon variations (halfling slingers, dwarven crossbowers)

@@ -1841,7 +1841,7 @@ void show_skills(void)
     int i;
     int x;
     char strng[5] = "";
-    char lcount = 0;
+    char lcount;
 
     _setcursortype(_NOCURSOR);
 
@@ -1856,7 +1856,7 @@ void show_skills(void)
 
 reprint_stuff:
     gotoxy(1, 1);
-    lcount = 0;
+    lcount = 'a';
     textcolor(LIGHTGREY);
     cprintf(" You have ");
     itoa(you.exp_available, strng, 10);
@@ -1883,23 +1883,32 @@ reprint_stuff:
                 textcolor(DARKGREY);
             else
                 textcolor(LIGHTGREY);
+
             if (you.skills[x] == 27)
                 textcolor(YELLOW);
-            putch(lcount + 97);
-            lcount++;
-            cprintf(" - ");
-            char bufff[15];
 
+            putch(lcount);
+            if (lcount == 'z')
+                lcount = 'A';
+            else
+                lcount++;
+
+            cprintf(" - ");
+
+            char bufff[15];
             sprintf(bufff, "%-14s", skills[x][0]);
             cprintf(bufff);
+
             cprintf(" Skill ");
             itoa(you.skills[x], strng, 10);
             cprintf(strng);
+
             textcolor(BLUE);
             cprintf(" (");
             itoa(((((skill_exp_needed(you.skills[x] + 2) * species_skills(x, you.species)) / 100) - you.skill_points[x]) * 10) / (((skill_exp_needed(you.skills[x] + 2) * species_skills(x, you.species)) / 100) - ((skill_exp_needed(you.skills[x] + 1) * species_skills(x, you.species)) / 100)), strng, 10);
             cprintf(strng);
             cprintf(")");
+
             textcolor(LIGHTGREY);
 #ifdef WIZARD
             cprintf(" / ");
@@ -1926,24 +1935,36 @@ reprint_stuff:
         getch();
     else
     {
-        if (get_thing < 97 || get_thing > 122)
-            goto putty;
-        lcount = 0;             // toggle skill practise
-
-        for (i = 0; i < 50; i++)
+        if ((get_thing >= 'a' && get_thing <= 'z')
+                                || (get_thing >= 'A' && get_thing <= 'Z'))
         {
-            if (you.skills[i] == 0)
-                continue;
-            if (get_thing - 97 == lcount++)
-                if (you.practise_skill[i] == 0)
-                    you.practise_skill[i] = 1;
+            lcount = 'a';            // toggle skill practise
+
+            for (i = 0; i < 50; i++)
+            {
+                if (you.skills[i] == 0)
+                    continue;
+
+                if (get_thing == lcount)
+                {
+                    if (you.practise_skill[i] == 0)
+                        you.practise_skill[i] = 1;
+                    else
+                        you.practise_skill[i] = 0;
+
+                    break;
+                }
+
+                if (lcount == 'z')
+                    lcount = 'A';
                 else
-                    you.practise_skill[i] = 0;
+                    lcount++;
+            }
+
+            goto reprint_stuff;
         }
-        goto reprint_stuff;
     }
 
-putty:
 #ifdef DOS_TERM
     puttext(1, 1, 80, 25, buffer);
 #endif
@@ -2206,33 +2227,33 @@ unsigned int skill_exp_needed(int lev)
     case 0:
         return 0;
     case 1:
-        return 20;
+        return 200;
     case 2:
-        return 30;
+        return 300;
     case 3:
-        return 50;
+        return 500;
     case 4:
-        return 75;
+        return 750;
     case 5:
-        return 105;
+        return 1050;
     case 6:
-        return 135;
+        return 1350;
     case 7:
-        return 170;
+        return 1700;
     case 8:
-        return 210;
+        return 2100;
     case 9:
-        return 255;
+        return 2550;
     case 10:
-        return 315;
+        return 3150;
     case 11:
-        return 375;
+        return 3750;
     case 12:
-        return 440;
+        return 4400;
     case 13:
-        return 525;
+        return 5250;
     default:
-        return 620 + 180 * (lev - 14);
+        return 6200 + 1800 * (lev - 14);
 
     }
 

@@ -1,5 +1,3 @@
-#ifndef BANG_H
-#define BANG_H
 /*
  *  File:       bang.cc
  *  Summary:    Functions related to explosions.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef BANG_H
+#define BANG_H
 
 #include "externs.h"
 

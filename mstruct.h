@@ -1,5 +1,3 @@
-#ifndef MSTRUCT_H
-#define MSTRUCT_H
 /*
  *  File:       mstruct.cc
  *  Summary:    Misc monster related functions.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef MSTRUCT_H
+#define MSTRUCT_H
 
 #include "externs.h"
 

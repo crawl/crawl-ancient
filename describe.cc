@@ -243,7 +243,7 @@ static void randart_descpr(string & description, int item_class, int item_type, 
 
     if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_NEGATIVE_ENERGY) != 0)
     {
-        description += "$It protects you from negative energy. ";
+        description += "$It partially protects you from negative energy. ";
     }
 
     if (randart_wpn_properties(item_class, item_type, item_dam, item_plus, item_plus2, 0, RAP_MAGIC) != 0)
@@ -604,7 +604,7 @@ static string describe_demon()
         description += " It is surrounded by a sickening stench.";
         break;
     case 2:
-        description += " It is surrounded by a brilliant glow";
+        description += " It is surrounded by a brilliant glow.";
         break;
     case 3:
         description += " It radiates an aura of extreme hatred for all that lives.";
@@ -996,41 +996,51 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         if (item_id >= 2 && item_dam % 30 >= 25)
             randart_descpr(description, item_class, item_type, item_plus, item_plus2, item_dam);
 
-        switch (weapon_skill(item_class, item_type))
+        switch (item_type)
         {
-        case 1:
-            description += "It falls into the 'short blades' category. ";
-            break;
-        case 2:
-            description += "It falls into the 'long swords' category. ";
-            break;
-        case 3:
-            description += "It falls into the 'great swords' category. ";
-            break;
-        case 4:
-            description += "It falls into the 'axes' category. ";
-            break;
-        case 5:
-            description += "It falls into the 'maces and flails' category. ";
-            break;
-        case 6:
-            description += "It falls into the 'pole-arms' category. ";
-            break;
-        case 7:
-            description += "It falls into the 'staves' category. ";
-            break;
-        case 8:
+        case WPN_SLING:
             description += "It falls into the 'slings' category. ";
             break;
-        case 9:
+
+        case WPN_BOW:
             description += "It falls into the 'bows' category. ";
             break;
-        case 10:
+
+        case WPN_HAND_CROSSBOW:
+        case WPN_CROSSBOW:
             description += "It falls into the 'crossbows' category. ";
             break;
 
         default:
-            DEBUGSTR("Unknown weapon type");
+            // Melee weapons
+            switch (weapon_skill(item_class, item_type))
+            {
+            case SK_SHORT_BLADES:
+                description += "It falls into the 'short blades' category. ";
+                break;
+            case SK_LONG_SWORDS:
+                description += "It falls into the 'long swords' category. ";
+                break;
+            case SK_GREAT_SWORDS:
+                description += "It falls into the 'great swords' category. ";
+                break;
+            case SK_AXES:
+                description += "It falls into the 'axes' category. ";
+                break;
+            case SK_MACES_FLAILS:
+                description += "It falls into the 'maces and flails' category. ";
+                break;
+            case SK_POLEARMS:
+                description += "It falls into the 'pole-arms' category. ";
+                break;
+
+            case SK_STAVES:
+                description += "It falls into the 'staves' category. ";
+                break;
+
+            default:
+                DEBUGSTR("Unknown weapon type");
+            }
         }
     }
 
@@ -1358,7 +1368,7 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
             break;              // these two are robes only.
 
         case 16:
-            description += "It protects its wearer from the effects of negative energy. ";
+            description += "It partially protects its wearer from the effects of negative energy. ";
             break;
         case 17:
             description += "It greatly increases the power of its wearer's magical spells, but is only intended for those who have very little left to learn. ";
@@ -1947,7 +1957,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
             break;
 
         case 19:
-            description += "This blessed ring protects the life-force of its wearer from negative energy, making them immune to the draining effects of undead and necromantic magic. ";
+            description += "This blessed ring protects the life-force of its wearer from negative energy, making them partially immune to the draining effects of undead and necromantic magic. ";
             break;
 
         case 20:
@@ -2828,7 +2838,8 @@ void describe_spell(int spelled)
         break;
 
     case 76:
-        description += " freezes a creature. ";
+        description += " freezes a creature.  This may result in the creature"
+                       " not being able to move for a short period of time.";
         break;
 
     case 77:
@@ -3078,7 +3089,8 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_ARC:
-        description += " zaps a nearby creature with a powerful electrical current.";
+        description += " zaps a random nearby creature with a powerful"
+                       " electrical current.";
         break;
 
     case SPELL_AIRSTRIKE:
@@ -3158,8 +3170,9 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 3:                     // red devil
 
-        description = "The Red Devil is slightly shorter than a human, \
-                        but muscular and covered in spikes and horns. Two short wings sprout from its shoulders.";
+        description = "The Red Devil is slightly shorter than a human, "
+                      "but muscular and covered in spikes and horns. Two "
+                      "short wings sprout from its shoulders.";
         break;
 
     case 4:                     // ?
@@ -3205,14 +3218,15 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 12:                    // manticore
 
-        description = "A hideous cross-breed, bearing the features of a human and a lion, with great bat-like wings. Its tail bristles with spikes, \
-                        which can be loosed at potential prey.";
+        description = "A hideous cross-breed, bearing the features of a "
+                      "human and a lion, with great bat-like wings. Its tail "
+                      "bristles with spikes, which can be loosed at potential "
+                      "prey.";
         break;
 
     case 13:                    // necrophage
 
-        description = "A vile undead creation of the most unholy necromancy, these creatures are made from the decaying corpses of humanoid creatures. \
-                        They exist to spread disease and decay, and gain power from the decaying corpses of other beings.";
+        description = "A vile undead creation of the most unholy necromancy, these creatures are made from the decaying corpses of humanoid creatures.  They exist to spread disease and decay, and gain power from the decaying corpses of other beings.";
         break;
 
     case 14:                    // orc
@@ -4359,9 +4373,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case 361:
-        description = "A charred skull floating in the air and rotating slowly. \
-                Mystic symbols carved into its blackened surface indicate its resistance \
-                to almost any form of attack. ";
+        description = "A charred skull floating in the air and rotating slowly.  Mystic symbols carved into its blackened surface indicate its resistance to almost any form of attack. ";
         break;
 
     case 362:                   // vamp knight
@@ -4446,10 +4458,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 378:                   // Killer Klown
 
-        description = "A comical figure full of life and laughter. It looks very \
-                happy to see you.$But is there a slightly malicious cast to its features? \
-                Is that red facepaint something altogether less pleasant? Join in the fun, \
-                and maybe you'll find out!";
+        description = "A comical figure full of life and laughter.  It looks very happy to see you.$But is there a slightly malicious cast to its features?  Is that red facepaint or something altogether less pleasant? Join in the fun, and maybe you'll find out!";
         break;
 
         /* Hugh Cook monsters: */
@@ -4461,16 +4470,13 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case 380:                   // dorgi
 
-        description = "\"The dorgi...was a huge grumping machine with a pronounced propensity for violence. It was huge, heavy, brown and bulbous. A hulking \
-                thing stubbled with inscrutable protruberances. A monstrous thing which moved \
-                upon its victims with a sound like heavy breathing.\"$(Hugh Cook, _The Wazir \
-                and the Witch_)";
+        description = "\"The dorgi...was a huge grumping machine with a pronounced propensity for violence. It was huge, heavy, brown and bulbous. A hulking thing stubbled with inscrutable protruberances. A monstrous thing which moved upon its victims with a sound like heavy breathing.\"$(Hugh Cook, _The Wazir and the Witch_)";
         break;
 
     case 381:                   // Sword
 
-        description = "An incandescent globe of light, capable of impressive \
-                pyrotechnics.";
+        description = "An incandescent globe of light, capable of impressive "
+                      "pyrotechnics.";
         break;
 
     case 382:                   // quokka

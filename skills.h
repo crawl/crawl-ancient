@@ -1,5 +1,3 @@
-#ifndef SKILLS_H
-#define SKILLS_H
 /*
  *  File:       skills.cc
  *  Summary:    Skill exercising functions.
@@ -9,8 +7,10 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef SKILLS_H
+#define SKILLS_H
 
-void exercise(char exsk, char deg);
+void exercise(char exsk, int deg);
 
 void show_skills(void);
 

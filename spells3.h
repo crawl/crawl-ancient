@@ -1,5 +1,3 @@
-#ifndef SPELLS3_H
-#define SPELLS3_H
 /*
  *  File:       spells3.cc
  *  Summary:    Implementations of some additional spells.
@@ -10,10 +8,14 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef SPELLS3_H
+#define SPELLS3_H
 
 void entomb();
 void you_teleport2(char allow_control);
 void you_teleport();
+bool monster_on_level(int monster);
+bool allow_control_teleport();
 void dancing_weapon(int pow, char force_hostile);
 void sublimation(int pow);
 void cast_bone_shards(int power);

@@ -6,7 +6,9 @@
 #define _NOCURSOR 0
 #define O_BINARY O_RDWR
 
-void lincurses_startup();
+void lincurses_startup( bool use_no_black );
+
+int translate_keypad( int keyin );
 
 int itoa(int value, char *strptr, int radix);
 

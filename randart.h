@@ -1,5 +1,3 @@
-#ifndef RANDART_H
-#define RANDART_H
 /*
  *  File:       randart.cc
  *  Summary:    Random and unrandom artifact functions.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef RANDART_H
+#define RANDART_H
 
 #define NO_UNRANDARTS 14
 

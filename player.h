@@ -1,5 +1,3 @@
-#ifndef PLAYER_H
-#define PLAYER_H
 /*
  *  File:       player.cc
  *  Summary:    Player related functions.
@@ -9,12 +7,18 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include "externs.h"
 
+int player_spell_levels(void);
+int player_hunger_rate(void);
 int player_teleport(void);
 int player_fast_run(void);
 int player_speed(void);
 int player_AC(void);
+bool player_light_armour(void);
 int player_evasion(void);
 int player_shield_class(void);
 int player_see_invis(void);
@@ -25,6 +29,7 @@ int player_regen(void);
 int player_sust_abil(void);
 int player_res_fire(void);
 int player_res_cold(void);
+int player_res_electricity(void);
 int player_res_poison(void);
 int player_prot_life(void);
 char you_resist_magic(int power);

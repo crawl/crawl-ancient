@@ -1,5 +1,3 @@
-#ifndef SPELLS2_H
-#define SPELLS2_H
 /*
  *  File:       spells2.cc
  *  Summary:    Implementations of some additional spells.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef SPELLS2_H
+#define SPELLS2_H
 
 int corpse_rot(int power);
 char detect_traps(void);

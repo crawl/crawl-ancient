@@ -1,5 +1,3 @@
-#ifndef MONSTUFF_H
-#define MONSTUFF_H
 /*
  *  File:       monstuff.cc
  *  Summary:    Misc monster related functions.
@@ -10,10 +8,13 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef MONSTUFF_H
+#define MONSTUFF_H
 
 char curse_an_item(char which, char power);
 void monster_blink(int mn);
 char random_near_space(int passed[2]);
+bool monster_regenerates(int monster_type);
 
 int distance(int x1, int x2, int y1, int y2);
 void swap_places(int swap);

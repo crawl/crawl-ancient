@@ -1,5 +1,3 @@
-#ifndef TRANSFOR_H
-#define TRANSFOR_H
 /*
  *  File:       transfor.cc
  *  Summary:    Misc function related to player transformations.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef TRANSFOR_H
+#define TRANSFOR_H
 
 void untransform(void);
 char can_equip(char use_which);

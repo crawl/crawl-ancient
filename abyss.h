@@ -1,5 +1,3 @@
-#ifndef ABYSS_H
-#define ABYSS_H
 /*
  *  File:       abyss.h
  *  Summary:    Misc functions (most of which don't appear to be related to priests).
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef ABYSS_H
+#define ABYSS_H
 
 char *god_name(char which_god);
 

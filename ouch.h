@@ -1,5 +1,3 @@
-#ifndef OUCH_H
-#define OUCH_H
 /*
  *  File:       ouch.cc
  *  Summary:    Functions used when Bad Things happen to the player.
@@ -11,6 +9,8 @@
  */
 
 
+#ifndef OUCH_H
+#define OUCH_H
 
 int check_your_resists(int hurted, int flavour);
 

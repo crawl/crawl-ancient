@@ -1,5 +1,3 @@
-#ifndef IT_USE2_H
-#define IT_USE2_H
 /*
  *  File:       it_use2.cc
  *  Summary:    Functions for using wands, potions, and weapon/armor removal.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef IT_USE2_H
+#define IT_USE2_H
 
 #include "externs.h"
 

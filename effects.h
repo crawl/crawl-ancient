@@ -1,5 +1,3 @@
-#ifndef EFFECTS_H
-#define EFFECTS_H
 /*
  *  File:       effects.cc
  *  Summary:    Misc stuff.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef EFFECTS_H
+#define EFFECTS_H
 
 #include "externs.h"
 

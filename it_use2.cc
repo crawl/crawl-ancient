@@ -89,8 +89,6 @@ void zapping(char ztype, int power, struct bolt beams[1])
         beam(beams);
         break;
     }
-
-
 }
 
 
@@ -112,7 +110,8 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         func_pass[1] = random2(5) + 9;
         func_pass[2] = 104 + func_pass[8] / 35;         // should this be the same as magic missile? no
 
-        func_pass[3] = 60;
+        // func_pass[3] = 60;
+        func_pass[3] = 8 + func_pass[8] / 20;
         func_pass[4] = '#';     // maybe make missile() put a # on wherever it hits?
 
         func_pass[6] = 4;       //3;
@@ -133,7 +132,8 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         func_pass[1] = random2(5) + 9;
         func_pass[2] = 104 + func_pass[8] / 35;         // should this be the same as magic missile?
 
-        func_pass[3] = 60;
+        // func_pass[3] = 60;
+        func_pass[3] = 8 + func_pass[8] / 20;
         func_pass[4] = '#';     // maybe make missile() put a # on wherever it hits?
 
         func_pass[6] = 4;       //3;
@@ -375,7 +375,7 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         func_pass[5] = 6;       // poison
 
         func_pass[7] = 1;
-        func_pass[3] = 7 + random2(func_pass[8]) / 80;
+        func_pass[3] = 10 + random2(func_pass[8]) / 80;
         return 2;
 
     case 17:                    // negative energy
@@ -390,7 +390,7 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         func_pass[5] = 7;       // -ve energy
 
         func_pass[7] = 1;
-        func_pass[3] = 7 + random2(func_pass[8]) / 80;
+        func_pass[3] = 10 + random2(func_pass[8]) / 80;
         return 2;
 
     case 18:                    // was splinters
@@ -568,7 +568,8 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         strcpy(str_pass, "sting");
         func_pass[1] = random2(5) + 9;
         func_pass[2] = 4 + func_pass[8] / 15;
-        func_pass[3] = 60;
+        // func_pass[3] = 60;
+        func_pass[3] = 8 + func_pass[8] / 20;
         func_pass[4] = '#';
         func_pass[6] = 4;
         func_pass[5] = 6;       // fire
@@ -639,7 +640,8 @@ char zappy(int func_pass[10], char str_pass[50], char z_type)
         strcpy(str_pass, "zap");
         func_pass[1] = random2(5) + 9;
         func_pass[2] = 10 + (func_pass[8] / 6);
-        func_pass[3] = 1500;
+        // func_pass[3] = 1500;
+        func_pass[3] = 7 + func_pass[8] / 27;
         func_pass[4] = 35;
         func_pass[6] = 2;
         func_pass[5] = 5;       // electricity
@@ -1334,7 +1336,7 @@ void unwield_item(char unw)
             break;
 
         case 14:                /* vampire's tooth */
-            you.hunger_inc -= 9;
+            // you.hunger_inc -= 9;
             break;
 
         case 15:                /* staff of Wucad Mu */
@@ -1369,9 +1371,9 @@ void unwield_item(char unw)
                                         you.inv_type[unw], you.inv_dam[unw],
                        you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_BRAND);
         }
+
         switch (i_dam)
         {
-
         case SPWPN_FLAMING:
             strcat(info, " stops flaming.");
             mpr(info);
@@ -1408,7 +1410,8 @@ void unwield_item(char unw)
                case 9: speed, 10 slicing etc */
 
         case SPWPN_VAMPIRICISM:
-            you.hunger_inc -= 6;
+            mpr("You feel the strange hunger wane.");
+            // you.hunger_inc -= 6;
             //      mpr(info);
             break;
 
@@ -1426,6 +1429,7 @@ void unwield_item(char unw)
         {
             unuse_randart(unw);
         }
+
         if (you.duration
             [DUR_VORPAL_BLADE] != 0 || you.duration
             [DUR_FIRE_BRAND] != 0 || you.duration
@@ -1442,6 +1446,7 @@ void unwield_item(char unw)
             mpr("Your branding spell evaporates.");
         }
     }
+
     if (you.inv_class[you.equip[EQ_WEAPON]] == 11)
     {
         switch (you.inv_type[you.equip[EQ_WEAPON]])
@@ -1496,7 +1501,7 @@ void unwield_item(char unw)
             break;
 
         case STAFF_AIR:
-            you.attribute[ATTR_RESIST_LIGHTNING]--;     /* res elec */
+            // you.attribute[ATTR_RESIST_LIGHTNING]--;     /* res elec */
             break;
 
         case STAFF_EARTH:
@@ -1505,8 +1510,6 @@ void unwield_item(char unw)
         }
     }
     /* end if inv_cla == 11 */
-
-
 }                               /* end of unwield_item */
 
 
@@ -1534,7 +1537,7 @@ void unwear_armour(char unw)
                 break;
 
             case ARM_STORM_DRAGON_ARMOUR:       /* storm dragon */
-                you.attribute[ATTR_RESIST_LIGHTNING]--;
+                // you.attribute[ATTR_RESIST_LIGHTNING]--;
                 break;
 
             case ARM_GOLD_DRAGON_ARMOUR:        /* gold dragon */
@@ -1684,15 +1687,13 @@ void unuse_randart(unsigned char unw)
         you.redraw_armor_class = 1;
     }
 
-    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_EVASION) !=
-        0)
+    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_EVASION) != 0)
     {
         //  mpr("You feel like a sitting duck.");
         you.redraw_evasion = 1;
     }
 
-    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_STRENGTH) !=
-        0)
+    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_STRENGTH) != 0)
     {
         //  mpr("You feel weak.");
         you.redraw_strength = 1;
@@ -1716,16 +1717,19 @@ void unuse_randart(unsigned char unw)
         you.max_dex -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_DEXTERITY);
     }
 
-    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_ELECTRICITY) != 0)
-    {
+    // Handled by player_res_electricity()
+    // if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_ELECTRICITY) != 0)
+    // {
         //  mpr("You feel vulnerable to electricity.");
-        you.attribute[ATTR_RESIST_LIGHTNING]--;
-    }
+    //     you.attribute[ATTR_RESIST_LIGHTNING]--;
+    // }
 
-    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM) != 0)
-    {
-        you.hunger_inc -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM);
-    }
+// This should now be handled in player_hunger_rate()
+//    if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM) != 0)
+//    {
+//        you.hunger_inc -= randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_METABOLISM);
+//    }
+
 
     if (randart_wpn_properties(you.inv_class[unw], you.inv_type[unw], you.inv_dam[unw], you.inv_plus[unw], you.inv_plus2[unw], 0, RAP_NOISES) != 0)
     {

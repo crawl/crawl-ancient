@@ -26,6 +26,7 @@
 #include "mutation.h"
 #include "player.h"
 #include "stuff.h"
+#include "shopping.h"
 #include "dungeon.h"
 #include "itemname.h"
 #include "skills2.h"
@@ -139,7 +140,8 @@ char forget_spell(void)
     while (you.spells[spc2] == 210);
 
 
-    you.spell_levels += spell_value(you.spells[spc2]);
+    // This is now handled by a function in player.cc
+    //you.spell_levels += spell_value(you.spells[spc2]);
     you.spell_no--;
     you.spells[spc2] = 210;
     return 1;
@@ -622,148 +624,148 @@ query:
             {
 
             case OBJ_JEWELLERY:
-                type_wanted = 250;
+                // Try for a base type the player hasn't identified
+                for (int i = 0; i < 10; i++)
+                {
+                    type_wanted = random2(24);
+                    if (!random2(3))
+                        type_wanted = 35 + random2(10);
+
+                    if (!get_id(OBJ_JEWELLERY, type_wanted)) break;
+                }
                 break;
 
             case OBJ_BOOKS:
-
                 // remember, put rarer books higher in the list
 
                 type_wanted = 99;
-
                 glof = best_skill(26, 50, glof);
-
-              which_book:switch (glof)
+which_book:
+                switch (glof)
                 {
                 default:
                 case SK_SPELLCASTING:   // spellcasting
-
-                    if (you.had_item[43] == 0)
-                        type_wanted = 43;
-                    if (you.had_item[42] == 0)
-                        type_wanted = 42;
+                    if (you.had_item[BOOK_POWER] == 0)
+                        type_wanted = BOOK_POWER;
+                    if (you.had_item[BOOK_WIZARDRY] == 0)
+                        type_wanted = BOOK_WIZARDRY;
                     break;
 
                 case SK_POISON_MAGIC:   // Poison Magic
-
-                    if (you.had_item[32] == 0)
-                        type_wanted = 32;
-                    if (you.had_item[13] == 0)
-                        type_wanted = 13;
+                    if (you.had_item[BOOK_ENVENOMATIONS] == 0)
+                        type_wanted = BOOK_ENVENOMATIONS;
+                    if (you.had_item[BOOK_POISONINGS] == 0)
+                        type_wanted = BOOK_POISONINGS;
                     break;
 
                 case SK_EARTH_MAGIC:    // Earth
-
-                    if (you.had_item[40] == 0)
-                        type_wanted = 40;
-                    if (you.had_item[39] == 0)
-                        type_wanted = 39;
+                    if (you.had_item[BOOK_EARTH] == 0)
+                        type_wanted = BOOK_EARTH;
+                    if (you.had_item[BOOK_GEOMANCY] == 0)
+                        type_wanted = BOOK_GEOMANCY;
                     break;
 
                 case SK_AIR_MAGIC:      // Air
-
-                    if (you.had_item[29] == 0)
-                        type_wanted = 29;
-                    if (you.had_item[28] == 0)
-                        type_wanted = 28;
+                    if (you.had_item[BOOK_SKY] == 0)
+                        type_wanted = BOOK_SKY;
+                    if (you.had_item[BOOK_AIR] == 0)
+                        type_wanted = BOOK_AIR;
                     break;
 
                 case SK_ICE_MAGIC:      // Ice
-
-                    if (you.had_item[9] == 0)
-                        type_wanted = 9;
-                    if (you.had_item[6] == 0)
-                        type_wanted = 6;
+                    if (you.had_item[BOOK_ICE] == 0)
+                        type_wanted = BOOK_ICE;
+                    if (you.had_item[BOOK_FROST] == 0)
+                        type_wanted = BOOK_FROST;
                     break;
 
                 case SK_FIRE_MAGIC:     // fire
-
-                    if (you.had_item[8] == 0)
-                        type_wanted = 8;
-                    if (you.had_item[5] == 0)
-                        type_wanted = 5;
+                    if (you.had_item[BOOK_FIRE] == 0)
+                        type_wanted = BOOK_FIRE;
+                    if (you.had_item[BOOK_FLAMES] == 0)
+                        type_wanted = BOOK_FLAMES;
                     break;
 
                 case SK_SUMMONINGS:     // summ
-
-                    if (you.had_item[27] == 0)
-                        type_wanted = 27;
-                    if (you.had_item[7] == 0)
-                        type_wanted = 7;
-                    if (you.had_item[25] == 0)
-                        type_wanted = 25;
+                    if (you.had_item[BOOK_DEMONOLOGY] == 0)
+                        type_wanted = BOOK_DEMONOLOGY;
+                    if (you.had_item[BOOK_INVOCATIONS] == 0)
+                        type_wanted = BOOK_INVOCATIONS;
+                    if (you.had_item[BOOK_SUMMONINGS] == 0)
+                        type_wanted = BOOK_SUMMONINGS;
                     break;
 
                 case SK_ENCHANTMENTS:   // ench
-
-                    if (you.had_item[12] == 0)
-                        type_wanted = 12;
-                    if (you.had_item[20] == 0)
-                        type_wanted = 20;
-                    if (you.had_item[36] == 0)
-                        type_wanted = 36;
-                    if (you.had_item[16] == 0)
-                        type_wanted = 16;
-                    if (you.had_item[26] == 0)
-                        type_wanted = 26;
+                    if (you.had_item[BOOK_ENCHANTMENTS] == 0)
+                        type_wanted = BOOK_ENCHANTMENTS;
+                    if (you.had_item[BOOK_WAR_CHANTS] == 0)
+                        type_wanted = BOOK_WAR_CHANTS;
+                    if (you.had_item[BOOK_CONTROL] == 0)
+                        type_wanted = BOOK_CONTROL;
+                    if (you.had_item[BOOK_HINDERANCE] == 0)
+                        type_wanted = BOOK_HINDERANCE;
+                    if (you.had_item[BOOK_CHARMS] == 0)
+                        type_wanted = BOOK_CHARMS;
                     break;
 
                 case SK_CONJURATIONS:   // conj
-
-                    if (you.had_item[33] == 0)
-                        type_wanted = 33;
-                    if (you.had_item[3] == 0)
-                        type_wanted = 3;
+                    if (you.had_item[BOOK_ANNIHILATIONS] == 0)
+                        type_wanted = BOOK_ANNIHILATIONS;
+                    if (you.had_item[BOOK_CONJURATIONS_I] == 0)
+                        type_wanted = BOOK_CONJURATIONS_I;
                     break;
 
                 case SK_NECROMANCY:     // necro
-
-                    if (you.had_item[24] == 0)
-                        type_wanted = 24;
-                    if (you.had_item[34] == 0)
-                        type_wanted = 34;
-                    if (you.had_item[15] == 0)
-                        type_wanted = 15;
-                    if (you.had_item[23] == 0)
-                        type_wanted = 23;
+                    if (you.had_item[BOOK_NECRONOMICON] == 0)
+                        type_wanted = BOOK_NECRONOMICON;
+                    if (you.had_item[BOOK_UNLIFE] == 0)
+                        type_wanted = BOOK_UNLIFE;
+                    if (you.had_item[BOOK_DEATH] == 0)
+                        type_wanted = BOOK_DEATH;
+                    if (you.had_item[BOOK_NECROMANCY] == 0)
+                        type_wanted = BOOK_NECROMANCY;
                     break;
 
                 case SK_TRANSLOCATIONS: // translocations
-
-                    if (you.had_item[11] == 0)
-                        type_wanted = 11;
-                    if (you.had_item[31] == 0)
-                        type_wanted = 31;
+                    if (you.had_item[BOOK_SPATIAL_TRANSLOCATIONS] == 0)
+                        type_wanted = BOOK_SPATIAL_TRANSLOCATIONS;
+                    if (you.had_item[BOOK_WARP] == 0)
+                        type_wanted = BOOK_WARP;
                     break;
 
                 case SK_TRANSMIGRATION: // transmutation
-
-                    if (you.had_item[17] == 0)
-                        type_wanted = 17;
-                    if (you.had_item[18] == 0)
-                        type_wanted = 18;
+                    if (you.had_item[BOOK_TRANSFIGURATIONS] == 0)
+                        type_wanted = BOOK_TRANSFIGURATIONS;
+                    if (you.had_item[BOOK_CHANGES] == 0)
+                        type_wanted = BOOK_CHANGES;
                     break;
-
-
                 }
 
-                if (type_wanted == 99 && glof == best_skill(26, 50, 99))        // && best_skill(25, 50, 99) != best_skill(26, 50, 99))
-
+                if (type_wanted == 99 && glof == best_skill(26, 50, 99))
                 {
                     glof = best_skill(26, 50, best_skill(26, 50, 99));
                     goto which_book;
                 }
 
-
+                // if we don't have a book, try and get a new one.
                 if (type_wanted == 99)
+                {
                     do
                     {
-                        type_wanted = random2(27);
+                        type_wanted = random2(NUM_BOOKS);
                         if (random2(500) == 0)
                             break;
                     }
                     while (you.had_item[type_wanted] == 1);
+                }
 
+                // if the book is invalid find any valid one.
+                while (book_rarity(type_wanted) == 100
+                                        || type_wanted == BOOK_DESTRUCTION
+                                        || type_wanted == BOOK_MANUAL)
+                {
+                    type_wanted = random2(NUM_BOOKS);
+                }
 
                 force_plus = 127;
 
@@ -779,12 +781,12 @@ query:
                     force_plus = 112;
                 if (func_pass[2] == 210)
                     force_plus = 96;
-
                 break;
 
             case OBJ_STAVES:
                 type_wanted = random2(18);
-                if (class_wanted == OBJ_STAVES && type_wanted > 9 && random2(5) != 0)
+                if (class_wanted == OBJ_STAVES && type_wanted > 9
+                                                        && random2(5) != 0)
                     type_wanted = random2(10);
                 break;
 
@@ -818,10 +820,15 @@ query:
         return;
     }
 
-    thing_created =             /*items(you.unique_items, 1, you.item_description,
-                                   grd, class_wanted, type_wanted, 1, 351, 250); */
-        items(1, class_wanted, type_wanted, 1, 351, 250);
 
+    thing_created = items(1, class_wanted, type_wanted, 1, 351, 250);
+
+    if (type_wanted == 250 && (class_wanted == OBJ_WEAPONS
+            || class_wanted == OBJ_ARMOUR || class_wanted == OBJ_JEWELLERY))
+    {
+        if (mitm.pluses[thing_created] > 130)
+            mitm.pluses[thing_created] -= 100;
+    }
 
     if (you.species != SP_NAGA)
         strcpy(info, "Something appears at your feet!");

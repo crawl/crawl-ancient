@@ -1,5 +1,3 @@
-#ifndef DIRECT_H
-#define DIRECT_H
 /*
  *  File:       direct.cc
  *  Summary:    Functions used when picking squares.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef DIRECT_H
+#define DIRECT_H
 
 #include "externs.h"
 

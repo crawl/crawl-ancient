@@ -1,5 +1,3 @@
-#ifndef LEVELS_H
-#define LEVELS_H
 /*
  *  File:       levels.cc
  *  Summary:    Functions used in Pandemonium.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef LEVELS_H
+#define LEVELS_H
 
 void init_pandemonium(void);
 void pandemonium_mons(void);

@@ -1400,7 +1400,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
         if (ident_lev > 0)
         {
-            if (it_plus >= 80)
+            if (it_plus >= 130)
             {
                 strcat(glog, "cursed ");
             }
@@ -1840,8 +1840,12 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                     strcat(glog, "abyssal ");
                     break;      /* found in abyss */
                 }               /* If more are added here, must also add below. */
-                strcat(glog, "rune");
+                if (it_quant > 1)
+                    strcat(glog, "runes");
+                else
+                    strcat(glog, "rune");
                 break;
+
             case MISC_DECK_OF_TRICKS:
                 strcat(glog, "deck of cards");
                 break;
@@ -1940,9 +1944,15 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 case 51:
                     strcat(glog, "abyssal ");
                     break;      /* found in abyss */
-                }               /* If more are added here, must also add above. */
-                strcat(glog, "rune of Zot");
+                }        /* If more are added here, must also add above. */
+
+                if (it_quant > 1)
+                    strcat(glog, "runes of Zot");
+                else
+                    strcat(glog, "rune of Zot");
+
                 break;
+
             case MISC_DECK_OF_TRICKS:
                 strcat(glog, "deck of tricks");
                 break;
@@ -2479,7 +2489,9 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
 
 
 
-    if (it_quant > 1 && item_clas != OBJ_MISSILES && item_clas != OBJ_SCROLLS && item_clas != OBJ_POTIONS && (item_clas != OBJ_FOOD || item_typ != FOOD_CHUNK))
+    if (it_quant > 1 && item_clas != OBJ_MISSILES && item_clas != OBJ_SCROLLS
+                && item_clas != OBJ_POTIONS && item_clas != OBJ_MISCELLANY
+                && (item_clas != OBJ_FOOD || item_typ != FOOD_CHUNK))
     {
         strcat(glog, "s");
     }
@@ -2675,7 +2687,7 @@ void init_properties()
     mss[OBJ_ARMOUR][ARM_CRYSTAL_PLATE_MAIL] = 1200;
 
     // dragon scale
-    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_AC] = 10;   // AC
+    prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_AC] = 8;   // AC
 
     prop[OBJ_ARMOUR][ARM_DRAGON_ARMOUR][PARM_EVASION] = -2;     // evasion
 
@@ -2696,7 +2708,7 @@ void init_properties()
     mss[OBJ_ARMOUR][ARM_ICE_DRAGON_HIDE] = 220;
 
     // ice dragon scale
-    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_AC] = 10;       // AC
+    prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_AC] = 8;       // AC
 
     prop[OBJ_ARMOUR][ARM_ICE_DRAGON_ARMOUR][PARM_EVASION] = -2;         // evasion
 
@@ -2738,7 +2750,7 @@ void init_properties()
     mss[OBJ_ARMOUR][ARM_STORM_DRAGON_HIDE] = 400;
 
     // storm dragon armour
-    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_AC] = 11;     // AC
+    prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_AC] = 9;     // AC
 
     prop[OBJ_ARMOUR][ARM_STORM_DRAGON_ARMOUR][PARM_EVASION] = -5;       // evasion
 
@@ -2752,7 +2764,7 @@ void init_properties()
     mss[OBJ_ARMOUR][ARM_GOLD_DRAGON_HIDE] = 1100;
 
     // gold dragon armour
-    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_AC] = 12;     // AC
+    prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_AC] = 10;     // AC
 
     prop[OBJ_ARMOUR][ARM_GOLD_DRAGON_ARMOUR][PARM_EVASION] = -10;       // evasion
 
@@ -2773,7 +2785,7 @@ void init_properties()
     mss[OBJ_ARMOUR][ARM_SWAMP_DRAGON_HIDE] = 200;
 
     // swamp dragon hide
-    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_AC] = 8;     // AC
+    prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_AC] = 6;     // AC
 
     prop[OBJ_ARMOUR][ARM_SWAMP_DRAGON_ARMOUR][PARM_EVASION] = -2;       // evasion
 
@@ -3439,6 +3451,9 @@ putty:
 }                               // end of check_item_knowledge
 
 
+//
+// Weapon skill returns the skill that the weapon would use in melee.
+//
 
 char weapon_skill(char wclass, char wtype)
 {
@@ -3491,13 +3506,13 @@ char weapon_skill(char wclass, char wtype)
         return SK_POLEARMS;     //strcat(glog , "halberd"); break;
 
     case WPN_SLING:
-        return SK_SLINGS;       //strcat(glog , "sling"); break;
+        return 0;               //strcat(glog , "sling"); break;
 
     case WPN_BOW:
-        return SK_BOWS;         //strcat(glog , "bow"); break;
+        return SK_MACES_FLAILS; //strcat(glog , "bow"); break;
 
     case WPN_CROSSBOW:
-        return SK_CROSSBOWS;    //strcat(glog , "crossbow"); break;
+        return SK_MACES_FLAILS; //strcat(glog , "crossbow"); break;
 
     case WPN_HAND_CROSSBOW:
         return SK_CROSSBOWS;    //strcat(glog , "hand crossbow"); break;

@@ -5,6 +5,9 @@
  *
  *  Change History (most recent first):
  *
+ *      <7>      7/13/99        BWR             Changed assassins to use
+ *                                              hand crossbows, changed
+ *                                              rangers into hunters.
  *      <6>      6/22/99        BWR             Added new rangers/slingers
  *      <5>      6/17/99        BCR             Removed some Linux/Mac filename
  *                                              weirdness
@@ -78,6 +81,7 @@ char new_game(void)
     int p;
     char keyn;
     char weap_skill = 0;
+    int to_hit_bonus;
 
     char char_fil[kFileNameSize];
 
@@ -107,7 +111,7 @@ char new_game(void)
         you.unique_items[i] = 0;
     }
     you.hunger = 6000;
-    you.hunger_inc = 3;
+    // you.hunger_inc = 3;
     you.equip[EQ_WEAPON] = -1;
 /*you.rate_regen = 6; */
     you.experience_level = 1;
@@ -234,19 +238,75 @@ name_q:
 
 #ifdef LOAD_UNPACKAGE_CMD
     // Create the file name base
-    char name_buff[kFileNameLen];
+    char name_buff[ kFileNameLen ];
 
     sprintf(name_buff, SAVE_DIR_PATH "%s%d", you.your_name, getuid());
 
-    char zip_buff[kFileNameLen];
+    char zip_buff[ kFileNameLen ];
 
     strcpy(zip_buff, name_buff);
     strcat(zip_buff, PACKAGE_SUFFIX);
+
+    // Create save dir name
+    strcpy(char_fil, name_buff);
+    strcat(char_fil, ".sav");
 
     handle = open(zip_buff, S_IWRITE, S_IREAD);
     if (handle != -1)
     {
         cprintf(EOL "Loading game..." EOL);
+
+#ifdef DO_ANTICHEAT_CHECKS
+        // We make the assumption here that if the file cannot be stat'ed,
+        // or the savegame db cannot be opened that these are system
+        // problems and don't punish the player for it.
+        struct stat  stat_buff;
+
+        if (stat( zip_buff, &stat_buff ) == 0)
+        {
+            GDBM_FILE  dbf = gdbm_open( SAVE_DIR_PATH "savegame.db", 0,
+                                                 GDBM_READER, 0660, NULL );
+            datum      key, content;
+
+            if (dbf)
+            {
+                key.dsize = strlen( name_buff );
+                key.dptr = name_buff;
+
+                content = gdbm_fetch( dbf, key );
+
+                if (!content.dptr)
+                {
+                    cprintf( EOL "Could not find game %s in database" EOL,
+                                                                    key.dptr );
+                    end(-1);
+                }
+                else
+                {
+                    int db_ctime = strtol( content.dptr, NULL, 16 );
+                    if ((int) stat_buff.st_ctime != db_ctime)
+                    {
+                        cprintf( EOL "Invalid time stamp %d != %d" EOL,
+                                            stat_buff.st_ctime, db_ctime );
+                        end(-1);
+                    }
+                }
+
+                gdbm_close( dbf );
+            }
+            else
+            {
+                cprintf( EOL "Error opening database: %s" EOL,
+                                                gdbm_strerror(gdbm_errno) );
+                end(-1);
+            }
+        }
+        else
+        {
+            cprintf( EOL "Could not stat saved game." EOL );
+            end(-1);
+        }
+#endif
 
         // Create command
         char cmd_buff[1024];
@@ -260,10 +320,15 @@ name_q:
         // Remove save game package
         unlink(zip_buff);
     }
-
-    // Create save dir name
-    strcpy(char_fil, name_buff);
-    strcat(char_fil, ".sav");
+    else
+    {
+#ifdef DO_ANTICHEAT_CHECKS
+        // Simple security patch -- must have zip file otherwise invalidate
+        // the character.
+        strcat( name_buff, ".bak" );
+        rename( char_fil, name_buff );
+#endif
+    }
 
 #else
     strcpy(char_fil, "");
@@ -613,8 +678,8 @@ switch_start:
         case JOB_BERSERKER:
             cprintf("Berserker");
             break;
-        case JOB_RANGER:
-            cprintf("ranger");
+        case JOB_HUNTER:
+            cprintf("hunter");
             break;
         case JOB_CONJURER:
             cprintf("conjurer");
@@ -708,7 +773,7 @@ query5:
     else if (keyn == 'i')
         you.char_class = JOB_BERSERKER;
     else if (keyn == 'j')
-        you.char_class = JOB_RANGER;
+        you.char_class = JOB_HUNTER;
     else if (keyn == 'k')
         you.char_class = JOB_CONJURER;
     else if (keyn == 'l')
@@ -802,80 +867,23 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
     case JOB_FIGHTER:           // fighter
 
         strcpy(you.class_name, "fighter");
-        you.hp = 14;
-        you.hp_max = 14;
+        you.hp = 15;
+        you.hp_max = 15;
         you.magic_points = 0;
         you.max_magic_points = 0;
-/*      you.f_abil = 10;
-   you.mag_abil = 5;
-   you.thr_abil = 10;
-   you.speed = 10; */
-        you.spell_levels = 0;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
-
-/*  if (you.species == SP_KOBOLD)
-   {
-   you.inv_type [0] = 3; // kobolds just get daggers
-   you.skills [SK_SHORT_BLADES] = 2;
-   } else  */
-        if (you.species == SP_OGRE)
-        {
-            you.inv_type[0] = WPN_CLUB;         // ogre
-
-            you.skills[SK_MACES_FLAILS] = 1;
-        }
-        else if (you.species == SP_TROLL)
-        {
-//   you.inv_type [0] = 0; // troll
-            //   you.skills [SK_FIGHTING] ++;
-        }
-/*    else
-   if (random2(4) == 0 | you.species == SP_HILL_DWARF | you.species == SP_MOUNTAIN_DWARF) // dwarves
-   {
-   you.inv_type [0] = WPN_HAND_AXE;
-   you.skills [SK_AXES] = 2;
-   } else
-   if (random2(4) == 0)
-   {
-   you.inv_type [0] = WPN_MACE;
-   you.skills [SK_MACES_FLAILS] = 2;
-   }
-   else you.skills [SK_SHORT_BLADES] = 2; */
-        weap_skill = 2;
-
 
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
 
-
-        if (you.species == SP_OGRE)
-        {
-            you.inv_quantity[0] = 1;
-            you.inv_class[0] = OBJ_WEAPONS;
-            you.inv_type[0] = WPN_CLUB;
-            you.inv_plus[0] = 50;
-            you.inv_dam[0] = 0;
-            you.inv_colour[0] = BROWN;
-
-        }
-
-        if (you.species == SP_TROLL)
-        {
-            you.inv_quantity[0] = 0;
-            you.inv_class[0] = OBJ_WEAPONS;
-            you.inv_type[0] = WPN_CLUB;
-            you.inv_plus[0] = 50;
-            you.inv_dam[0] = 0;
-            you.inv_colour[0] = BROWN;
-
-        }
-
-        if (you.species == SP_OGRE || you.species == SP_TROLL || (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN))
+        if (you.species == SP_OGRE || you.species == SP_TROLL
+                            || (you.species >= SP_RED_DRACONIAN
+                                    && you.species <= SP_UNK2_DRACONIAN))
         {
             you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_ARMOUR;
@@ -883,6 +891,28 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
             you.inv_plus[1] = 50;
             you.inv_dam[1] = 0;
             you.inv_colour[1] = BROWN;
+
+            if (you.species == SP_OGRE)
+            {
+                you.inv_quantity[0] = 1;
+                you.inv_class[0] = OBJ_WEAPONS;
+                you.inv_type[0] = WPN_CLUB;
+                you.inv_plus[0] = 50;
+                you.inv_dam[0] = 0;
+                you.inv_colour[0] = BROWN;
+
+            }
+
+            if (you.species == SP_TROLL)
+            {
+                you.inv_quantity[0] = 0;
+                you.inv_class[0] = OBJ_WEAPONS;
+                you.inv_type[0] = WPN_CLUB;
+                you.inv_plus[0] = 50;
+                you.inv_dam[0] = 0;
+                you.inv_colour[0] = BROWN;
+
+            }
 
             if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
             {
@@ -940,7 +970,7 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         {
             you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_ARMOUR;
-            you.inv_type[1] = ARM_RING_MAIL;
+            you.inv_type[1] = ARM_SCALE_MAIL;
             you.inv_plus[1] = 50;
             you.inv_dam[1] = 0;
             you.inv_colour[1] = LIGHTCYAN;
@@ -962,19 +992,23 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         // 9 = hand ae
         // 3 = dagger
 
-        you.strength += 6;
-        you.dex += 4;
+        you.strength += 7;
+        you.dex += 3;
 
         if (you.species != SP_TROLL)
             you.equip[EQ_WEAPON] = 0;
+
         you.equip[EQ_BODY_ARMOUR] = 1;
-        if (you.species != SP_KOBOLD && you.species != SP_OGRE && you.species != SP_TROLL && you.species != SP_GHOUL)
+
+        if (you.species != SP_KOBOLD && you.species != SP_OGRE
+                        && you.species != SP_TROLL && you.species != SP_GHOUL)
             you.equip[EQ_SHIELD] = 2;
+
         you.gold = random2(10);
 /* you.res_magic = 3; */
 
-
         you.skills[SK_FIGHTING] = 3;
+        weap_skill = 2;
         if (you.species == SP_KOBOLD)
         {
             you.skills[SK_THROWING] = 2;
@@ -989,10 +1023,11 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
                 you.skills[SK_DODGING] = 2;
             else
                 you.skills[SK_ARMOUR] = 2;
-            you.skills[SK_SHIELDS] = 1;
+
+            you.skills[SK_SHIELDS] = 2;
             you.skills[SK_STABBING + random() % 2]++;
-            you.skills[SK_THROWING] = 1;
-            you.skills[SK_UNARMED_COMBAT] = 1;
+            you.skills[SK_THROWING] = 2;
+            // you.skills[SK_UNARMED_COMBAT] = 1;
         }
         else
             you.skills[SK_FIGHTING] += 2;
@@ -1009,11 +1044,13 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
    you.mag_abil = 10;
    you.thr_abil = 5;
    you.speed = 10; */
-        you.spell_levels = 12;
-
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
-        you.inv_type[0] = WPN_DAGGER;   //damage = 6; //break;
+
+        if (you.species == SP_OGRE_MAGE)
+            you.inv_type[0] = WPN_SHORT_SWORD;
+        else
+            you.inv_type[0] = WPN_DAGGER;
 
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
@@ -1042,8 +1079,8 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
 //      int leftover = 8;
 
 //      you.strength = 6;
-        you.dex += 4;
-        you.intel += 6;
+        you.dex += 3;
+        you.intel += 7;
 
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
@@ -1092,7 +1129,6 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
    you.mag_abil = 7;
    you.thr_abil = 5;
    you.speed = 10; */
-        you.spell_levels = 8;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
@@ -1200,23 +1236,20 @@ getkey:
    you.mag_abil = 6;
    you.thr_abil = 12;
    you.speed = 10; */
-        you.spell_levels = 0;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;      // damage = 6; //break;
-
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
 
-
-        you.inv_quantity[1] = random2(10) + random2(10) + 10;
-        you.inv_class[1] = OBJ_MISSILES;
-        you.inv_type[1] = MI_DART;      //wtype;
-
+        you.inv_quantity[1] = 1;
+        you.inv_class[1] = OBJ_WEAPONS;
+        you.inv_type[1] = WPN_DAGGER;      // damage = 6; //break;
         you.inv_plus[1] = 50;
+        you.inv_plus2[1] = 50;
         you.inv_dam[1] = 0;
         you.inv_colour[1] = LIGHTCYAN;
 
@@ -1235,6 +1268,13 @@ getkey:
         you.inv_dam[3] = 0;
         you.inv_colour[3] = DARKGREY;
 
+        you.inv_quantity[4] = random2(10) + random2(10) + 10;
+        you.inv_class[4] = OBJ_MISSILES;
+        you.inv_type[4] = MI_DART;      //wtype;
+        you.inv_plus[4] = 50;
+        you.inv_dam[4] = 0;
+        you.inv_colour[4] = LIGHTCYAN;
+
 /* you.AC = 3;
    you.evasion = 9; */
 
@@ -1242,8 +1282,8 @@ getkey:
         // 9 = hand axe
         // 3 = dagger
 
-        you.strength += 2;
-        you.dex += 6;
+        you.strength += 3;
+        you.dex += 5;
         you.intel += 2;
 
         you.equip[EQ_WEAPON] = 0;
@@ -1273,18 +1313,16 @@ getkey:
     case JOB_GLADIATOR: // Gladiator
 
         strcpy(you.class_name, "Gladiator");
-        you.hp = 15;
-        you.hp_max = 15;
+        you.hp = 14;
+        you.hp_max = 14;
         you.magic_points = 0;
         you.max_magic_points = 0;
-        you.spell_levels = 0;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
         choose_weapon();
         cprintf(EOL "A fine choice.");
-        weap_skill = 3;
 
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
@@ -1310,7 +1348,7 @@ getkey:
         {
             you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_ARMOUR;
-            you.inv_type[1] = ARM_SCALE_MAIL;
+            you.inv_type[1] = ARM_RING_MAIL;
             you.inv_plus[1] = 50;
             you.inv_dam[1] = 0;
             you.inv_colour[1] = LIGHTCYAN;
@@ -1323,20 +1361,23 @@ getkey:
             you.inv_colour[2] = LIGHTCYAN;
         }
 
-        you.strength += 7;
-        you.dex += 3;
+        you.strength += 6;
+        you.dex += 4;
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 1;
         you.equip[EQ_SHIELD] = 2;
         you.gold = random2(10);
 
         you.skills[SK_FIGHTING] = 3;
+        weap_skill = 3;
+
         if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
-            you.skills[SK_DODGING] = 3;
+            you.skills[SK_DODGING] = 2;
         else
-            you.skills[SK_ARMOUR] = 3;
+            you.skills[SK_ARMOUR] = 2;
 /* you.evasion ++; */
-        you.skills[SK_SHIELDS] = 2;
+        you.skills[SK_SHIELDS] = 1;
+        you.skills[SK_UNARMED_COMBAT] = 2;
         break;
 
 
@@ -1351,7 +1392,6 @@ getkey:
    you.mag_abil = 7;
    you.thr_abil = 5;
    you.speed = 10; */
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_DAGGER;
@@ -1409,7 +1449,6 @@ getkey:
    you.mag_abil = 6;
    you.thr_abil = 4;
    you.speed = 10; */
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
@@ -1460,7 +1499,6 @@ getkey:
         break;
 
     case JOB_ASSASSIN:          // assassin
-
         strcpy(you.class_name, "assassin");
         you.hp = 12;
         you.hp_max = 12;
@@ -1470,20 +1508,24 @@ getkey:
    you.mag_abil = 6;
    you.thr_abil = 12;
    you.speed = 10; */
+
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
-        you.inv_type[0] = WPN_SHORT_SWORD;
-        you.inv_plus[0] = 50;
-        you.inv_plus2[0] = 50;
+        you.inv_type[0] = WPN_DAGGER;
+        to_hit_bonus = random2(3);
+        you.inv_plus[0] = 51 + to_hit_bonus;
+        you.inv_plus2[0] = 51 + (2 - to_hit_bonus);
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
-        you.inv_quantity[1] = random2(10) + random2(10) + 10;
-        you.inv_class[1] = OBJ_MISSILES;
-        you.inv_type[1] = MI_DART;      //wtype;
 
+        you.inv_quantity[1] = 1;
+        you.inv_class[1] = OBJ_WEAPONS;
+        you.inv_type[1] = WPN_HAND_CROSSBOW;
         you.inv_plus[1] = 50;
-        you.inv_dam[1] = 3;
-        you.inv_colour[1] = LIGHTCYAN;
+        you.inv_plus2[1] = 50;
+        you.inv_dam[1] = 0;
+        you.inv_colour[1] = BROWN;
+
         you.inv_quantity[2] = 1;
         you.inv_class[2] = OBJ_ARMOUR;
         you.inv_type[2] = ARM_ROBE;
@@ -1498,11 +1540,19 @@ getkey:
         you.inv_dam[3] = 0;
         you.inv_colour[3] = DARKGREY;
 
+        you.inv_quantity[4] = random2(10) + random2(10) + 10;
+        you.inv_class[4] = OBJ_MISSILES;
+        you.inv_type[4] = MI_DART;      //wtype;
+        you.inv_plus[4] = 50;
+        you.inv_dam[4] = 3;
+        you.inv_colour[4] = LIGHTCYAN;
+
 /* you.AC = 2;
    you.evasion = 10; */
-        you.strength += 3;
-        you.dex += 5;
+        you.strength += 2;
+        you.dex += 6;
         you.intel += 2;
+
         you.equip[EQ_WEAPON] = 0;
         you.equip[EQ_BODY_ARMOUR] = 2;
         you.equip[EQ_CLOAK] = 3;
@@ -1513,15 +1563,14 @@ getkey:
         you.skills[SK_SHORT_BLADES] = 2;
 
         you.skills[SK_DODGING] = 1;
-        you.skills[SK_STEALTH] = 2;
+        you.skills[SK_STEALTH] = 3;
         you.skills[SK_STABBING] = 2;
-        you.skills[SK_DODGING + random() % 3]++;
 
 /* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
         you.skills[SK_THROWING] = 1;
         you.skills[SK_DARTS] = 1;
-
+        you.skills[SK_CROSSBOWS] = 1;
         break;
 
     case JOB_BERSERKER: // Barbarian
@@ -1537,7 +1586,6 @@ getkey:
    you.mag_abil = 2;
    you.thr_abil = 10;
    you.speed = 10; */
-        you.spell_levels = 0;
 
         if (you.species == SP_OGRE)
         {
@@ -1658,9 +1706,9 @@ getkey:
         you.skills[SK_POLEARMS] = 1;
         break;
 
-    case JOB_RANGER:            // Ranger
+    case JOB_HUNTER:
 
-        strcpy(you.class_name, "ranger");
+        strcpy(you.class_name, "hunter");
         you.hp = 13;
         you.hp_max = 13;
         you.magic_points = 0;
@@ -1669,7 +1717,6 @@ getkey:
    you.mag_abil = 6;
    you.thr_abil = 11;
    you.speed = 10; */
-        you.spell_levels = 4;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
@@ -1702,6 +1749,13 @@ getkey:
         you.inv_plus[3] = 50;
         you.inv_dam[3] = 0;
         you.inv_colour[3] = BROWN;
+
+        if (you.species >= SP_RED_DRACONIAN
+                                    && you.species <= SP_UNK2_DRACONIAN)
+        {
+            you.inv_type[3] = ARM_ROBE;
+            you.inv_colour[3] = GREEN;
+        }
 
 /*      you.AC = 2;
    you.evasion = 9; */
@@ -1747,6 +1801,7 @@ getkey:
                     you.skills[SK_AXES] = 1;
                 }
 
+                you.skills[SK_DODGING] = 1;
                 you.skills[SK_SHIELDS] = 1;
                 you.skills[SK_CROSSBOWS] = 2;
                 break;
@@ -1762,12 +1817,9 @@ getkey:
 
         break;
 
-    case JOB_CONJURER:          // Conjurer
-
-    case JOB_ENCHANTER: // Enchanter
-
-    case JOB_SUMMONER:          // Summoner
-
+    case JOB_CONJURER:
+    case JOB_ENCHANTER:
+    case JOB_SUMMONER:
     case JOB_FIRE_ELEMENTALIST:
     case JOB_ICE_ELEMENTALIST:
     case JOB_AIR_ELEMENTALIST:
@@ -1799,24 +1851,24 @@ getkey:
         switch (random() % 8)   /* get a random lvl 1 attack spell - later overwritten for most classes */
         {
         case 0:
-            you.spells[0] = 75;
+            you.spells[0] = SPELL_BURN;
             break;
         case 1:
-            you.spells[0] = 76;
+            you.spells[0] = SPELL_FREEZE;
             break;
         case 2:
-            you.spells[0] = 132;
+            you.spells[0] = SPELL_ARC;
             break;
         case 3:
-            you.spells[0] = 127;
+            you.spells[0] = SPELL_CRUSH;
             break;
         case 4:
-            you.spells[0] = 115;
+            you.spells[0] = SPELL_STING;
             break;
         case 5:
         case 6:
         case 7:
-            you.spells[0] = 5;
+            you.spells[0] = SPELL_MAGIC_DART;
             break;
         }
 
@@ -1828,10 +1880,14 @@ getkey:
    you.mag_abil = 7;
    you.thr_abil = 5;
    you.speed = 10; */
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
-        you.inv_type[0] = WPN_DAGGER;
+
+        if (you.species == SP_OGRE_MAGE)
+            you.inv_type[0] = WPN_SHORT_SWORD;
+        else
+            you.inv_type[0] = WPN_DAGGER;
+
         you.inv_plus[0] = 50;
         you.inv_plus2[0] = 50;
         if (you.char_class == JOB_ENCHANTER)
@@ -2053,7 +2109,6 @@ getkey:
    you.mag_abil = 6;
    you.thr_abil = 4;
    you.speed = 10; */
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
@@ -2109,7 +2164,6 @@ getkey:
         you.magic_points = 1;
         you.max_magic_points = 1;
         you.speed = 10;
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
@@ -2204,7 +2258,6 @@ getkey:
         you.magic_points = 1;
         you.max_magic_points = 1;
         you.speed = 10;
-        you.spell_levels = 4;
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_SHORT_SWORD;
@@ -2275,7 +2328,6 @@ getkey:
         you.hp_max = 15;
         you.magic_points = 1;
         you.max_magic_points = 1;
-        you.spell_levels = 8;
 
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
@@ -2391,8 +2443,9 @@ getkey:
         you.inv_quantity[0] = 1;
         you.inv_class[0] = OBJ_WEAPONS;
         you.inv_type[0] = WPN_DAGGER;
-        you.inv_plus[0] = 50;
-        you.inv_plus2[0] = 50;
+        to_hit_bonus = random2(3);
+        you.inv_plus[0] = 51 + to_hit_bonus;
+        you.inv_plus2[0] = 51 + (2 - to_hit_bonus);
         you.inv_dam[0] = 0;
         you.inv_colour[0] = LIGHTCYAN;
         you.inv_quantity[1] = 1;
@@ -2572,7 +2625,7 @@ getkey:
     case SP_HALFLING:           // halfling
         you.hp_max -= 2;
         you.base_hp2 -= 2;
-        you.hunger_inc -= 1;
+        // you.hunger_inc -= 1;
     /*you.evasion ++; */
         break;
 
@@ -2618,19 +2671,19 @@ getkey:
     case SP_OGRE:               // Ogre
         you.hp_max += 3;
         you.base_hp2 += 3;
-        you.hunger_inc += 1;
+        // you.hunger_inc += 1;
         break;
 
     case SP_TROLL:              // Troll
         you.hp_max += 3;
         you.base_hp2 += 3;
-        you.hunger_inc += 6;
+        // you.hunger_inc += 6;
         break;
 
     case SP_OGRE_MAGE:          // Ogre-Mage
         you.hp_max += 2;
         you.base_hp2 += 2;
-        you.hunger_inc += 1;
+        // you.hunger_inc += 1;
         break;
 
     case SP_RED_DRACONIAN:      // Draconian
@@ -2652,13 +2705,13 @@ getkey:
     case SP_CENTAUR:            // Centaur
         you.hp_max += 3;
         you.base_hp2 += 3;
-        you.hunger_inc += 2;
+        // you.hunger_inc += 2;
         break;
 
     case SP_DEMIGOD:            // Demigod
         you.hp_max += 3;
         you.base_hp2 += 3;
-        you.hunger_inc += 1;
+        // you.hunger_inc += 1;
         you.max_magic_points++;
         you.base_magic_points2++;
         break;
@@ -2666,7 +2719,7 @@ getkey:
     case SP_SPRIGGAN:           // spriggan
         you.hp_max -= 2;
         you.base_hp2 -= 2;
-        you.hunger_inc -= 1;
+        // you.hunger_inc -= 1;
         break;
 
     case SP_MINOTAUR:           // Minotaur
@@ -2754,7 +2807,8 @@ getkey:
                     break;
 
                 case SP_HILL_ORC:
-                    if (you.inv_class[i] == OBJ_WEAPONS)
+                    if (you.inv_class[i] == OBJ_WEAPONS
+                                        || you.inv_class[i] == OBJ_MISSILES)
                         you.inv_dam[i] += 90;
                     else
                         you.inv_dam[i] += 180;
@@ -2926,7 +2980,8 @@ getkey:
     if (you.char_class == JOB_PRIEST || you.char_class == JOB_PALADIN)
         set_id(OBJ_POTIONS, POT_HEALING, 1);
 
-    you.spell_levels = you.skills[SK_SPELLCASTING] * 2 - (you.spells[0] != 210) - (you.spells[1] != 210);
+    // Now handled by a function in player.cc
+    // you.spell_levels = you.skills[SK_SPELLCASTING] * 2 - (you.spells[0] != 210) - (you.spells[1] != 210);
 
 
     // tmpfile purging removed in favour of marking
@@ -3016,31 +3071,37 @@ getkey:
     }
 /* Places the staircases to the branch levels: */
 
-    you.branch_stairs[0] = 5 + random2(6);      // orc mines
+    you.branch_stairs[STAIRS_ORCISH_MINES] = 5 + random2(6);
 
-    you.branch_stairs[1] = 10 + random2(6);     // hive
+    you.branch_stairs[STAIRS_HIVE] = 10 + random2(6);
 
-    you.branch_stairs[2] = 7 + random2(6);      // lair
+    you.branch_stairs[STAIRS_LAIR] = 7 + random2(6);
 
-    you.branch_stairs[3] = you.branch_stairs[2] + random2(4) + 3;       // slime pits
+    you.branch_stairs[STAIRS_SLIME_PITS] = you.branch_stairs[STAIRS_LAIR]
+                                                            + random2(4) + 3;
 
-    you.branch_stairs[4] = 13 + random2(6);     // vaults
+    you.branch_stairs[STAIRS_VAULTS] = 13 + random2(6);
 
-    you.branch_stairs[5] = you.branch_stairs[4] + random2(3) + 2;       // crypt
+    you.branch_stairs[STAIRS_CRYPT] = you.branch_stairs[STAIRS_VAULTS]
+                                                            + random2(3) + 2;
 
-    you.branch_stairs[6] = you.branch_stairs[5] + 4;    // hall of blades
+    you.branch_stairs[STAIRS_HALL_OF_BLADES] = you.branch_stairs[STAIRS_CRYPT]
+                                                            + 4;
 
-    you.branch_stairs[7] = 26;  // hall of Zot
+    you.branch_stairs[STAIRS_HALL_OF_ZOT] = 26;
 
-    you.branch_stairs[8] = 3 + random2(4);      // Temple
+    you.branch_stairs[STAIRS_ECUMENICAL_TEMPLE] = 3 + random2(4);
 
-    you.branch_stairs[9] = you.branch_stairs[2] + random2(2) + 6;       // Snake pit
+    you.branch_stairs[STAIRS_SNAKE_PIT] = you.branch_stairs[STAIRS_LAIR]
+                                                            + random2(2) + 6;
 
-    you.branch_stairs[10] = you.branch_stairs[0] + random2(2) + 3;      // elven halls
+    you.branch_stairs[STAIRS_ELVEN_HALLS] =
+                    you.branch_stairs[STAIRS_ORCISH_MINES] + random2(2) + 3;
 
-    you.branch_stairs[11] = you.branch_stairs[5] + random2(2) + 2;      // Tomb
+    you.branch_stairs[STAIRS_TOMB] = you.branch_stairs[STAIRS_CRYPT]
+                                                            + random2(2) + 2;
 
-    you.branch_stairs[12] = you.branch_stairs[2] + random2(6) + 2;      // Swamp
+    you.branch_stairs[STAIRS_SWAMP] = you.branch_stairs[2] + random2(6) + 2;
 
     return 1;
 
@@ -3256,7 +3317,7 @@ char class_allowed(char speci, char char_class)
         }
         return 0;
 
-    case JOB_RANGER:            // ranger
+    case JOB_HUNTER:
 
         switch (speci)
         {
@@ -3941,7 +4002,7 @@ void init_player(void)
     you.num_inv_items = 0;      // number of items carried.
 
     you.spell_no = 0;
-    you.spell_levels = 0;
+    // you.spell_levels = 0;
     you.char_direction = 0;
 // 0 = going down
     // 1 = going up!

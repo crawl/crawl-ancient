@@ -91,9 +91,8 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         break;                  // rock wall - remember earth elementals
 
     case 2:
-        if (you.where_are_you == 17 &&
-                            (you.your_level - you.branch_stairs[7]) == 5) {
-            // stone on the bottom level is coloured the same as rock
+        if (you.where_are_you == 17) {
+            // stone in the realm of Zot is coloured the same as rock
             *color = env.rock_colour;
         }
         else
@@ -698,7 +697,7 @@ void monster_grid( bool do_updates )
                     menv[s].target_y = you.y_pos;
 
                     if (you.turn_is_over == 1 && mons_shouts(menv[s].type) > 0
-                                    && you.skills[SK_STABBING] >= random2(50))
+                                    && random2(100) >= you.skills[SK_STEALTH])
                     {
                         switch (mons_shouts(menv[s].type))
                         {
@@ -768,8 +767,15 @@ int check_awaken(int mons_aw)
 {
     int mons_perc = 0;
 
-    mons_perc = (mons_intel(menv[mons_aw].type) * 4) + menv[mons_aw].hit_dice + mons_see_invis(menv[mons_aw].type) * 5;
-// I assume that creatures who can see invisible are very perceptive
+    // Berserkers aren't really conserned about being stealthy.
+    if (you.berserker > 0)
+        return 1;
+
+    mons_perc = (mons_intel(menv[mons_aw].type) * 4)
+                    + menv[mons_aw].hit_dice
+                    + mons_see_invis(menv[mons_aw].type) * 5;
+
+    // I assume that creatures who can see invisible are very perceptive
     mons_perc += 10;
 
     if (you.invis != 0 && mons_see_invis(menv[mons_aw].type) == 0)
@@ -2232,14 +2238,17 @@ put_screen:
 
 
             case 99:            // to pandemonium
+                buffer2[bufcount2 + 1] = LIGHTBLUE;
+                break;
+
             case 100:           // out of
             case 101:           // to another part
                 // These are Pandemonium gates, I'm using light
-                // blue for all types of gates as to maintain
+                // green for all types of gates as to maintain
                 // the fact that the player should have to
                 // visit them to verify what they are...
                 // not just use a crystal ball. -- bwross
-                buffer2[bufcount2 + 1] = LIGHTBLUE;
+                buffer2[bufcount2 + 1] = LIGHTGREEN;
                 break;
 
             case 117:           // realm of zot?
@@ -2337,10 +2346,21 @@ put_screen:
 
 gettything:
     getty = getch();
-    if (spec_place[0] == 0 && getty != 0 && getty != '+' && getty != '-' && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l' && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n')
+
+#ifdef LINUX
+    getty = translate_keypad( getty );
+#endif
+
+    if (spec_place[0] == 0 && getty != 0 && getty != '+' && getty != '-'
+            && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l'
+            && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n'
+            && (getty < '0' || getty > '9'))
         goto putty;
 
-    if (spec_place[0] == 1 && getty != 0 && getty != '+' && getty != '-' && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l' && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n' && getty != '.' && getty != 'S')
+    if (spec_place[0] == 1 && getty != 0 && getty != '+' && getty != '-'
+            && getty != 'h' && getty != 'j' && getty != 'k' && getty != 'l'
+            && getty != 'y' && getty != 'u' && getty != 'b' && getty != 'n'
+            && getty != '.' && getty != 'S' && (getty < '0' || getty > '9'))
         goto gettything;
 
     if (getty == 0)
@@ -2349,38 +2369,55 @@ gettything:
     switch (getty)
     {
     case 'b':
+    case '1':
         move_x = -1;
         move_y = 1;
         break;
+
     case 'j':
+    case '2':
         move_y = 1;
         move_x = 0;
         break;
+
     case 'u':
+    case '9':
         move_x = 1;
         move_y = -1;
         break;
+
     case 'k':
+    case '8':
         move_y = -1;
         move_x = 0;
         break;
+
     case 'y':
+    case '7':
         move_y = -1;
         move_x = -1;
         break;
+
     case 'h':
+    case '4':
         move_x = -1;
         move_y = 0;
         break;
+
     case 'n':
+    case '3':
         move_y = 1;
         move_x = 1;
         break;
+
     case 'l':
+    case '6':
         move_x = 1;
         move_y = 0;
         break;
 
+#ifndef LINUX
+    // This is old DOS keypad support
     case 'H':
         move_y = -1;
         move_x = 0;
@@ -2414,6 +2451,8 @@ gettything:
         move_y = 1;
         move_x = 1;
         break;
+#endif
+
     case '+':
         move_y = 20;
         move_x = 0;
@@ -2999,7 +3038,10 @@ void viewwindow3(char draw_it, bool do_updates)
                         break;  // rock wall - remember earth elementals
 
                     case 2:
-                        buffy[bufcount + 1] = LIGHTGREY;
+                        if (you.where_are_you == 17)
+                            buffy[bufcount + 1] = env.rock_colour;
+                        else
+                            buffy[bufcount + 1] = LIGHTGREY;
                         showed = '#';
                         break;  // stone wall
 

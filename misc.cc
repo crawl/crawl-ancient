@@ -435,12 +435,11 @@ void in_a_cloud(void)
         break;
 
     case 9:                     // dark miasma
-
         strcpy(info, "You are engulfed in a dark miasma.");
         mpr(info);
-        if (player_prot_life() != 0)
+        if (player_prot_life() > random2(3))
             return;
-/*   beam_colour = 4; */
+        /*   beam_colour = 4; */
         if (player_res_poison() <= 0)
             you.poison++;
         hurted += (random2(5) + random2(5) + random2(4) * you.time_taken) / 10;         // 3
@@ -591,31 +590,6 @@ void up_stairs()
     load(stair_taken, moving_level, 0, old_level, want_followers, 0, old_level_where);
     moving_level = 0;
 
-    int j = 0;
-
-/*if (you.your_level >= 40)
-   {
-   for (i = 0; i < 80; i ++)
-   {
-   for (j = 0; j < 70; j ++)
-   {
-   if (grd [i] [j] >= 86 && grd [i] [j] <= 89) grd [i] [j] = 67;
-   }
-   }
-   } // end if */
-
-    if (you.char_direction == 1)
-    {
-        for (i = 0; i < 80; i++)
-        {
-            for (j = 0; j < 70; j++)
-            {
-                if (grd[i][j] == 69)
-                    grd[i][j] = 67;
-            }
-        }
-    }
-
     new_level();
 
     if (you.levitation != 0)
@@ -669,6 +643,13 @@ void down_stairs(char remove_stairs, int old_level)
 //int old_level = you.your_level;
     char leaving_abyss = 0;
     char old_where = you.where_are_you;
+
+    if (stair_find == DNGN_ENTER_LABYRINTH)
+    {
+        mpr( "Sorry, this section of the dungeon is closed for fumigation." );
+        mpr( "Try again next release." );
+        return;
+    }
 
     if ((stair_find < 81 || stair_find > 85) && stair_find != 69 && ((stair_find < 92 || stair_find > 101) && stair_find != 98) && !(stair_find >= 110 && stair_find < 130))
     {
@@ -1283,7 +1264,7 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
         mpr(info);
     }
 
-    if ((you.equip[EQ_BODY_ARMOUR] == -1 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] < ARM_RING_MAIL || (you.inv_type[you.equip[EQ_BODY_ARMOUR]] >= ARM_STEAM_DRAGON_HIDE && you.inv_type[you.equip[EQ_BODY_ARMOUR]] <= ARM_MOTTLED_DRAGON_ARMOUR) || you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 == 4) && random2(2) == 0)      /* && move_x != 0 || move_y != 0) */
+    if (player_light_armour() && random2(2) == 0)
         exercise(SK_DODGING, 1);
 
 out_of_trap:
@@ -1293,19 +1274,7 @@ out_of_trap:
     if (random2(2) != 0)
         itrap(beam, trapped);
 
-
-    if (random2(10) + damage_taken < 7)
-    {
-
-    }                           // end of if grd is a trap
-
-    return;                     // This is to avoid going through the you_attack bit.
-
 }
-
-
-
-
 
 
 void itrap(struct bolt beam[1], int trapped)
@@ -1408,93 +1377,96 @@ void cull_items(void)
 }                               // end cull_items
 
 
-void handle_traps(char trt, char trap_known)
+void handle_traps(char trt, int i, char trap_known)
 {
+    struct bolt  beam;
 
     switch (trt)
     {
-    case 6:
+    case TRAP_DART:
+        strcpy(beam.beam_name, " dart");
+        beam.damage = 4 + you.your_level / 2;
+        dart_trap(trap_known, i, &beam);
+        break;
+
+    case TRAP_ARROW:
+        strcpy(beam.beam_name, "n arrow");
+        beam.damage = 7 + you.your_level;
+        dart_trap(trap_known, i, &beam);
+        break;
+
+    case TRAP_BOLT:
+        strcpy(beam.beam_name, " bolt");
+        beam.damage = 13 + you.your_level;
+        dart_trap(trap_known, i, &beam);
+        break;
+
+    case TRAP_SPEAR:
+        strcpy(beam.beam_name, " spear");
+        beam.damage = 10 + you.your_level;
+        dart_trap(trap_known, i, &beam);
+        break;
+
+    case TRAP_AXE:
+        strcpy(beam.beam_name, "n axe");
+        beam.damage = 15 + you.your_level;
+        dart_trap(trap_known, i, &beam);
+        break;
+
+    case TRAP_TELEPORT:
+        mpr("You enter a teleport trap!");
+        if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+        {
+            mpr("You feel a weird sense of stasis.");
+            break;
+        }
+        you_teleport2(1);
+        break;
+
+    case TRAP_AMNESIA:
+        mpr("You feel momentarily disoriented.");
+        forget_map(random2(50) + random2(50) + 2);
+        break;
+
+    case TRAP_BLADE:
         if (trap_known == 1 && random2(3) == 0)
         {
             strcpy(info, "You avoid triggering a blade trap.");
             mpr(info);
             return;
         }
-        if (random2(player_evasion()) + random2(you.dex) / 3 + trap_known * 3 > 8)
+
+        if (random2(player_evasion()) + random2(you.dex) / 3 +
+                                                        trap_known * 3 > 8)
         {
             strcpy(info, "A huge blade swings just past you!");
             mpr(info);
             return;
         }
+
         strcpy(info, "A huge blade swings out and slices into you!");
         mpr(info);
-        ouch(10 + random2(15) + random2(15) - random2(player_AC() + 1), 0, 10);
+        ouch(2 * you.your_level + random2(15) + random2(15)
+                                            - random2(player_AC() + 1), 0, 10);
         break;
 
-    case 8:                     /* Zot trap! */
+    case TRAP_ZOT:                     /* Zot trap! */
+    default:
         if (trap_known == 1)
         {
             mpr("You enter the Zot trap.");
         }
         else
             mpr("Oh no! You have blundered into a Zot trap!");
-        miscast_effect(10 + random2(15), random2(30) + 10, 75 + random2(100), 3);
+        miscast_effect(10 + random2(15), random2(30) + you.your_level,
+                                                    75 + random2(100), 3);
         break;
-
     }
-
 }
-
 
 
 void disarm_trap(struct dist disa[1])
 {
-
-/*
-   strcpy(info, "Disarm which trap?");
-   mpr(info);
-   strcpy(info, "Which direction?");
-   mpr(info);
-   struct dist disa [1];
-   direction(0, disa);
-
-
-   if (disa[0].nothing == -1)
-   {
-   strcpy(info, "Huh?");
-   mpr(info);
-   return;
-   }
-
-   if (mgrd [you.x_pos + disa[0].move_x] [you.y_pos + disa[0].move_y] != MNG)
-   {
-   strcpy(info, "Not there!");
-   mpr(info);
-   return;
-   }
-
-   if (disa[0].move_x > 1 || disa[0].move_y > 1)
-   {
-   strcpy(info, "You can't reach that space.");
-   mpr(info);
-   return;
-   }
-
-   if (disa[0].move_x == 0 && disa[0].move_y == 0)
-   {
-   strcpy(info, "You aren't a trap!");
-   mpr(info);
-   return;
-   }
-
-   if (grd [you.x_pos + disa[0].move_x] [you.y_pos + disa[0].move_y] < 75 || grd [you.x_pos + disa[0].move_x] [you.y_pos + disa[0].move_y] > 77)
-   {
-   strcpy(info, "You can't see a trap there.");
-   mpr(info);
-   return;
-   }
- */
-
     if (you.berserker != 0)
     {
         mpr("You're too berserk!");
@@ -1522,18 +1494,23 @@ void disarm_trap(struct dist disa[1])
         return;
     }
 
-    if (random2(you.skills[SK_TRAPS_DOORS] + 5) <= 3)   // && you.char_class != 3)
-
+    if (random2(you.skills[SK_TRAPS_DOORS] + 2) <= random2(you.your_level + 5))
     {
         strcpy(info, "You failed to disarm the trap.");
         mpr(info);
         you.turn_is_over = 1;
-/*        if (random2(2) == 0)
-   {
-   disa[0].move_x = 0; disa[0].move_y = 0;
-   } */
-        if (random2(2) == 0)
-            exercise(SK_TRAPS_DOORS, 1);
+
+        if (random2( you.dex ) > random2(you.your_level + 5) + 5)
+        {
+            exercise( SK_TRAPS_DOORS, random2(you.your_level / 5) + 1 );
+        }
+        else
+        {
+            // Failed dex check, trap goes off
+            handle_traps( env.trap_type[i], i, 0 );
+            exercise( SK_TRAPS_DOORS, random2(2) );
+        }
+
         return;
     }
 
@@ -1563,8 +1540,8 @@ void disarm_trap(struct dist disa[1])
 
     you.turn_is_over = 1;
 
-    exercise(SK_TRAPS_DOORS, 5 + random2(5));
-
+    // reduced from 5 + random2(5)
+    exercise(SK_TRAPS_DOORS, 1 + you.your_level / 5 + random2(5));
 }
 
 

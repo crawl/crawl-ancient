@@ -1,5 +1,3 @@
-#ifndef MACRO_H
-#define MACRO_H
 /*
  *  File:       macro.cc
  *  Summary:    Crude macro-capability
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        JS              Created
  */
+#ifndef MACRO_H
+#define MACRO_H
 
 #ifndef MACRO_C
 #undef getch

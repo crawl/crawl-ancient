@@ -55,24 +55,43 @@ void mons_trap(int i)
             break;
     }
 
-    if (env.trap_type[tr] < TRAP_TELEPORT || env.trap_type[tr] == TRAP_BLADE || env.trap_type[tr] == TRAP_BOLT)
+    /* Flying monsters can avoid mechanical traps, but not magical ones */
+    if (env.trap_type[tr] < TRAP_TELEPORT || env.trap_type[tr] == TRAP_BLADE
+                                            || env.trap_type[tr] == TRAP_BOLT)
     {
-        if (mons_flies(menv[i].type) == 0)
-            return;             /* Flying monsters can avoid mechanical traps, but not magical ones */
+        if (mons_flies(menv[i].type))
+        {
+            if (mons_near(i) && grd[env.trap_x[tr]][env.trap_y[tr]]
+                                                    != DNGN_UNDISCOVERED_TRAP)
+            {
+                strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
+                strcat(info, " flies over the trap.");
+
+            }
+            return;
+        }
     }
 
-    if (mons_near(i) && grd[env.trap_x[tr]][env.trap_y[tr]] == 78)
+    if (mons_near(i) && grd[env.trap_x[tr]][env.trap_y[tr]]
+                                                    == DNGN_UNDISCOVERED_TRAP)
     {
-        grd[env.trap_x[tr]][env.trap_y[tr]] -= 3;
-        if (env.trap_type[tr] >= TRAP_TELEPORT)
-            grd[env.trap_x[tr]][env.trap_y[tr]]++;
-        if (env.trap_type[tr] == TRAP_BLADE || env.trap_type[tr] == TRAP_BOLT)
-            grd[env.trap_x[tr]][env.trap_y[tr]]--;
+        if (env.trap_type[tr] == TRAP_TELEPORT
+                        || env.trap_type[tr] == TRAP_AMNESIA
+                        || env.trap_type[tr] == TRAP_ZOT)
+            grd[env.trap_x[tr]][env.trap_y[tr]] = DNGN_TRAP_II;
+        else
+            grd[env.trap_x[tr]][env.trap_y[tr]] = DNGN_TRAP_I;
     }
 
+    //
+    // Monsters don't have the trap damage as a function of level, this
+    // is because the monsters are fairly stupid and tend to have fewer
+    // hps than the player, so this prevent traps from easily killing
+    // large monsters fairly deep in the dungeon.
+    //
     switch (env.trap_type[tr])
     {
-
     case TRAP_DART:
         strcpy(beem[0].beam_name, " dart");
         beem[0].damage = 4;
@@ -111,7 +130,8 @@ void mons_trap(int i)
 
 
     case TRAP_TELEPORT:
-        if (menv[i].type == MONS_TUNNELING_WORM || menv[i].type == MONS_WORM_TAIL)
+        if (menv[i].type == MONS_TUNNELING_WORM
+                                        || menv[i].type == MONS_WORM_TAIL)
             return;
         monster_teleport(i, 1);
         return;
@@ -119,7 +139,8 @@ void mons_trap(int i)
     case TRAP_AMNESIA:
         if (mons_near(i))
         {
-            strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
+            strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
             strcat(info, " looks momentarily disoriented.");
             mpr(info);
         }
@@ -128,26 +149,39 @@ void mons_trap(int i)
     case TRAP_BLADE:
         if (random2(5) == 0)
         {
-            strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
-            strcat(info, " avoids triggering a blade trap.");
             if (mons_near(i))
+            {
+                strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
+                strcat(info, " avoids triggering a blade trap.");
                 mpr(info);
+            }
             return;
         }
         if (random2(menv[i].evasion) > 8)
         {
-            strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
-            strcat(info, " avoids a huge swinging blade.");
             if (mons_near(i))
+            {
+                strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
+                strcat(info, " avoids a huge swinging blade.");
                 mpr(info);
+            }
             return;
         }
-        strcpy(info, "A huge blade swings out and slices into ");
-        strcat(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 1));
-        strcat(info, "!");
+
         if (mons_near(i))
+        {
+            strcpy(info, "A huge blade swings out and slices into ");
+            strcat(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 1));
+            strcat(info, "!");
             mpr(info);
-        damage_taken = 10 + random2(15) + random2(15) - random2(menv[i].armor_class + 1);
+        }
+
+        damage_taken = 10 + random2(15) + random2(15)
+                                            - random2(menv[i].armor_class + 1);
+
         if (damage_taken <= 0)
             damage_taken = 0;
         menv[i].hit_points -= damage_taken;
@@ -161,13 +195,16 @@ void mons_trap(int i)
     case TRAP_ZOT:
         if (mons_near(i))
         {
-            strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
+            strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
             strcat(info, " enters a Zot trap!");
             mpr(info);
         }
         else
             mpr("You hear a distant \"Zot\".");
-        /* Zot traps are out to get *YOU*! They benefit hostile monsters and hurt friendly ones */
+
+        // Zot traps are out to get *YOU*! They benefit hostile monsters
+        // and hurt friendly ones
         if (menv[i].behavior == BEH_ENSLAVED)
         {
             beem[0].thing_thrown = KILL_MON;   /* prob unnecessary */
@@ -179,26 +216,29 @@ void mons_trap(int i)
             mons_ench_f2(i, mons_near(i), func_pass, beem);
             return;
         }
+
         /* Okay! Now, what nice thing can we do to the monster? */
         beem[0].thing_thrown = KILL_MON;       /* prob unnecessary */
-        beem[0].colour = GREEN;     /* default: heal it */
+        beem[0].colour = GREEN;                /* default: heal it */
+
         if (random2(4) == 0)
             beem[0].colour = BLUE; /* Maybe we can haste it instead. */
+
         if (random2(4) == 0)
             beem[0].colour = MAGENTA; /* Or even turn it invisible. */
-        if (random2(5) == 0 && mons_near(i))    /* Or let it attack you with wild magic. */
+
+        if (random2(5) == 0 && mons_near(i))
         {
+            /* Or let it attack you with wild magic. */
             mpr("The power of Zot is invoked against you.");
-            miscast_effect(10 + random2(15), random2(30) + 10, 75 + random2(100), 0);
+            miscast_effect(10 + random2(15), random2(30) + 10,
+                                                        75 + random2(100), 0);
             return;
         }
+
         mons_ench_f2(i, mons_near(i), func_pass, beem);
         return;
-
-
     }                           // end of switch
-    // surely a bug
-    // if ((20 + you.your_level * 2) * random2(200) / 100 >= menv [i].evasion);
 
     if ((20 + you.your_level * 2) * random2(200) / 100 >= menv[i].evasion)
     {
@@ -207,6 +247,7 @@ void mons_trap(int i)
         if (damage_taken > 0)
             menv[i].hit_points -= damage_taken;
     }
+
     if (damage_taken > 0)
     {
         if (mons_near(i))
@@ -235,9 +276,6 @@ void mons_trap(int i)
         strcat(info, "!");
         mpr(info);
     }
-
-
-
 
 /*      if (random2(10) > 6 && it_no > 300) return; */
 
@@ -298,18 +336,19 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
     switch (spell_cast)
     {
     case MS_VAMPIRE_SUMMON:                    // vampire summoning
-
         sumcount2 = random2(4) + 1;
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
             if (random2(3) != 0)
-                create_monster(MONS_GIANT_BAT, 24, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+                create_monster(MONS_GIANT_BAT, 24, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
             else
-                create_monster(MONS_RAT, 24, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+                create_monster(MONS_RAT, 24, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
     case MS_LEVEL_SUMMON:         // summon anything appropriate for level
-
-        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0
+                                            && monster_abjuration(1, 1) >= 1)
         {
             monster_abjuration(menv[i].hit_dice * 10, 0);
             return;
@@ -317,30 +356,32 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
 
         sumcount2 = random2(4) + 1;
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
-            create_monster(250, 24, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+            create_monster(250, 24, menv[i].behavior, menv[i].x, menv[i].y,
+                                                    menv[i].monster_foe, 250);
         return;
 
     case MS_FAKE_RAKSHASA_SUMMON:                    // summon fake R
-
         sumcount2 = random2(2) + 1;
         for (sumcount = 0; sumcount < sumcount2; sumcount++)
-            create_monster(MONS_FAKE_RAKSHASA, 21, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+            create_monster(MONS_FAKE_RAKSHASA, 21, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
     case MS_SUMMON_DEMON:                    // summon demon
-
-        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0
+                                            && monster_abjuration(1, 1) >= 1)
         {
             monster_abjuration(menv[i].hit_dice * 10, 0);
             return;
         }
 
-        create_monster(summon_any_demon(1), 22, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+        create_monster(summon_any_demon(1), 22, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
     case MS_ANIMATE_DEAD:                    // animate dead
-
-        if (!mons_near(i) || animate_dead(100, menv[i].behavior, menv[i].monster_foe, 0) <= 0)
+        if (!mons_near(i) || animate_dead(100, menv[i].behavior,
+                                                menv[i].monster_foe, 0) <= 0)
         {
             spell_cast = 100;
             return;
@@ -350,13 +391,13 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
         return;
 
     case MS_SUMMON_LESSER_DEMON:                    // summon lesser demon
-
-        create_monster(summon_any_demon(0), 21, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+        create_monster(summon_any_demon(0), 21, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
     case MS_SUMMON_UFETUBUS:                    // summon LIGHTCYAN lesser demon
-
-        create_monster(MONS_UFETUBUS, 21, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+        create_monster(MONS_UFETUBUS, 21, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
         /*case 37: // summon any demon
@@ -364,13 +405,13 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
            return; */
 
     case MS_GERYON:                    // Geryon
-
-        create_monster(MONS_BEAST, 23, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+        create_monster(MONS_BEAST, 23, menv[i].behavior,
+                                menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
 
     case MS_SUMMON_UNDEAD:                    // summon undead around player
-
-        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+        if (menv[0].behavior == 1 && mons_near(i) && random2(2) == 0
+                                            && monster_abjuration(1, 1) >= 1)
         {
             monster_abjuration(menv[i].hit_dice * 10, 0);
             return;
@@ -385,18 +426,19 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
             }
             while (mons_holiness(summonik) != 1);
 
-            create_monster(summonik, 21, menv[i].behavior, you.x_pos, you.y_pos, menv[i].monster_foe, 250);
+            create_monster(summonik, 21, menv[i].behavior,
+                            you.x_pos, you.y_pos, menv[i].monster_foe, 250);
         }
         return;
 
     case MS_TORMENT:                    // torment
-
         if (!mons_near(i) || menv[i].behavior == 7)
             return;
 
         if (menv[i].enchantment[2] != ENCH_INVIS)
         {
-            strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));
+            strcpy(info, monam(menv[i].number, menv[i].type,
+                                                menv[i].enchantment[2], 0));
             strcat(info, " calls on the powers of Hell!");
             mpr(info);
         }
@@ -406,14 +448,15 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
         return;
 
     case MS_SUMMON_DEMON_1:                    // summon class 1 demon
-
-        if (menv[0].behavior == 1 && !mons_near(i) && random2(2) == 0 && monster_abjuration(1, 1) >= 1)
+        if (menv[0].behavior == 1 && !mons_near(i) && random2(2) == 0
+                                            && monster_abjuration(1, 1) >= 1)
         {
             monster_abjuration(menv[i].hit_dice * 10, 0);
             return;
         }
 
-        create_monster(summon_any_demon(2), 21, menv[i].behavior, menv[i].x, menv[i].y, menv[i].monster_foe, 250);
+        create_monster(summon_any_demon(2), 21, menv[i].behavior,
+                            menv[i].x, menv[i].y, menv[i].monster_foe, 250);
         return;
     }
 
@@ -447,7 +490,8 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
 
     beem[0].ench_power = 5 * menv[i].hit_dice;
 
-    if (spell_cast == 5 || spell_cast == 11 || spell_cast == 13 || spell_cast == 14)
+    if (spell_cast == 5 || spell_cast == 11 || spell_cast == 13
+                                                        || spell_cast == 14)
     {                           // you.haste/you.invis
 
         beem[0].move_x = 0;
@@ -458,7 +502,6 @@ void mons_cast(int i, struct bolt beem[1], int spell_cast)
         beem[0].ench_power = 2000;
 
     if (spell_cast == 20)       // burst of hellfire
-
         return;
 
     if (theBeam.isBeam)
@@ -812,7 +855,6 @@ SBeam mons_spells(char spell_cast, int power)
     beam.type = -1;
     beam.flavour = -1;
     beam.thrown = -1;
-    beam.missileType = -1;
 #endif
 
     switch (spell_cast)
@@ -833,7 +875,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
         //return 0;
-        beam.missileType = BEAM_MMISSILE;   // a magical missile
+        beam.flavour = BEAM_MMISSILE;   // a magical missile
 
         beam.isBeam = false;
         break;
@@ -853,7 +895,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = SYM_ZAP;        // maybe make     put a # on wherever it hits?
 
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_FIRE;   // fire
+        beam.flavour = BEAM_FIRE;   // fire
 
         beam.isBeam = false;
         break;
@@ -873,7 +915,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = SYM_ZAP;        // maybe make     put a # on wherever it hits?
 
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_COLD;   // cold
+        beam.flavour = BEAM_COLD;   // cold
 
         beam.isBeam = false;
         break;
@@ -885,7 +927,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = CYAN;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -897,7 +939,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = BLACK;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -909,7 +951,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = BLUE;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -921,7 +963,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = RED;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -934,7 +976,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_POISON;   // poison
+        beam.flavour = BEAM_POISON;   // poison
 
         beam.hit = 7 + random2(power) / 80;
         beam.isBeam = true;
@@ -948,7 +990,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = SYM_ZAP;
 
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_FIRE;   // fire
+        beam.flavour = BEAM_FIRE;   // fire
 
         beam.hit = 8 + random2(power) / 80;     // hit
 
@@ -962,7 +1004,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = WHITE;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_COLD;   // cold
+        beam.flavour = BEAM_COLD;   // cold
 
         beam.hit = 8 + random2(power) / 80;     // hit
 
@@ -977,11 +1019,11 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = LIGHTCYAN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_ELECTRICITY;   // electricity
+        beam.flavour = BEAM_ELECTRICITY;   // electricity
 
         beam.hit = 10 + random2(power) / 40;
-        break;
         beam.isBeam = true;
+        break;
 
     case MS_INVIS:                    // make invisible
 
@@ -990,7 +1032,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = MAGENTA;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1004,7 +1046,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 40;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_YOU_MISSILE;  //DML: ???
-        beam.missileType = BEAM_EXPLOSION;  // fire
+        beam.flavour = BEAM_EXPLOSION;  // fire
 
         beam.isBeam = false;
         break;
@@ -1016,7 +1058,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = GREEN;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1029,7 +1071,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = LIGHTGREY;        // 6 is used by digging
 
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1042,7 +1084,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = LIGHTGREY;        // 6 is used by digging
 
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1060,7 +1102,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = WHITE;
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MMISSILE;
+        beam.flavour = BEAM_MMISSILE;
         beam.hit = 6;           // + random2(power) / 10;
 
         beam.isBeam = false;
@@ -1073,7 +1115,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = BROWN;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_MAGIC;
+        beam.flavour = BEAM_MAGIC;
         beam.isBeam = true;
         break;
 
@@ -1085,7 +1127,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = DARKGREY;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_NEG;   // -ve energy
+        beam.flavour = BEAM_NEG;   // -ve energy
 
         beam.hit = 7 + random2(power) / 80;
         beam.isBeam = true;
@@ -1102,7 +1144,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 10 + (power / 20);
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MMISSILE;   // a magical missile
+        beam.flavour = BEAM_MMISSILE;   // a magical missile
 
         beam.isBeam = false;
         break;
@@ -1118,7 +1160,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 11;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_FIRE;   // fire - I think this is appropriate
+        beam.flavour = BEAM_FIRE;   // fire - I think this is appropriate
 
         beam.isBeam = false;
         break;
@@ -1136,7 +1178,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.thrown = KILL_MON;
         beam.damage = 50;
         beam.hit = 7 + (power / 20);
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1152,7 +1194,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 8 + power / 15;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_FIRE;   // fire
+        beam.flavour = BEAM_FIRE;   // fire
 
         beam.isBeam = false;
         break;
@@ -1165,7 +1207,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = LIGHTGREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_POISON;   // poison
+        beam.flavour = BEAM_POISON;   // poison
 
         beam.hit = 7 + random2(power) / 80;
         beam.isBeam = true;
@@ -1180,7 +1222,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_EXPLOSION;  // an exploding magical missile
+        beam.flavour = BEAM_EXPLOSION;  // an exploding magical missile
 
         beam.isBeam = false;
         break;
@@ -1194,7 +1236,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_NUKE;  // a magical missile which destroys walls
+        beam.flavour = BEAM_NUKE;  // a magical missile which destroys walls
 
         beam.isBeam = true;
         break;
@@ -1208,7 +1250,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 60;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_FIRE;   // fire
+        beam.flavour = BEAM_FIRE;   // fire
 
         beam.isBeam = false;
         break;
@@ -1222,7 +1264,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 6 + (power / 25);
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MMISSILE;   // a magical missile - or similarly unresisted thing
+        beam.flavour = BEAM_MMISSILE;   // a magical missile - or similarly unresisted thing
 
         beam.isBeam = false;
         break;
@@ -1236,7 +1278,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 5 + power / 47;
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MMISSILE;   // a magical missile - or similarly unresisted thing
+        beam.flavour = BEAM_MMISSILE;   // a magical missile - or similarly unresisted thing
 
         beam.isBeam = false;
         break;
@@ -1250,7 +1292,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_POISON;   // poison
+        beam.flavour = BEAM_POISON;   // poison
 
         break;
         beam.isBeam = false;
@@ -1264,7 +1306,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 7;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MMISSILE;
+        beam.flavour = BEAM_MMISSILE;
         beam.isBeam = false;
         break;
 
@@ -1278,7 +1320,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.thrown = KILL_MON;
         beam.damage = 50;
         beam.hit = 30 + (power / 10);
-        beam.missileType = BEAM_MAGIC;   // magic
+        beam.flavour = BEAM_MAGIC;   // magic
 
         beam.isBeam = true;
         break;
@@ -1291,7 +1333,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = GREEN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_POISON;   // poison
+        beam.flavour = BEAM_POISON;   // poison
 
         beam.hit = 7 + random2(power) / 80;
         beam.isBeam = false;
@@ -1306,7 +1348,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 9;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MMISSILE;   // a magical missile
+        beam.flavour = BEAM_MMISSILE;   // a magical missile
 
         beam.isBeam = false;
         break;
@@ -1320,7 +1362,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.hit = 20;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_EXPLOSION;  // hellfire
+        beam.flavour = BEAM_EXPLOSION;  // hellfire
 
         beam.isBeam = true;
         break;
@@ -1333,7 +1375,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.colour = CYAN;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
-        beam.missileType = BEAM_FRAG;
+        beam.flavour = BEAM_FRAG;
         beam.hit = 15 + random2(power) / 50;
         beam.isBeam = true;
         break;
@@ -1345,8 +1387,7 @@ SBeam mons_spells(char spell_cast, int power)
         beam.type = 0;
         beam.colour = LIGHTGREEN;
         beam.thrown = KILL_MON_MISSILE;
-        beam.missileType = BEAM_MAGIC;   // magic
-
+        beam.flavour = BEAM_MAGIC;   // magic
         beam.isBeam = true;
         break;
 

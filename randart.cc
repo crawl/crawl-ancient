@@ -1498,35 +1498,20 @@ struct unrandart_entry *seekunrandart(unsigned char aclass, unsigned char atype,
 
 int find_okay_unrandart(unsigned char aclass)
 {
-    int x = 0;
-    char ura_index[NO_UNRANDARTS];
+    int x, count;
+    int ret = -1;
 
-    for (x = 0; x < NO_UNRANDARTS; x++)
+    for (x = 0, count = 0; x < NO_UNRANDARTS; x++)
     {
-        ura_index[x] = 0;
-    }
-    int counter = 0;
-
-    x = 0;
-
-    while (x < NO_UNRANDARTS)
-    {
-        if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
+        if (unranddata[x].ura_cl = aclass && does_unrandart_exist(x) == 0)
         {
-            ura_index[counter] = x;
-            counter++;
+            count++;
+            if (random4(count) == 0)
+                ret = x;
         }
-        x++;
     }
 
-    if (counter == 0)
-        return -1;
-
-    int y = ura_index[random4(counter)];
-
-/* output_value("Found randart no: ", y); */
-
-    return y;
+    return ret;
 }
 
 void make_item_unrandart(int x, int ura_item)

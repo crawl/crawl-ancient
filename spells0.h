@@ -1,5 +1,3 @@
-#ifndef SPELLS0_H
-#define SPELLS0_H
 /*
  *  File:       spells0.cc
  *  Summary:    Some spell related functions.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef SPELLS0_H
+#define SPELLS0_H
 
 int spell_hunger(int spell_value, unsigned char spell);
 int which_spell_in_book(int sbook_type, int spl);

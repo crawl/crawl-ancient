@@ -1,5 +1,3 @@
-#ifndef WINHDR_H
-#define WINHDR_H
 /*
  *  File:       WinHdr.h
  *  Summary:    OS specific stuff for inclusion into AppHdr.h.
@@ -11,6 +9,8 @@
  *
  *               <1>     5/30/99        JDJ             Created.
  */
+#ifndef WINHDR_H
+#define WINHDR_H
 
 
 // ===================================================================================

@@ -1,5 +1,3 @@
-#ifndef SPELLS1_H
-#define SPELLS1_H
 /*
  *  File:       spells1.cc
  *  Summary:    Implementations of some additional spells.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef SPELLS1_H
+#define SPELLS1_H
 
 #include "externs.h"
 

@@ -1,5 +1,3 @@
-#ifndef ENUM_H
-#define ENUM_H
 /*
  *  File:       enum.h
  *  Summary:    Global (ick) enums.
@@ -7,11 +5,14 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>     8/6/99          BWR             added branch and level types
  *      <3>     6/2/99          DML             beams, clouds, ench, ms, kill,
                                                 other minor changes
  *      <2>     5/26/99         JDJ             Added a header guard.
  *      <1>     -/--/--         LRH             Created
  */
+#ifndef ENUM_H
+#define ENUM_H
 
 
 enum ABILITIES
@@ -146,7 +147,7 @@ enum ARMOUR_PROPERTIES
 
 enum ATTRIBUTES
 {
-    ATTR_RESIST_LIGHTNING,
+    ATTR_DIVINE_LIGHTNING_PROTECTION,
     ATTR_SPEC_AIR,
     ATTR_SPEC_EARTH,
     ATTR_CONTROL_TELEPORT,
@@ -169,12 +170,71 @@ enum BEAMS
   BEAM_NEG,
   BEAM_CLOUD,
   BEAM_EXPLOSION = 10,
-  BEAM_SPORE,  //??
+  BEAM_SPORE,
   BEAM_HOLY = 18,
   BEAM_FRAG = 19,
-  BEAM_20 = 20, /*DUNNO?  Something like an explosion*/
+  BEAM_LAVA = 20,
   BEAM_ICE = 23,
   BEAM_NUKE = 27
+};
+
+//
+// These represent the dungeon branches you can be in (you.where_are_you).
+//
+enum BRANCHES
+{
+   BRANCH_MAIN_DUNGEON,
+   BRANCH_DIS,
+   BRANCH_GEHENNA,
+   BRANCH_VESTIBULE_OF_HELL,
+   BRANCH_COCYTUS,
+   BRANCH_TARTARUS,
+   BRANCH_INFERNO,
+   BRANCH_THE_PIT,
+   BRANCH_ORCISH_MINES = 10,
+   BRANCH_HIVE,
+   BRANCH_LAIR,
+   BRANCH_SLIME_PITS,
+   BRANCH_VAULTS,
+   BRANCH_CRYPT,
+   BRANCH_HALL_OF_BLADES,
+   BRANCH_HALL_OF_ZOT,
+   BRANCH_ECUMENICAL_TEMPLE,
+   BRANCH_SNAKE_PIT,
+   BRANCH_ELVEN_HALLS,
+   BRANCH_TOMB,
+   BRANCH_SWAMP
+};
+
+//
+// These represent the indices of the stair locations (you.branch_stairs[]).
+//
+enum BRANCH_STAIRS
+{
+    STAIRS_ORCISH_MINES,
+    STAIRS_HIVE,
+    STAIRS_LAIR,
+    STAIRS_SLIME_PITS,
+    STAIRS_VAULTS,
+    STAIRS_CRYPT,
+    STAIRS_HALL_OF_BLADES,
+    STAIRS_HALL_OF_ZOT,
+    STAIRS_ECUMENICAL_TEMPLE,
+    STAIRS_SNAKE_PIT,
+    STAIRS_ELVEN_HALLS,
+    STAIRS_TOMB,
+    STAIRS_SWAMP
+};
+
+//
+// The various types of level (you.level_type).
+//
+enum LEVEL_TYPES
+{
+    LEVEL_DUNGEON,
+    LEVEL_LABYRINTH,
+    LEVEL_ABYSS,
+    LEVEL_PANDEMONIUM
 };
 
 enum BOOKS
@@ -222,7 +282,9 @@ enum BOOKS
     BOOK_EARTH,
     BOOK_MANUAL,
     BOOK_WIZARDRY,
-    BOOK_POWER
+    BOOK_POWER,
+
+    NUM_BOOKS
 };
 
 enum CLOUD_TYPES
@@ -557,7 +619,7 @@ enum JOB
     JOB_PALADIN,
     JOB_ASSASSIN,
     JOB_BERSERKER,
-    JOB_RANGER,
+    JOB_HUNTER,
     JOB_CONJURER,
     JOB_ENCHANTER,
     JOB_FIRE_ELEMENTALIST,

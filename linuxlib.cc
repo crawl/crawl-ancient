@@ -6,6 +6,9 @@
  *
  *  Change History (most recent first):
  *
+ *      <4>     99/07/13        BWR     added translate_keypad(), to try and
+ *                                      translate keypad escape sequences into
+ *                                      numeric char values.
  *      <3>     99/06/18        BCR     moved CHARACTER_SET #define to AppHdr.h
  *      <2>     99/05/12        BWR     Tchars, signals, solaris support
  *
@@ -36,15 +39,20 @@
 #include "defines.h"
 
 
-#ifdef USE_TCHARS_IOCTL
-#include <sys/ttold.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <errno.h>
+#if defined(USE_POSIX_TERMIOS)
+  #include <termios.h>
 
-static struct ltchars def_ltc;
-static struct ltchars ltc;
+  static struct termios  def_term;
+  static struct termios  game_term;
 
+#elif defined(USE_TCHARS_IOCTL)
+  #include <sys/ttold.h>
+  #include <sys/time.h>
+  #include <sys/types.h>
+  #include <errno.h>
+
+  static struct ltchars def_term;
+  static struct ltchars game_term;
 #endif
 
 #ifdef USE_UNIX_SIGNALS
@@ -119,7 +127,7 @@ short translatecolor(short col)
 
 
 
-void setupcolorpairs()
+void setupcolorpairs( bool use_no_black )
 {
     short i, j;
 
@@ -128,23 +136,95 @@ void setupcolorpairs()
             if ((i > 0) || (j > 0))
                 init_pair(i * 8 + j, j, i);
 
-    init_pair(63, COLOR_BLACK, COLOR_BLACK);
+    if (use_no_black)
+        init_pair(63, COLOR_WHITE, COLOR_BLACK);
+    else
+        init_pair(63, COLOR_BLACK, COLOR_BLACK);
 }
 
-#ifdef USE_TCHARS_IOCTL
+#if defined(USE_POSIX_TERMIOS)
+
 void termio_init()
 {
-    ioctl(0, TIOCGLTC, &def_ltc);
-    memcpy(&ltc, &def_ltc, sizeof(struct ltchars));
+    tcgetattr(0, &def_term);
+    memcpy(&game_term, &def_term, sizeof(struct termios));
 
-    ltc.t_suspc = ltc.t_dsuspc = -1;
-    ioctl(0, TIOCSLTC, &ltc);
+    def_term.c_cc[VINTR] = (char) 3;  // ctrl-Y
+    game_term.c_cc[VINTR] = (char) 3;  // ctrl-Y
+
+    // Lets recover some control sequences
+    game_term.c_cc[VDSUSP] = (char) -1;  // ctrl-Y
+    game_term.c_cc[VSTART] = (char) -1;  // ctrl-Q
+    game_term.c_cc[VSTOP] = (char) -1;   // ctrl-S
+
+    tcsetattr(0, TCSAFLUSH, &game_term);
 }
+
+#elif defined(USE_TCHARS_IOCTL)
+
+void termio_init()
+{
+    ioctl(0, TIOCGLTC, &def_term);
+    memcpy(&game_term, &def_term, sizeof(struct ltchars));
+
+    game_term.t_suspc = game_term.t_dsuspc = -1;
+    ioctl(0, TIOCSLTC, &game_term);
+}
+
 #endif
 
-void lincurses_startup()
+int translate_keypad( int keyin )
 {
-#ifdef USE_TCHARS_IOCTL
+    int  ret;
+
+    switch (keyin)
+    {
+    case KEY_A1:
+        ret = '7';
+        break;
+
+    case KEY_A3:
+        ret = '9';
+        break;
+
+    case KEY_B2:
+        ret = '5';
+        break;
+
+    case KEY_C1:
+        ret = '1';
+        break;
+
+    case KEY_C3:
+        ret = '3';
+        break;
+
+    case KEY_UP:
+        ret = '8';
+        break;
+
+    case KEY_DOWN:
+        ret = '2';
+        break;
+
+    case KEY_RIGHT:
+        ret = '6';
+        break;
+
+    case KEY_LEFT:
+        ret = '4';
+        break;
+
+    default:
+        ret = keyin;
+    }
+
+    return (ret);
+}
+
+void lincurses_startup( bool use_no_black )
+{
+#if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
     termio_init();
 #endif
 
@@ -159,7 +239,7 @@ void lincurses_startup()
     cbreak();
     meta(stdscr, TRUE);
     start_color();
-    setupcolorpairs();
+    setupcolorpairs( use_no_black );
 
 #ifndef SOLARIS
     // This can cause some display problems under Solaris
@@ -170,11 +250,13 @@ void lincurses_startup()
 
 void lincurses_shutdown()
 {
-#ifdef USE_TCHARS_IOCTL
-    ioctl(0, TIOCSLTC, &def_ltc);
+#if defined(USE_POSIX_TERMIOS)
+    tcsetattr(0, TCSAFLUSH, &def_term);
+#elif defined(USE_TCHARS_IOCTL)
+    ioctl(0, TIOCSLTC, &def_term);
 #endif
 
-#ifdef USE_SIGNALS
+#ifdef USE_UNIX_SIGNALS
     sigrelse(SIGQUIT);
     sigrelse(SIGINT);
 #endif

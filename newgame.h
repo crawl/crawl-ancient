@@ -1,5 +1,3 @@
-#ifndef NEWGAME_H
-#define NEWGAME_H
 /*
  *  File:       newgame.cc
  *  Summary:    Functions used when starting a new game.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef NEWGAME_H
+#define NEWGAME_H
 
 char new_game(void);
 #endif

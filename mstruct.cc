@@ -383,6 +383,12 @@ int mons_exp_mod(int mc)
 {
     return smc->exp_mod;
 }
+
+int mons_speed(int mc)
+{
+    return smc->speed;
+}
+
 unsigned char mons_char(int mc)
 {
     return (unsigned char) smc->showchar;
@@ -1039,40 +1045,55 @@ int exper_value(int mclass, int mHD, int maxhp)
 {
     long x_val = 0;
 
-    if (mclass == 25 || mclass == 51 || mclass == 107 || mclass == 108)
+    int speed = mons_speed(mclass);
+    int modifier = mons_exp_mod(mclass);
+
+
+    if (mclass == MONS_SMALL_ZOMBIE || mclass == MONS_BIG_ZOMBIE
+            || mclass == MONS_SMALL_SKELETON || mclass == MONS_LARGE_SKELETON)
     {
         x_val = (16 + mHD * 4) * (mHD * mHD) / 10;
-        goto done_xval;
+    }
+    else
+    {
+        //x_val = ((maxhp / 7) + 1) * (mHD * mHD) + 1;
+        x_val = (16 + maxhp) * (mHD * mHD) / 10;
     }
 
-//x_val = ((maxhp / 7) + 1) * (mHD * mHD) + 1;
-    x_val = (16 + maxhp) * (mHD * mHD) / 10;
+    if (modifier > 0)
+    {
+        x_val *= mons_exp_mod(mclass);
+        x_val /= 10;
+    }
 
-    x_val *= mons_exp_mod(mclass);
-    x_val /= 10;
+    if (speed > 0)
+    {
+        x_val *= speed;
+        x_val /= 10;
+    }
 
+    // some trial reductions -- bwross
+    if (x_val > 100)
+        x_val = 100 + (x_val - 100) * 3 / 4;
+
+    if (x_val > 1000)
+        x_val = 1000 + (x_val - 1000) / 2;
+
+
+    // guarantee the value is withing limits
     if (mons_flag(mclass, M_NO_EXP_GAIN))
-        x_val = 10;
-
-done_xval:
-    if (x_val < 0)
         x_val = 0;
-    if (x_val > 15000)
+    else if (x_val <= 0)
+        x_val = 1;
+    else if (x_val > 15000)
         x_val = 15000;
+
     return x_val;
 }
-/*
-   main()
-   {
-   printf("%i x %i (%i)\n",mondatasize,sizeof(struct monsterentry),sizeof(mondata));
-   printf("%s\n",mons_name(13));
-   if(mons_flag(13,M_RES_COLD)) {
-   printf("cold resistant\n");
-   }
-   } */
+
 
 char mons_pan(int mcls)         // is the monster to be found in pandemonium
- {
+{
 
     switch (mcls)
     {

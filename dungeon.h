@@ -1,5 +1,3 @@
-#ifndef DUNGEON_H
-#define DUNGEON_H
 /*
  *  File:       dungeon.cc
  *  Summary:    Functions used when building new levels.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef DUNGEON_H
+#define DUNGEON_H
 
 int builder(unsigned int lev_numb, char level_type);
 

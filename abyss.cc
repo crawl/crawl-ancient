@@ -221,6 +221,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
         for (j = 0; j < 70; j++)
         {
             env.map[i][j] = 0;
+            mgrd[i][j] = MNG;
         }
     }
 

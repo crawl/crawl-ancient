@@ -83,8 +83,18 @@ void blink(void)
         return;
     }
 
-    if (you.conf != 0)
+    if (!allow_control_teleport())
+    {
+        mpr("A powerful magic interfers with your control of the blink.");
         random_blink();
+        return;
+    }
+
+    if (you.conf != 0)
+    {
+        random_blink();
+        return;
+    }
 
 start_blink:
     strcpy(info, "Blink to where?");
@@ -137,17 +147,8 @@ void random_blink(void)
         return;
     }
 
-
-// This is a bit too powerful.
-/*
- *  if (you.attribute[ATTR_CONTROL_TELEPORT] != 0 && you.conf == 0)
- *  {
- *      blink();
- *      return;
- *  }
- */
-
-    if (random_near_space(passed) == 0 || (you.x_pos == passed[0] && you.y_pos == passed[1]))
+    if (random_near_space(passed) == 0
+                    || (you.x_pos == passed[0] && you.y_pos == passed[1]))
     {
         strcpy(info, "You feel rather strange for a moment.");
         mpr(info);
@@ -1095,11 +1096,12 @@ void cast_regen(int pow)
     strcpy(info, "Your skin crawls.");
     mpr(info);
 
-    if (you.duration[DUR_REGENERATION] == 0)
-    {
+    // Now handled by player_hunger_rate()
+    // if (you.duration[DUR_REGENERATION] == 0)
+    // {
 /* you.rate_regen += 100; */
-        you.hunger_inc += 4;
-    }
+    //     you.hunger_inc += 4;
+    // }
 
     dur_change = 5 + random2(pow) + random2(pow) + random2(pow);
 
@@ -1190,10 +1192,11 @@ void cast_insulation(int power)
 
     int dur_incr = 0;
 
-    if (you.duration[DUR_INSULATION] == 0)
-    {
-        you.attribute[ATTR_RESIST_LIGHTNING]++;
-    }
+    // handled by player_res_electrity() now
+    // if (you.duration[DUR_INSULATION] == 0)
+    // {
+    //     you.attribute[ATTR_RESIST_LIGHTNING]++;
+    // }
 
     strcpy(info, "You feel insulated.");
     mpr(info);

@@ -1,5 +1,3 @@
-#ifndef INVENT_H
-#define INVENT_H
 /*
  *  File:       invent.cc
  *  Summary:    Functions for inventory related commands.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef INVENT_H
+#define INVENT_H
 
 
 //void inventory(int item_class_inv, int inv_quantity [52], unsigned char inv_dam [52], unsigned char inv_class [52], unsigned char inv_type [52], unsigned char inv_plus [52]);

@@ -176,6 +176,27 @@ char random_near_space(int passed[2])
 }
 
 
+bool monster_regenerates(int monster_type)
+{
+    if (monster_type == MONS_IMP
+                    || monster_type == MONS_TROLL
+                    || monster_type == MONS_SLIME_CREATURE
+                    || monster_type == MONS_ROCK_TROLL
+                    || monster_type == MONS_IRON_TROLL
+                    || monster_type == MONS_CACODEMON
+                    || monster_type == MONS_LEMURE
+                    || monster_type == MONS_HELLWING
+                    || monster_type == MONS_ANITA
+                    || monster_type == MONS_DEEP_TROLL)
+    {
+        return( true );
+    }
+    else
+    {
+        return( false );
+    }
+}
+
 
 int distance(int x1, int x2, int y1, int y2)
 {
@@ -1497,14 +1518,14 @@ static bool handle_wand(int i, bolt & beem)
 // a spell was cast.
 //
 //---------------------------------------------------------------
-static bool handle_spell(int i, bolt & beem)
+static bool handle_spell(int i, bolt &beem)
 {
     ASSERT(i >= 0);
     ASSERT(i < MNST);
 
     bool cast = false;
 
-    monsters & monster = env.mons[i];
+    monsters &monster = env.mons[i];
 
     if (mons_flag(monster.type, M_SPELLCASTER) && monster.behavior != BEH_SLEEP)
     {
@@ -1944,8 +1965,12 @@ void monster()
                     goto endbat;
 
                 // regenerate
-                if (monster.hit_points < monster.max_hit_points && (random2(25) == 0 || monster.type == MONS_IMP || monster.type == MONS_TROLL || monster.type == MONS_SLIME_CREATURE || monster.type == MONS_ROCK_TROLL || monster.type == MONS_IRON_TROLL || monster.type == MONS_CACODEMON || monster.type == MONS_LEMURE || monster.type == MONS_HELLWING || monster.type == MONS_ANITA || monster.type == MONS_DEEP_TROLL))
+                if (monster.hit_points < monster.max_hit_points
+                        && (random2(25) == 0
+                            || monster_regenerates( monster.type )))
+                {
                     monster.hit_points++;
+                }
 
                 if (monster.speed >= 100)
                     continue;

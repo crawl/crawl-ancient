@@ -1,5 +1,3 @@
-#ifndef FILES_H
-#define FILES_H
 /*
  *  File:       files.cc
  *  Summary:    Functions used to save and load levels/games.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef FILES_H
+#define FILES_H
 
 #define MAX_LEVELS      50
 #define MAX_DUNGEONS    30

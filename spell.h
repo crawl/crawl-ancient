@@ -1,5 +1,3 @@
-#ifndef SPELL_H
-#define SPELL_H
 /*
  *  File:       spell.cc
  *  Summary:    Spell casting functions.
@@ -10,6 +8,8 @@
  *               <1>     -/--/--        LRH             Created
  */
 
+#ifndef SPELL_H
+#define SPELL_H
 
 void exercise_spell(int spell_ex, int spc, int divide);
 void surge_power(int spell);

@@ -1,37 +1,44 @@
 Bugs:
 
-* Macro code does not work properly in Linux.  When enabled, the user
-  must hit two keys before any actions are executed, instead of having
-  their actions executed immediately after each keystroke.  Quick fix is
-  to disable macros from the Linux build, but eventually we want to get
-  them working on Linux.
+* cannot make the program with -DWIZARD (some files won't compile)
+
+* "deep elf" doesn't get an "a" in front of it in the score file
+
+*  bug: killed by program bug when killed by exploding spore
+
+* Skeletal Warrior cast a spell and seg faulted the game in the abyss.
+
+* Makleb's Minor Destruction (first prompt '8' crashes game under DOS?)
+
+* Macro code does not work properly in Linux.  When enabled, the user must hit
+  two keys before any actions are executed, instead of having their actions
+  executed immediately after each keystroke.  Quick fix is to disable macros
+  from the Linux build, but eventually we want to get them working on Linux.
 
 * From the code it appears that dropping items takes zero time...
 
 * Currently possible to gain 0hp when gaining a level... should
-  be safeguards added to make sure this is at least never negative,
-  if not guaranteeing 1hp / level.
+be safeguards added to make sure this is at least never negative,
+if not guaranteeing 1hp / level.
 
 * If you have teleport control you'll see a prompt that says, "You may
-  choose your destination (press '.' or delete to select)". I somehow got
-  into the habit of immediately blowing by this prompt without ever reading
-  it so I was always flailing around whenever I tried to teleport. I've
-  changed show_map() so that it accepts '\r' as well as '.' which should be
-  much more intuitive, but I don't see a check for the delete key in
-  show_map() so I think the prompt is wrong.
-
+choose your destination (press '.' or delete to select)". I somehow got
+into the habit of immediately blowing by this prompt without ever reading
+it so I was always flailing around whenever I tried to teleport. I've
+changed show_map() so that it accepts '\r' as well as '.' which should be
+much more intuitive, but I don't see a check for the delete key in
+show_map() so I think the prompt is wrong.
 
 * Armour skill advances too slowly?
-        >People here were never using heavy armour... banded, splint, scale,
-plate
-        >are still completly ignored.  I did a few changes to make it more
-        >on par with doging... ie I made it recover evasion every two instead of
-        >every three levels, to help counter with the silly and hard to figure
-        >out double penalty subtraction deal that destroys evasion when you
-        >wear armour (add to that the penalty to hit, and the limited value of
-        >armour points and its no wonder no one bothers).  Since its not as easy
-        >to advance I gave it a slight nudge by increasing the exercise in combat
-        >to 1 + random2(2).
+    >People here were never using heavy armour... banded, splint, scale, plate
+    >are still completly ignored.  I did a few changes to make it more
+    >on par with doging... ie I made it recover evasion every two instead of
+    >every three levels, to help counter with the silly and hard to figure
+    >out double penalty subtraction deal that destroys evasion when you
+    >wear armour (add to that the penalty to hit, and the limited value of
+    >armour points and its no wonder no one bothers).  Since its not as easy
+    >to advance I gave it a slight nudge by increasing the exercise in combat
+    >to 1 + random2(2).
 
         Maybe another solution would be to bump up the base AC values of
         each armour type. I only used the T$R standard values as a kind

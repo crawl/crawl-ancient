@@ -941,84 +941,99 @@ dirc:
 }                               // end vamp drain
 
 
-int burn_freeze(int pow, char b_f)
+int burn_freeze(int pow, char flavour)
 {
-    int mgr = 0;
+    int mgr = MNG;
     struct dist bmove[1];
 
-dirc:
-    strcpy(info, "Which direction?");
-    mpr(info);
-    direction(0, bmove);
-
-    mgr = mgrd[you.x_pos + bmove[0].move_x][you.y_pos + bmove[0].move_y];
-
-    if (bmove[0].nothing == -1)
+    while (mgr == MNG)
     {
-        strcpy(info, "The spell fizzles!");
+        strcpy(info, "Which direction?");
         mpr(info);
-        bmove[0].move_x = 0;
-        bmove[0].move_y = 0;
-        return -1;
+        direction(0, bmove);
+
+        if (bmove[0].nothing == -1)
+        {
+            strcpy(info, "The spell fizzles!");
+            mpr(info);
+            bmove[0].move_x = 0;
+            bmove[0].move_y = 0;
+            return -1;
+        }
+
+        if (bmove[0].move_x > 1 || bmove[0].move_y > 1)
+        {
+            strcpy(info, "This spell doesn't reach that far.");
+            mpr(info);
+            continue;
+        }
+
+        if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
+        {
+            strcpy(info, "That would be silly!");
+            mpr(info);
+            continue;
+        }
+
+        mgr = mgrd [you.x_pos+bmove[0].move_x] [you.y_pos+bmove[0].move_y];
+
+        // Yes, this is stange, but it dos maintain the original behaviour
+        if (mgr == MNG)
+        {
+            strcpy(info, "There isn't anything there!");
+            mpr(info);
+            bmove[0].move_x = 0;
+            bmove[0].move_y = 0;
+            return -1;
+        }
     }
 
-    if (bmove[0].move_x > 1 || bmove[0].move_y > 1)
+    switch (flavour)
     {
-        strcpy(info, "This spell doesn't reach that far.");
-        mpr(info);
-        goto dirc;
-    }
+    case BEAM_FIRE:
+        strcpy(info, "You burn ");
+        break;
 
-    if (bmove[0].move_x == 0 && bmove[0].move_y == 0)
-    {
-        strcpy(info, "That would be silly!");
-        mpr(info);
-        goto dirc;
-    }
-
-    if (mgr == MNG)
-    {
-        strcpy(info, "There isn't anything there!");
-        mpr(info);
-        bmove[0].move_x = 0;
-        bmove[0].move_y = 0;
-        return -1;
-    }
-
-    strcpy(info, "You burn ");
-    if (b_f == 3)
-    {
+    case BEAM_COLD:
         strcpy(info, "You freeze ");
-    }
-    if (b_f == 0)
-    {
+        break;
+
+    case BEAM_MISSILE:
         strcpy(info, "You crush ");
-    }
-    if (b_f == 5)
-    {
+        break;
+
+    case BEAM_ELECTRICITY:
         strcpy(info, "You zap ");
-    }
-    strcat(info, monam(menv[mgr].number, menv[mgr].type, menv[mgr].enchantment[2], 1));
+        break;
+    };
+
+    strcat( info, monam(menv[mgr].number, menv[mgr].type,
+                                            menv[mgr].enchantment[2], 1) );
     strcat(info, ".");
     mpr(info);
 
     int hurted = 1 + random2(4) + random2(3) + random2(pow) / 25;
+
     struct bolt beam[1];
 
-    beam[0].flavour = b_f;
-    if (b_f != 0)
+    beam[0].flavour = flavour;
+    if (flavour != BEAM_MISSILE)
         hurted = check_mons_resists(beam, mgr, hurted);
-    menv[mgr].hit_points -= hurted;
 
-    if (menv[mgr].hit_points <= 0)
-    {
-        monster_die(mgr, 1, 0);
+    if (hurted) {
+        menv[mgr].hit_points -= hurted;
+
+        if (menv[mgr].hit_points <= 0)
+        {
+            monster_die(mgr, 1, 0);
+        }
+        else
+        {
+            print_wounds(mgr);
+        }
     }
-    else
-        print_wounds(mgr);
 
     return 1;
-
 }                               // end vamp drain
 
 

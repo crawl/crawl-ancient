@@ -97,7 +97,7 @@ char *mutation_descrip[][3] =
     {"You are robust (+10 percent hp).", "You are very robust (+20 percent hp).", "You are extremely robust (+30 percent hp)."},
 
     {"You are immune to unholy pain and torment.", "", ""},
-    {"You are immune to negative energy.", "", ""},
+    {"You resist negative energy.", "You are quite resistant to negative energy.", "You are immune to negative energy."},
     {"You can summon minor demons to your aid.", "", ""},       /* Use find_spell in files.cc to avoid duplication */
     {"You can summon demons to your aid.", "", ""},
     {"You can hurl blasts of hellfire.", "", ""},
@@ -429,13 +429,16 @@ char mutate(int which_mutation)
     if (you.is_undead != 0 && force == 0)
         return 0;
 
-    if (wearing_amulet(AMU_RESIST_MUTATION) != 0 && random2(10) != 0 && force == 0)
+    if (wearing_amulet(AMU_RESIST_MUTATION) != 0 && random2(10) != 0
+                                                                && force == 0)
     {
         mpr("You feel rather odd for a moment.");
         return 0;
     }
 
-    if (you.mutation[MUT_MUTATION_RESISTANCE] != 0 && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || random2(3) != 0) && force == 0)
+    if (you.mutation[MUT_MUTATION_RESISTANCE] != 0
+            && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || random2(3) != 0)
+                                            && force == 0)
     {
         mpr("You feel rather odd for a moment.");
         return 0;
@@ -443,7 +446,7 @@ char mutate(int which_mutation)
 
     if (which_mutation == 100 && random2(15) < how_mutated())
     {
-        if (random2(3) != 0)
+        if (random2(3) != 0 && force == 0)
             return 0;
         return delete_mutation(100);
     }
@@ -459,9 +462,14 @@ char mutate(int which_mutation)
 
     if (you.mutation[mutat] >= 3 && mutat != MUT_STRONG && mutat != MUT_CLEVER && mutat != MUT_AGILE && mutat != MUT_WEAK && mutat != MUT_DOPEY && mutat != MUT_CLUMSY)
         return 0;
+
     if (you.mutation[mutat] > 13 && force == 0)
         return 0;
-    if (mutat == MUT_TOUGH_SKIN || (mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES) && body_covered() > 2)
+
+    // These can be forced by demonspawn
+    if (mutat == MUT_TOUGH_SKIN
+                || (mutat >= MUT_GREEN_SCALES && mutat <= MUT_BONEY_PLATES)
+                && body_covered() > 2 && force == 0)
         return 0;
 
     if ((mutat == MUT_ACUTE_VISION || mutat == MUT_POISON_RESISTANCE || mutat == MUT_SPIT_POISON) && you.species == SP_NAGA)
@@ -469,14 +477,23 @@ char mutate(int which_mutation)
 
     if (you.species == SP_GNOME && mutat == MUT_MAPPING)
         return 0;               /* gnomes can't sense surroundings */
+
     if ((you.species == SP_CENTAUR || you.species == SP_SPRIGGAN) && mutat == MUT_FAST)
         return 0;               /* centaurs/spriggans are already swift */
-    if (mutat == MUT_REGENERATION && you.mutation[MUT_SLOW_METABOLISM] > 0)
+
+    // This one can be forced by demonspawn
+    if (mutat == MUT_REGENERATION && you.mutation[MUT_SLOW_METABOLISM] > 0
+                                                                && force == 0)
         return 0;               /* if you have a slow metabolism, no regen */
+
     if (mutat == MUT_SLOW_METABOLISM && you.mutation[MUT_REGENERATION] > 0)
         return 0;               /* if you have a slow metabolism, no regen */
-    if (mutat == MUT_ACUTE_VISION && you.mutation[MUT_BLURRY_VISION] > 0)
+
+    // This one can be forced by demonspawn
+    if (mutat == MUT_ACUTE_VISION && you.mutation[MUT_BLURRY_VISION] > 0
+                                                                && force == 0)
         return 0;
+
     if (mutat == MUT_BLURRY_VISION && you.mutation[MUT_ACUTE_VISION] > 0)
         return 0;               /* blurred vision/see invis */
 
@@ -548,6 +565,7 @@ char mutate(int which_mutation)
         you.redraw_strength = 1;
         mpr(gain_mutation[mutat][0]);
         break;
+
     case MUT_DOPEY:
         if (you.mutation[MUT_CLEVER] > 0)
         {
@@ -559,6 +577,7 @@ char mutate(int which_mutation)
         you.redraw_intelligence = 1;
         mpr(gain_mutation[mutat][0]);
         break;
+
     case MUT_CLUMSY:
         if (you.mutation[MUT_AGILE] > 0)
         {
@@ -569,6 +588,26 @@ char mutate(int which_mutation)
         you.max_dex--;
         you.redraw_dexterity = 1;
         mpr(gain_mutation[mutat][0]);
+        break;
+
+    case MUT_REGENERATION:
+        if (you.mutation[MUT_SLOW_METABOLISM] > 0)
+        {
+            // Should only get here from demonspawn, where our inate
+            // ability will clear away the counter-mutation.
+            while( delete_mutation( MUT_SLOW_METABOLISM ) );
+        }
+        mpr(gain_mutation[mutat][you.mutation[mutat]]);
+        break;
+
+    case MUT_ACUTE_VISION:
+        if (you.mutation[MUT_BLURRY_VISION] > 0)
+        {
+            // Should only get here from demonspawn, where our inate
+            // ability will clear away the counter-mutation.
+            while( delete_mutation( MUT_BLURRY_VISION ) );
+        }
+        mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
     case MUT_CARNIVOROUS:       // carnivorous
@@ -592,8 +631,7 @@ char mutate(int which_mutation)
         break;
 
     case MUT_SHOCK_RESISTANCE:  // res elec
-
-        you.attribute[ATTR_RESIST_LIGHTNING]++;
+        // you.attribute[ATTR_RESIST_LIGHTNING]++;
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
@@ -604,7 +642,7 @@ char mutate(int which_mutation)
             delete_mutation(MUT_SLOW_METABOLISM);
             return 1;
         }
-        you.hunger_inc++;
+        // you.hunger_inc++;
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
@@ -615,8 +653,8 @@ char mutate(int which_mutation)
             delete_mutation(MUT_FAST_METABOLISM);
             return 1;
         }
-        if (you.mutation[mutat] == 0 || you.mutation[mutat] == 2)
-            you.hunger_inc--;
+        // if (you.mutation[mutat] == 0 || you.mutation[mutat] == 2)
+        //    you.hunger_inc--;
         mpr(gain_mutation[mutat][you.mutation[mutat]]);
         break;
 
@@ -838,8 +876,7 @@ char delete_mutation(char which_mutation)
 
 
     case MUT_SHOCK_RESISTANCE:  // res elec
-
-        you.attribute[ATTR_RESIST_LIGHTNING]--;
+        // you.attribute[ATTR_RESIST_LIGHTNING]--;
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
@@ -849,7 +886,7 @@ char delete_mutation(char which_mutation)
            mutate(MUT_SLOW_METABOLISM);
            break;
            } */
-        you.hunger_inc--;
+        // you.hunger_inc--;
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
@@ -859,8 +896,8 @@ char delete_mutation(char which_mutation)
            mutate(MUT_FAST_METABOLISM);
            break;
            } */
-        if (you.mutation[mutat] == 0 || you.mutation[mutat] == 2)
-            you.hunger_inc++;
+        // if (you.mutation[mutat] == 1 || you.mutation[mutat] == 3)
+        //     you.hunger_inc++;
         mpr(lose_mutation[mutat][you.mutation[mutat] - 1]);
         break;
 
@@ -955,10 +992,9 @@ char body_covered(void)
     covered += you.mutation[MUT_GREEN_SCALES];
     covered += you.mutation[MUT_BLACK_SCALES];
     covered += you.mutation[MUT_GREY_SCALES];
-//covered += you.mutation [7]; boney plates
+    covered += you.mutation[MUT_BONEY_PLATES];
 
     return covered;
-
 }
 
 
@@ -1074,9 +1110,9 @@ void demonspawn()
             if (random2(4) == 0)
             {
                 whichm = MUT_HORNS;
-                howm = 1;
+                howm = 1 + random2(2);
                 if (you.experience_level >= 5)
-                    howm = 3;
+                    howm = 2 + random2(2);
             }                   /* horns */
 
             if (you.mutation[whichm] != 0)
@@ -1085,6 +1121,7 @@ void demonspawn()
             counter++;
         }
         while (whichm == -1 && counter < 5000);
+
         if (whichm == -1)       /* unlikely but remotely possible */
         {
             /* I know this is a cop-out */
@@ -1144,7 +1181,7 @@ void demonspawn()
         }                       /* teleport */
         if (random2(10) == 0)
         {
-            whichm = MUT_ACUTE_VISION;
+            whichm = MUT_REGENERATION;
             howm = 2;
         }                       /* regenerate */
         if (random2(12) == 0)
@@ -1160,7 +1197,7 @@ void demonspawn()
         if (random2(12) == 0)
         {
             whichm = MUT_NEGATIVE_ENERGY_RESISTANCE;
-            howm = 1;
+            howm = 1 + random2(3);
         }                       /* resist -ve energy */
         if (random2(20) == 0 && you.mutation[MUT_TORMENT_RESISTANCE] == 0)
         {

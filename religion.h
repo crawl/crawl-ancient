@@ -1,5 +1,3 @@
-#ifndef RELIGION_H
-#define RELIGION_H
 /*
  *  File:       religion.cc
  *  Summary:    Misc religion related functions.
@@ -9,6 +7,8 @@
  *
  *               <1>     -/--/--        LRH             Created
  */
+#ifndef RELIGION_H
+#define RELIGION_H
 
 void pray(void);
 char *god_name(int which_god);

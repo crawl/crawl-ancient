@@ -470,16 +470,19 @@ void invoke_wielded(void)
             strcpy(info, "You channel some magical energy.");
             mpr(info);
 
-            you.inv_ident[you.equip[EQ_WEAPON]] = 3;
-            strcpy(info, "You are wielding ");
-            in_name(you.equip[EQ_WEAPON], 3, str_pass);
-            strcat(info, str_pass);
-            strcat(info, ".");
+            if (you.inv_ident[you.equip[EQ_WEAPON]] < 3)
+            {
+                you.inv_ident[you.equip[EQ_WEAPON]] = 3;
+                strcpy(info, "You are wielding ");
+                in_name(you.equip[EQ_WEAPON], 3, str_pass);
+                strcat(info, str_pass);
+                strcat(info, ".");
 
-            mpr(info);
-            more();
+                mpr(info);
+                more();
 
-            wield_change = 1;
+                wield_change = 1;
+            }
             break;
         }
         staff_spell(you.equip[EQ_WEAPON]);
@@ -1081,6 +1084,7 @@ void skill_manual(char sc_read_2)
     char skname[30];
     char keyin;
 
+    you.inv_ident[sc_read_2] = 3;
     strcpy(info, "This is a manual of ");
     strcat(info, skill_name(you.inv_plus[sc_read_2]));
     strcat(info, "!");
@@ -1119,7 +1123,7 @@ read_it:
     strcat(info, ".");
     mpr(info);
 
-    exercise(you.inv_plus[sc_read_2], 100);
+    exercise(you.inv_plus[sc_read_2], 500);
 
     if (random2(10) == 0)
     {
