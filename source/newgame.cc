@@ -297,7 +297,8 @@ bool new_game(void)
     //jmf: NEW ASSERTS: we ought to do a *lot* of these
     ASSERT(NUM_SPELLS < SPELL_NO_SPELL);
     ASSERT(NUM_DURATIONS > DUR_LAST_DUR);
-
+    ASSERT(NUM_JOBS < JOB_UNKNOWN);
+    ASSERT(NUM_ATTRIBUTES < 30);
     init_player();
 
     you.exp_available = 25;     // now why is this all the way up here? {dlb}
@@ -733,9 +734,9 @@ bool new_game(void)
     you.branch_stairs[STAIRS_ELVEN_HALLS] =
         you.branch_stairs[STAIRS_ORCISH_MINES] + (coinflip() ? 4 : 3);  // 11.0
 
-    you.branch_stairs[STAIRS_HIVE] = 10 + random2(6);   // avg: 12.5
-
     you.branch_stairs[STAIRS_LAIR] = 7 + random2(6);    // avg:  9.5
+
+    you.branch_stairs[STAIRS_HIVE] = 10 + random2(6);   // avg: 12.5
 
     you.branch_stairs[STAIRS_SLIME_PITS] =
         you.branch_stairs[STAIRS_LAIR] + 3 + random2(4);        // avg: 14.0
@@ -883,34 +884,14 @@ bool class_allowed(unsigned char speci, int char_class)
         return true;
 
     case JOB_PALADIN:
-        if (player_genus(GENPC_ELVEN, speci))
-            return false;
-        if (player_genus(GENPC_DRACONIAN, speci))
-            return false;
-        if (player_descriptor(PDSC_UNDEAD, speci))
-            return false;
-
         switch (speci)
         {
-        case SP_CENTAUR:
-        case SP_DEMIGOD:
-        case SP_DEMONSPAWN:
-        case SP_GNOME:
-        case SP_HALFLING:
-        case SP_HILL_DWARF:
-        case SP_HILL_ORC:
-        case SP_KENKU:
-        case SP_KOBOLD:
-        case SP_MINOTAUR:
-        case SP_NAGA:
-        case SP_OGRE:
-        case SP_OGRE_MAGE:
-        case SP_SPRIGGAN:
-        case SP_TROLL:
-        case SP_MERFOLK:
-            return false;
+        case SP_HUMAN:
+        case SP_MOUNTAIN_DWARF:
+        case SP_HIGH_ELF:
+            return true;
         }
-        return true;
+        return false;
 
     case JOB_ASSASSIN:
         if (player_genus(GENPC_DWARVEN, speci))
@@ -2035,6 +2016,10 @@ void give_basic_knowledge(int which_job)
         set_id(OBJ_POTIONS, POT_POISON, 1);
         break;
 
+    case JOB_WARPER:
+        set_id(OBJ_SCROLLS, SCR_BLINKING, 1);
+        break;
+
     default:
         break;
     }
@@ -2044,7 +2029,7 @@ void give_basic_knowledge(int which_job)
 
 void give_basic_spells(int which_job)
 {
-    // wanderer's may or may not already have a spell -- bwr
+    // wanderers may or may not already have a spell -- bwr
     if (which_job == JOB_WANDERER)
         return;
 
@@ -2270,7 +2255,7 @@ bool verifyPlayerName(void)
     }
 #endif
 
-     for (int i = 0; i < strlen(you.your_name); i++)
+     for (unsigned int i = 0; i < strlen(you.your_name); i++)
     {
 #if MAC
         // the only bad character on Macs is the path seperator
@@ -2657,7 +2642,7 @@ static void create_wanderer( void )
     you.inv_plus[2] = 50;
     you.inv_dam[2] = 0;
 
-    // Wanderer's have at least seen one type of potion, and if they
+    // Wanderers have at least seen one type of potion, and if they
     // don't get anything else good, they'll get to keep this one...
     // Note:  even if this is taken away, the knowledge of the potion
     // type is still given to the character.
@@ -2700,24 +2685,24 @@ static void create_wanderer( void )
         // Spellcaster style wanderer
 
         // Could only have learned spells in common schools...
-        const int school_list[9] =
-            { SK_CONJURATIONS, SK_FIRE_MAGIC, SK_ICE_MAGIC,
-             SK_AIR_MAGIC, SK_EARTH_MAGIC, SK_ENCHANTMENTS,
-             SK_TRANSMIGRATION, SK_TRANSLOCATIONS, SK_NECROMANCY };
+        const int school_list[5] =
+            { SK_CONJURATIONS,
+                       SK_ENCHANTMENTS, SK_ENCHANTMENTS,
+                       SK_TRANSLOCATIONS, SK_NECROMANCY };
 
             //jmf: Two of those spells are gone due to their munchkinicity.
             //     crush() and arc() are like having good melee capability.
             //     Therefore giving them to "harder" class makes less-than-
         //     zero sense, and they're now gone.
-        const int spell_list[9] =
-           { SPELL_MAGIC_DART, SPELL_FLAME_TONGUE, SPELL_FREEZE,
-             SPELL_SHOCK, SPELL_SANDBLAST, SPELL_CONFUSING_TOUCH,
-             SPELL_DISRUPT, SPELL_APPORTATION, SPELL_ANIMATE_SKELETON };
+        const int spell_list[5] =
+           { SPELL_MAGIC_DART,
+             SPELL_CONFUSING_TOUCH, SPELL_BACKLIGHT,
+             SPELL_APPORTATION, SPELL_ANIMATE_SKELETON };
 
         // Choose one of the schools we have at random.
         int school = SK_SPELLCASTING;
         int num_schools = 0;
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < 5; i++)
         {
             if (you.skills[ school_list[ i ]])
             {
@@ -3742,7 +3727,7 @@ void give_items_skills()
         if (you.species == SP_DEEP_ELF)
             you.skills[SK_CROSSBOWS] = 1;
         else
-            you.skills[SK_DARTS] += 1;
+            you.skills[SK_THROWING] += 1;
 
         break;
 
@@ -4013,7 +3998,7 @@ void give_items_skills()
         switch (you.char_class)
         {
         case JOB_SUMMONER:
-            you.inv_type[2] = BOOK_SUMMONINGS;
+            you.inv_type[2] = BOOK_CALLINGS;
             you.inv_plus[2] = 0;
             you.skills[SK_SUMMONINGS] = 4;
             // gets some darts - this class is difficult to start off with
@@ -4171,7 +4156,7 @@ void give_items_skills()
         }
 
         if (you.char_class == JOB_TRANSMUTER)
-            you.skills[SK_UNARMED_COMBAT] = 1;
+            you.skills[SK_UNARMED_COMBAT] += 1;
         else if (you.species == SP_GNOME)
             you.skills[SK_SLINGS]++;
         else

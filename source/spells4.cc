@@ -79,7 +79,7 @@ void do_monster_rot(int mon);
 
 //jmf: FIXME: put somewhere else (misc.cc?)
 // A feeble attempt at Nethack-like completeness for cute messages.
-static const char *your_hand(int plural)
+const char *your_hand(int plural)
 {
     static char buffer[80];
 
@@ -196,7 +196,7 @@ int mons_has_ench(struct monsters *mon, int ench, int ench2)
 
 bool mons_del_ench(struct monsters *mon, int ench, int ench2)
 {
-    int p;
+    unsigned int p;
 
     // silliness
     if (ench == ENCH_NONE)
@@ -875,7 +875,6 @@ static int shatter_walls(char x, char y, int pow, int garbage)
         stuff = DEBRIS_WOOD;
         break;
 
-    case DNGN_SILVER_STATUE:    //FIXME: decrement statue[whatever].stuff
     case DNGN_METAL_WALL:
         stuff = DEBRIS_METAL;
         chance /= 4;
@@ -894,7 +893,6 @@ static int shatter_walls(char x, char y, int pow, int garbage)
         break;
 
     case DNGN_GREEN_CRYSTAL_WALL:
-    case DNGN_ORANGE_CRYSTAL_STATUE:
         stuff = DEBRIS_CRYSTAL;
         break;
 
@@ -960,7 +958,7 @@ void cast_shatter(int pow)
     if (damage)
         ouch(damage, 0, KILLED_BY_TARGETTING);
 
-    int rad = 1 + (you.skills[SK_EARTH_MAGIC]/4);
+    int rad = 3 + (you.skills[SK_EARTH_MAGIC]/9);
 
     apply_area_within_radius(shatter_items, you.x_pos, you.y_pos, pow, rad, 0);
     apply_area_within_radius(shatter_monsters, you.x_pos, you.y_pos, pow, rad, 0);
@@ -1411,28 +1409,18 @@ static int sleep_monsters(char x, char y, int pow, int garbage)
 {
     int mnstr = mgrd[x][y];
 
-    if (mnstr == NON_MONSTER)
-        return 0;
-    if (mons_holiness(menv[mnstr].type) != MH_NATURAL)
-        return 0;
-    if (check_mons_magres(&menv[mnstr], pow))
-        return 0;
-    if (mons_friendly(&menv[mnstr]))
-        return 0;
+    if (mnstr == NON_MONSTER)                                   return 0;
+    if (mons_holiness(menv[mnstr].type) != MH_NATURAL)          return 0;
+    if (check_mons_magres(&menv[mnstr], pow))                   return 0;
+    if (mons_friendly(&menv[mnstr]))                            return 0;
     //jmf: now that sleep == hibernation:
-    if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip())
-        return 0;
-    if (mons_has_ench(&menv[mnstr], ENCH_SLEEP_WARY))
-        return 0;
+    if ((mons_res_cold(menv[mnstr].type) > 0) && coinflip())    return 0;
+    if (mons_has_ench(&menv[mnstr], ENCH_SLEEP_WARY))           return 0;
 
     if (mons_flag(menv[mnstr].type, M_COLD_BLOOD))
-    {
         mons_add_ench(&menv[mnstr], ENCH_SLOW);
-        menv[mnstr].behavior = BEH_SLEEP;
-    }
-    else
-        menv[mnstr].behavior = BEH_SLEEP;
 
+    menv[mnstr].behavior = BEH_SLEEP;
     mons_add_ench(&menv[mnstr], ENCH_SLEEP_WARY);
 
     return 1;
@@ -1448,17 +1436,17 @@ static int tame_beast_monsters(char x, char y, int pow, int garbage)
     int which_mons = mgrd[x][y];
     struct monsters *monster = &menv[which_mons];
 
-    if (which_mons == NON_MONSTER)
-        return 0;
-    if (mons_holiness(monster->type) != MH_NATURAL)
-        return 0;
-    if (mons_intel_type(monster->type) != I_ANIMAL)
-        return 0;
-    if (mons_friendly(monster))
-        return 0;
+    if (which_mons == NON_MONSTER)                             return 0;
+    if (mons_holiness(monster->type) != MH_NATURAL)            return 0;
+    if (mons_intel_type(monster->type) != I_ANIMAL)            return 0;
+    if (mons_friendly(monster))                                return 0;
 
     // 50% bonus for dogs, add cats if they get implemented
-    if (monster->type == MONS_HOUND || monster->type == MONS_WAR_DOG)
+    if (monster->type == MONS_HOUND || monster->type == MONS_WAR_DOG
+                 || monster->type == MONS_BLACK_BEAR)
+        pow += (pow / 2);
+
+    if (you.species == SP_HILL_ORC && monster->type == MONS_WARG)
         pow += (pow / 2);
 
     if (check_mons_magres(monster, pow))
@@ -1538,7 +1526,7 @@ static int ignite_poison_clouds(char x, char y, int pow, int garbage)
             || env.cloud_type[env.cgrid[x][y]] == CLOUD_STINK_MON)
         {
             did_anything = true;
-            env.cloud_type[env.cgrid[x][y]] += (CLOUD_FIRE - CLOUD_STINK);
+            env.cloud_type[env.cgrid[x][y]] = CLOUD_FIRE;
 
             // must find cloud in order to lower its duration
             // is there a better way to find a cloud (e.g. cgrid?)
@@ -1557,7 +1545,7 @@ static int ignite_poison_clouds(char x, char y, int pow, int garbage)
                  || env.cloud_type[env.cgrid[x][y]] == CLOUD_POISON_MON)
         {
             did_anything = true;
-            env.cloud_type[env.cgrid[x][y]] += (CLOUD_FIRE - CLOUD_POISON);
+            env.cloud_type[env.cgrid[x][y]] = CLOUD_FIRE;
         }
     }
 
@@ -1707,11 +1695,6 @@ void cast_ignite_poison(int pow)
 
     if (damage)
     {
-        // More evidence for a lack of understanding of the related system...
-        // the player_res_fire function returns a number centered around 100,
-        // not around 0 (so the player would always resist here)... of
-        // course basing stuff around 100 isn't obvious, but there's a
-        // lot of little surprises like that in this code.  -- bwr
         if (player_res_fire() > 100)
         {
             mpr("You feel like your blood is boiling!");
@@ -1819,7 +1802,6 @@ void cast_discharge(int pow)
             sprintf(info, "%s blue arc%s ground%s harmlessly %s you.",
                 plural ? "Some" : "A",
                 plural ? "s" : "",
-                plural ? "" : "s",
                 plural ? " themselves" : "s itself",
                 plural ? "around" : (coinflip() ? "beside" :
                                      coinflip() ? "behind" : "before")
@@ -1923,7 +1905,6 @@ void cast_bend(int pow)
 // the insane damage potential.  -- bwr
 static int disperse_monsters(char x, char y, int pow, int message)
 {
-    int specdam = 0;
     int monster_attacked = mgrd[x][y];
 
     if (monster_attacked == NON_MONSTER)
@@ -3312,58 +3293,46 @@ static int quadrant_blink(char x, char y, int pow, int garbage)
         pow = 100;
 
     // setup: Brent's new algorithm
+    // we are interested in two things: distance of a test point from
+    // the ideal 'line',  and the distance of a test point from two
+    // actual points,  one in the 'correct' direction and one in the
+    // 'incorrect' direction.
 
-    // please note: this is really a simple vector projection using
-    // x,y as a basis vector.  But I can't remember the bloody maths,
-    // so I've hacked it in this way.  Feel free to correct;  the matrix
-    // in question is undoubtably simple. -- GDL
-    int m, b, tries;
-    bool vert = false;
-    if (x == you.x_pos)
-        vert = true;
-    else
-    {
-        m = ((int)y - you.y_pos) * 100 / ((int)x - you.x_pos);      // * 100
-        b = 100 * ((int)y - you.y_pos) - m * ((int)x - you.x_pos);  // * 100
-    }
+    // scale distance by 10 for more interesting numbers.
+    int l,m;        // for line equation lx + my = 0
+    l = (x - you.x_pos);
+    m = (you.y_pos - y);
 
     int tx, ty;         // test x,y
     int bx, by;         // best x,y
-    int best_dist = 1000000;
+    int rx, ry;         // x,y relative to you.
+    int sx, sy;         // test point in the correct direction
 
-    for(tries = pow * pow / 500 + 3; tries > 0; tries--)
+    int best_dist = 10000;
+
+    sx = l;
+    sy = -m;
+
+    // for each point (a,b), distance from the line is | la + mb |
+
+    for(int tries = pow * pow / 500 + 1; tries > 0; tries--)
     {
         if (!random_near_space(you.x_pos, you.y_pos, tx, ty))
             return 0;
 
-        // get intersection point
-        int ix, iy;
-        if (vert)
-        {
-            ix = you.x_pos;
-            iy = ty;
-        }
-        else
-        {
-            if (m == 0)
-            {
-                ix = tx;
-                iy = you.y_pos;
-            }
-            else
-            {
-                ix = (100 * (ty - you.y_pos) + m * (tx + you.x_pos)) / ( 2 * m );
-                iy = (m * ix + 100 * b) / 100;
-            }
-        }
+        rx = tx - you.x_pos;
+        ry = ty - you.y_pos;
 
-        // check distance between intersection and point
-        int dist = distance(ix, iy, tx, ty);
+        int dist = l * rx + m * ry;
+        dist *= 10 * dist;      // square and multiply by 10
 
-        // attempt to be on the 'correct' side of the line
-        if (((ix >= you.x_pos) ^ (x >= you.x_pos))
-            || ((iy >= you.y_pos) ^ (y >= you.y_pos)))
-            dist += 100;
+        // check distance to test points
+        int dist1 = distance(rx, ry, sx, sy) * 10;
+        int dist2 = distance(rx, ry, -sx, -sy) * 10;
+
+        // 'good' points will always be closer to test point 1
+        if (dist2 < dist1)
+            dist += 80;          // make the point less attractive
 
         if (dist < best_dist)
         {

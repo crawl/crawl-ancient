@@ -172,17 +172,10 @@ static void print_description(const string &d)
 // string.
 //
 //---------------------------------------------------------------
-static void randart_descpr(string & description, int item_class,
+static void randart_descpr(string &description, int item_class,
                            int item_type, int item_plus, int item_plus2,
                            int item_dam)
 {
-    // If description is already $-terminated, remove the $.
-    if (description.length() > 0
-        && description[description.length() - 1] == '$')
-    {
-        description[description.length() - 1] = 0;
-    }
-
     unsigned int old_length = description.length();
 
     if (randart_wpn_properties( item_class, item_type, item_dam,
@@ -1046,7 +1039,7 @@ static string describe_weapon(int item_class, int item_type, int item_plus,
         description += "$Attack delay: ";
         append_value(description,
                      property(OBJ_WEAPONS, item_type, PWPN_SPEED) * 10, false);
-        description += "%";
+        description += "%%";
     }
     description += "$$";
 
@@ -2568,7 +2561,7 @@ static string describe_jewellery(int item_class, int item_type, int item_plus,
             case RING_SLAYING:
                 description +=
                     "This ring increases the hand-to-hand and missile combat "
-                    "skills of its wearer. ";
+                    "skills of its wearer.   Multiple rings are not cumulative.";
                 break;
 
             case RING_SEE_INVISIBLE:
@@ -2855,7 +2848,7 @@ static string describe_staff(int item_type, unsigned char item_id)
 
         case STAFF_SMITING:
             description +=
-                "of holy spells allows its wielder to smite foes from afar. ";
+                "allows its wielder to smite foes from afar. ";
             break;
 
         case STAFF_SUMMONING_II:
@@ -2904,7 +2897,7 @@ static string describe_staff(int item_type, unsigned char item_id)
         }
 
         description +=
-            "$$Damage rating: 7 $Accuracy rating: +6 $Attack delay: 120%";
+            "$$Damage rating: 7 $Accuracy rating: +6 $Attack delay: 120%%";
 
         description += "$$It falls into the 'staves' category. ";
     }
@@ -3910,7 +3903,8 @@ void describe_spell(int spelled)
 
     case SPELL_POISON_WEAPON:
         description +=
-            "temporarily coats any sharp bladed weapon with poison. ";
+            "temporarily coats any sharp bladed weapon with poison.  Will only "
+            "work on weapons without an existing enchantment.";
         break;
 
     case SPELL_RESIST_POISON:
@@ -3960,13 +3954,13 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_DISRUPT:
-        description += "disrupts the matter of another creature's body, "
+        description += "disrupts space around another creature, "
             "causing injury.";
         break;
 
-    case SPELL_DISINTEGRATE:    // atomic theory in Crawl? {dlb}
-        description += "rends apart the substance of an object "
-            "(especially a creature's body), " "causing severe damage. ";
+    case SPELL_DISINTEGRATE:
+        description += "violently rends apart anything in a small volume of "
+            "space.  Can be used to cause severe damage.";
         break;
 
     case SPELL_BLADE_HANDS:
@@ -4165,7 +4159,7 @@ void describe_spell(int spelled)
             "reading scrolls, casting spells, praying or yelling "
             "in the caster's vicinity impossible. (Applies to "
             "caster too, of course.)  This spell will not hide your "
-            "presence, since its sudden and complete effect "
+            "presence, since its oppressive, unnatural effect "
             "will almost certainly alert any living creature that something "
             "is very wrong. ";
         break;
@@ -4204,13 +4198,13 @@ void describe_spell(int spelled)
 
     case SPELL_INTOXICATE:
         description += "works by converting a small portion of brain matter "
-            "into alcohol. It affects all intelligent humanoids "
-            "within the caster's view (as well as the caster). It "
+            "into alcohol. It affects all intelligent humanoids within "
+            "the caster's view (presumably including the caster). It "
             "is frequently used as an icebreaker at wizard parties. ";
         break;
 
 #ifdef USE_ELVISH_GLAMOUR_ABILITY
-    case SPELL_GLAMOUR: // intended only as High/Grey Elf ability
+    case SPELL_GLAMOUR: // intended only as Grey Elf ability
         description += "is an Elvish magic, which draws upon the viewing "
             "creature's credulity and the caster's comeliness "
             "to charm, confuse or render comatose. ";
@@ -4300,8 +4294,9 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_CONJURE_BALL_LIGHTNING:
-        description += "allows the conjurer to create ball lightning, but be "
-                       "wary as ball lighting is difficult to control. ";
+        description += "allows the conjurer to create ball lightning.  "
+                        "Using the spell is not without risk - ball lighting "
+                        "can be difficult to control. ";
         break;
 
     case SPELL_TWIST:
@@ -4312,12 +4307,12 @@ void describe_spell(int spelled)
     case SPELL_FAR_STRIKE:
         description += "allows the caster to transfer the force of a "
                        "weapon strike to any target the caster can see.  "
-                       "This spell will only deliver the impact of the blow, "
+                       "This spell will only deliver the impact of the blow; "
                        "magical side-effects and enchantments cannot be "
-                       "transferred in this way.  The force transferred by this "
-                       "spell has little to do with one's skill with weapons, "
-                       "and more to do with personal strength, translocation "
-                       "skill, and magic ability. ";
+                       "transferred in this way.  The force transferred by "
+                           "this spell has little to do with one's skill with "
+                           "weapons, and more to do with personal strength, "
+                           "translocation skill, and magic ability. ";
         break;
 
     case SPELL_SWAP:
@@ -4330,11 +4325,10 @@ void describe_spell(int spelled)
                        "similar items from a distant pile to the floor "
                        "near the caster.  The mass of the target item(s) will "
                        "make the task more difficult, with some items too "
-                       "massive to ever be moved by this spell.  Also be "
-                       "wary that if your power level is insufficient "
-                       "to move all of a group of items, some might be lost "
-                       "to the cosmic void... but you need not worry about "
-                       "this when transporting only a single object. ";
+                       "massive to ever be moved by this spell.   Using this "
+                       "spell on a group of items can be risky;  insufficient "
+                       "power will cause some of the items to be lost in the "
+                       "infinite void.";
         break;
 
     default:
@@ -4531,7 +4525,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_MANTICORE:
         description = "A hideous cross-breed, bearing the features of a "
             "human and a lion, with great bat-like wings. Its tail "
-            "bristles with spikes, which can be loosed at potential " "prey.";
+            "bristles with spikes, which can be loosed at potential prey.";
         break;
 
     case MONS_NECROPHAGE:
@@ -4662,7 +4656,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_SPATIAL_VORTEX:
-        description = "A shimmering, twisted coil of space.";
+        description = "A crazily shifting twist in the fabric of reality.";
         break;
 
     case MONS_ABOMINATION_SMALL:
@@ -4829,8 +4823,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         description +=
             "A wizard who didn't want to die, a Lich is a skeletal,"
             " desiccated corpse kept alive by a mighty exercise of "
-            "necromancy. These undead creatures can wield great "
-            "magic and are best avoided by all but the most " "confident.";
+            "necromancy.  These undead creatures can wield great "
+            "magic and are best avoided by all but the most confident.";
         break;
 
     case MONS_ANCIENT_LICH:
@@ -4846,7 +4840,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_GUARDIAN_MUMMY:
         description += "An ancient warrior, embalmed "
-            "and cursed with the ability to walk even when dead.";
+            "and cursed to walk in undeath for eternity.";
         break;
 
     case MONS_GREATER_MUMMY:
@@ -4864,8 +4858,13 @@ void describe_monsters(int class_described, unsigned char which_mons)
     case MONS_NAGA_WARRIOR:
     case MONS_GUARDIAN_NAGA:
     case MONS_GREATER_NAGA:
-        description = "A weird hybrid; human from the waist up,"
-            " it has a snake tail instead of legs. ";
+        if (you.species == SP_NAGA)
+                   description = "An attractive";
+                 else
+                   description = "A strange";
+        description += " hybrid; human from the chest up,"
+            " with a scaly, muscular torso trailing off like "
+            " that of a snake.  ";
 
         switch (class_described)
         {
@@ -4891,7 +4890,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_OGRE_MAGE:
-        description = "A rare breed of ogre, skilled in the " "use of magic.";
+        description = "A rare breed of ogre, skilled in the use of magic.";
         break;
 
     case MONS_PLANT:
@@ -4950,7 +4949,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
     case MONS_TROLL:
         description =
-            "A huge, nasty-looking creature. Its thick and knobbly hide seems to heal almost instantly from most wounds.";
+            "A huge, nasty-looking creature. Its thick and knobbly hide "
+            "seems to heal almost instantly from most wounds.";
         break;
 
     case MONS_DEEP_TROLL:
@@ -5300,7 +5300,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_AZURE_JELLY:
-        description = "A faintly glowing blob of bright blue cytoplasm. ";
+        description = "A frosty blob of bright blue cytoplasm. ";
         break;
 
     case MONS_ACID_BLOB:
@@ -5475,7 +5475,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
         case MONS_DEEP_ELF_SUMMONER:
         case MONS_DEEP_ELF_CONJURER:
-            description += "This one is a mage specialized in ancient art ";
+            description += "This one is a mage specialized in the ancient art ";
             if (class_described == MONS_DEEP_ELF_SUMMONER)
                 description += "of summoning servants";
             else
@@ -5494,13 +5494,13 @@ void describe_monsters(int class_described, unsigned char which_mons)
 
         case MONS_DEEP_ELF_DEMONOLOGIST:
             description +=
-                "This mage specialized in demonology, and is marked "
-                "heavily by long years in contact with unnatural demonic forces.";
+                "This mage specialized in demonology, and is marked heavily "
+                "from long years in contact with unnatural demonic forces.";
             break;
 
         case MONS_DEEP_ELF_ANNIHILATOR:
-            description += "This one likes destruction more than most, "
-                "and is better at it.";
+            description += "This one likes destructive magics more than most, "
+                "and is better at them.";
             break;
 
         case MONS_DEEP_ELF_SORCEROR:
@@ -5812,7 +5812,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_SIGMUND:
-        description += "An evil elderly human.";
+        description += "An evil and spritely old human, whose eyes "
+                   "twinkle with madness.  Sigmund wields a nasty looking scythe.";
         break;
 
     case MONS_EDMUND:
@@ -5885,7 +5886,7 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_DUANE:
-        description += "Another evil mercenary.";
+        description += "An evil mercenary with unusually large ears.";
         break;
 
     case MONS_NORRIS:

@@ -22,6 +22,16 @@
 #include "items.h"
 #include "view.h"
 
+#ifdef USE_CURSES
+#include <curses.h>
+
+// Hack here to get rid of curses "erase" macro, so we don't do
+// bad things to the C++ string class member function "erase"
+#ifdef erase
+    #undef erase
+#endif
+#endif
+
 game_options    Options;
 extern void (*viewwindow) (char, bool);
 extern unsigned char (*mapch) (unsigned char);
@@ -189,6 +199,7 @@ void read_init_file(void)
     Options.race          = 0;
     Options.cls           = 0;
     Options.sc_entries    = 0;
+    Options.friend_brand  = 0;
 
     // map each colour to itself as default
     for (int i = 0; i < 16; i++)
@@ -400,7 +411,7 @@ void read_init_file(void)
         else if (key == "background")
         {
             // change background colour
-            // Experimental! This will probably look really bad!
+            // Experimental! This may look really bad!
             const int col = str_to_colour( field );
 
             if (col != -1)
@@ -409,6 +420,27 @@ void read_init_file(void)
                 fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
 
         }
+#ifdef USE_COLOUR_OPTS
+        else if (key == "friend_brand")
+        {
+            // Use curses attributes to mark friend
+            // Some may look bad on some terminals.
+            if (field == "standout")               // probably reverses
+                Options.friend_brand = A_STANDOUT;
+            else if (field == "bold")              // probably brightens fg
+                Options.friend_brand = A_BOLD;
+            else if (field == "blink")             // probably brightens bg
+                Options.friend_brand = A_BLINK;
+            else if (field == "underline")
+                Options.friend_brand = A_UNDERLINE;
+            else if (field == "reverse")
+                Options.friend_brand = A_REVERSE;
+            else if (field == "dim")
+                Options.friend_brand = A_DIM;
+            else
+                fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
+        }
+#endif
         else if (key == "show_uncursed")
         {
             // label known uncursed items as "uncursed"

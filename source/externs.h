@@ -23,7 +23,7 @@ extern char info[200];               // defined in acr.cc {dlb}
 extern char st_prn[20];              // defined in acr.cc {dlb}
 extern char str_pass[80];            // defined in acr.cc {dlb}
 extern unsigned char show_green;     // defined in view.cc {dlb}
-extern FixedVector<unsigned char, 1000> mcolour;  // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
+extern FixedVector<unsigned short, 1000> mcolour;  // defined in mon-util.cc -- w/o this screen redraws *really* slow {dlb}
 
 #ifdef SHORT_FILE_NAMES
     const int kNameLen = 30;
@@ -316,7 +316,7 @@ struct environ
     FixedArray<unsigned char, GXM, GYM> map;
     FixedArray<unsigned char, GXM, GYM> cgrid;
     FixedArray<unsigned int, 19, 19> show;
-    FixedArray<unsigned char, 19, 19> show_col;
+    FixedArray<unsigned short, 19, 19> show_col;
     unsigned char rock_colour;
     unsigned char floor_colour;
 
@@ -392,6 +392,7 @@ struct game_options {
     char        race;           // preselected race
     char        cls;            // preselected class
     int         sc_entries;     // # of score entries
+    unsigned int friend_brand;   // Attribute for branding friendly monsters
 };
 
 extern game_options  Options;

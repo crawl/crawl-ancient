@@ -35,7 +35,7 @@
 static FixedVector < int, NUM_MONSTERS > mon_entry;
 
 // really important extern -- screen redraws suck w/o it {dlb}
-FixedVector < unsigned char, 1000 > mcolour;
+FixedVector < unsigned short, 1000 > mcolour;
 
 /* used in monam - could possibly be static to that function */
 char *gmo_n;
@@ -59,7 +59,7 @@ static monsterentry *seekmonster(int *p_monsterid);
 #define smc seekmonster(&mc)
 
 /* ******************** BEGIN PUBLIC FUNCTIONS ******************** */
-void mon_init(FixedVector < unsigned char, 1000 > &colour)
+void mon_init(FixedVector < unsigned short, 1000 > &colour)
 {
     unsigned int x;             // must be unsigned to match size_t {dlb}
 
@@ -648,7 +648,6 @@ void define_monster(int k)
     // speed_inc,  not 10* as it was overflowing 8 bits and causing
     // hangs
     m2_speed_inc += 70;
-    m2_speed_inc += random2(10);
 
     // so let it be written, so let it be done
     menv[k].hit_dice = m2_HD;
@@ -841,7 +840,7 @@ static int mons_exp_mod(int mc)
 }                               // end mons_exp_mod()
 
 
-static int mons_speed(int mc)
+int mons_speed(int mc)
 {
     return smc->speed;
 }                               // end mons_speed()

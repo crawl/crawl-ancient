@@ -601,8 +601,6 @@ bool restore_stat(unsigned char which_stat, bool suppress_msg)
 
 void turn_undead(int pow)
 {
-    int p;
-    bool brek = false;
     struct monsters *monster;
 
     mpr("You attempt to repel the undead.");
@@ -637,8 +635,6 @@ void turn_undead(int pow)
 
 void holy_word(int pow)
 {
-    int p;
-    bool brek = false;
     struct monsters *monster;
 
     mpr("You speak a Word of immense power!");
@@ -958,10 +954,10 @@ char burn_freeze(int pow, char flavour)
             return -1;
         }
 
-        if (bmove.dx == 0 && bmove.dy == 0)
+        if (bmove.isMe)
         {
-            mpr("That would be silly!");
-            continue;
+            canned_msg(MSG_UNTHINKING_ACT);
+            return -1;
         }
 
         mgr = mgrd[you.x_pos + bmove.dx][you.y_pos + bmove.dy];

@@ -16,6 +16,8 @@
  *
  *  Change History (most recent first):
  *
+ *       <8>   10 May 2001  GDL     Added FreeBSD support
+ *                                  courtesy Andrew E. Filonov
  *       <7>    9 May 2000  GDL     Added Windows 32 bit console support
  *       <6>    24mar2000   jmf     Added a whole slew of new options, which
  *                                  ought to be mandatory :-)
@@ -76,6 +78,42 @@
     // Default to non-ibm character set
     #define USE_ASCII_CHARACTERS
 
+    // This will allow using the standout attribute in curses to
+    // mark friendly monsters.
+    #define USE_COLOUR_OPTS
+
+// Define plain_term for linux and similar, and dos_term for DOS and EMX.
+#elif defined ( BSD )
+    // Most of the linux stuff applies, and so we want it
+    #define LINUX
+    #define PLAIN_TERM
+//#define MULTIUSER
+    #include "liblinux.h"
+
+    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
+    #define CHARACTER_SET           0
+
+    #define USE_CURSES
+    #define EOL "\n"
+
+    // This is used for Posix termios.
+    #define USE_POSIX_TERMIOS
+
+    // This is used for BSD tchars type ioctl, use this if you can't
+    // use the Posix support above.
+    #define USE_TCHARS_IOCTL
+    //
+    // This uses Unix signal control to block some things, may be
+    // useful in conjunction with USE_TCHARS_IOCTL.
+    //
+    // #define USE_UNIX_SIGNALS
+
+    // This is for systems with no usleep... comment if you have it.
+    // #define USE_SELECT_FOR_DELAY
+
+    // Default to non-ibm character set
+    #define USE_ASCII_CHARACTERS
+
 // Define plain_term for linux and similar, and dos_term for DOS and EMX.
 #elif defined(LINUX)
 
@@ -86,6 +124,10 @@
 
     #define USE_CURSES
     #define EOL "\n"
+
+    // This will allow using the standout attribute in curses to
+    // mark friendly monsters.
+    #define USE_COLOUR_OPTS
 
     #include <string>
     #include "liblinux.h"
@@ -235,7 +277,7 @@
 // Use this is you want the occasional spellcaster or ranger type wanderer
 // to show up... comment it if you find these types silly or too powerful,
 // or just want fighter type wanderers.
-#define USE_SPELLCASTER_AND_RANGER_WANDERER_TEMPLATES
+// #define USE_SPELLCASTER_AND_RANGER_WANDERER_TEMPLATES
 
 // LRH's skill-pool drainer for high skill pools
 // #define USE_SKILL_POOL_DRAIN

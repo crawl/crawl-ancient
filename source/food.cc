@@ -28,6 +28,7 @@
 #include "items.h"
 #include "itemname.h"
 #include "item_use.h"
+#include "it_use2.h"
 #include "misc.h"
 #include "mon-util.h"
 #include "mutation.h"
@@ -122,9 +123,11 @@ void set_hunger(int new_hunger_level, bool suppress_msg)
 
 static void weapon_switch( int targ )
 {
-    you.equip[EQ_WEAPON] = targ;
-
-    if (targ != -1)
+    if (targ == -1)
+    {
+        mpr( "You switch back to your bare hands." );
+    }
+    else
     {
         char buff[80];
         in_name( targ, 3, buff );
@@ -134,12 +137,15 @@ static void weapon_switch( int targ )
         sprintf( info, "Switching back to %c - %s.", let, buff );
         mpr( info );
 
+        // unwield the old weapon and wield the new.
+        // XXX This is a pretty dangerous hack;  I don't like it.--GDL
+        if (you.equip[EQ_WEAPON] != -1)
+            unwield_item(you.equip[EQ_WEAPON]);
+
+        you.equip[EQ_WEAPON] = targ;
+
         // special checks: staves of power, etc
         wield_effects( targ, false );
-    }
-    else
-    {
-        mpr( "You switch back to your bare hands." );
     }
 }
 
@@ -604,7 +610,6 @@ void eat_food(void)
 
 static bool food_change(bool suppress_message)
 {
-    char current_state = you.hunger_state;
     char newstate = HS_ENGORGED;
     bool state_changed = false;
 

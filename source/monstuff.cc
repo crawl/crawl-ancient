@@ -8,7 +8,7 @@
  *      <7>     26 Mar  2001   GDL     Fixed monster reaching
  *      <6>     13 Mar  2001   GDL     Rewrite of monster AI
  *      <5>     31 July 2000   GDL     More Manticore fixes.
- *      <4>     29 July 2000   JDJ     Fixed a bunch of places in mons_pickup where MSLOT_WEAPON
+ *      <4>     29 July 2000   JDJ     Fixed a bunch of places in handle_pickup where MSLOT_WEAPON
  *                                     was being erroneously used.
  *      <3>     25 July 2000   GDL     Fixed Manticores
  *      <2>     11/23/99       LRH     Upgraded monster AI
@@ -44,7 +44,7 @@
 #include "view.h"
 
 static bool handle_special_ability(struct monsters *monster, bolt & beem);
-static bool mons_pickup(struct monsters *monster);
+static bool handle_pickup(struct monsters *monster);
 static void handle_behavior(struct monsters *monster);
 static void mons_in_cloud(struct monsters *monster);
 static void monster_move(struct monsters *monster);
@@ -1443,7 +1443,8 @@ static bool handle_potion(struct monsters *monster, bolt & beem)
         {
         case POT_HEALING:
         case POT_HEAL_WOUNDS:
-            if (monster->hit_points <= monster->max_hit_points / 2)
+            if (monster->hit_points <= monster->max_hit_points / 2
+                && mons_holiness(monster->type) != MH_UNDEAD)
             {
                 simple_monster_message(monster, " drinks a potion.");
 
@@ -1607,7 +1608,10 @@ static bool handle_scroll(struct monsters *monster)
             mitm.quantity[monster->inv[MSLOT_SCROLL]]--;
 
             if (mitm.quantity[monster->inv[MSLOT_SCROLL]] < 1)
-                destroy_item(monster->inv[MSLOT_SCROLL]);
+            {
+                mitm.quantity[monster->inv[MSLOT_SCROLL]] == 0; // paranoia
+                monster->inv[MSLOT_SCROLL] = NON_ITEM;
+            }
         }
 
         return read;
@@ -1805,54 +1809,52 @@ static bool handle_spell(struct monsters *monster, bolt & beem)
             if (hspell_pass[4] == MS_DIG)
                 hspell_pass[4] = MS_NO_SPELL;
 
-            if (monster->behavior == BEH_FLEE)
+            // up to four tries to pick a spell.
+            for (int loopy = 0; loopy < 4; loopy ++)
             {
-                spell_cast = (one_chance_in(5) ? MS_NO_SPELL : hspell_pass[5]);
-            }
-            else
-            {
-                // up to four tries to pick a spell.
-                for (int loopy = 0; loopy < 4; loopy ++)
-                {
-                    bool spellOK = false;
+                bool spellOK = false;
 
-                    // setup spell
+                // setup spell - fleeing monsters will always try to choose their
+                // emergency spell.
+                if (monster->behavior == BEH_FLEE)
+                    spell_cast = (one_chance_in(5) ? MS_NO_SPELL : hspell_pass[5]);
+                else
                     spell_cast = hspell_pass[random2(5)];
-                    if (spell_cast == MS_NO_SPELL)
-                        continue;
 
-                    // setup the spell
-                    setup_mons_cast(monster, beem, spell_cast);
+                if (spell_cast == MS_NO_SPELL)
+                    continue;
 
-                    // beam-type spells requiring tracers
-                    if (ms_requires_tracer(spell_cast))
-                    {
-                        fire_tracer(monster, beem);
-                        // good idea?
-                        if (mons_should_fire(beem))
-                            spellOK = true;
-                    }
-                    else
-                    // all direct-effect/summoning/etc
-                    {
+                // setup the spell
+                setup_mons_cast(monster, beem, spell_cast);
+
+                // beam-type spells requiring tracers
+                if (ms_requires_tracer(spell_cast))
+                {
+                    fire_tracer(monster, beem);
+                    // good idea?
+                    if (mons_should_fire(beem))
                         spellOK = true;
-                        if (ms_direct_nasty(spell_cast)
-                            && mons_aligned(monster_index(monster), monster->foe))
-                            spellOK = false;
-                    }
-
-                    if (spellOK == true)
-                        break;
-
-                    spell_cast = MS_NO_SPELL;
-
-                    // ok, maybe we'll cast a defensive spell
-                    if (coinflip())
-                        spell_cast = hspell_pass[2];
-
-                    if (spell_cast != MS_NO_SPELL)
-                        break;
                 }
+                else
+                // all direct-effect/summoning/etc
+                {
+                    spellOK = true;
+                    if (ms_direct_nasty(spell_cast)
+                        && mons_aligned(monster_index(monster), monster->foe))
+                        spellOK = false;
+                }
+
+                if (spellOK == true)
+                    break;
+
+                spell_cast = MS_NO_SPELL;
+
+                // ok, maybe we'll cast a defensive spell
+                if (coinflip())
+                    spell_cast = hspell_pass[2];
+
+                if (spell_cast != MS_NO_SPELL)
+                    break;
             }
         }
 
@@ -2189,7 +2191,7 @@ void monster(void)
                         || monster->type == MONS_NECROPHAGE
                         || monster->type == MONS_GHOUL))
                 {
-                    if (mons_pickup(monster))
+                    if (handle_pickup(monster))
                         continue;
                 }
 
@@ -2262,8 +2264,6 @@ void monster(void)
                     if (handle_throw(monster, beem))
                         continue;
                 }
-
-              end_throw:
 
                 // see if we move into (and fight) an unfriendly monster
                 int targmon = mgrd[monster->x + mmov_x][monster->y + mmov_y];
@@ -2352,12 +2352,12 @@ void monster(void)
 
 //---------------------------------------------------------------
 //
-// mons_pickup
+// handle_pickup
 //
-// Returns 0 if monster doesn't spend any time pickup up
+// Returns false if monster doesn't spend any time pickup up
 //
 //---------------------------------------------------------------
-static bool mons_pickup(struct monsters *monster)
+static bool handle_pickup(struct monsters *monster)
 {
     // single calculation permissible {dlb}
     bool monsterNearby = mons_near(monster);
@@ -2493,7 +2493,19 @@ static bool mons_pickup(struct monsters *monster)
         break;
 
     case OBJ_MISSILES:
-        /* Removed check for item_plus2 - probably irrelevant */
+        // fleeing monsters never stop to pick up ammo
+        if (monster->behavior == BEH_FLEE)
+            return false;
+
+        // don't pick up if we're in combat, and there isn't
+        // much there,  and we already have ammo.
+        if (mitm.quantity[igrd[monster->x][monster->y]] < 5
+            && monster->behavior != BEH_WANDER
+            && monster->inv[MSLOT_MISSILE] != NON_ITEM)
+        {
+            return false;
+        }
+
         if (monster->inv[MSLOT_MISSILE] != NON_ITEM
             && mitm.sub_type[monster->inv[MSLOT_MISSILE]]
                                 == mitm.sub_type[igrd[monster->x][monster->y]]
@@ -2527,14 +2539,6 @@ static bool mons_pickup(struct monsters *monster)
         // nobody bothers to pick up rocks if they don't already have some:
         if (mitm.sub_type[igrd[monster->x][monster->y]] == MI_LARGE_ROCK)
             return false;
-
-        // nobody stoops to pick up just one more of something they
-        // already have {dlb}
-        if (monster->inv[MSLOT_MISSILE] != NON_ITEM
-            || mitm.quantity[igrd[monster->x][monster->y]] == 1)
-        {
-            return false;
-        }
 
         // monsters with powerful melee attacks don't bother
         if (mondamage(monster->type, 0) > 5)
@@ -2647,7 +2651,7 @@ static bool mons_pickup(struct monsters *monster)
     //if (monster->speed_increment > 25)
     //  monster->speed_increment -= monster->speed;
     return true;
-}                               // end mons_pickup()
+}                               // end handle_pickup()
 
 static void monster_move(struct monsters *monster)
 {

@@ -59,8 +59,6 @@ void destroy_item(int dest)
     int c = 0;
     int cy = 0;
 
-    //if ( mitm.quantity [dest] < 1 ) return;
-
     if (dest == NON_ITEM)
         return;
 
@@ -73,7 +71,7 @@ void destroy_item(int dest)
 
         for (cy = 0; cy < NUM_MONSTER_SLOTS; cy++)
         {
-            if (monster->inv[cy] == dest)       //menv[c].inv[cy] = NON_ITEM;
+            if (monster->inv[cy] == dest)
             {
                 monster->inv[cy] = NON_ITEM;
                 mitm.quantity[dest] = 0;
@@ -1182,7 +1180,8 @@ static void dart_trap(bool trap_known, int trapped, struct bolt &pbolt)
         mpr(info);
 
         if ((strstr(pbolt.beam_name, "needle") != NULL)
-                && random2(100) < 50 - (3*player_AC()/2))
+                && random2(100) < 50 - (3*player_AC()/2)
+                && !player_res_poison())
         {
             mpr("You are poisoned.");
             you.poison += 1 + random2(3);

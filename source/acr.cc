@@ -802,7 +802,7 @@ static void input(void)
     case 'T':
     case CMD_REMOVE_ARMOUR:
         {
-            int index;
+            int index=0;
 
             if (armour_prompt("Take off which item?", &index))
                 takeoff_armour(index);
@@ -1107,7 +1107,15 @@ static void input(void)
             grd[you.x_pos][you.y_pos] = DNGN_ROCK_STAIRS_UP;
             break;
         case 'i':
-            identify(0);
+            mpr("You feel a rush of knowledge.");
+            for(i=0; i<ENDOFPACK; i++)
+            {
+                if (you.inv_quantity[i] > 0)
+                {
+                    set_id(you.inv_class[i], you.inv_type[i], 1);
+                    you.inv_ident[i] = 3;
+                }
+            }
             break;
         case '_':
             j = 0;
@@ -1149,8 +1157,6 @@ static void input(void)
             break;
 
         case ':':
-            int i, j;
-
             j = 0;
             for (i = 0; i < 20; i++)
             {

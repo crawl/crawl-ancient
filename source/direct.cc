@@ -705,25 +705,26 @@ static void describe_cell(int mx, int my)
 
         print_wounds(&menv[i]);
 
-        if (menv[i].behavior == BEH_SLEEP)
+        if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
         {
-            strcpy(info, mons_pronoun(menv[i].type, 0));
-            strcat(info, " doesn't appear to have noticed you.");
-            mpr(info);
-        }
-
-        // wandering hostile with no target in LOS
-        if (menv[i].behavior == BEH_WANDER && !mons_friendly(&menv[i])
-            && menv[i].foe == MHITNOT)
-        {
-            // special case: bats, horroes, and blowflies get set to BEH_WANDER
-            // to produce their unique behavior.
-            if (!(menv[i].type == MONS_GIANT_BAT || menv[i].type == MONS_UNSEEN_HORROR
-                || menv[i].type == MONS_GIANT_BLOWFLY))
+            if (menv[i].behavior == BEH_SLEEP)
             {
                 strcpy(info, mons_pronoun(menv[i].type, 0));
-                strcat(info, " doesn't appear to be interested in you.");
+                strcat(info, " doesn't appear to have noticed you.");
                 mpr(info);
+            }
+            // wandering hostile with no target in LOS
+            else if (menv[i].behavior == BEH_WANDER && !mons_friendly(&menv[i])
+                    && menv[i].foe == MHITNOT)
+            {
+                // special case: batty monsters get set to BEH_WANDER as
+                // part of their special behavior.
+                if (!testbits(menv[i].flags, MF_BATTY))
+                {
+                    strcpy(info, mons_pronoun(menv[i].type, 0));
+                    strcat(info, " doesn't appear to be interested in you.");
+                    mpr(info);
+                }
             }
         }
 

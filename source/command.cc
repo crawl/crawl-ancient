@@ -27,6 +27,7 @@
 #include "spl-util.h"
 #include "stuff.h"
 #include "version.h"
+#include "wpn-misc.h"
 
 extern bool wield_change;       // defined in output.cc
 
@@ -507,16 +508,11 @@ void list_weapons(void)
 
     strcpy(info, "Firing    : ");
 
-    if (weapon_id == -1 || you.inv_class[weapon_id] != OBJ_WEAPONS
-                        || you.inv_type[weapon_id] < WPN_SLING
-                        || you.inv_type[weapon_id] > WPN_CROSSBOW)
-    {
-        type_wanted = MI_DART;
-    }
+    if (weapon_id != -1 && you.inv_class[weapon_id] == OBJ_WEAPONS
+        && launches_things(you.inv_type[weapon_id]))
+        type_wanted = launched_by(you.inv_type[weapon_id]);
     else
-    {
-        type_wanted = you.inv_type[weapon_id] - 13;
-    }
+        type_wanted = MI_DART;
 
     for (int i = 0; i < ENDOFPACK; i++)
     {

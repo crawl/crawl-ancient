@@ -47,6 +47,9 @@ unsigned long cfseed;
 
 extern bool wield_change;       // defined in output.cc
 
+// unfortunately required for near_stairs(ugh!):
+extern unsigned char (*mapch) (unsigned char);
+
 unsigned char get_ch(void)
 {
     unsigned char gotched = getch();
@@ -491,7 +494,11 @@ int letter_to_index(int the_letter)
     return the_letter;
 }                               // end letter_to_index()
 
-bool near_stairs(int px, int py, int max_dist)
+// returns 0 if the point is not near stairs
+// returns 1 if the point is near unoccupied stairs
+// returns 2 if the point is near player-occupied stairs
+
+int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx)
 {
     int i,j;
 
@@ -507,8 +514,12 @@ bool near_stairs(int px, int py, int max_dist)
 
             // very simple check
             if (grd[x][y] >= DNGN_STONE_STAIRS_DOWN_I
-                && grd[x][y] <= DNGN_RETURN_LAIR_IV)
-                return true;
+                && grd[x][y] <= DNGN_RETURN_LAIR_IV
+                && grd[x][y] != DNGN_ENTER_SHOP)        // silly
+            {
+                stair_gfx = mapch(grd[x][y]);
+                return (x == you.x_pos && y == you.y_pos)?2:1;
+            }
         }
     }
 

@@ -70,8 +70,10 @@ static void hs_search_death(char *inbuf, struct scorefile_entry &se);
 static void hs_search_where(char *inbuf, struct scorefile_entry &se);
 
 // file locking stuff
+#ifdef USE_FILE_LOCKING
 static bool lock_file_handle( FILE *handle, int type );
 static bool unlock_file_handle( FILE *handle );
+#endif // USE_FILE_LOCKING
 
 void hiscores_new_entry(struct scorefile_entry &ne)
 {
@@ -641,7 +643,6 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
 bool hs_read(FILE *scores, struct scorefile_entry &dest)
 {
     char inbuf[200];
-    char *result;
     int c;
 
     // get a character..

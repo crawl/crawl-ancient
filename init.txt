@@ -152,6 +152,27 @@ always_greet = true
 
 # background = lightgrey
 
+#
+# Brand friendly monsters with a curses attribute... these might not
+# do what you think, it depends on the terminal.
+#
+# Available options, with typical results:
+#
+# standout      -- often the same as reverse, might be underline or dim
+# bold          -- used by colour curses for brightening foreground colours
+# blink         -- used by colour curses for brightening background colours
+# reverse       -- this will probably work
+# dim           -- probably no effect
+# underline     -- this will probably work
+#
+# This is somewhat interesting (blink here is used to give friends a
+# dark grey background, and then we change dark grey so we can see bats):
+#
+# friend_brand = blink
+# colour.darkgrey = magenta
+
+friend_brand = standout
+
 # Message channel options:
 #
 # Format is channel.CHANNEL_NAME = (COLOUR|mute|default|on|off|plain)

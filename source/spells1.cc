@@ -379,14 +379,6 @@ void conjure_flame(int pow)
         goto direc;
     }
 
-    if (grd[spelld.tx][spelld.ty] <= DNGN_LAST_SOLID_TILE
-        || mgrd[spelld.tx][spelld.ty] != NON_MONSTER
-        || env.cgrid[spelld.tx][spelld.ty] != EMPTY_CLOUD)
-    {
-        mpr("There's already something there!");
-        goto direc;
-    }
-
     int durat = 5 + (random2(pow) / 2) + (random2(pow) / 2);
 
     if (durat > 23)
@@ -498,7 +490,6 @@ char healing_spell(int healed)
     struct monsters *monster = 0;       // NULL {dlb}
     struct dist bmove;
 
-  dirc:
     mpr("Which direction?", MSGCH_PROMPT);
     direction(bmove, DIR_DIR);
 
@@ -687,6 +678,15 @@ void antimagic( void )
     if (you.haste)
         you.haste = 1;
 
+    if (you.slow)
+        you.slow = 1;
+
+    if (you.paralysis)
+        you.paralysis = 1;
+
+    if (you.conf)
+        you.conf = 1;
+
     if (you.might)
         you.might = 1;
 
@@ -695,6 +695,9 @@ void antimagic( void )
 
     if (you.invis)
         you.invis = 1;
+
+    if (you.duration[DUR_WEAPON_BRAND])
+        you.duration[DUR_WEAPON_BRAND] = 1;
 
     if (you.duration[DUR_ICY_ARMOUR])
         you.duration[DUR_ICY_ARMOUR] = 1;
@@ -710,16 +713,6 @@ void antimagic( void )
 
     if (you.shock_shield)
         you.shock_shield = 1;
-
-    // This one isn't really so appropriate, and extension has
-    // more than enough already -- bwr
-    /*
-    if ( !(you.duration[DUR_WEAPON_BRAND] < 1
-                 || you.duration[DUR_WEAPON_BRAND] > 80) )
-    {
-        you.duration[DUR_WEAPON_BRAND] += 10 + random2(10);
-    }
-    */
 
     if (you.duration[DUR_SWIFTNESS])
         you.duration[DUR_SWIFTNESS] = 1;
@@ -758,14 +751,25 @@ void antimagic( void )
     if (you.duration[DUR_CONDENSATION_SHIELD])
         you.duration[DUR_CONDENSATION_SHIELD] = 1;
 
-    if (you.duration[DUR_DEATH_CHANNEL])
-        you.duration[DUR_DEATH_CHANNEL] = 1;
-}                               // end extension()
+    //if (you.duration[DUR_DEATH_CHANNEL])
+    //    you.duration[DUR_DEATH_CHANNEL] = 1;
+
+    contaminate_player( -1 * (1+random2(5)));
+}                               // end antimagic()
 
 void extension(int pow)
 {
     if (you.haste)
         potion_effect(POT_SPEED, pow);
+
+    if (you.slow)
+        potion_effect(POT_SLOWING, pow);
+
+    if (you.paralysis)
+        potion_effect(POT_PARALYSIS, pow);  // how did you cast extension?
+
+    if (you.conf)
+        potion_effect(POT_CONFUSION, pow);  // how did you cast extension?
 
     if (you.might)
         potion_effect(POT_MIGHT, pow);
@@ -795,18 +799,12 @@ void extension(int pow)
         if (you.shock_shield > 25)
             you.shock_shield = 25;
 
-        mpr("Your ring of flames spell is extended.");
+        mpr("Your ring of flames roars with new vigour!");
     }
 
-    // This one isn't really so appropriate, and extension has
-    // more than enough already -- bwr
-    /*
     if ( !(you.duration[DUR_WEAPON_BRAND] < 1
                  || you.duration[DUR_WEAPON_BRAND] > 80) )
-    {
-        you.duration[DUR_WEAPON_BRAND] += 10 + random2(10);
-    }
-    */
+        you.duration[DUR_WEAPON_BRAND] += 5 + random2(8);
 
     if (you.duration[DUR_SWIFTNESS])
         cast_swiftness(pow);
@@ -850,8 +848,8 @@ void extension(int pow)
     if (you.duration[DUR_CONDENSATION_SHIELD])
         cast_condensation_shield(pow);
 
-    if (you.duration[DUR_DEATH_CHANNEL])
-        cast_death_channel(pow);
+    //if (you.duration[DUR_DEATH_CHANNEL])
+    //    cast_death_channel(pow);
 }                               // end extension()
 
 void ice_armour(int pow, bool extending)

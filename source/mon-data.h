@@ -2471,7 +2471,7 @@
 {
     MONS_IJYB, 'g', BLUE, "Ijyb",
     M_WARM_BLOOD | M_SPEAKS,
-    0, 20, 6, MH_NATURAL, -3,
+    0, 5, 6, MH_NATURAL, -3,        // 20 was way high.  Usually pretty harmless.
     { 4, 0, 0, 0 },
     { 3, 0, 0, 28 },
     0, 12, 10, 7, 250, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 3
@@ -3048,7 +3048,7 @@
     0, 10, MONS_ORB_OF_FIRE, MH_NATURAL, 5000,
     { 0, 0, 0, 0 },
     { 30, 0, 0, 150 },
-    20, 20, 20, 7, MST_ORB_OF_FIRE, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL, 1
+    20, 20, 20, 7, MST_ORB_OF_FIRE, CE_CONTAMINATED, Z_NOZOMBIE, S_SHOUT, I_NORMAL, 1
 }
 ,
 

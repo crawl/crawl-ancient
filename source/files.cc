@@ -297,8 +297,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
     int ic = 0;
     int imn = 0;
 
-    int turns = 0;
-
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
@@ -849,8 +847,6 @@ void load(unsigned char stair_taken, bool moving_level, bool was_a_labyrinth,
 void save_level(int level_saved, bool was_a_labyrinth, char where_were_you)
 {
     char cha_fil[kFileNameSize];
-    int count_x, count_y;
-    struct tagHeader th;
 
     make_filename(cha_fil, you.your_name, level_saved, where_were_you,
         was_a_labyrinth, false);

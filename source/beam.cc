@@ -748,8 +748,6 @@ bool check_mons_magres(struct monsters * monster, int pow)
 bool mass_enchantment(int wh_enchant, int pow, int origin)
 {
     int i;                      // loop variable {dlb}
-    int p;                      // loop variable {dlb}
-    bool brek = false;
     bool msgGenerated = false;
     struct monsters *monster;
 
@@ -835,8 +833,6 @@ bool mass_enchantment(int wh_enchant, int pow, int origin)
 int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 {
     bool is_near = mons_near(monster);  // single caluclation permissible {dlb}
-    bool brek = false;
-    char p;                     // loop variable
 
     switch (pbolt.colour)      /* put in magic resistance */
     {
@@ -977,8 +973,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
 // actually poisons a monster (w/ message)
 void poison_monster(struct monsters *monster, bool fromPlayer)
 {
-    int p;
-    bool yourPoison;
+    bool yourPoison = false;
     int currentPoison;
     int currentStrength = 0;
 
@@ -1000,7 +995,6 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
     if (currentPoison != ENCH_NONE)
     {
         currentStrength = (currentPoison - ENCH_POISON_I) + 1;
-        yourPoison = false;
     }
     else
     {
@@ -1046,7 +1040,6 @@ void poison_monster(struct monsters *monster, bool fromPlayer)
 // actually napalms a monster (w/ message)
 void sticky_flame_monster(int mn, bool fromPlayer, int power)
 {
-    int p;
     bool yourFlame;
     int currentFlame;
     int currentStrength = 0;
@@ -1253,7 +1246,7 @@ static void beam_explodes(struct bolt &beam, int x, int y)
     if (strcmp(beam.beam_name, "blast of poison") == 0)
     {
         cloud_type = YOU_KILL(beam.thrower)?CLOUD_POISON:CLOUD_POISON_MON;
-        big_cloud(cloud_type, x, y, 0, 9);
+        big_cloud(cloud_type, x, y, 0, 7 + random2(5));
         return;
     }
 
@@ -1319,7 +1312,7 @@ static void beam_drop_object(struct bolt &beam, int inv_number, int x, int y)
     {
         if (grd[x][y] != DNGN_LAVA && grd[x][y] != DNGN_DEEP_WATER)
             if (you.inv_class[inv_number] != OBJ_MISSILES
-                || !one_chance_in((you.inv_type[inv_number] == MI_NEEDLE) ? 5 :
+                || !one_chance_in((you.inv_type[inv_number] == MI_NEEDLE) ? 6 :
                     (you.inv_type[inv_number] == MI_STONE)? 3 : 2))
                 item_place(inv_number, x, y, 1);
     }
@@ -1782,6 +1775,16 @@ static int affect_place_clouds(struct bolt &beam, int x, int y)
 
 static void affect_place_explosion_clouds(struct bolt &beam, int x, int y)
 {
+    // first check: FIRE/COLD over water/lava
+    if ( (grd[x][y] == DNGN_LAVA && beam.flavour == BEAM_COLD)
+        || ((grd[x][y] == DNGN_DEEP_WATER || grd[x][y] == DNGN_SHALLOW_WATER)
+              && beam.flavour == BEAM_FIRE) )
+    {
+        place_cloud(CLOUD_STEAM, x, y, 2 + random2(5));
+        return;
+    }
+
+    // then check for more specific explosion cloud types.
     if (stricmp(beam.beam_name, "ice storm") == 0)
     {
         place_cloud(CLOUD_COLD, x, y, 2 + random2avg(5, 2));
@@ -2425,7 +2428,9 @@ static int  affect_monster(struct bolt &beam, struct monsters *mon)
     int thrower = YOU_KILL(beam.thrower)?KILL_YOU_MISSILE:KILL_MON_MISSILE;
 
     if (mon->hit_points < 1)
+    {
         monster_die(mon, thrower, beam.beam_source);
+    }
     else
     {
         if (thrower == KILL_YOU_MISSILE && mons_near(mon))
@@ -2742,7 +2747,7 @@ static void explosion1(struct bolt &pbolt)
         pbolt.type = SYM_BURST;
         // pbolt.damage += 100;   // it should already be set for this.
         pbolt.flavour = BEAM_FIRE;
-        ex_size = 2;
+        ex_size = 1;
     }
 
     if (stricmp(pbolt.beam_name, "orb of electricity") == 0)

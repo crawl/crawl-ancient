@@ -1335,9 +1335,9 @@ int items(unsigned char allow_uniques,  // not just true-false,
     case OBJ_MISSILES:
         mitm.pluses[p] = 0;
         mitm.sub_type[p] = random2(5);
-        // ARGH
+        // ARGH!
         if (mitm.sub_type[p] == MI_EGGPLANT)
-            mitm.sub_type[p] == MI_NEEDLE;
+            mitm.sub_type[p] = MI_NEEDLE;
         quant = 0;
 
         if (force_type != OBJ_RANDOM)
@@ -2383,7 +2383,7 @@ void give_item(int mid, int level_number)
     {
     case MONS_KOBOLD:
         // a few of the smarter kobolds have blowguns.
-        if (one_chance_in(10))
+        if (one_chance_in(15))
         {
             mitm.base_type[bp] = OBJ_WEAPONS;
             mitm.sub_type[bp] = WPN_BLOWGUN;
@@ -3784,12 +3784,12 @@ static void place_traps(int level_number)
 
         env.trap_type[i] = TRAP_DART;
 
-        if (random2(1 + level_number) > 1)
+        if ((random2(1 + level_number) > 1) && one_chance_in(4))
+            env.trap_type[i] = TRAP_NEEDLE;
+        if (random2(1 + level_number) > 2)
             env.trap_type[i] = TRAP_ARROW;
         if (random2(1 + level_number) > 3)
             env.trap_type[i] = TRAP_SPEAR;
-        if ((random2(1 + level_number) > 4) && one_chance_in(5))
-            env.trap_type[i] = TRAP_NEEDLE;
         if (random2(1 + level_number) > 5)
             env.trap_type[i] = TRAP_AXE;
         if (random2(1 + level_number) > 7)
@@ -3807,8 +3807,6 @@ static void place_traps(int level_number)
             env.trap_type[i] = TRAP_TELEPORT;
         if (one_chance_in(40))
             env.trap_type[i] = TRAP_AMNESIA;
-
-        env.trap_type[i] = TRAP_NEEDLE;
 
         grd[env.trap_x[i]][env.trap_y[i]] = DNGN_UNDISCOVERED_TRAP;
     }                           // end "for i"
@@ -4666,7 +4664,6 @@ static void special_room(int level_number, spec_room &sr)
 // fills a special room with bees
 static void beehive(spec_room &sr)
 {
-    int temp_rand;          // probability determination {dlb}
     int i;
     int x,y;
 
@@ -5919,12 +5916,12 @@ static char rare_weapon(unsigned char w_type)
         return 6;
     case WPN_GLAIVE:
     case WPN_HALBERD:
+    case WPN_BLOWGUN:
         return 5;
     case WPN_BROAD_AXE:
     case WPN_HAND_CROSSBOW:
     case WPN_SPIKED_FLAIL:
     case WPN_WHIP:
-    case WPN_BLOWGUN:
         return 4;
     case WPN_GREAT_MACE:
         return 3;
@@ -6336,7 +6333,6 @@ static void spotty_level(bool seeded, int iterations, bool boxy)
 static void bigger_room(void)
 {
     unsigned char i, j;
-    unsigned char pos_x, pos_y;
 
     for (i = 10; i < (GXM - 10); i++)
     {
@@ -7150,7 +7146,6 @@ static void city_level(int level_number)
     int xs = 0, ys = 0;
     int x1 = 0, x2 = 0;
     int y1 = 0, y2 = 0;
-    unsigned char pos_x, pos_y;
     int i,j;
 
     temp_rand = random2(8);
@@ -7283,7 +7278,6 @@ static void diamond_rooms(int level_number)
         sr.y2 = sr.y1 + 5 + random2(10);
 
         oblique_max = (sr.x2 - sr.x1) / 2;      //random2(20) + 5;
-        int oblique = oblique_max;
 
         if (!octa_room(sr, oblique_max, type_floor))
         {
@@ -7480,7 +7474,6 @@ static void roguey_level(int level_number, spec_room &sr)
     }                           // end "for i"
 
     // Now, join them together:
-    unsigned char pos_x, pos_y;
     FixedVector < char, 2 > pos;
     FixedVector < char, 2 > jpos;
 
@@ -7644,7 +7637,7 @@ static bool place_specific_trap(unsigned char spec_x, unsigned char spec_y,
 void define_zombie(int mid, int ztype, int cs, int power)
 {
     int mons_sec2 = 0;
-    int zombie_size;
+    int zombie_size = 0;
 
     // set size based on zombie class (cs)
     switch(cs)
@@ -7687,7 +7680,11 @@ void define_zombie(int mid, int ztype, int cs, int power)
             // this limit can be updated if mons->number goes >8 bits..
             test = random2(182);            // not guaranteed to be valid, so..
             cls = mons_charclass(test);
-            if (cls == MONS_PROGRAM_BUG || mons_rarity(cls) == 0)
+            if (cls == MONS_PROGRAM_BUG)
+                continue;
+
+            // don't make odd zombies on normal dungeon levels.
+            if (you.level_type == LEVEL_DUNGEON && mons_rarity(cls) == 0)
                 continue;
 
             // monster class must be zombifiable and match class size
@@ -7702,12 +7699,17 @@ void define_zombie(int mid, int ztype, int cs, int power)
             if (mons_zombie_size(cls) != zombie_size && zombie_size >= 0)
                 continue;
 
+            // hack -- non-dungeon zombies are always made out of nastier
+            // monsters
+            if (you.level_type != LEVEL_DUNGEON && mons_power(cls) > 8)
+                break;
+
             // check for rarity.. and OOD - identical to mons_place()
             int level, diff, chance;
 
-            level  = mons_level( cls );
+            level  = mons_level( cls ) - 4;
             diff   = level - power;
-            chance = mons_rarity( cls ) - (diff * diff);
+            chance = mons_rarity( cls ) - (diff * diff) / 2;
 
             if (power > level - relax && power < level + relax
                 && random2avg(100, 2) <= chance)
@@ -7716,7 +7718,7 @@ void define_zombie(int mid, int ztype, int cs, int power)
             // every so often,  we'll relax the OOD restrictions.  Avoids
             // infinite loops (if we don't do this,  things like creating
             // a large skeleton on level 1 may hang the game!
-            if (one_chance_in(15))
+            if (one_chance_in(5))
                 relax++;
         }
 

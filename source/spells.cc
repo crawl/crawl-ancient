@@ -42,6 +42,7 @@
 #include "player.h"
 #include "spells1.h"
 #include "spells3.h"
+#include "spells4.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -117,13 +118,16 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                mpr("Sparks fly from your hands!");
-                break;
+                sprintf(info, "Sparks fly from your %s!", your_hand(1));
+                                mpr(info);
+                                break;
             case 1:
                 mpr("The air around you crackles with energy!");
                 break;
             case 2:
-                mpr("Wisps of smoke drift from your fingertips.");
+                    sprintf(info, "Wisps of smoke drift from your %s.",
+                                    your_hand(1));
+                                mpr(info);
                 break;
             case 3:
                 mpr("You feel a strange surge of energy!");
@@ -147,7 +151,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 // josh declares mummies cannot smell {dlb}
                 if (you.species != SP_MUMMY)
                     mpr("You smell something strange.");
-                break;
+                                else
+                                    mpr("Your bandages flutter.");
+                                break;
             }
             break;
 
@@ -155,7 +161,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(2))
             {
             case 0:
-                mpr("Smoke pours from your fingertips!");
+                sprintf(info, "Smoke pours from your %s!", your_hand(1));
+                            mpr(info);
                 big_cloud(CLOUD_GREY_SMOKE, you.x_pos, you.y_pos, 20,
                           7 + random2(7));
                 break;
@@ -229,7 +236,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                mpr("Your hands glow momentarily.");
+                sprintf(info, "Your %s glow momentarily.", your_hand(1));
+                mpr(info);
                 break;
             case 1:
                 mpr("The air around you crackles with energy!");
@@ -258,8 +266,10 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             case 9:
                 if (!silenced(you.x_pos, you.y_pos))
                     mpr("You hear something strange.");
-                else
+                else if (you.attribute[ATTR_TRANSFORMATION] != TRAN_AIR)
                     mpr("Your skull vibrates slightly.");
+                                else
+                                    canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             }
             break;
@@ -582,10 +592,12 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 break;
 
             case 1:
-                mpr("You sense a hostile presence.");
-                create_monster(summon_any_demon(DEMON_GREATER), 0,
+                if (create_monster(summon_any_demon(DEMON_GREATER), 0,
                                 BEH_HOSTILE, you.x_pos, you.y_pos,
-                                MHITNOT, 250);
+                                MHITNOT, 250) != -1)
+                {
+                    mpr("You sense a hostile presence.");
+                }
                 break;
 
             case 2:
@@ -728,7 +740,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                // josh declares mummies cannot smell {dlb}
+                // mummies cannot smell {dlb}
                 if (you.species != SP_MUMMY)
                     mpr("You smell decay.");
                 break;
@@ -893,7 +905,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                mpr("Your hands glow momentarily.");
+                sprintf(info, "Your %s glow momentarily.", your_hand(1));
+                mpr(info);
                 break;
             case 1:
                 mpr("The air around you crackles with energy!");
@@ -920,7 +933,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                // josh declares mummies cannot smell {dlb}
+                // mummies cannot smell
                 if (you.species != SP_MUMMY)
                     mpr("You smell something strange.");
                 break;
@@ -964,7 +977,6 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
 
             switch (random2(3))
             {
-            unsigned char i;
             case 0:
                 mpr("Your body is flooded with distortional energies!");
                 you.magic_contamination += random2avg(35, 3);
@@ -998,19 +1010,23 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(10))
             {
             case 0:
-                mpr("Sparks fly from your hands!");
+                sprintf(info, "Sparks fly from your %s!",
+                                                 your_hand(1));
+                                mpr(info);
                 break;
             case 1:
                 mpr("The air around you burns with energy!");
                 break;
             case 2:
-                mpr("Wisps of smoke drift from your fingertips.");
+                sprintf(info, "Wisps of smoke drift from your %s.",
+                                                 your_hand(1));
+                                 mpr(info);
                 break;
             case 3:
                 mpr("You feel a strange surge of energy!");
                 break;
             case 4:
-                // josh declares mummies cannot smell {dlb}
+                // mummies cannot smell
                 if (you.species != SP_MUMMY)
                     mpr("You smell smoke.");
                 break;
@@ -1039,7 +1055,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(2))
             {
             case 0:
-                mpr("Smoke pours from your fingertips!");
+                sprintf(info, "Smoke pours from your %s!",
+                                                 your_hand(1));
+                mpr(info);
                 big_cloud(CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos,
                           20, 7 + random2(7));
                 break;
@@ -1132,13 +1150,16 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("A chill runs through your body.");
                 break;
             case 2:
-                mpr("Wisps of condensation drift from your fingertips.");
+                        sprintf(info, "Wisps of condensation drift from your %s.",
+                                       your_hand(1));
+                        mpr(info);
                 break;
             case 3:
                 mpr("You feel a strange surge of energy!");
                 break;
             case 4:
-                mpr("Your hands feel numb with cold.");
+                       sprintf(info,"Your %s feel numb with cold.", your_hand(1));
+                       mpr(info);
                 break;
             case 5:
                 mpr("A chill runs through your body.");
@@ -1220,8 +1241,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 scrolls_burn(9, OBJ_POTIONS);
                 break;
             case 1:
-                mpr("Freezing gasses pour from your hands!");
-
+                sprintf(info,"Freezing gasses pour from your %s!",
+                                                 your_hand(1));
+                                 mpr(info);
                 big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20,
                           8 + random2(4));
                 break;
@@ -1244,7 +1266,8 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You are showered with tiny particles of grit.");
                 break;
             case 2:
-                mpr("Sand pours from your fingers.");
+                sprintf(info,"Sand pours from your %s.", your_hand(1));
+                                 mpr(info);
                 break;
             case 3:
                 mpr("You feel a surge of energy from the ground.");
@@ -1346,7 +1369,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You feel momentarily weightless.");
                 break;
             case 2:
-                mpr("Wisps of vapour drift from your fingertips.");
+                sprintf(info, "Wisps of vapour drift from your %s.",
+                                         your_hand(1));
+                                 mpr(info);
                 break;
             case 3:
                 mpr("You feel a strange surge of energy!");
@@ -1355,13 +1380,14 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You feel electric!");
                 break;
             case 5:
-                mpr("Sparks of electricity dance on your fingertips.");
+                       sprintf(info, "Sparks of electricity dance between your %s.",
+                                       your_hand(1));
                 break;
             case 6:
                 mpr("You are blasted with air!");
                 break;
             case 7:
-                // josh declares mummies cannot smell {dlb}
+                // mummies cannot smell
                 if (!silenced(you.x_pos, you.y_pos))
                     mpr("You hear a whooshing sound.");
                 else if (you.species != SP_MUMMY)
@@ -1371,7 +1397,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 canned_msg(MSG_NOTHING_HAPPENS);
                 break;
             case 9:
-                // josh declares mummies cannot smell {dlb}
+                // mummies cannot smell
                 if (!silenced(you.x_pos, you.y_pos))
                     mpr("You hear a crackling sound.");
                 else if (you.species != SP_MUMMY)
@@ -1384,10 +1410,12 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             switch (random2(2))
             {
             case 0:
-                mpr("There is a shower of sparks.");
+                mpr("There is a short, sharp shower of sparks.");
                 break;
             case 1:
-                mpr("The wind howls around you!");
+                sprintf(info, "The wind %s around you!",
+                                                 silenced(you.x_pos, you.y_pos) ? "whips" : "howls");
+                            mpr(info);
                 break;
             }
             break;
@@ -1401,7 +1429,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                      KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
-                mpr("Noxious gasses pour from your hands!");
+                       sprintf(info, "Noxious gasses pour from your %s!",
+                                       your_hand(1));
+                       mpr(info);
                 big_cloud(CLOUD_STINK, you.x_pos, you.y_pos, 20,
                           9 + random2(4));
                 break;
@@ -1428,7 +1458,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 explosion(beam);
                 break;
             case 1:
-                mpr("Venomous gasses pour from your hands!");
+                sprintf(info, "Venomous gasses pour from your %s!",
+                                                 your_hand(1));
+                                 mpr(info);
                 big_cloud( CLOUD_POISON, you.x_pos, you.y_pos, 20,
                            8 + random2(5) );
                 break;
@@ -1450,7 +1482,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 mpr("You feel slightly ill.");
                 break;
             case 2:
-                mpr("Wisps of poison gas drift from your fingertips.");
+                sprintf(info, "Wisps of poison gas drift from your %s.",
+                                                 your_hand(1));
+                                 mpr(info);
                 break;
             case 3:
                 mpr("You feel a strange surge of energy!");
@@ -1473,7 +1507,7 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
             case 9:
                 if (!silenced(you.x_pos, you.y_pos))
                     mpr("You hear a slurping sound.");
-                else
+                else if (you.species != SP_MUMMY)
                     mpr("You taste almonds.");
                 break;
             }
@@ -1493,7 +1527,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 you.poison += 2 + random2(3);
                 break;
             case 1:
-                mpr("Noxious gasses pour from your hands!");
+                sprintf(info, "Noxious gasses pour from your %s!",
+                                                 your_hand(1));
+                                 mpr(info);
                 place_cloud(CLOUD_STINK, you.x_pos, you.y_pos,
                             2 + random2(4));
                 break;
@@ -1545,7 +1581,9 @@ bool miscast_effect(unsigned int sp_type, int mag_pow,
                 you.poison += 10 + random2avg(19, 2);
                 break;
             case 1:
-                mpr("Venomous gasses pour from your hands!");
+                sprintf(info, "Venomous gasses pour from your %s!",
+                                     your_hand(1));
+                                 mpr(info);
                 big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20,
                           7 + random2(7));
                 break;

@@ -129,7 +129,7 @@ static void zappy(char z_type, int power, struct bolt &pbolt)
     // level 3/4
     // This cap might actually come into effect (we're talking 20's in
     // the skills involved (inc spellcasting) with INT 20 and a spell
-    // magnifier (stave or ring) to start breaking this point).
+    // magnifier (staff or ring) to start breaking this point).
     case ZAP_STONE_ARROW:
     case ZAP_ORB_OF_ENERGY:
     case ZAP_STICKY_FLAME:

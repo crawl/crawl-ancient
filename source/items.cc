@@ -793,7 +793,7 @@ bool move_top_item( int src_x, int src_y, int dest_x, int dest_y )
 // drop_gold
 //
 //---------------------------------------------------------------
-static void drop_gold(int amount)
+static void drop_gold(unsigned int amount)
 {
     if (you.gold > 0)
     {
@@ -1722,7 +1722,7 @@ int cull_items(void)
                     }
 
                     // POOF!
-                    mitm.base_type[item] == OBJ_UNASSIGNED;
+                    mitm.base_type[item] = OBJ_UNASSIGNED;
                     mitm.quantity[item] = 0;
                     if (first_cleaned == NON_ITEM)
                         first_cleaned = item;

@@ -399,7 +399,14 @@ void cprintf(const char *s)
    // loop through string
    char *p = (char *)s;
    while(*p)
+   {
+      if (p[0] == '%' && p[1] == '%')
+      {
+         p++;
+         continue;
+      }
       writeChar(*p++);
+   }
 
    // reset buffering
    setBuffering(oldValue);

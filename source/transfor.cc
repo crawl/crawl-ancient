@@ -248,8 +248,6 @@ bool transform(int pow, char which_trans)
 
 void untransform(void)
 {
-    unsigned char was_transformed = you.attribute[ATTR_TRANSFORMATION];
-
     FixedVector < char, 8 > rem_stuff;
 
     for (int i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)
@@ -316,14 +314,6 @@ void untransform(void)
     {
         rem_stuff[EQ_BOOTS] = 1;
         remove_equipment(rem_stuff);
-
-#if 0
-        // handled in player_movement_speed()
-        if (was_transformed != TRAN_BLADE_HANDS && was_transformed != TRAN_LICH)
-        {
-            you.attribute[ATTR_WALK_SLOWLY]++;
-        }
-#endif
     }
 
     calc_hp();

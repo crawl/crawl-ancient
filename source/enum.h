@@ -182,6 +182,8 @@ enum ATTRIBUTES
     ATTR_GOD_GIFT_COUNT,        //jmf: added to help manage god gift giving
     ATTR_EXPENSIVE_FLIGHT,      //jmf: flag for "manual flight" (ie wings)
     ATTR_DEMONIC_SCALES,        //jmf: remember which kind of scales to improve
+    ATTR_WALLS,
+    ATTR_LAST_WALLS,
     NUM_ATTRIBUTES              // must always remain last member {dlb}
 };
 
@@ -266,7 +268,7 @@ enum BOOKS
     BOOK_CONJURATIONS_II,
     BOOK_FLAMES,                       //    5
     BOOK_FROST,
-    BOOK_INVOCATIONS,
+    BOOK_SUMMONINGS,
     BOOK_FIRE,
     BOOK_ICE,
     BOOK_SURVEYANCES,                  //   10
@@ -284,7 +286,7 @@ enum BOOKS
     BOOK_HEALING,
     BOOK_NECROMANCY,
     BOOK_NECRONOMICON,
-    BOOK_SUMMONINGS,                   //   25
+    BOOK_CALLINGS,                     //   25
     BOOK_CHARMS,
     BOOK_DEMONOLOGY,
     BOOK_AIR,

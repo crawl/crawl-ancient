@@ -113,6 +113,17 @@
     #define DARKGREY DARKGRAY
 #endif
 
+// Colour options... these are used as bit flags along with the colour
+// value in the low byte.
+
+// This is used to signal curses (which has seven base colours) to
+// try to get a brighter version using recommisioned attribute flags.
+#define COLFLAG_CURSES_BRIGHTEN              0x0080
+
+#ifdef USE_COLOUR_OPTS
+    #define COLFLAG_FRIENDLY_MONSTER         0x0100
+#endif
+
 // required for stuff::coinflip()
 #define IB1 1
 #define IB2 2

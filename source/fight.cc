@@ -408,6 +408,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 special_brand = SPWPN_FREEZING;
                 your_to_hit += random2(10);
                 break;
+            case TRAN_SERPENT_OF_HELL:
             case TRAN_DRAGON:
                 damage = 20 + you.strength;
                 your_to_hit += random2(10);
@@ -416,6 +417,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 damage = 5;
                 special_brand = SPWPN_DRAINING;
                 your_to_hit += random2(10);
+                break;
+            case TRAN_AIR:
+                damage = 0;
+                your_to_hit = 0;
                 break;
             }
         }
@@ -450,7 +455,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
     //jmf: check for backlight enchantment
     if (mons_has_ench(defender, ENCH_BACKLIGHT_I, ENCH_BACKLIGHT_IV))
-       your_to_hit += random2(10);
+       your_to_hit += 2 + random2(8);
 
     int weapon_speed2 = 10;
 
@@ -578,6 +583,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         stab_bonus = 1;
     }
 
+    // helpless (plants, etc)
+    if (helpless)
+        stabAttempt = false;
+
     // see if we need to roll against dexterity / stabbing
     if (stabAttempt && rollNeeded)
         stabAttempt = (random2(200) <= you.skills[SK_STABBING] + you.dex);
@@ -624,6 +633,10 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         damage *= dammod;       //random2(you.strength);
         damage /= 78;
 
+        //  apply damage bonus from ring of slaying
+        // (before randomization -- some of these rings
+        //  are stupidly powerful) -- GDL
+        damage += slaying_bonus(PWPN_DAMAGE);
 
         damage_done = random2(damage);
 
@@ -679,9 +692,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 wield_change = true;
             }
         }
-
-        //  else (damage_done -= random2(5));
-        damage_done += slaying_bonus(PWPN_DAMAGE);
 
         if (stab_bonus)
         {
@@ -1654,6 +1664,8 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 damage *= dammod;
                 damage /= 10;
 
+                damage += slaying_bonus(PWPN_DAMAGE);
+
                 damage_done = (int) random2(damage);
 
                 damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
@@ -1667,8 +1679,6 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 
                 if (you.hunger_state == HS_STARVING)
                     damage_done -= random2(5);
-
-                damage_done += slaying_bonus(PWPN_DAMAGE);
 
                 damage_done -= random2(1 + defender->armor_class);
 
@@ -3717,6 +3727,8 @@ void monster_die(struct monsters *monster, char killer, int i)
 
     int dmi;                    // dead monster's inventory
     int monster_killed = monster_index(monster);
+    bool death_message = mons_near(monster)
+        && (!mons_has_ench(monster, ENCH_INVIS) || player_see_invis());
 
     // From time to time Trog gives you a little bonus
     if (killer == KILL_YOU
@@ -3779,14 +3791,16 @@ void monster_die(struct monsters *monster, char killer, int i)
             strcat(info, " ");
             strcat(info, ptr_monam(monster, 1));
             strcat(info, "!");
-            mpr(info, MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
+            if (death_message)
+                mpr(info, MSGCH_MONSTER_DAMAGE, MDAM_DEAD);
 
             if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
             {
                 gain_exp(exper_value( monster ));
             }
             else
-                mpr("That felt strangely unrewarding.");
+                if (death_message)
+                    mpr("That felt strangely unrewarding.");
 
             // Xom doesn't care who you killed:
             if (you.religion == GOD_XOM
@@ -3859,7 +3873,8 @@ void monster_die(struct monsters *monster, char killer, int i)
                                     monster->x, monster->y, you.pet_target,
                                     mons_charclass(monster->type)) != -1)
                 {
-                    mpr("A strange glowing mist starts to gather...");
+                    if (death_message)
+                        mpr("A glowing mist starts to gather...");
                 }
             }
             break;
@@ -4183,6 +4198,12 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
         !(current_tile == DNGN_DEEP_WATER || current_tile == DNGN_SHALLOW_WATER))
         return false;
 
+    // and apparently putting lava monsters on non-lava sqaures is a
+    // no-no, too
+    if ( monster_habitat(new_mclass) == DNGN_LAVA
+        && current_tile != DNGN_LAVA)
+         return false;
+
     return true;
 }        // end valid_morph()
 
@@ -4193,14 +4214,24 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 {
     char str_polymon[200] = "";      // cannot use info[] here {dlb}
     bool player_messaged = false;
+    int source_power, target_power, relax;
+
+    source_power = mons_power(monster->type);
+    relax = 4;
 
     if ( targetc == RANDOM_MONSTER )
     {
         do
         {
             targetc = random2(NUM_MONSTERS);     // was: random2(400) {dlb}
+            target_power = mons_power(targetc);
+
+            if (one_chance_in(10) && valid_morph(monster, targetc))
+                relax++;
         }
-        while ( !valid_morph(monster, targetc) );
+        while ( !valid_morph(monster, targetc)
+            || target_power < source_power - relax
+            || target_power > source_power + relax );
     }
 
     // messaging: {dlb}
@@ -4455,51 +4486,40 @@ static int weapon_type_modify(int weapnum, char *noise, char *noise2,
 static void monster_drop_ething(struct monsters *monster)
 {
     /* drop weapons & missiles last (ie on top) so others pick up */
-    int loopy;                  // loop variable {dlb}
-    bool dropped = false;
+    int i;                  // loop variable {dlb}
+    bool destroyed = false;
+    bool hostile_grid = false;
 
-    if (grd[monster->x][monster->y] == DNGN_LAVA
-        || grd[monster->x][monster->y] == DNGN_DEEP_WATER)
+    if (grd[monster->x][monster->y] == DNGN_LAVA ||
+        grd[monster->x][monster->y] == DNGN_DEEP_WATER)
+        hostile_grid = true;
+
+    for (i = MSLOT_GOLD; i >= MSLOT_WEAPON; i--)
     {
-        for (loopy = 0; loopy < NUM_MONSTER_SLOTS; loopy++)
-        {
-            if (monster->inv[loopy] != NON_ITEM)
-            {
-                destroy_item(monster->inv[loopy]);
-                dropped = true;
-            }
-        }
+        int item = monster->inv[i];
 
-        if (dropped)
+        if (item != NON_ITEM)
         {
-            if (grd[monster->x][monster->y] == DNGN_LAVA)
-                mpr("You hear a hissing sound.");
+            if (hostile_grid)
+            {
+                destroyed = true;
+                mitm.quantity[item] = 0;
+            }
             else
-                mpr("You hear a splashing sound.");
+            {
+                mitm.link[item] = igrd[monster->x][monster->y];
+                igrd[monster->x][monster->y] = item;
+            }
+            monster->inv[i] = NON_ITEM;
         }
-        return;
     }
 
-    for (loopy = MSLOT_GOLD; loopy >= MSLOT_WEAPON; loopy--)
+    if (destroyed)
     {
-        if (monster->inv[loopy] != NON_ITEM)
-        {
-            mitm.link[monster->inv[loopy]] = NON_ITEM;
-
-            if (igrd[monster->x][monster->y] == NON_ITEM)
-            {
-                igrd[monster->x][monster->y] = monster->inv[loopy];
-            }
-            else
-            {
-                int huj = igrd[monster->x][monster->y];
-
-                igrd[monster->x][monster->y] = monster->inv[loopy];
-                mitm.link[monster->inv[loopy]] = huj;
-            }
-        }
-
-        monster->inv[loopy] = NON_ITEM;
+        if (grd[monster->x][monster->y] == DNGN_LAVA)
+            mpr("You hear a hissing sound.");
+        else
+            mpr("You hear a splashing sound.");
     }
 }                               // end monster_drop_ething()
 
@@ -4526,7 +4546,7 @@ static void place_monster_corpse(struct monsters *monster)
         // seems to me that this should be translated to a probability
         // calculation outside the loop (why keep calling random2() with
         // each iteration?) {dlb}
-        if (o >= 200 + random2(150))
+        if (o > MAX_ITEMS - 10)
             return;
 
         if (mitm.quantity[o] == 0)
@@ -4541,20 +4561,13 @@ static void place_monster_corpse(struct monsters *monster)
             if (mitm.colour[o] == BLACK)
                 mitm.colour[o] = monster->number;
             mitm.quantity[o] = 1;
-            mitm.link[o] = NON_ITEM;
             break;
         }
     }
 
-    if (igrd[monster->x][monster->y] == NON_ITEM)
-        igrd[monster->x][monster->y] = o;
-    else
-    {
-        int hug = igrd[monster->x][monster->y];
-
-        igrd[monster->x][monster->y] = o;
-        mitm.link[o] = hug;
-    }
+    // place on top of pile
+    mitm.link[o] = igrd[monster->x][monster->y];
+    igrd[monster->x][monster->y] = o;
 
     return;
 }                               // end place_monster_corpse()

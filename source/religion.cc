@@ -324,7 +324,7 @@ void pray(void)
                 || you.religion == GOD_VEHUMET)
             && you.piety > 160 && random2(you.piety) > 100)
         {
-            unsigned char gift = NUM_BOOKS;
+            unsigned int gift = NUM_BOOKS;
 
             switch (you.religion)
             {
@@ -355,12 +355,12 @@ void pray(void)
                     gift = BOOK_ANNIHILATIONS;  // conj books
 
                 if (you.skills[SK_CONJURATIONS] < you.skills[SK_SUMMONINGS]
-                    || gift == BOOK_MINOR_MAGIC_I)
+                    || gift == NUM_BOOKS)
                 {
-                    if (!you.had_item[BOOK_SUMMONINGS])
+                    if (!you.had_item[BOOK_CALLINGS])
+                        gift = BOOK_CALLINGS;
+                    else if (!you.had_item[BOOK_SUMMONINGS])
                         gift = BOOK_SUMMONINGS;
-                    else if (!you.had_item[BOOK_INVOCATIONS])
-                        gift = BOOK_INVOCATIONS;
                     else if (!you.had_item[BOOK_DEMONOLOGY])
                         gift = BOOK_DEMONOLOGY; // summoning bks
                 }
@@ -502,7 +502,7 @@ char *god_name(int which_god,bool long_name) // mv - rewritten
         sprintf(buffer, "Sif Muna%s", long_name?" the Loreminder":"");
         break;
     case GOD_TROG:
-        sprintf(buffer, "Trog%s", long_name?" the Fierce":"");
+        sprintf(buffer, "Trog%s", long_name?" the Wrathful":"");
         break;
     case GOD_NEMELEX_XOBEH:
         strcpy(buffer, "Nemelex Xobeh");
@@ -602,60 +602,56 @@ void Xom_acts(bool niceness, int sever, bool force_sever)
 
             done_bad = true;
         }
-        else if (!you.is_undead)
+        else if (!you.is_undead && random2(sever) <= 3)
         {
-            if (random2(sever) <= 3)
+            temp_rand = random2(4);
+
+            god_speaks(GOD_XOM,
+                (temp_rand == 0) ? "\"You need some minor adjustments, mortal!\"" :
+                (temp_rand == 1) ? "\"Let me alter your pitiful body.\"" :
+                (temp_rand == 2) ? "Xom's power touches on you for a moment."
+                                 : "You hear Xom's maniacal laughter.");
+
+            mpr("Your body is suffused with distortional energy.");
+
+            set_hp(1 + random2(you.hp), false);
+            deflate_hp(you.hp_max / 2, true);
+
+            bool failMsg = true;
+            for (int i = 0; i < 4; i++)
             {
-                temp_rand = random2(4);
-
-                god_speaks(GOD_XOM,
-                    (temp_rand == 0) ? "\"You need some minor adjustments, mortal!\"" :
-                    (temp_rand == 1) ? "\"Let me alter your pitiful body.\"" :
-                    (temp_rand == 2) ? "Xom's power touches on you for a moment."
-                                     : "You hear Xom's maniacal laughter.");
-
-                mpr("Your body is suffused with distortional energy.");
-
-                set_hp(1 + random2(you.hp), false);
-                deflate_hp(you.hp_max / 2, true);
-
-                bool failMsg = true;
-                for (int i = 0; i < 4; i++)
-                {
-                    if (!mutate(100, failMsg))
-                        failMsg = false;
-                }
-
-                done_bad = true;
+                if (!mutate(100, failMsg))
+                    failMsg = false;
             }
 
-            if (random2(sever) <= 3)
-            {
-                temp_rand = random2(4);
-
-                god_speaks(GOD_XOM,
-                    (temp_rand == 0) ? "\"You have displeased me, mortal.\"" :
-                    (temp_rand == 1) ? "\"You have grown too confident for your meagre worth.\"" :
-                    (temp_rand == 2) ? "Xom's power touches on you for a moment."
-                                     : "You hear Xom's maniacal laughter.");
-
-                if (one_chance_in(4))
+            done_bad = true;
+        }
+                else if (!you.is_undead && random2(sever) <= 3)
                 {
+            temp_rand = random2(4);
+
+            god_speaks(GOD_XOM,
+                (temp_rand == 0) ? "\"You have displeased me, mortal.\"" :
+                (temp_rand == 1) ? "\"You have grown too confident for your meagre worth.\"" :
+                (temp_rand == 2) ? "Xom's power touches on you for a moment."
+                                 : "You hear Xom's maniacal laughter.");
+
+            if (one_chance_in(4))
+            {
+                drain_exp();
+                if (random2(sever) > 3)
                     drain_exp();
-                    if (random2(sever) > 3)
-                        drain_exp();
-                    if (random2(sever) > 3)
-                        drain_exp();
-                }
-                else
-                {
-                    mpr("A wave of agony tears through your body!");
-                    set_hp(1 + (you.hp / 2), false);
-                }
-
-                done_bad = true;
+                if (random2(sever) > 3)
+                    drain_exp();
             }
-        }                       // end "if (!you.is_undead)"
+            else
+            {
+                mpr("A wave of agony tears through your body!");
+                set_hp(1 + (you.hp / 2), false);
+            }
+
+            done_bad = true;
+        }
         else if (random2(sever) <= 3)
         {
             temp_rand = random2(4);
@@ -939,6 +935,7 @@ void done_good(char thing_done, int pgain)
         case GOD_SHINING_ONE:
         case GOD_VEHUMET:
         case GOD_MAKHLEB:
+        case GOD_OKAWARU:
             simple_god_message(" accepts your kill.");
             if (random2(18 + pgain) > 4)
                 gain_piety(1);
@@ -953,6 +950,7 @@ void done_good(char thing_done, int pgain)
         case GOD_SHINING_ONE:
         case GOD_VEHUMET:
         case GOD_MAKHLEB:
+        case GOD_OKAWARU:
             simple_god_message(" accepts your kill.");
             if (random2(18 + pgain) > 3)
                 gain_piety(1);
@@ -1101,7 +1099,7 @@ void gain_piety(char pgn)
                     (you.religion == GOD_ELYVILON)
                             ? "call upon Elyvilon for minor healing"
                 // Unknown god
-                            : "endure this program bug");
+                            : "endure this program bug @30");
 
             strcat(info, ".");
             god_speaks(you.religion, info);
@@ -1146,7 +1144,7 @@ void gain_piety(char pgn)
                    (you.religion == GOD_ELYVILON)
                            ? "call upon Elyvilon for purification"
                    // Unknown god
-                           : "endure this program bug");
+                           : "endure this program bug @50");
 
             strcat(info, ".");
             god_speaks(you.religion, info);
@@ -1185,7 +1183,7 @@ void gain_piety(char pgn)
                      (you.religion == GOD_ELYVILON)
                                  ? "call upon Elyvilon for moderate healing"
                      // Unknown god
-                                 : "endure this program bug");
+                                 : "endure this program bug @75");
             strcat(info, ".");
             god_speaks(you.religion, info);
             break;
@@ -1226,7 +1224,7 @@ void gain_piety(char pgn)
                         (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon to restore your abilities"
                         // Unknown god
-                                : "endure this program bug");
+                                : "endure this program bug @100");
 
             strcat(info, ".");
             god_speaks(you.religion, info);
@@ -1264,7 +1262,7 @@ void gain_piety(char pgn)
                      (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon for incredible healing"
                      // Unknown god
-                                : "endure this program bug");
+                                : "endure this program bug @120");
 
             strcat(info, ".");
             god_speaks(you.religion, info);
@@ -1399,7 +1397,7 @@ void naughty(char type_naughty, int naughtiness)
     }
 
     // exit function early iff piety loss is zero:
-    if (!piety_loss)
+    if (piety_loss < 1)
         return;
 
     // output guilt message:
@@ -1469,7 +1467,7 @@ void lose_piety(char pgn)
                            (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon for incredible healing"
                            // Unknown god
-                                : "endure this program bug");
+                                : "endure this program bug @120");
 
                 strcat(info, ".");
                 god_speaks(you.religion, info);
@@ -1508,7 +1506,7 @@ void lose_piety(char pgn)
                         (you.religion == GOD_TROG)
                             ? "haste yourself"
                         // Unknown god
-                            : "endure this program bug");
+                            : "endure this program bug @100");
 
                 strcat(info, ".");
                 god_speaks(you.religion, info);
@@ -1547,7 +1545,7 @@ void lose_piety(char pgn)
                        (you.religion == GOD_ELYVILON)
                                 ? "call upon Elyvilon for moderate healing"
                        // Unknown god
-                                : "endure this program bug");
+                                : "endure this program bug @75");
 
                 strcat(info, ".");
                 god_speaks(you.religion, info);
@@ -1591,7 +1589,7 @@ void lose_piety(char pgn)
                        (you.religion == GOD_ELYVILON)
                             ? "call upon Elyvilon for Purification"
                        // Unknown god
-                            : "endure this program bug");
+                            : "endure this program bug @50");
 
                 strcat(info, ".");
                 god_speaks(you.religion, info);
@@ -1629,7 +1627,7 @@ void lose_piety(char pgn)
                     (you.religion == GOD_ELYVILON)
                             ? "call upon Elyvilon for minor healing."
                     // Unknown god
-                            : "endure this program bug");
+                            : "endure this program bug @30");
 
                 strcat(info, ".");
                 god_speaks(you.religion, info);
@@ -1935,7 +1933,7 @@ void divine_retribution(int god)
 
         case 3:
         case 4:
-            simple_god_message( " says: Feel my wrath!", god );
+            simple_god_message("'s voice booms out, \"Feel my wrath!\"", god );
 
             // A collection of physical effects that might be better
             // suited to Trog than wild fire magic... messagaes sould
@@ -2087,7 +2085,7 @@ void divine_retribution(int god)
 
     // Sometimes divine experiences are overwelming...
     // We access directly here to avoid the player saving against these
-    if (one_chance_in(5))
+    if (one_chance_in(5) && you.experience_level < random2(37))
     {
         if (coinflip()) {
             if (you.conf < 20)

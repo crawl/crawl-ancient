@@ -76,8 +76,8 @@ void monster_grid(bool do_updates);
 // with the IBM graphics option.
 //
 //---------------------------------------------------------------
-void get_ibm_symbol(unsigned int object, unsigned char *ch,
-                           unsigned char *color)
+void get_ibm_symbol(unsigned int object, unsigned short *ch,
+                           unsigned short *color)
 {
     ASSERT(color != NULL);
     ASSERT(ch != NULL);
@@ -544,9 +544,9 @@ void get_ibm_symbol(unsigned int object, unsigned char *ch,
 void viewwindow2(char draw_it, bool do_updates)
 {
     const long BUFFER_SIZE = 1550;
-    FixedVector < unsigned char, BUFFER_SIZE > buffy;   //[800]; //392];
+    FixedVector < unsigned short, BUFFER_SIZE > buffy;   //[800]; //392];
 
-    unsigned char ch, color;
+    unsigned short ch, color;
 
 #ifdef WIZARD
     //memset(buffy, 255, sizeof(buffy)); //jmf: this won't compile for me
@@ -723,7 +723,7 @@ void viewwindow2(char draw_it, bool do_updates)
             {                   // 1056
                 ch = buffy[count_x];
                 color = buffy[count_x + 1];
-                ASSERT(color < 16);
+//                ASSERT(color < 16);
                 ASSERT(ch < 255);
 
                 textcolor(color);
@@ -978,6 +978,14 @@ void monster_grid(bool do_updates)
                             [monster->y - you.y_pos + 9]
                     = ((mcolour[monster->type] == BLACK)
                             ? monster->number : mcolour[monster->type]);
+#ifdef USE_COLOUR_OPTS
+                if (mons_friendly(monster))
+                {
+                    env.show_col[monster->x - you.x_pos + 9]
+                                [monster->y - you.y_pos + 9]
+                        |= COLFLAG_FRIENDLY_MONSTER;
+                }
+#endif
             }                   // end "if mons_near(monster)"
         }                       // end "if (monster->type != -1)"
     }                           // end "for s"
@@ -2427,8 +2435,8 @@ bool mons_near(struct monsters *monster, unsigned int foe)
 // without the IBM graphics option.
 //
 //---------------------------------------------------------------
-void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
-                               unsigned char *color)
+void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
+                               unsigned short *color)
 {
     ASSERT(color != NULL);
     ASSERT(ch != NULL);
@@ -2889,10 +2897,9 @@ void get_non_ibm_symbol(unsigned int object, unsigned char *ch,
 void viewwindow3(char draw_it, bool do_updates)
 {
     int bufcount = 0;
-    FixedVector < unsigned char, 1500 > buffy;  //[800]; //392];
+    FixedVector < unsigned short, 1500 > buffy;  //[800]; //392];
 
-    unsigned char showed = 0;   // presently unused ... I think {dlb}
-    unsigned char ch, color;
+    unsigned short ch, color;
 
     int count_x, count_y;
 

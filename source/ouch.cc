@@ -86,7 +86,6 @@ extern bool wield_change;       // defined in output.cc
 
 void end_game(struct scorefile_entry &se);
 void item_corrode(char itco);
-static char *pad(char *str);
 
 
 /* NOTE: DOES NOT check for hellfire!!! -- this is good */

@@ -154,7 +154,7 @@ struct monsterentry
 /* ***********************************************************************
  * called from: acr
  * *********************************************************************** */
-void mon_init( FixedVector<unsigned char, 1000>& colour );
+void mon_init( FixedVector<unsigned short, 1000>& colour );
 
 
 // last updated 12may2000 {dlb}
@@ -310,6 +310,13 @@ int mons_skeleton(int mcls);
  *              player - spells2 - spells3
  * *********************************************************************** */
 int mons_weight(int mclass);
+
+
+// last updated 08may2001 {gdl}
+/* ***********************************************************************
+ * called from: monplace mon-util
+ * *********************************************************************** */
+int mons_speed(int mclass);
 
 
 // last updated 12may2000 {dlb}

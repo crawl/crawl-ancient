@@ -245,6 +245,8 @@ void mons_trap(struct monsters *monster)
 
 
     // go back and handle projectile traps: {dlb}
+    bool apply_poison = false;
+
     if (projectileFired)
     {
         // projectile traps *always* revealed after "firing": {dlb}
@@ -260,8 +262,7 @@ void mons_trap(struct monsters *monster)
                 && beem.type == MI_NEEDLE
                 && random2(100) < 50 - (3*monster->armor_class/2))
             {
-                damage_taken = 1;
-                poison_monster( monster, false );
+                apply_poison = true;
             }
         }
         else
@@ -279,6 +280,9 @@ void mons_trap(struct monsters *monster)
             strcat(info, "!");
             mpr(info);
         }
+
+        if (apply_poison)
+            poison_monster( monster, false );
 
         // generate "fallen" projectile, where appropriate: {dlb}
         if (random2(10) < 7)
@@ -555,8 +559,6 @@ void setup_mons_cast(struct monsters *monster, struct bolt &pbolt, int spell_cas
 
 void monster_teleport(struct monsters *monster, bool instan)
 {
-
-    int p = 0;                  // loop variable
     int temp_rand = 0;          // probability determination {dlb}
 
     if (!instan)

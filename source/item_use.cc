@@ -422,7 +422,10 @@ void wield_effects(int item_wield_2, bool showMsgs)
                     break;
 
                 case SPWPN_VAMPIRICISM:
-                    mpr("You feel a strange hunger.");
+                    if (you.species != SP_MUMMY)
+                        mpr("You feel a strange hunger.");
+                    else
+                        mpr("You feel strangely empty.");
                     break;
 
                 case SPWPN_DISRUPTION:
@@ -462,15 +465,19 @@ void wield_effects(int item_wield_2, bool showMsgs)
                     break;
 
                 case NWPN_STAFF_OF_OLGREB:
-                    // josh declares mummies cannot smell {dlb}
+                    // mummies cannot smell
                     if (you.species != SP_MUMMY)
                         mpr("You smell chlorine.");
+                    else
+                        mpr("The staff glows slightly green.");
                     break;
 
                 case NWPN_VAMPIRES_TOOTH:
-                    // josh declares mummies cannot smell, and do not hunger {dlb}
+                    // mummies cannot smell, and do not hunger {dlb}
                     if (you.species != SP_MUMMY)
                         mpr("You feel a strange hunger, and smell blood on the air...");
+                    else
+                        mpr("You feel strangely empty.");
                     break;
 
                 default:
@@ -612,15 +619,15 @@ void wear_armour(void)
     if (!armour_prompt("Wear which item?", &armour_wear_2))
         return;
 
-    if (you.inv_class[armour_wear_2] != OBJ_ARMOUR)
-    {
-        mpr("You can't wear any such thing.");
-        return;
-    }
-
     if (you.inv_quantity[armour_wear_2] == 0)
     {
         mpr("You don't have any such object.");
+        return;
+    }
+
+    if (you.inv_class[armour_wear_2] != OBJ_ARMOUR)
+    {
+        mpr("You can't wear that.");
         return;
     }
 
@@ -1696,8 +1703,8 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
         // slaying bonuses
         if (!(launched && wepType == MI_NEEDLE))
-            baseDam += slaying_bonus(PWPN_DAMAGE);
-        baseHit += slaying_bonus(PWPN_HIT);
+            exDamBonus += slaying_bonus(PWPN_DAMAGE);
+        exHitBonus += slaying_bonus(PWPN_HIT);
 
     }
     else

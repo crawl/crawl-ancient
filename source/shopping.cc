@@ -48,13 +48,11 @@ char in_a_shop(char shoppy, char id[4][50])
 {
     // easier to work with {dlb}
     unsigned int greedy = env.shop_greed[shoppy];
-    unsigned char shop_type = env.shop_type[shoppy];
 
     FixedArray < int, 4, 50 > shop_id;
     FixedVector < int, 20 > shop_items;
 
     char st_pass[60];
-    char gold_p[10];
     unsigned int gp_value = 0;
     char i;
     unsigned char ft;

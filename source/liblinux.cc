@@ -83,7 +83,7 @@ static inline short macro_colour( short col )
     return (Options.colour[ col ]);
 }
 
-// Translate DOS colors to curses. 128 just means use high intens./bold.
+// Translate DOS colors to curses.
 short translatecolor(short col)
 {
     switch (col)
@@ -113,28 +113,28 @@ short translatecolor(short col)
         return COLOR_WHITE;
         break;
     case DARKGREY:
-        return COLOR_BLACK + 128;
+        return COLOR_BLACK + COLFLAG_CURSES_BRIGHTEN;
         break;
     case LIGHTBLUE:
-        return COLOR_BLUE + 128;
+        return COLOR_BLUE + COLFLAG_CURSES_BRIGHTEN;
         break;
     case LIGHTGREEN:
-        return COLOR_GREEN + 128;
+        return COLOR_GREEN + COLFLAG_CURSES_BRIGHTEN;
         break;
     case LIGHTCYAN:
-        return COLOR_CYAN + 128;
+        return COLOR_CYAN + COLFLAG_CURSES_BRIGHTEN;
         break;
     case LIGHTRED:
-        return COLOR_RED + 128;
+        return COLOR_RED + COLFLAG_CURSES_BRIGHTEN;
         break;
     case LIGHTMAGENTA:
-        return COLOR_MAGENTA + 128;
+        return COLOR_MAGENTA + COLFLAG_CURSES_BRIGHTEN;
         break;
     case YELLOW:
-        return COLOR_YELLOW + 128;
+        return COLOR_YELLOW + COLFLAG_CURSES_BRIGHTEN;
         break;
     case WHITE:
-        return COLOR_WHITE + 128;
+        return COLOR_WHITE + COLFLAG_CURSES_BRIGHTEN;
         break;
     default:
         return COLOR_GREEN;
@@ -595,25 +595,35 @@ void textcolor(int col)
 {
     short fg, bg;
 
-    FG_COL = col;
+    FG_COL = col & 0x00ff;
     fg = translatecolor( macro_colour( FG_COL ) );
     bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
 
-    if (bg & 128)
-        bg = bg - 128;
+    unsigned int flags = 0;
 
-    if ((fg == 128) && (bg == 0))
-    {
-        // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | character_set);
-    }
-    else
-    {
-        if (fg & 128)
-            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | character_set);
-        else
-            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | character_set);
-    }
+#ifdef USE_COLOUR_OPTS
+    if (col & COLFLAG_FRIENDLY_MONSTER)
+        flags |= Options.friend_brand;
+#endif
+
+    // curses typically uses A_BOLD to give bright foreground colour,
+    // but various termcaps may disagree
+    if (fg & COLFLAG_CURSES_BRIGHTEN)
+        flags |= A_BOLD;
+
+    // curses typically uses A_BLINK to give bright background colour,
+    // but various termcaps may disagree
+    if (bg & COLFLAG_CURSES_BRIGHTEN)
+        flags |= A_BLINK;
+
+    // Strip out all the bits above the raw 3-bit colour definition
+    fg &= 0x0007;
+    bg &= 0x0007;
+
+    // figure out which colour pair we want
+    const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
+
+    attrset(COLOR_PAIR(pair) | flags | character_set);
 }
 
 
@@ -621,25 +631,35 @@ void textbackground(int col)
 {
     short fg, bg;
 
-    BG_COL = col;
+    BG_COL = col & 0x00ff;
     fg = translatecolor( macro_colour( FG_COL ) );
     bg = translatecolor( (BG_COL == BLACK) ? Options.background : BG_COL );
 
-    if (bg & 128)
-        bg = bg - 128;
+    unsigned int flags = 0;
 
-    if ((fg == 128) && (bg == 0))
-    {
-        // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | character_set);
-    }
-    else
-    {
-        if (fg & 128)
-            attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | character_set);
-        else
-            attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | character_set);
-    }
+#ifdef USE_COLOUR_OPTS
+    if (col & COLFLAG_FRIENDLY_MONSTER)
+        flags |= A_STANDOUT;
+#endif
+
+    // curses typically uses A_BOLD to give bright foreground colour,
+    // but various termcaps may disagree
+    if (fg & COLFLAG_CURSES_BRIGHTEN)
+        flags |= A_BOLD;
+
+    // curses typically uses A_BLINK to give bright background colour,
+    // but various termcaps may disagree
+    if (bg & COLFLAG_CURSES_BRIGHTEN)
+        flags |= A_BLINK;
+
+    // Strip out all the bits above the raw 3-bit colour definition
+    fg &= 0x0007;
+    bg &= 0x0007;
+
+    // figure out which colour pair we want
+    const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
+
+    attrset(COLOR_PAIR(pair) | flags | character_set);
 }
 
 

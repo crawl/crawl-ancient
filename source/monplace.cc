@@ -17,6 +17,7 @@
 #include "mon-pick.h"
 #include "mon-util.h"
 #include "misc.h"
+#include "player.h"
 #include "stuff.h"
 #include "spells4.h"
 
@@ -102,7 +103,7 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
                     // was: random2(400) {dlb}
                     mon_type = random2(NUM_MONSTERS);
                 }
-                while (!mons_abyss(mon_type));
+                while (mons_abyss(mon_type) == 0);
             }
             while (random2avg(100, 2) > mons_rare_abyss(mon_type));
         }
@@ -147,6 +148,11 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
     // (4) for first monster, choose location.  This is pretty intensive.
     bool proxOK;
     bool close_to_player;
+
+    // player shoved out of the way?
+    bool shoved = false;
+    unsigned char stair_gfx = 0;
+    int pval = 0;
 
     if (!summoned)
     {
@@ -212,9 +218,34 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
                     break;
 
                 case 3:
-                    proxOK = near_stairs(px, py, 1);
+                    pval = near_stairs(px, py, 1, stair_gfx);
+                    if (pval == 2)
+                    {
+                        // 0 speed monsters can't shove player out of their way.
+                        if (mons_speed(mon_type) == 0)
+                        {
+                            proxOK = false;
+                            break;
+                        }
+                        // swap the monster and the player spots,  unless the
+                        // monster was generated in lava or deep water.
+                        if (grd[px][py] == DNGN_LAVA || grd[px][py] == DNGN_DEEP_WATER)
+                        {
+                            proxOK = false;
+                            break;
+                        }
+                        shoved = true;
+                        int tpx = px;
+                        int tpy = py;
+                        px = you.x_pos;
+                        py = you.y_pos;
+                        you.x_pos = tpx;
+                        you.y_pos = tpy;
+                    }
+
+                    proxOK = (pval > 0);
                     break;
-                deafult:
+                default:
                     break;
             }
 
@@ -230,15 +261,49 @@ bool place_monster(int &id, int mon_type, int power, char behavior,
 
     // now, forget about banding if the first placement failed,  or there's too
     // many monsters already,  or we successfully placed by stairs
-    if (id < 0 || id+30 > MAX_MONSTERS || proximity == 3)
-        return id;
+    if (id < 0 || id+30 > MAX_MONSTERS)
+        return false;
+
+    // message to player from stairwell/gate appearance?
+    if (see_grid(px, py) && proximity == 3)
+    {
+        info[0] = '\0';
+
+        if (player_see_invis() || mons_has_ench(&menv[id], ENCH_INVIS) == ENCH_NONE)
+            strcpy(info, ptr_monam(&menv[id], 2));
+        else if (shoved)
+            strcpy(info, "Something");
+
+        if (shoved)
+        {
+            strcat(info, " shoves you out of the ");
+            strcat(info, (stair_gfx == '>' || stair_gfx == '<')?"stairwell!":
+                "gate!");
+            mpr(info);
+        }
+        else if (info[0] != '\0')
+        {
+            strcat(info, (stair_gfx == '>')?" comes up the stairs.":
+                         (stair_gfx == '<')?" comes down the stairs.":
+                         " comes through the gate.");
+            mpr(info);
+        }
+
+        // special case: must update the view for monsters created in player LOS
+        viewwindow(1, false);
+    }
+
+    // monsters placed by stairs don't bring the whole band up/down/through
+    // with them
+    if (proximity == 3)
+        return true;
 
     // (5) for each band monster, loop call to place_monster_aux().
     for(i=1; i<band_size; i++)
         place_monster_aux(band_monsters[i], behavior, target, px, py, lev_mons, extra, false);
 
-    // return id of first monster placed
-    return id;
+    // placement of first monster, at least, was a success.
+    return true;
 }
 
 static int place_monster_aux(int mon_type, char behavior, int target,
@@ -246,7 +311,7 @@ static int place_monster_aux(int mon_type, char behavior, int target,
 {
     int id, i;
     char grid_wanted;
-    int fx, fy;         // final x,y
+    int fx=0, fy=0;     // final x,y
 
     // gotta be able to pick an ID
     for (id = 0; id < MAX_MONSTERS; id++)
@@ -936,7 +1001,7 @@ int create_monster(int cls, int dur, int beha, int cr_x, int cr_y,
         summd = -1;
     else
         summd = mons_place( cls, beha, hitting, true, empty[0], empty[1],
-            LEVEL_DUNGEON, 0, zsec );
+            you.level_type, 0, zsec );
 
     // then handle the outcome {dlb}:
     if (summd == -1)

@@ -14,6 +14,7 @@
 
 #include "externs.h"
 
+const char *your_hand(int plural);
 bool backlight_monsters(char x, char y, int pow, int garbage);
 int torment_monsters(char x, char y, int pow, int message);
 int mons_has_ench( struct monsters *mon, int ench, int ench2 = ENCH_NONE );

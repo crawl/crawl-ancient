@@ -910,8 +910,6 @@
      3
 },
 
-// removed SPTYP_POISON... this spell is aimed against poison and doesn't
-// require it (otherwise we'd be needing Ice to fireball Ice Beasts) -- bwr
 {
     SPELL_IGNITE_POISON, "Ignite Poison",
      SPTYP_FIRE | SPTYP_TRANSMIGRATION,
@@ -974,7 +972,7 @@
 
 {
     SPELL_FORESCRY, "Forescry",
-     SPTYP_DIVINATION, // -ench, part of enchantment spell reduction -- bwr
+     SPTYP_DIVINATION,
      5
 },
 
@@ -987,13 +985,7 @@
 {
     SPELL_WARP_BRAND, "Warp Weapon",
      SPTYP_ENCHANTMENT | SPTYP_TRANSLOCATION ,
-     6
-     // Yes, at *least* 6... distortion brands were never really indended
-     // to be easily available, they were obviously indended as very
-     // dangerous items you occasionally run into... so they do large
-     // amounts of unresistable damage compared to other brands, and
-     // occasionally do powerful teleportation effects... this spell
-     // shouldn't really be in the game at all. -- bwr
+     7     // this is high for a reason - Warp brands are very powerful.
 },
 
 {

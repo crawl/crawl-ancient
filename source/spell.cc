@@ -1055,11 +1055,6 @@ bool your_spells(int spc2, int powc, bool allow_fail)
         if (spell_direction(spd, beam) == -1)
             return true;
 
-        if (spd.isMe)
-        {
-            canned_msg(MSG_UNTHINKING_ACT);
-            return true;
-        }
         zapping(ZAP_DISRUPTION, powc, beam);
         return true;
 

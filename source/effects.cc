@@ -566,10 +566,10 @@ void acquirement(unsigned char force_class)
                     break;
 
                 case SK_SUMMONINGS:
-                    if (!you.had_item[BOOK_SUMMONINGS])
+                    if (!you.had_item[BOOK_CALLINGS])
+                        type_wanted = BOOK_CALLINGS;
+                    else if (!you.had_item[BOOK_SUMMONINGS])
                         type_wanted = BOOK_SUMMONINGS;
-                    else if (!you.had_item[BOOK_INVOCATIONS])
-                        type_wanted = BOOK_INVOCATIONS;
                     else if (!you.had_item[BOOK_DEMONOLOGY])
                         type_wanted = BOOK_DEMONOLOGY;
                     break;
@@ -801,7 +801,6 @@ void yell(void)
 {
     bool targ_prev = false;
     int mons_targd = 0;
-    struct monsters *called = 0;        // NULL {dlb}
     struct dist targ;
 
     if (silenced(you.x_pos, you.y_pos))

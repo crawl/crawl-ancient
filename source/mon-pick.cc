@@ -95,7 +95,7 @@ int mons_level(int mcls)
     int (*fnc_level) (int) = 0;
 
     if (you.level_type == LEVEL_ABYSS)
-        monster_level = ((mons_abyss(mcls)) ? 1 : 0);
+        monster_level = ((mons_abyss(mcls)) ? 51 : 0);
     else if (you.level_type == LEVEL_PANDEMONIUM)
         monster_level = ((mons_pan(mcls)) ? 52 : 0);
     else

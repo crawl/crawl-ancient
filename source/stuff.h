@@ -168,7 +168,7 @@ int letter_to_index(int the_letter);
 /* ***********************************************************************
  * called from: monplace
  * *********************************************************************** */
-bool near_stairs(int px, int py, int max_dist);
+int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx);
 
 // last updated 16mar2001 {dlb}
 /* ***********************************************************************

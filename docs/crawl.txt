@@ -442,7 +442,7 @@ Chaos Knights:
 
   The Chaos Knight is a fighter who chooses to serve one of the fearsome and
   unpredictable Gods of Chaos. He or she has two choices: Xom or Makhleb.
-  Xom is a very unpredictable (and possibly psychotic) creature who rewards
+  Xom is a very unpredictable (and possibly psychotic) entity who rewards
   or punishes according to whim. Makhleb the Destroyer is a more purposeful
   God, who appreciates destruction and offers a variety of very violent
   powers to the faithful.
@@ -502,6 +502,17 @@ Magicians:
   Elementalists are magicians who specialise in one of the four types of
   elemental magic: air, fire, earth, or ice.
 
+    Fire Magic tends towards destructive conjurations.
+
+    Ice Magic offers a balance between destructive conjurations and
+    protective enchantments.
+
+    Air Magic provides many useful enchantments in addition to some
+    unique destructive capabilities.
+
+    Earth Magic is a mixed bag, with destructive, defensive and utility
+    spells available.
+
   Venom mages specialise in poison magic, which is extremely useful in the
   shallower levels of the dungeon where few creatures are immune to it. Poison
   is especially effective when used against insects.
@@ -515,14 +526,14 @@ Magicians:
 Wanderers:
 
   Wanderers are people who have not learned a specific trade.  Instead,
-  they've travelled around become a "Jack-of-all-trades, master of none".
+  they've travelled around becoming "Jacks-of-all-trades, master of none".
   They start the game with a large assortment of skills and maybe some
   small items they picked up along the way, but other than that they're
   pretty much on their own.  Non-human wanderers might not even know which
   skills they have (since they haven't quite learned enough for one full
-  level), and therefore make for an additional challenge... although, you
-  shouldn't expect human wanderers to be easy either (this class is
-  typically harder to play than the other classes).
+  level), and therefore make for an additional challenge.  You shouldn't
+  expect human wanderers to be easy either, as this class is typically
+  harder to play than the other classes.
 
 ----------------------------------------------------------------------------
                                 EXPERIENCE

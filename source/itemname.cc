@@ -1454,7 +1454,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                           || item_typ == BOOK_CONJURATIONS_II) ? "Conjurations" :
                           (item_typ == BOOK_FLAMES) ? "Flames" :
                           (item_typ == BOOK_FROST) ? "Frost" :
-                          (item_typ == BOOK_INVOCATIONS) ? "Summonings" :
+                          (item_typ == BOOK_SUMMONINGS) ? "Summonings" :
                           (item_typ == BOOK_FIRE) ? "Fire" :
                           (item_typ == BOOK_ICE) ? "Ice" :
                           (item_typ == BOOK_SURVEYANCES) ? "Surveyances" :
@@ -1470,7 +1470,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
                           (item_typ == BOOK_CLOUDS) ? "Clouds" :
                           (item_typ == BOOK_HEALING) ? "Healing" :
                           (item_typ == BOOK_NECROMANCY) ? "Necromancy" :
-                          (item_typ == BOOK_SUMMONINGS) ? "Callings" :
+                          (item_typ == BOOK_CALLINGS) ? "Callings" :
                           (item_typ == BOOK_CHARMS) ? "Charms" :
                           (item_typ == BOOK_DEMONOLOGY) ? "Demonology" :
                           (item_typ == BOOK_AIR) ? "Air" :
@@ -1533,11 +1533,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ,
 
         if (ident_lev > 0)
         {
-            strcat(glog, (item_typ == STAFF_SMITING
-
-                          // confusing that II is spell and I is not {dlb}
-                          || item_typ == STAFF_SUMMONING_II
-
+                   strcat(glog, (// confusing that II is spell and I is not {dlb}
+                             item_typ == STAFF_SUMMONING_II
                           || item_typ == STAFF_DESTRUCTION_I
                           || item_typ == STAFF_DESTRUCTION_II
                           || item_typ == STAFF_DESTRUCTION_III

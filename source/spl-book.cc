@@ -226,14 +226,14 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
 
     // 10 - Book of Surveyances
     {0,
-     SPELL_DETECT_SECRET_DOORS, //jmf: added
+     SPELL_DETECT_SECRET_DOORS,
      SPELL_DETECT_TRAPS,
-     SPELL_DETECT_ITEMS,        // returning items
-     SPELL_DETECT_CREATURES,
+     SPELL_DETECT_ITEMS,
      SPELL_MAGIC_MAPPING,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
+     SPELL_NO_SPELL
      },
     // 11 - Book of Spatial Translocations
     {0,
@@ -297,7 +297,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_SLOW,
      SPELL_CONFUSE,
      SPELL_PARALYZE,
-     SPELL_NO_SPELL,            // jmf: was SPELL_TELEPORT_OTHER, but didn't fit
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -391,12 +391,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 25 - Book of Summonings //jmf: now Callings
+    // 25 - Book of Callings
     {0,
      SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_STICKS_TO_SNAKES,
      SPELL_CALL_IMP,
-     //SPELL_ABJURATION_I, //jmf: moved to Demonology and Summonings
      SPELL_SUMMON_SCORPIONS,
      SPELL_SUMMON_ICE_BEAST,
      SPELL_SUMMON_ELEMENTAL,
@@ -455,7 +454,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
     //   let people use necromancy.
     // - there is no need for another air spell... air spells are
     //   already very common (ie. this level nine spell occured in
-    //   three books!)
+    //   two books!)
 
     // 29 - Book of the Sky
     {0,
@@ -478,13 +477,13 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
 
     // 30 - Book of Divinations
     {0,
+     SPELL_DETECT_SECRET_DOORS,
      SPELL_DETECT_CREATURES,
+     SPELL_DETECT_ITEMS,
      SPELL_DETECT_CURSE,
      SPELL_SEE_INVISIBLE,
-     SPELL_DETECT_ITEMS,
      SPELL_FORESCRY,
      SPELL_IDENTIFY,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
     // 31 - Book of the Warp
@@ -646,7 +645,6 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_DISRUPT,
      SPELL_DETECT_SECRET_DOORS,
      SPELL_APPORTATION,
-     // SPELL_STING,     // removed to up value of disrupt in this book -- bwr
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -663,35 +661,11 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
      SPELL_NO_SPELL,
      },
 
-    /*
-    // Removing this book...  it's pointless and contains spells that
-    // for the most part are available in serveral other books (for
-    // example... Sleep occurs in 4 other books!).  Anyways, there are
-    // already enough "enchantment" books, whe don't need any more.
-
-    // 46 - Book of Inobtrusiveness //jmf: added 19mar2000
-    {0,
-     SPELL_SWIFTNESS,
-#ifdef USE_SILENCE_CODE
-     SPELL_SILENCE,
-#endif
-     SPELL_SLEEP,
-     SPELL_INVISIBILITY,
-     SPELL_MASS_SLEEP,
-     // SPELL_AIR_WALK,
-#ifndef USE_SILENCE_CODE
-     SPELL_NO_SPELL,
-#endif
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     },
-     */
     // 46 - Book of Beasts //jmf: added 19mar2000
     {0,
      SPELL_SUMMON_SMALL_MAMMAL,
-     SPELL_DETECT_CREATURES,
      SPELL_STICKS_TO_SNAKES,
+     SPELL_DETECT_CREATURES,
      SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_TAME_BEASTS,
      SPELL_DRAGON_FORM,
@@ -701,13 +675,14 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
     // 47 - Book of Assassination //jmf: 24jun2000
     {0,
      SPELL_STING,
+     // SPELL_PROJECTED_NOISE, // this doesn't get enough play
      SPELL_SURE_BLADE,
      // SPELL_SILENCE,      // not stealthy + reducing occurences --bwr
-     SPELL_PROJECTED_NOISE, // this doesn't get enough play
      SPELL_MEPHITIC_CLOUD,
      SPELL_POISON_WEAPON,
      SPELL_PARALYZE,
      SPELL_INVISIBILITY,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
 
@@ -771,8 +746,8 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
     // 53 - Staff of Destruction
     {0,
      SPELL_THROW_FROST,
-     SPELL_BOLT_OF_COLD,
-     SPELL_LIGHTNING_BOLT,
+     SPELL_ICE_BOLT,
+     SPELL_FREEZING_CLOUD,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -793,7 +768,7 @@ int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] = {
     // 55 - Staff of Destruction
     {0,
      SPELL_BOLT_OF_INACCURACY,
-     SPELL_BOLT_OF_FIRE,
+     SPELL_BOLT_OF_MAGMA,
      SPELL_BOLT_OF_COLD,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -964,7 +939,7 @@ char book_rarity(unsigned char which_book)
     case BOOK_CONJURATIONS_II:
     case BOOK_PRACTICAL_MAGIC:
     case BOOK_NECROMANCY:
-    case BOOK_SUMMONINGS:
+    case BOOK_CALLINGS:
     case BOOK_WIZARDRY:
         return 3;
 
@@ -1002,7 +977,6 @@ char book_rarity(unsigned char which_book)
 
     case BOOK_TEMPESTS:
     case BOOK_DEATH:
-    // case BOOK_INOBTRUSIVENESS:  //jmf: added 23mar2000
         return 11;
 
     case BOOK_MUTATIONS:
@@ -1020,7 +994,7 @@ char book_rarity(unsigned char which_book)
     case BOOK_ANNIHILATIONS:
         return 17;
 
-    case BOOK_INVOCATIONS:
+    case BOOK_SUMMONINGS:
         return 18;
 
     case BOOK_NECRONOMICON:
@@ -1029,9 +1003,6 @@ char book_rarity(unsigned char which_book)
 
     case BOOK_DESTRUCTION:
         return 30;
-
-    case BOOK_HEALING:          // never created naturally
-        return 100;
 
     default:
         return 1;
@@ -1353,7 +1324,7 @@ void which_spell(void)
 
         if (you.inv_type[spell_container] == BOOK_NECRONOMICON)
         {
-            mpr("The pages of the Necronomicon glow with a malevolent light...");
+            mpr("The pages of the Necronomicon glow with a dark malevolence...");
             miscast_effect(SPTYP_NECROMANCY, 8, random2avg(88, 3), 100);
         }
         else if (you.inv_type[spell_container] == BOOK_DEMONOLOGY)
