@@ -111,9 +111,7 @@ void redraw_screen(void)
     char title[40];
 
     strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
-    draw_border(BROWN, you.your_name, title, you.species);
-
-//draw_border(BROWN, you.your_name, title);
+    draw_border(you.your_name, title, you.species);
 
     you.redraw_hit_points = 1;
     you.redraw_magic_points = 1;

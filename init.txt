@@ -6,7 +6,7 @@
 
 # Player name
 #
-#name=kernel
+name=RBarnes
 #
 
 # Directory for reading macro.txt and init.txt, and dumping characters.
@@ -32,7 +32,7 @@
 #    X          Corpses
 #    $          Gold
 #
-#autopickup=$?!:"/0
+autopickup=$?!:+="/0
 
 #How much information do we want in our character dumps?
 #With verbose on, all stats of special weapons (even generic

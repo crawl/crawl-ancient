@@ -392,8 +392,10 @@ static int player_res_magic(void)
    case 21: strcat(glog , "ring of fire"); break;
    case 22: strcat(glog , "ring of ice"); break;
    case 23: strcat(glog , "ring of teleport control"); break;
-   case 35: strcat(glog , "amulet of rage"); break;
-   case 36: strcat(glog , "amulet of maintain speed"); break; // not foolproof
+   case AMU_RAGE:
+     strcat(glog , "amulet of rage"); break;
+   case AMU_RESIST_SLOW:
+     strcat(glog , "amulet of resist slow"); break; // not foolproof
    case 37: strcat(glog , "amulet of clarity"); break; // not foolproof
    case 38: strcat(glog , "amulet of warding"); break;
    case 39: strcat(glog , "amulet of resist corrosion"); break;
@@ -2118,7 +2120,7 @@ void level_change(void)         // Look at this !!!!
                                     you.skills[best_skill(0, 50, 99)],
                                     you.char_class, you.experience_level));
 
-                    draw_border(BROWN, you.your_name, title, you.species);
+                    draw_border(you.your_name, title, you.species);
 
                     you.redraw_hit_points = 1;
                     you.redraw_magic_points = 1;
@@ -2178,7 +2180,7 @@ void level_change(void)         // Look at this !!!!
                                     you.skills[best_skill(0, 50, 99)],
                                     you.char_class, you.experience_level));
 
-                    draw_border(BROWN, you.your_name, title, you.species);
+                    draw_border(you.your_name, title, you.species);
 
                     you.redraw_hit_points = 1;
                     you.redraw_magic_points = 1;

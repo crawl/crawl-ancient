@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *      <3>     10/1/99         BCR             Changed messages for speed and
+ *                                              made amulet resist slow up speed
  *      <2>     5/20/99         BWR             Fixed bug with RAP_METABOLISM
  *                                              and RAP_NOISES artefacts/
  *      <1>     -/--/--         LRH             Created
@@ -984,23 +986,38 @@ void potion_effect(char pot_eff, int pow)
         break;
 
     case POT_SPEED:
-        if (you.haste == 0)
-            strcpy(info, "You feel yourself speed up.");
-        else
-            strcpy(info, "Your high speed feels more durable.");
-        mpr(info);
-        if (you.slow > 0)
+        if (you.haste > 90)
+          strcpy(info, "You already have as much speed as you can handle.");
+        else if (wearing_amulet(AMU_RESIST_SLOW))
         {
+          strcpy(info, "Your amulet glows brightly and you gain speed.");
+          if (you.slow > 0)
+          {
             you.slow = 0;
+            you.haste = 10;
+          }
+          else
+            you.haste += random2(pow) + 50;
+        }
+        else if (you.haste == 0)
+        {
+          strcpy(info, "You feel yourself speed up.");
+          if (you.slow > 0)
+            you.slow = 0;
+          else
+            you.haste += random2(pow) + 40;
         }
         else
-            you.haste += random2(pow) + 40;
-        /*      wand_id = 1; */
-        if (you.haste > 90)
-            you.haste = 90;
+        {
+          strcpy(info, "You feel as though your speed will last longer.");
+          you.haste += random2(pow) + 40;
+        }
 
+        if (you.haste > (90 + (10 * wearing_amulet(AMU_RESIST_SLOW))))
+          you.haste = 90 + (10 * wearing_amulet(AMU_RESIST_SLOW));
+
+        mpr(info);
         break;
-        //}
 
     case POT_MIGHT:             // potion of might
 
@@ -1101,26 +1118,26 @@ void potion_effect(char pot_eff, int pow)
 
     case POT_SLOWING:           // slow
 
-        if (wearing_amulet(AMU_MAINTAIN_SPEED) == 1)
+        if (wearing_amulet(AMU_RESIST_SLOW) == 1)
+          strcpy(info, "You feel momentarily lethargic.");
+        else if (you.slow > 90)
+          strcpy(info, "You already have as much slowness as possible.");
+        else if (you.slow == 0)
         {
-            strcpy(info, "You feel momentarily lethargic.");
-            mpr(info);
-            break;
-        }
-        if (you.slow == 0)
-            strcpy(info, "You feel yourself slow down.");
-        else
-            strcpy(info, "Your low speed feels more durable.");
-        mpr(info);
-        if (you.haste > 0)
-        {
-            you.haste = 0;
-        }
-        else
+          strcpy(info, "You feel yourself slow down.");
+          if (you.slow > 0)
+            you.slow = 0;
+          else
             you.slow += random2(pow) + 10;
-        /*      wand_id = 1; */
-        if (you.slow > 90)
+        }
+        else
+        {
+          you.slow += random2(pow) + 10;
+          strcpy(info, "You feel as though you will be slow longer.");
+          if (you.slow > 90)
             you.slow = 90;
+        }
+        mpr(info);
         break;
 
     case POT_PARALYSIS: // paralysis

@@ -1,4 +1,4 @@
-# Make file for Dungeon Crawl (dos)
+# Make file for Dungeon Crawl (irix)
 
 APPNAME = crawl
 
@@ -6,19 +6,24 @@ APPNAME = crawl
 # it will make a variable called OBJECTS that contains all the libraries
 include makefile.obj
 
-CXX = gxx
-DELETE = del
-COPY = copy
-OS_TYPE = DOS
+CXX = CC
+DELETE = rm -f
+COPY = cp
+OS_TYPE = LINUX
 CFLAGS = -Wall -D$(OS_TYPE) $(EXTRA_FLAGS)
-LDFLAGS = -Lc:\djgpp\contrib\pdcurs22\lib
-INSTALLDIR = c:\games\crawl
-LIB = -lcurso -lpano
+LDFLAGS = -L/usr/lib
+MCHMOD = 711
+INSTALLDIR = /usr/games
+LIB = -lncurses
+
+# Include for Linux
+INCLUDES = -I/usr/include/ncurses
 
 all:            $(APPNAME)
 
 install:        $(APPNAME)
 		$(COPY) $(APPNAME) ${INSTALLDIR}
+		chmod ${MCHMOD} ${INSTALLDIR}/$(APPNAME)
 
 clean:
 		$(DELETE) *.o
@@ -33,6 +38,7 @@ distclean:
 $(APPNAME):	$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
 		strip $(APPNAME)
+		chmod ${MCHMOD} $(APPNAME)
 
 debug:		$(OBJECTS)
 		${CXX} ${LDFLAGS} $(INCLUDES) $(CFLAGS) $(OBJECTS) -o $(APPNAME) $(LIB)
@@ -43,7 +49,5 @@ profile:	$(OBJECTS)
 .cc.o:
 		${CXX} ${CFLAGS} -c $< ${INCLUDE}
 
-# I don't have touch for DOS, but if you do, you can put this back.
-#
-#.h.cc:
-#		touch $@
+.h.cc:
+		touch $@

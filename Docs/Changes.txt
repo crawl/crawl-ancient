@@ -1,3 +1,50 @@
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+10/2/99
+
+* Reformatted the help screen so that it is easier to see what you're
+  looking for at a glance.  Also added a "more" capability so that
+  if the command list goes over the screen size, you will get a more prompt
+  and it will be displayed correctly.
+* Changed the amulet of maintain speed to the amulet of resist slowness. The
+  old description stated that it made you resist slow and made your speed
+  better, but the code only made it so that you would resist slow.  So now
+  if you have the amulet on, you get a +10 boost to any hasting, plus the
+  maximum hasting you can have is bumped up 10.
+* Changed some silly messages involving hasting and slowing.
+* Tried to add some messages to the raise dead functions to indicate
+  that you failed when you cast the spell, but I'm not sure they work.
+  The code is very confusing.  They may only work some of the time.
+* #ifdeffed LINUX the code in acr.cc from line 663 to line 676 which was
+  using variables declared in another ifdef LINUX block.  This may have
+  screwed something up because I'm not sure what's going on here.
+
+Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
+9/29/99
+
+* Fixed the highscore() function so that it doesn't take so long.
+* Added some whitespace to the scores output so that it will look better.
+* fixed a bug involving 'a' being in scores.  See Bugs.txt and ouch.cc
+* added comments in enum.h showing where the unique monsters are
+* Removed the first argument from draw_border in view.cc since it was
+  always being passed the same value.
+* Fixed a bug where the player's score was not always being saved.
+* I noticed some problems with the new makefiles while compiling under
+  DOS.  Any platform that has its own library (like liblinux) should be
+  +='ed to OBJECTS in the system specific makefile.
+* Added noopt (no optimization) to Makefile to allow me to compile under
+  DOS with no headaches.
+
+Daniel Ligon
+28/09/99
+
+-- renamed linuxlib to liblinux
+-- turned on keypad for ncurses (linux port)
+-- made kbhit() of liblinux.cc to always returned 0
+-- made big lookup table in liblinux.cc to convert keypresses to
+   commands
+-- added enumerated commands to enum.h and to big switch in acr.cc
+-- added Brian's makefiles
+
 Brent Ross (bwross@csclub.uwaterloo.ca)
 24/09/99
 
@@ -76,6 +123,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 
 -- added Linley's suggested new weapons (Axe, Spiked Flail, Great mace,
     Great flail)
+
 -- upped damage for some maces & flails (swords are quick and accurate,
    but maces and flails hit harder).
 
@@ -462,7 +510,9 @@ Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 (Note: I've tried to annotate all my changes in the code  with my initials
        (BCR), so you can grep for them to find my changes.)
 
-* did some small cleanup here and there * wrote a new makefile for Linux.
+* did some small cleanup here and there
+
+* wrote a new makefile for Linux.
   Made a number of changes to the make process which should save up some
   headaches in the future.  Now there is an OS_TYPE variable in the makefile
   that is automatically make into a #define in the make process, and that
@@ -471,9 +521,10 @@ Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
   make.obj which is included into the makefile.  This should save a little
   space and keep all the makefiles consistent on what objects they need.
 
-* indented and added a header to defines.h * fixed some oddness in
-  newgame.cc.  Various system dependent name checks were all messed up in
-  a bunch of nested #ifdef stuff.  Sorted it out.
+* indented and added a header to defines.h
+
+* fixed some oddness in newgame.cc.  Various system dependent name
+  checks were all messed up in a bunch of nested #ifdef stuff.  Sorted it out.
 
 * made the #define MACROS actually do something.  Now if you have it
   defined, the macros.h and macros.cc files will be used, otherwise they
@@ -584,9 +635,10 @@ David Loewenstern <loewenstern@home.com>
   weapon types).
 * fixed a bug in displaying the top scores when no score file had existed.
 
-Jesse Jones (jesjones@halcyon.com)
 
+Jesse Jones (jesjones@halcyon.com)
 05/30/99
+
 * highscore() will print more scores on larger windows.
 * wearing cloaks no longer prevents wearing or removing body armor
 * armor can be dropped if it's worn and not cursed
@@ -602,7 +654,6 @@ Jesse Jones (jesjones@halcyon.com)
 
 
 Brent Ross (bwross@csclub.uwaterloo.ca)
-
 5/?/99
 
 * used GNU indent 1.91 (options -bad -bli0 -i4 -npcs -npsl), to hopefully
@@ -722,9 +773,7 @@ Brent Ross (bwross@csclub.uwaterloo.ca)
 * Made named artefact weapons slightly rarer, Sword of Power now has
   1 in 2 check as well.
 
-
 Jesse Jones (jesjones@halcyon.com)
-
 5/?/99
 
 * Fixed what appear to be three bugs involving extra semi-colons.

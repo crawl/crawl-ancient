@@ -5,10 +5,13 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *     <2>     9/29/99     BCR     Added the BORDER_COLOR define
+ *     <1>     -/--/--     LRH     Created
  */
 #ifndef VIEW_H
 #define VIEW_H
+
+#define BORDER_COLOR BROWN
 
 #include "externs.h"
 
@@ -26,5 +29,5 @@ void magic_mapping(int map_radius, int proportion);
 void show_map(int spec_place[2]);
 bool mons_near(unsigned char monst);
 void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p);
-void draw_border(int bord_col, char your_name[kNameLen], char class_name[40], char tspecies);
+void draw_border(char your_name[kNameLen], char class_name[40], char tspecies);
 #endif

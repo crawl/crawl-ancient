@@ -1893,7 +1893,7 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
                 valued += 20;
                 break;          //amulet of rage
 
-            case AMU_MAINTAIN_SPEED:
+            case AMU_RESIST_SLOW:
                 valued += 30;
                 break;          //amulet of maintain speed - not foolproof
 

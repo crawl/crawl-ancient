@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *      <7>     9/29/99         BCR             Added comments showing where uniques are
  *      <6>     9/25/99         CDL             Added commands
  *      <5>     9/9/99          BWR             Removed Great Swords skill
  *      <4>     8/6/99          BWR             added branch and level types
@@ -684,7 +685,7 @@ enum JEWELLERY
     RING_ICE,
     RING_TELEPORT_CONTROL,
     AMU_RAGE = 35,
-    AMU_MAINTAIN_SPEED,
+    AMU_RESIST_SLOW,
     AMU_CLARITY,
     AMU_WARDING,
     AMU_RESIST_CORROSION,
@@ -989,10 +990,12 @@ enum MONSTERS
     MONS_METAL_GARGOYLE,
     MONS_MOLTEN_GARGOYLE,
     MONS_PROGRAM_BUG,           // 250
-     MONS_MNOLEG,
+// BCR - begin first batch of uniques.
+    MONS_MNOLEG,
     MONS_LOM_LOBON,
     MONS_CEREBOV,
     MONS_GLOORX_VLOQ,
+// BCR - End first batch of uniques.
     MONS_NAGA_MAGE = 260,
     MONS_NAGA_WARRIOR,
     MONS_ORC_WARLORD,
@@ -1013,6 +1016,7 @@ enum MONSTERS
     MONS_DEATH_OOZE,
     MONS_ACID_BLOB,
     MONS_ROYAL_JELLY,
+// BCR - begin second batch of uniques.
     MONS_TERENCE,               // 280
      MONS_JESSICA,
     MONS_IJYB,
@@ -1044,6 +1048,7 @@ enum MONSTERS
     MONS_ADOLF,
     MONS_MARGERY,
     MONS_BORIS,                 // 310
+// BCR - end second batch of uniques.
      MONS_GERYON = 340,
     MONS_DISPATER,
     MONS_ASMODEUS,

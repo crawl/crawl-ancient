@@ -23,7 +23,6 @@ item_use.o \
 itemname.o \
 items.o \
 levels.o \
-liblinux.o \
 llist.o \
 macro.o \
 maps.o \

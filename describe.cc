@@ -2066,11 +2066,11 @@ static string describe_jewellery(int item_class, int item_type, int item_plus, i
             description += "This ring allows its wearer to control the destination of any teleportation, although without perfect accuracy. Trying to teleport into a solid object will result in a random teleportation, at least in the case of a normal teleportation. ";
             break;
 
-        case 35:
+        case AMU_RAGE:
             description += "This amulet enables its wearer to attempt to enter a state of berserk rage, and increases their chance of successfully doing so. ";
             break;
 
-        case 36:
+        case AMU_RESIST_SLOW:
             description += "This amulet protects its wearer from some magically induced forms of slowness, and increases the duration of enchantments which speed his or her actions. ";
             break;
 

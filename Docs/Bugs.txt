@@ -1,6 +1,17 @@
 Bugs:
 
+* DJGPP (dos compiler) may puke up a lung on some of the very long function if
+  you try to compile in debug mode.
+
+* values 250 - 310 should be reserved for Uniques in the monsters enum, but 260 - 280
+  are occupied by other monsters.  Should move them if it won't mess anything else up.
+  If they are moved, remember to alter the ouch.cc check to see if 'a' is put in front
+  of the unique's name in the scores.
+
+* Various odd effects when playing in term on Linux.  May be terminfo's fault.
+
 *  "-5 stone" is heavily enchanted to do *more* damage and costs 100
+
 *  "+6" was missile weapon generated in a jewellery shop
 
 *  stop polearms of reaching from working over other monsters... might
@@ -14,18 +25,12 @@ Bugs:
 
 *  fired beams sometimes take the wrong route and can't hit targets in los
 
-*  "deep elf" doesn't get an "a" in front of it in the score file
-
 *  killed by program bug when killed by exploding spore
 
 *  fix keypad... still broken
 
 * cannot make the program with -DWIZARD (some files won't compile)
    -- fixed
-
-* "deep elf" doesn't get an "a" in front of it in the score file
-
-*  bug: killed by program bug when killed by exploding spore
 
 * Skeletal Warrior cast a spell and seg faulted the game in the abyss.
 
@@ -35,12 +40,13 @@ Bugs:
   two keys before any actions are executed, instead of having their actions
   executed immediately after each keystroke.  Quick fix is to disable macros
   from the Linux build, but eventually we want to get them working on Linux.
+   -- fixed
 
 * From the code it appears that dropping items takes zero time...
 
 * Currently possible to gain 0hp when gaining a level... should
-be safeguards added to make sure this is at least never negative,
-if not guaranteeing 1hp / level.
+  be safeguards added to make sure this is at least never negative,
+  if not guaranteeing 1hp / level.
 
 * If you have teleport control you'll see a prompt that says, "You may
 choose your destination (press '.' or delete to select)". I somehow got

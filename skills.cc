@@ -395,7 +395,6 @@ cut_through:
         {
             strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
             redraw_skill(you.your_name, title);
-//       draw_border(BROWN, you.your_name, title);
         }
     }
 

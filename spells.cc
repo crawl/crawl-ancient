@@ -5,7 +5,8 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *     <2>     10/1/99     BCR     Added messages for failed animate dead
+ *     <1>     -/--/--     LRH     Created
  */
 
 /* This determines how likely it is that more powerful wild magic effects

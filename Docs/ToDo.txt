@@ -108,6 +108,7 @@ in gray.
         and it is recorded. Maybe (if it doesn't take up too much space)
         shops could be listed by name/type as well - eg "Gog U Khig's
         Antique Weapons".
+ -- done (LRH)
 
 * The spores contaminate the food by exploding, only the
         > explosion effect should destroy food on the ground.

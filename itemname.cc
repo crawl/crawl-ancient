@@ -1523,8 +1523,8 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
             case AMU_RAGE:
                 strcat(glog, "amulet of rage");
                 break;
-            case AMU_MAINTAIN_SPEED:
-                strcat(glog, "amulet of maintain speed");
+            case AMU_RESIST_SLOW:
+                strcat(glog, "amulet of resist slowing");
                 break;
             case AMU_CLARITY:
                 strcat(glog, "amulet of clarity");

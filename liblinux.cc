@@ -67,90 +67,90 @@
 
 
 // Globals holding current text/backg. colors
-short FG_COL = COLOR_WHITE;
-short BG_COL = COLOR_BLACK;
+   short FG_COL = COLOR_WHITE;
+   short BG_COL = COLOR_BLACK;
 
 // a lookup table to convert keypresses to command enums
-int key_to_command_table[ KEY_MAX ];
+   int key_to_command_table[ KEY_MAX ];
 
 
 
 // Translate DOS colors to curses. 128 just means use high intens./bold.
-short translatecolor(short col)
-{
-    switch (col)
-    {
-    case BLACK:
-        return COLOR_BLACK;
-        break;
-    case BLUE:
-        return COLOR_BLUE;
-        break;
-    case GREEN:
-        return COLOR_GREEN;
-        break;
-    case CYAN:
-        return COLOR_CYAN;
-        break;
-    case RED:
-        return COLOR_RED;
-        break;
-    case MAGENTA:
-        return COLOR_MAGENTA;
-        break;
-    case BROWN:
-        return COLOR_YELLOW;
-        break;
-    case LIGHTGREY:
-        return COLOR_WHITE;
-        break;
-    case DARKGREY:
-        return COLOR_BLACK + 128;
-        break;
-    case LIGHTBLUE:
-        return COLOR_BLUE + 128;
-        break;
-    case LIGHTGREEN:
-        return COLOR_GREEN + 128;
-        break;
-    case LIGHTCYAN:
-        return COLOR_CYAN + 128;
-        break;
-    case LIGHTRED:
-        return COLOR_RED + 128;
-        break;
-    case LIGHTMAGENTA:
-        return COLOR_MAGENTA + 128;
-        break;
-    case YELLOW:
-        return COLOR_YELLOW + 128;
-        break;
-    case WHITE:
-        return COLOR_WHITE + 128;
-        break;
-    default:
-        return COLOR_GREEN;
-        break;                  //mainly for debugging
+   short translatecolor(short col)
+   {
+      switch (col)
+      {
+         case BLACK:
+            return COLOR_BLACK;
+            break;
+         case BLUE:
+            return COLOR_BLUE;
+            break;
+         case GREEN:
+            return COLOR_GREEN;
+            break;
+         case CYAN:
+            return COLOR_CYAN;
+            break;
+         case RED:
+            return COLOR_RED;
+            break;
+         case MAGENTA:
+            return COLOR_MAGENTA;
+            break;
+         case BROWN:
+            return COLOR_YELLOW;
+            break;
+         case LIGHTGREY:
+            return COLOR_WHITE;
+            break;
+         case DARKGREY:
+            return COLOR_BLACK + 128;
+            break;
+         case LIGHTBLUE:
+            return COLOR_BLUE + 128;
+            break;
+         case LIGHTGREEN:
+            return COLOR_GREEN + 128;
+            break;
+         case LIGHTCYAN:
+            return COLOR_CYAN + 128;
+            break;
+         case LIGHTRED:
+            return COLOR_RED + 128;
+            break;
+         case LIGHTMAGENTA:
+            return COLOR_MAGENTA + 128;
+            break;
+         case YELLOW:
+            return COLOR_YELLOW + 128;
+            break;
+         case WHITE:
+            return COLOR_WHITE + 128;
+            break;
+         default:
+            return COLOR_GREEN;
+            break;                  //mainly for debugging
 
-    }
-}
+      }
+   }
 
 
 
-void setupcolorpairs( bool use_no_black )
-{
-    short i, j;
+   void setupcolorpairs( bool use_no_black )
+   {
+      short i, j;
 
-    for (i = 0; i < 8; i++)
-        for (j = 0; j < 8; j++)
+      for (i = 0; i < 8; i++)
+         for (j = 0; j < 8; j++)
             if ((i > 0) || (j > 0))
-                init_pair(i * 8 + j, j, i);
+               init_pair(i * 8 + j, j, i);
 
-    if (use_no_black)
-        init_pair(63, COLOR_WHITE, COLOR_BLACK);
-    else
-        init_pair(63, COLOR_BLACK, COLOR_BLACK);
-}
+      if (use_no_black)
+         init_pair(63, COLOR_WHITE, COLOR_BLACK);
+      else
+         init_pair(63, COLOR_BLACK, COLOR_BLACK);
+   }
 
 #if defined(USE_POSIX_TERMIOS)
 
@@ -183,473 +183,473 @@ void termio_init()
 
 #endif
 
-void init_key_to_command()
-{
-  int i;
+   void init_key_to_command()
+   {
+      int i;
 
-  // initialize to "do nothing"
-  for ( i=0; i < KEY_MAX; i++ )
-  {
-    key_to_command_table[ i ] = CMD_NO_CMD;
-  }
+   // initialize to "do nothing"
+      for ( i=0; i < KEY_MAX; i++ )
+      {
+         key_to_command_table[ i ] = CMD_NO_CMD;
+      }
 
-  // lower case
-  key_to_command_table[ 'a' ] = CMD_USE_ABILITY;
-  key_to_command_table[ 'b' ] = CMD_MOVE_DOWN_LEFT;
-  key_to_command_table[ 'c' ] = CMD_CLOSE_DOOR;
-  key_to_command_table[ 'd' ] = CMD_DROP;
-  key_to_command_table[ 'e' ] = CMD_EAT;
-  key_to_command_table[ 'f' ] = CMD_FIRE;
-  key_to_command_table[ 'g' ] = CMD_PICKUP;
-  key_to_command_table[ 'h' ] = CMD_MOVE_LEFT;
-  key_to_command_table[ 'i' ] = CMD_DISPLAY_INVENTORY;
-  key_to_command_table[ 'j' ] = CMD_MOVE_DOWN;
-  key_to_command_table[ 'k' ] = CMD_MOVE_UP;
-  key_to_command_table[ 'l' ] = CMD_MOVE_RIGHT;
-  key_to_command_table[ 'm' ] = CMD_DISPLAY_SKILLS;
-  key_to_command_table[ 'n' ] = CMD_MOVE_DOWN_RIGHT;
-  key_to_command_table[ 'o' ] = CMD_OPEN_DOOR;
-  key_to_command_table[ 'p' ] = CMD_PRAY;
-  key_to_command_table[ 'q' ] = CMD_QUAFF;
-  key_to_command_table[ 'r' ] = CMD_READ;
-  key_to_command_table[ 's' ] = CMD_SEARCH;
-  key_to_command_table[ 't' ] = CMD_THROW;
-  key_to_command_table[ 'u' ] = CMD_MOVE_UP_RIGHT;
-  key_to_command_table[ 'v' ] = CMD_GET_VERSION;
-  key_to_command_table[ 'w' ] = CMD_WIELD_WEAPON;
-  key_to_command_table[ 'x' ] = CMD_LOOK_AROUND;
-  key_to_command_table[ 'y' ] = CMD_MOVE_UP_LEFT;
-  key_to_command_table[ 'z' ] = CMD_ZAP_WAND;
+   // lower case
+      key_to_command_table[ 'a' ] = CMD_USE_ABILITY;
+      key_to_command_table[ 'b' ] = CMD_MOVE_DOWN_LEFT;
+      key_to_command_table[ 'c' ] = CMD_CLOSE_DOOR;
+      key_to_command_table[ 'd' ] = CMD_DROP;
+      key_to_command_table[ 'e' ] = CMD_EAT;
+      key_to_command_table[ 'f' ] = CMD_FIRE;
+      key_to_command_table[ 'g' ] = CMD_PICKUP;
+      key_to_command_table[ 'h' ] = CMD_MOVE_LEFT;
+      key_to_command_table[ 'i' ] = CMD_DISPLAY_INVENTORY;
+      key_to_command_table[ 'j' ] = CMD_MOVE_DOWN;
+      key_to_command_table[ 'k' ] = CMD_MOVE_UP;
+      key_to_command_table[ 'l' ] = CMD_MOVE_RIGHT;
+      key_to_command_table[ 'm' ] = CMD_DISPLAY_SKILLS;
+      key_to_command_table[ 'n' ] = CMD_MOVE_DOWN_RIGHT;
+      key_to_command_table[ 'o' ] = CMD_OPEN_DOOR;
+      key_to_command_table[ 'p' ] = CMD_PRAY;
+      key_to_command_table[ 'q' ] = CMD_QUAFF;
+      key_to_command_table[ 'r' ] = CMD_READ;
+      key_to_command_table[ 's' ] = CMD_SEARCH;
+      key_to_command_table[ 't' ] = CMD_THROW;
+      key_to_command_table[ 'u' ] = CMD_MOVE_UP_RIGHT;
+      key_to_command_table[ 'v' ] = CMD_GET_VERSION;
+      key_to_command_table[ 'w' ] = CMD_WIELD_WEAPON;
+      key_to_command_table[ 'x' ] = CMD_LOOK_AROUND;
+      key_to_command_table[ 'y' ] = CMD_MOVE_UP_LEFT;
+      key_to_command_table[ 'z' ] = CMD_ZAP_WAND;
 
-  // upper case
-  key_to_command_table[ 'A' ] = CMD_DISPLAY_MUTATIONS;
-  key_to_command_table[ 'B' ] = CMD_RUN_DOWN_LEFT;
-  key_to_command_table[ 'C' ] = CMD_EXPERIENCE_CHECK;
-  key_to_command_table[ 'D' ] = CMD_BUTCHER;
-  key_to_command_table[ 'E' ] = CMD_NO_CMD;
-  key_to_command_table[ 'F' ] = CMD_NO_CMD;
-  key_to_command_table[ 'G' ] = CMD_NO_CMD;
-  key_to_command_table[ 'H' ] = CMD_RUN_LEFT;
-  key_to_command_table[ 'I' ] = CMD_INVOKE;
-  key_to_command_table[ 'J' ] = CMD_RUN_DOWN;
-  key_to_command_table[ 'K' ] = CMD_RUN_UP;
-  key_to_command_table[ 'L' ] = CMD_RUN_RIGHT;
-  key_to_command_table[ 'M' ] = CMD_MEMORISE_SPELL;
-  key_to_command_table[ 'N' ] = CMD_RUN_DOWN_RIGHT;
-  key_to_command_table[ 'O' ] = CMD_DISPLAY_OVERMAP;
-  key_to_command_table[ 'P' ] = CMD_WEAR_JEWELLERY;
-  key_to_command_table[ 'Q' ] = CMD_QUIT;
-  key_to_command_table[ 'R' ] = CMD_REMOVE_JEWELLERY;
-  key_to_command_table[ 'S' ] = CMD_SAVE_GAME;
-  key_to_command_table[ 'T' ] = CMD_REMOVE_ARMOUR;
-  key_to_command_table[ 'U' ] = CMD_RUN_UP_RIGHT;
-  key_to_command_table[ 'V' ] = CMD_EXAMINE_OBJECT;
-  key_to_command_table[ 'W' ] = CMD_WEAR_ARMOUR;
-  key_to_command_table[ 'X' ] = CMD_DISPLAY_MAP;
-  key_to_command_table[ 'Y' ] = CMD_RUN_UP_LEFT;
-  key_to_command_table[ 'Z' ] = CMD_CAST_SPELL;
+   // upper case
+      key_to_command_table[ 'A' ] = CMD_DISPLAY_MUTATIONS;
+      key_to_command_table[ 'B' ] = CMD_RUN_DOWN_LEFT;
+      key_to_command_table[ 'C' ] = CMD_EXPERIENCE_CHECK;
+      key_to_command_table[ 'D' ] = CMD_BUTCHER;
+      key_to_command_table[ 'E' ] = CMD_NO_CMD;
+      key_to_command_table[ 'F' ] = CMD_NO_CMD;
+      key_to_command_table[ 'G' ] = CMD_NO_CMD;
+      key_to_command_table[ 'H' ] = CMD_RUN_LEFT;
+      key_to_command_table[ 'I' ] = CMD_INVOKE;
+      key_to_command_table[ 'J' ] = CMD_RUN_DOWN;
+      key_to_command_table[ 'K' ] = CMD_RUN_UP;
+      key_to_command_table[ 'L' ] = CMD_RUN_RIGHT;
+      key_to_command_table[ 'M' ] = CMD_MEMORISE_SPELL;
+      key_to_command_table[ 'N' ] = CMD_RUN_DOWN_RIGHT;
+      key_to_command_table[ 'O' ] = CMD_DISPLAY_OVERMAP;
+      key_to_command_table[ 'P' ] = CMD_WEAR_JEWELLERY;
+      key_to_command_table[ 'Q' ] = CMD_QUIT;
+      key_to_command_table[ 'R' ] = CMD_REMOVE_JEWELLERY;
+      key_to_command_table[ 'S' ] = CMD_SAVE_GAME;
+      key_to_command_table[ 'T' ] = CMD_REMOVE_ARMOUR;
+      key_to_command_table[ 'U' ] = CMD_RUN_UP_RIGHT;
+      key_to_command_table[ 'V' ] = CMD_EXAMINE_OBJECT;
+      key_to_command_table[ 'W' ] = CMD_WEAR_ARMOUR;
+      key_to_command_table[ 'X' ] = CMD_DISPLAY_MAP;
+      key_to_command_table[ 'Y' ] = CMD_RUN_UP_LEFT;
+      key_to_command_table[ 'Z' ] = CMD_CAST_SPELL;
 
-  // control
-  key_to_command_table[   1 ] = CMD_TOGGLE_AUTOPICKUP;
-  key_to_command_table[   2 ] = CMD_OPEN_DOOR_DOWN_LEFT;
-  key_to_command_table[   3 ] = CMD_NO_CMD;
-  key_to_command_table[   4 ] = CMD_NO_CMD;
-  key_to_command_table[   5 ] = CMD_NO_CMD;
-  key_to_command_table[   6 ] = CMD_NO_CMD;
-  key_to_command_table[   7 ] = CMD_NO_CMD;
-  key_to_command_table[   8 ] = CMD_OPEN_DOOR_LEFT;
-  key_to_command_table[   9 ] = CMD_NO_CMD;
-  key_to_command_table[  10 ] = CMD_OPEN_DOOR_DOWN;
-  key_to_command_table[  11 ] = CMD_OPEN_DOOR_UP;
-  key_to_command_table[  12 ] = CMD_OPEN_DOOR_RIGHT;
-  key_to_command_table[  13 ] = CMD_NO_CMD;
-  key_to_command_table[  14 ] = CMD_OPEN_DOOR_DOWN_RIGHT;
-  key_to_command_table[  15 ] = CMD_NO_CMD;
-  key_to_command_table[  16 ] = CMD_REPLAY_MESSAGES;
-  key_to_command_table[  17 ] = CMD_NO_CMD;
-  key_to_command_table[  18 ] = CMD_REDRAW_SCREEN;
-  key_to_command_table[  19 ] = CMD_NO_CMD;
-  key_to_command_table[  20 ] = CMD_NO_CMD;
-  key_to_command_table[  21 ] = CMD_OPEN_DOOR_UP_LEFT;
-  key_to_command_table[  22 ] = CMD_NO_CMD;
-  key_to_command_table[  23 ] = CMD_NO_CMD;
-  key_to_command_table[  24 ] = CMD_SAVE_GAME_NOW;
-  key_to_command_table[  25 ] = CMD_OPEN_DOOR_UP_RIGHT;
-  key_to_command_table[  26 ] = CMD_SUSPEND_GAME;
+   // control
+      key_to_command_table[   1 ] = CMD_TOGGLE_AUTOPICKUP;
+      key_to_command_table[   2 ] = CMD_OPEN_DOOR_DOWN_LEFT;
+      key_to_command_table[   3 ] = CMD_NO_CMD;
+      key_to_command_table[   4 ] = CMD_NO_CMD;
+      key_to_command_table[   5 ] = CMD_NO_CMD;
+      key_to_command_table[   6 ] = CMD_NO_CMD;
+      key_to_command_table[   7 ] = CMD_NO_CMD;
+      key_to_command_table[   8 ] = CMD_OPEN_DOOR_LEFT;
+      key_to_command_table[   9 ] = CMD_NO_CMD;
+      key_to_command_table[  10 ] = CMD_OPEN_DOOR_DOWN;
+      key_to_command_table[  11 ] = CMD_OPEN_DOOR_UP;
+      key_to_command_table[  12 ] = CMD_OPEN_DOOR_RIGHT;
+      key_to_command_table[  13 ] = CMD_NO_CMD;
+      key_to_command_table[  14 ] = CMD_OPEN_DOOR_DOWN_RIGHT;
+      key_to_command_table[  15 ] = CMD_NO_CMD;
+      key_to_command_table[  16 ] = CMD_REPLAY_MESSAGES;
+      key_to_command_table[  17 ] = CMD_NO_CMD;
+      key_to_command_table[  18 ] = CMD_REDRAW_SCREEN;
+      key_to_command_table[  19 ] = CMD_NO_CMD;
+      key_to_command_table[  20 ] = CMD_NO_CMD;
+      key_to_command_table[  21 ] = CMD_OPEN_DOOR_UP_LEFT;
+      key_to_command_table[  22 ] = CMD_NO_CMD;
+      key_to_command_table[  23 ] = CMD_NO_CMD;
+      key_to_command_table[  24 ] = CMD_SAVE_GAME_NOW;
+      key_to_command_table[  25 ] = CMD_OPEN_DOOR_UP_RIGHT;
+      key_to_command_table[  26 ] = CMD_SUSPEND_GAME;
 
-  // other printables
-  key_to_command_table[ '.' ] = CMD_MOVE_NOWHERE;
-  key_to_command_table[ '<' ] = CMD_GO_UPSTAIRS;
-  key_to_command_table[ '>' ] = CMD_GO_DOWNSTAIRS;
-  key_to_command_table[ '@' ] = CMD_EXPERIENCE_CHECK;
-  key_to_command_table[ ',' ] = CMD_PICKUP;
-  key_to_command_table[ ';' ] = CMD_INSPECT_FLOOR;
-  key_to_command_table[ '!' ] = CMD_SHOUT;
-  key_to_command_table[ '^' ] = CMD_DISPLAY_RELIGION;
-  key_to_command_table[ '#' ] = CMD_CHARACTER_DUMP;
-  key_to_command_table[ '=' ] = CMD_ADJUST_INVENTORY;
-  key_to_command_table[ '?' ] = CMD_DISPLAY_COMMANDS;
-  key_to_command_table[ '`' ] = CMD_MACRO_ADD;
-  key_to_command_table[ '~' ] = CMD_MACRO_SAVE;
-  key_to_command_table[ '(' ] = CMD_LIST_WEAPONS;
-  key_to_command_table[ ']' ] = CMD_LIST_ARMOUR;
-  key_to_command_table[ '"' ] = CMD_LIST_JEWELLERY;
+   // other printables
+      key_to_command_table[ '.' ] = CMD_MOVE_NOWHERE;
+      key_to_command_table[ '<' ] = CMD_GO_UPSTAIRS;
+      key_to_command_table[ '>' ] = CMD_GO_DOWNSTAIRS;
+      key_to_command_table[ '@' ] = CMD_DISPLAY_CHARACTER_STATUS;
+      key_to_command_table[ ',' ] = CMD_PICKUP;
+      key_to_command_table[ ';' ] = CMD_INSPECT_FLOOR;
+      key_to_command_table[ '!' ] = CMD_SHOUT;
+      key_to_command_table[ '^' ] = CMD_DISPLAY_RELIGION;
+      key_to_command_table[ '#' ] = CMD_CHARACTER_DUMP;
+      key_to_command_table[ '=' ] = CMD_ADJUST_INVENTORY;
+      key_to_command_table[ '?' ] = CMD_DISPLAY_COMMANDS;
+      key_to_command_table[ '`' ] = CMD_MACRO_ADD;
+      key_to_command_table[ '~' ] = CMD_MACRO_SAVE;
+      key_to_command_table[ '(' ] = CMD_LIST_WEAPONS;
+      key_to_command_table[ ']' ] = CMD_LIST_ARMOUR;
+      key_to_command_table[ '"' ] = CMD_LIST_JEWELLERY;
 
-  key_to_command_table[ '\\' ] = CMD_DISPLAY_KNOWN_OBJECTS;
-  key_to_command_table[ '\'' ] = CMD_WEAPON_SWAP;
+      key_to_command_table[ '\\' ] = CMD_DISPLAY_KNOWN_OBJECTS;
+      key_to_command_table[ '\'' ] = CMD_WEAPON_SWAP;
 
-  // digits
-  key_to_command_table[ '1' ] = CMD_MOVE_DOWN_LEFT;
-  key_to_command_table[ '2' ] = CMD_MOVE_DOWN;
-  key_to_command_table[ '3' ] = CMD_MOVE_DOWN_RIGHT;
-  key_to_command_table[ '4' ] = CMD_MOVE_LEFT;
-  key_to_command_table[ '5' ] = CMD_REST;
-  key_to_command_table[ '6' ] = CMD_MOVE_RIGHT;
-  key_to_command_table[ '7' ] = CMD_MOVE_UP_LEFT;
-  key_to_command_table[ '8' ] = CMD_MOVE_UP;
-  key_to_command_table[ '9' ] = CMD_MOVE_UP_RIGHT;
+   // digits
+      key_to_command_table[ '1' ] = CMD_MOVE_DOWN_LEFT;
+      key_to_command_table[ '2' ] = CMD_MOVE_DOWN;
+      key_to_command_table[ '3' ] = CMD_MOVE_DOWN_RIGHT;
+      key_to_command_table[ '4' ] = CMD_MOVE_LEFT;
+      key_to_command_table[ '5' ] = CMD_REST;
+      key_to_command_table[ '6' ] = CMD_MOVE_RIGHT;
+      key_to_command_table[ '7' ] = CMD_MOVE_UP_LEFT;
+      key_to_command_table[ '8' ] = CMD_MOVE_UP;
+      key_to_command_table[ '9' ] = CMD_MOVE_UP_RIGHT;
 
-  // keypad
-  key_to_command_table[ KEY_A1    ] = CMD_MOVE_UP_LEFT;
-  key_to_command_table[ KEY_A3    ] = CMD_MOVE_UP_RIGHT;
-  key_to_command_table[ KEY_C1    ] = CMD_MOVE_DOWN_LEFT;
-  key_to_command_table[ KEY_C3    ] = CMD_MOVE_DOWN_RIGHT;
+   // keypad
+      key_to_command_table[ KEY_A1    ] = CMD_MOVE_UP_LEFT;
+      key_to_command_table[ KEY_A3    ] = CMD_MOVE_UP_RIGHT;
+      key_to_command_table[ KEY_C1    ] = CMD_MOVE_DOWN_LEFT;
+      key_to_command_table[ KEY_C3    ] = CMD_MOVE_DOWN_RIGHT;
 
-  key_to_command_table[ KEY_HOME  ] = CMD_MOVE_UP_LEFT;
-  key_to_command_table[ KEY_PPAGE ] = CMD_MOVE_UP_RIGHT;
-  key_to_command_table[ KEY_END   ] = CMD_MOVE_DOWN_LEFT;
-  key_to_command_table[ KEY_NPAGE ] = CMD_MOVE_DOWN_RIGHT;
+      key_to_command_table[ KEY_HOME  ] = CMD_MOVE_UP_LEFT;
+      key_to_command_table[ KEY_PPAGE ] = CMD_MOVE_UP_RIGHT;
+      key_to_command_table[ KEY_END   ] = CMD_MOVE_DOWN_LEFT;
+      key_to_command_table[ KEY_NPAGE ] = CMD_MOVE_DOWN_RIGHT;
 
-  key_to_command_table[ KEY_B2    ] = CMD_REST;
+      key_to_command_table[ KEY_B2    ] = CMD_REST;
 
-  key_to_command_table[ KEY_UP    ] = CMD_MOVE_UP;
-  key_to_command_table[ KEY_DOWN  ] = CMD_MOVE_DOWN;
-  key_to_command_table[ KEY_LEFT  ] = CMD_MOVE_LEFT;
-  key_to_command_table[ KEY_RIGHT ] = CMD_MOVE_RIGHT;
+      key_to_command_table[ KEY_UP    ] = CMD_MOVE_UP;
+      key_to_command_table[ KEY_DOWN  ] = CMD_MOVE_DOWN;
+      key_to_command_table[ KEY_LEFT  ] = CMD_MOVE_LEFT;
+      key_to_command_table[ KEY_RIGHT ] = CMD_MOVE_RIGHT;
 
 
-  // other odd things
-  // key_to_command_table[ 263 ] = CMD_OPEN_DOOR_LEFT;   // backspace
+   // other odd things
+   // key_to_command_table[ 263 ] = CMD_OPEN_DOOR_LEFT;   // backspace
 
-  // these are invalid keys, but to help kludge running
-  // pass them through unmolested
-   key_to_command_table[ 125 ] = 125;
-   key_to_command_table[ '*' ] = '*';
-   key_to_command_table[ '/' ] = '/';
+   // these are invalid keys, but to help kludge running
+   // pass them through unmolested
+      key_to_command_table[ 125 ] = 125;
+      key_to_command_table[ '*' ] = '*';
+      key_to_command_table[ '/' ] = '/';
 
-}
+   }
 
-int key_to_command( int keyin )
-{
-  return key_to_command_table[ keyin ];
-}
+   int key_to_command( int keyin )
+   {
+      return key_to_command_table[ keyin ];
+   }
 
 
 // cdl -- This routine is dead
-int translate_keypad( int keyin )
-{
-    int  ret;
+   int translate_keypad( int keyin )
+   {
+      int  ret;
 
-    switch (keyin)
-    {
-    case KEY_A1:
-        ret = '7';
-        break;
+      switch (keyin)
+      {
+         case KEY_A1:
+            ret = '7';
+            break;
 
-    case KEY_A3:
-        ret = '9';
-        break;
+         case KEY_A3:
+            ret = '9';
+            break;
 
-    case KEY_B2:
-        ret = '5';
-        break;
+         case KEY_B2:
+            ret = '5';
+            break;
 
-    case KEY_C1:
-        ret = '1';
-        break;
+         case KEY_C1:
+            ret = '1';
+            break;
 
-    case KEY_C3:
-        ret = '3';
-        break;
+         case KEY_C3:
+            ret = '3';
+            break;
 
-    case KEY_UP:
-        ret = '8';
-        break;
+         case KEY_UP:
+            ret = '8';
+            break;
 
-    case KEY_DOWN:
-        ret = '2';
-        break;
+         case KEY_DOWN:
+            ret = '2';
+            break;
 
-    case KEY_RIGHT:
-        ret = '6';
-        break;
+         case KEY_RIGHT:
+            ret = '6';
+            break;
 
-    case KEY_LEFT:
-        ret = '4';
-        break;
+         case KEY_LEFT:
+            ret = '4';
+            break;
 
-    default:
-        ret = keyin;
-    }
+         default:
+            ret = keyin;
+      }
 
-    return (ret);
-}
+      return (ret);
+   }
 
-void lincurses_startup( bool use_no_black )
-{
-#if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
+   void lincurses_startup( bool use_no_black )
+   {
+   #if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
     termio_init();
-#endif
+   #endif
 
-#ifdef USE_UNIX_SIGNALS
+   #ifdef USE_UNIX_SIGNALS
     sigignore(SIGQUIT);
     sigignore(SIGINT);
-#endif
+   #endif
 
     //savetty();
 
-    initscr();
-    cbreak();
-    noecho();
+      initscr();
+      cbreak();
+      noecho();
 
-    nonl();
-    intrflush(stdscr, FALSE);
-    keypad(stdscr, TRUE);
+      nonl();
+      intrflush(stdscr, FALSE);
+      keypad(stdscr, TRUE);
     //cbreak();
 
-    meta(stdscr, TRUE);
-    start_color();
-    setupcolorpairs( use_no_black );
+      meta(stdscr, TRUE);
+      start_color();
+      setupcolorpairs( use_no_black );
 
-    init_key_to_command();
+      init_key_to_command();
 
-#ifndef SOLARIS
+   #ifndef SOLARIS
     // This can cause some display problems under Solaris
-    scrollok(stdscr, TRUE);
-#endif
-}
+      scrollok(stdscr, TRUE);
+   #endif
+   }
 
 
-void lincurses_shutdown()
-{
-#if defined(USE_POSIX_TERMIOS)
+   void lincurses_shutdown()
+   {
+   #if defined(USE_POSIX_TERMIOS)
     tcsetattr(0, TCSAFLUSH, &def_term);
-#elif defined(USE_TCHARS_IOCTL)
+   #elif defined(USE_TCHARS_IOCTL)
     ioctl(0, TIOCSLTC, &def_term);
-#endif
+   #endif
 
-#ifdef USE_UNIX_SIGNALS
+   #ifdef USE_UNIX_SIGNALS
     sigrelse(SIGQUIT);
     sigrelse(SIGINT);
-#endif
+   #endif
 
     // resetty();
-    endwin();
-}
+      endwin();
+   }
 
 
 /* Convert value to string */
-int itoa(int value, char *strptr, int radix)
-{
-    unsigned int bitmask = 32768;
-    int ctr = 0;
-    int startflag = 0;
+   int itoa(int value, char *strptr, int radix)
+   {
+      unsigned int bitmask = 32768;
+      int ctr = 0;
+      int startflag = 0;
 
-    if (radix == 10)
-    {
-        sprintf(strptr, "%i", value);
-    }
-    if (radix == 2)             /* int to "binary string" */
-    {
-        while (bitmask)
-        {
+      if (radix == 10)
+      {
+         sprintf(strptr, "%i", value);
+      }
+      if (radix == 2)             /* int to "binary string" */
+      {
+         while (bitmask)
+         {
             if (value & bitmask)
             {
-                startflag = 1;
-                sprintf(strptr + ctr, "1");
+               startflag = 1;
+               sprintf(strptr + ctr, "1");
             }
             else
             {
-                if (startflag)
-                    sprintf(strptr + ctr, "0");
+               if (startflag)
+                  sprintf(strptr + ctr, "0");
             }
             bitmask = bitmask >> 1;
             if (startflag)
-                ctr++;
-        }
-        if (!startflag)         /* Special case if value == 0 */
+               ctr++;
+         }
+         if (!startflag)         /* Special case if value == 0 */
             sprintf((strptr + ctr++), "0");
-        strptr[ctr] = (char) NULL;
-    }
-    return (OK);                /* Me? Fail? Nah. */
-}
+         strptr[ctr] = (char) NULL;
+      }
+      return (OK);                /* Me? Fail? Nah. */
+   }
 
 
 // Convert string to lowercase.
-char *strlwr(char *str)
-{
-    unsigned int i;
+   char *strlwr(char *str)
+   {
+      unsigned int i;
 
-    for (i = 0; i < strlen(str); i++)
-        str[i] = tolower(str[i]);
-    return (str);
-}
-
-
-int cprintf(char *format,...)
-{
-    int i;
-    char buffer[2048];          // One full screen if no control seq...
-
-    va_list argp;
-
-    va_start(argp, format);
-    vsprintf(buffer, format, argp);
-    va_end(argp);
-    i = addstr(buffer);
-    refresh();
-    return (i);
-}
+      for (i = 0; i < strlen(str); i++)
+         str[i] = tolower(str[i]);
+      return (str);
+   }
 
 
-int putch(unsigned char chr)
-{
-    if (chr == 0)
-        chr = ' ';
-    return (addch(chr));
-}
+   int cprintf(char *format,...)
+   {
+      int i;
+      char buffer[2048];          // One full screen if no control seq...
+
+      va_list argp;
+
+      va_start(argp, format);
+      vsprintf(buffer, format, argp);
+      va_end(argp);
+      i = addstr(buffer);
+      refresh();
+      return (i);
+   }
 
 
-char getche()
-{
-    char chr;
-
-    chr = getch();
-    addch(chr);
-    refresh();
-    return (chr);
-}
+   int putch(unsigned char chr)
+   {
+      if (chr == 0)
+         chr = ' ';
+      return (addch(chr));
+   }
 
 
-int window(int x1, int y1, int x2, int y2)
-{
-    x1 = y1 = x2 = y2 = 0;      /* Do something to them.. makes gcc happy :) */
+   char getche()
+   {
+      char chr;
 
-    return (refresh());
-}
-
-
-int clrscr()
-{
-    int retval;
-
-    retval = clear();
-    refresh();
-    return (retval);
-}
+      chr = getch();
+      addch(chr);
+      refresh();
+      return (chr);
+   }
 
 
-void _setcursortype(int curstype)
-{
-    curs_set(curstype);
-}
+   int window(int x1, int y1, int x2, int y2)
+   {
+      x1 = y1 = x2 = y2 = 0;      /* Do something to them.. makes gcc happy :) */
+
+      return (refresh());
+   }
 
 
-void textcolor(int col)
-{
-    short fg, bg;
+   int clrscr()
+   {
+      int retval;
 
-    FG_COL = col;
-    fg = translatecolor(FG_COL);
-    bg = translatecolor(BG_COL);
+      retval = clear();
+      refresh();
+      return (retval);
+   }
 
-    if (bg & 128)
-        bg = bg - 128;
 
-    if ((fg == 128) && (bg == 0))
-    {
+   void _setcursortype(int curstype)
+   {
+      curs_set(curstype);
+   }
+
+
+   void textcolor(int col)
+   {
+      short fg, bg;
+
+      FG_COL = col;
+      fg = translatecolor(FG_COL);
+      bg = translatecolor(BG_COL);
+
+      if (bg & 128)
+         bg = bg - 128;
+
+      if ((fg == 128) && (bg == 0))
+      {
         // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
-    }
-    else
-    {
-        if (fg & 128)
-        {
+         attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
+      }
+      else
+      {
+         if (fg & 128)
+         {
             attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
-        }
-        else
-        {
+         }
+         else
+         {
             attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
-        }
-    }
-}
+         }
+      }
+   }
 
 
-void textbackground(int col)
-{
-    short fg, bg;
+   void textbackground(int col)
+   {
+      short fg, bg;
 
-    BG_COL = col;
-    fg = translatecolor(FG_COL);
-    bg = translatecolor(BG_COL);
+      BG_COL = col;
+      fg = translatecolor(FG_COL);
+      bg = translatecolor(BG_COL);
 
-    if (bg & 128)
-        bg = bg - 128;
+      if (bg & 128)
+         bg = bg - 128;
 
-    if ((fg == 128) && (bg == 0))
-    {
+      if ((fg == 128) && (bg == 0))
+      {
         // Special case: 0/0/bold = darkgray/black!
-        attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
-    }
-    else
-    {
-        if (fg & 128)
-        {
+         attrset(COLOR_PAIR(63) | A_BOLD | CHARACTER_SET);
+      }
+      else
+      {
+         if (fg & 128)
+         {
             attrset((COLOR_PAIR((fg - 128) + bg * 8)) | A_BOLD | CHARACTER_SET);
-        }
-        else
-        {
+         }
+         else
+         {
             attrset(COLOR_PAIR(fg + bg * 8) | A_NORMAL | CHARACTER_SET);
-        }
-    }
-}
+         }
+      }
+   }
 
 
-int gotoxy(int x, int y)
-{
-    return (move(y - 1, x - 1));
-}
+   int gotoxy(int x, int y)
+   {
+      return (move(y - 1, x - 1));
+   }
 
 
-int wherex()
-{
-    int x, y;
+   int wherex()
+   {
+      int x, y;
 
-    getyx(stdscr, y, x);
-    return (x + 1);
-}
-
-
-int wherey()
-{
-    int x, y;
-
-    getyx(stdscr, y, x);
-    return (y + 1);
-}
+      getyx(stdscr, y, x);
+      return (x + 1);
+   }
 
 
-int stricmp(char *str1, char *str2)
-{
-    return (strcmp(str1, str2));
-}
+   int wherey()
+   {
+      int x, y;
+
+      getyx(stdscr, y, x);
+      return (y + 1);
+   }
 
 
-void delay(long time)
-{
-#ifndef USE_SELECT_FOR_DELAY
-    usleep(time * 1000);
-#else
+   int stricmp(char *str1, char *str2)
+   {
+      return (strcmp(str1, str2));
+   }
+
+
+   void delay(long time)
+   {
+   #ifndef USE_SELECT_FOR_DELAY
+      usleep(time * 1000);
+   #else
     struct timeval timer;
 
     time *= 1000;
@@ -658,30 +658,30 @@ void delay(long time)
     timer.tv_usec = (time % 10000000L);
 
     select(0, NULL, NULL, NULL, &timer);
-#endif
-}
+   #endif
+   }
 
 /*
    Note: kbhit now in macro.cc
  */
 
 /* This is Juho Snellman's modified kbhit, to work with macros */
-int kbhit()
-{
-    int i;
+   int kbhit()
+   {
+      int i;
 
-    return 0;
+      return 0;
 
-    nodelay(stdscr, TRUE);
-    i = wgetch(stdscr);
-    nodelay(stdscr, FALSE);
-    if (i == -1)
-        i = 0;
-    else
-        ungetch(i);
+      nodelay(stdscr, TRUE);
+      i = wgetch(stdscr);
+      nodelay(stdscr, FALSE);
+      if (i == -1)
+         i = 0;
+      else
+         ungetch(i);
 
-    return (i);
-}
+      return (i);
+   }
 
 /*int kbhit()
    {
@@ -708,9 +708,7 @@ int kbhit()
    char title [40];
 
    strcpy(title, skill_title(best_skill(you, 0, 50, 99), you[0].skills [best_skill(you, 0, 50, 99)], you[0].clas, you[0].xl));
-   draw_border(BROWN, you[0].your_name, title, you[0].species);
-
-   //draw_border(BROWN, you[0].your_name, title);
+   draw_border(you[0].your_name, title, you[0].species);
 
    you[0].hp_ch = 1;
    you[0].ep_ch = 1;
