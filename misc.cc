@@ -5,9 +5,9 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Multi-user support, new berserk
- *                                              code.
- *      <1>      -/--/--        LRH             Created
+ *   <3>   11/14/99      cdl    evade with random40(ev) vice random2(ev)
+ *   <2>    5/20/99      BWR    Multi-user support, new berserk code.
+ *   <1>    -/--/--      LRH    Created
  */
 
 #include "AppHdr.h"
@@ -343,7 +343,7 @@ void in_a_cloud(void)
             hurted -= random2(player_AC());
             if (hurted <= 0)
                 hurted = 0;
-            ouch(hurted, cl, 2);
+            ouch(hurted, cl, KILLED_BY_CLOUD);
         }
         else
         {
@@ -351,7 +351,7 @@ void in_a_cloud(void)
             mpr(info);
             hurted += ((random2(10) + random2(10) + random2(5) + 10) * you.time_taken) / 10;
             hurted /= 2 + (player_res_fire() - 100) * (player_res_fire() - 100);
-            ouch(hurted, cl, 2);
+            ouch(hurted, cl, KILLED_BY_CLOUD);
         }
         scrolls_burn(7, 6);
         break;
@@ -365,7 +365,7 @@ void in_a_cloud(void)
         hurted += (random2(3) * you.time_taken) / 10;
         if (hurted <= 0)
             hurted = 0;
-        ouch((hurted * you.time_taken) / 10, cl, 2);
+        ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
         if (random2(27) + 1 >= you.experience_level)
         {
             mpr("You choke on the stench!");
@@ -384,7 +384,7 @@ void in_a_cloud(void)
             hurted -= random2(player_AC());
             if (hurted <= 0)
                 hurted = 0;
-            ouch((hurted * you.time_taken) / 10, cl, 2);
+            ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
         }
         else
         {
@@ -392,7 +392,7 @@ void in_a_cloud(void)
             mpr(info);
             hurted += ((random2(10) + random2(10) + random2(5) + 10) * you.time_taken) / 10;
             hurted /= 2 + (player_res_cold() - 100) * (player_res_cold() - 100);
-            ouch(hurted, cl, 2);
+            ouch(hurted, cl, KILLED_BY_CLOUD);
         }
         scrolls_burn(7, 8);
         break;
@@ -404,7 +404,7 @@ void in_a_cloud(void)
         mpr(info);
         if (player_res_poison() != 0)
             break;
-        ouch((random2(10) * you.time_taken) / 10, cl, 2);
+        ouch((random2(10) * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
         you.poison++;
         break;
 
@@ -431,7 +431,7 @@ void in_a_cloud(void)
         hurted += (random2(6) * you.time_taken) / 10;
         if (hurted <= 0 || player_res_fire() > 100)
             hurted = 0;
-        ouch((hurted * you.time_taken) / 10, cl, 2);
+        ouch((hurted * you.time_taken) / 10, cl, KILLED_BY_CLOUD);
         break;
 
     case 9:                     // dark miasma
@@ -447,7 +447,7 @@ void in_a_cloud(void)
         if (hurted <= 0)
             hurted = 0;
         you.hp -= hurted;
-        ouch(hurted, cl, 2);
+        ouch(hurted, cl, KILLED_BY_CLOUD);
         potion_effect(POT_SLOWING, 5);
         if (you.hp_max > 4)
         {
@@ -529,10 +529,10 @@ void up_stairs()
         for (i = 0; i < 52; i++)
         {
             if (you.inv_quantity[i] > 0 && you.inv_class[i] == 12)
-                ouch(-9999, 0, 12);
+                ouch(-9999, 0, KILLED_BY_WINNING);
         }
 
-        ouch(-9999, 0, 11);
+        ouch(-9999, 0, KILLED_BY_LEAVING);
 
     }
 
@@ -1277,6 +1277,7 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
         goto out_of_trap;
     }
 
+    // note that this uses full (not random40) player_evasion.
     if ((20 + you.your_level * 2) * random2(200) / 100 >= player_evasion() + random2(you.dex) / 3 - 2)
     {
         damage_taken = random2(beam[0].damage);
@@ -1284,7 +1285,7 @@ void dart_trap(int trap_known, int trapped, struct bolt beam[1])
         strcat(info, "hits you!");
         mpr(info);
         if (damage_taken > 0)
-            ouch(damage_taken, 0, 10);
+            ouch(damage_taken, 0, KILLED_BY_TRAP);
     }
     else
     {
@@ -1464,7 +1465,7 @@ void handle_traps(char trt, int i, char trap_known)
             return;
         }
 
-        if (random2(player_evasion()) + random2(you.dex) / 3 +
+        if (random40(player_evasion()) + random2(you.dex) / 3 +
                                                         trap_known * 3 > 8)
         {
             strcpy(info, "A huge blade swings just past you!");
@@ -1475,7 +1476,7 @@ void handle_traps(char trt, int i, char trap_known)
         strcpy(info, "A huge blade swings out and slices into you!");
         mpr(info);
         ouch(2 * you.your_level + random2(15) + random2(15)
-                                            - random2(player_AC() + 1), 0, 10);
+                                            - random2(player_AC() + 1), 0, KILLED_BY_TRAP);
         break;
 
     case TRAP_ZOT:                     /* Zot trap! */
@@ -1771,13 +1772,13 @@ void fall_into_a_pool(char place, unsigned char grype)
     {
         strcpy(info, "You burn to a cinder!");
         mpr(info);
-        ouch(-9999, 0, 5);
+        ouch(-9999, 0, KILLED_BY_LAVA);
     }
 
     if (grype == 61)
     {
         mpr("The lava burns you!");
-        ouch((10 + random2(20) + random2(20) + random2(20)) / (player_res_fire() - 99), 0, 5);
+        ouch((10 + random2(20) + random2(20) + random2(20)) / (player_res_fire() - 99), 0, KILLED_BY_LAVA);
     }
 
 // a distinction between stepping and falling from you.levitation stops you stepping into a thin stream of lava to get to the other side.
@@ -1819,9 +1820,9 @@ drowning:
     strcpy(info, "You drown...");
     mpr(info);
     if (grype == 61)
-        ouch(-9999, 0, 5);
+        ouch(-9999, 0, KILLED_BY_LAVA);
     if (grype == 62)
-        ouch(-9999, 0, 6);
+        ouch(-9999, 0, KILLED_BY_WATER);
 // Okay, so you don't trigger a trap when you scramble onto it. I really can't be bothered right now.
 
 }                               // end of fall_into_a_pool()

@@ -5,6 +5,7 @@
  *
  *  Change History (most recent first):
  *
+ *               <2>     Oct 31 99      CDL             right justify prices
  *               <1>     -/--/--        LRH             Created
  */
 
@@ -24,6 +25,7 @@
 #include "player.h"
 #include "stuff.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -253,9 +255,10 @@ print_stock:
         if (gp_value <= 1)
             gp_value = 1;
         gotoxy(60, i);
-        itoa(gp_value, st_pass, 10);
+        // cdl - itoa(gp_value, st_pass, 10);
+        sprintf( st_pass, "%5d", gp_value );
         cprintf(st_pass);
-        cprintf("gold");
+        cprintf(" gold");
         if (mitm.link[itty] == 501)
             break;
 

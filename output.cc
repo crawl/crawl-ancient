@@ -110,7 +110,7 @@ void print_stats()
             cprintf("       ");
         you.redraw_strength = 0;
         if (you.strength <= 0)
-            ouch(-9999, 0, 8);
+            ouch(-9999, 0, KILLED_BY_WEAKNESS);
         burden_change();
     }
 
@@ -139,7 +139,7 @@ void print_stats()
             cprintf("       ");
         you.redraw_intelligence = 0;
         if (you.intel <= 0)
-            ouch(-9999, 0, 7);
+            ouch(-9999, 0, KILLED_BY_STUPIDITY);
     }
 
     if (you.redraw_dexterity == 1)
@@ -167,7 +167,7 @@ void print_stats()
             cprintf("       ");
         you.redraw_dexterity = 0;
         if (you.dex <= 0)
-            ouch(-9999, 0, 9);
+            ouch(-9999, 0, KILLED_BY_CLUMSINESS);
         textcolor(LIGHTGREY);
     }
 

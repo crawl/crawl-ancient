@@ -5,8 +5,10 @@
  *
  *  Change History (most recent first):
  *
- *               <2>     9/25/99        CDL             linuxlib -> liblinux
- *               <1>     -/--/--        LRH             Created
+ *   <4>    11/14/99     cdl    added random40(), made arg to random*() signed
+ *   <3>    11/06/99     cdl    added random22()
+ *   <2>     9/25/99     cdl    linuxlib -> liblinux
+ *   <1>     -/--/--     LRH    Created
  */
 
 #include "AppHdr.h"
@@ -38,7 +40,7 @@
 extern char wield_change;
 
 #ifdef USE_NEW_RANDOM
-int random2(unsigned int max)
+int random2(int max)
 {
   if (max <= 0)
     return 0;
@@ -46,7 +48,7 @@ int random2(unsigned int max)
     return (int) ((((float) max) * rand()) / RAND_MAX);
 }
 #else
-int random2(unsigned int randmax)
+int random2(int randmax)
 {
     if (randmax <= 0)
         return 0;
@@ -54,6 +56,38 @@ int random2(unsigned int randmax)
     return random() % randmax;
 }
 #endif
+
+int random22( int max )
+{
+  // this has the same mean as random2(), but a lower variance
+  return ( random2( max+1 ) + random2( max ) ) / 2;
+}
+
+int random40( int max )
+{
+  // designed to randomize evasion.
+  // low values of max are slightly lowered
+  // high values tend to max out near LIMIT/2
+
+  int limit = 40;
+
+  int i;
+  int sum = 0;
+
+  if (max <= 0)
+    return 0;
+
+  for ( i = 0; i < max; i++ )
+  {
+     if ( random2( limit ) >= i )
+       sum++;
+  }
+
+  return sum;
+
+}
+
+
 
 unsigned char get_ch()
 {

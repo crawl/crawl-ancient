@@ -6,14 +6,16 @@
  *  Change History (most recent first):
  *
  *
- *      <5>      8/08/99        BWR             Upped rarity of unique artefacts
- *      <4>      7/13/99        BWR             Made pole arms of speed.
- *      <3>      5/22/99        BWR             Made named artefact weapons
- *                                              rarer, Sword of Power esp.
- *      <2>      5/09/99        LRH             Replaced some sanity checking code in
- *                                              spellbook_template with a corrected version
+     <6>     11/06/99    cdl    random3 -> random2
+ *   <5>      8/08/99    BWR    Upped rarity of unique artefacts
+ *   <5>      8/08/99    BWR    Upped rarity of unique artefacts
+ *   <4>      7/13/99    BWR    Made pole arms of speed.
+ *   <3>      5/22/99    BWR    Made named artefact weapons
+ *                              rarer, Sword of Power esp.
+ *   <2>      5/09/99    LRH    Replaced some sanity checking code in
+ *                              spellbook_template with a corrected version
  *                                              using ASSERTs.
- *      <1>      -/--/--        LRH             Created
+ *   <1>      -/--/--    LRH    Created
  */
 
 #include "AppHdr.h"
@@ -46,6 +48,7 @@
 #include "maps.h"
 #include "randart.h"
 #include "shopping.h"
+#include "stuff.h"
 #include "mstruct.h"
 #include "itemname.h"
 
@@ -733,8 +736,6 @@
 
    void item_colour(int p);
 
-   int random3(unsigned int rmax);
-
    void place_spec_shop(char shop_x, char shop_y, char force_s_type);
 
    void place_shops(void);
@@ -818,8 +819,8 @@
 
       int done_city = 0;
 
-      dung1 = random3(100);
-      dung2 = random3(100);
+      dung1 = random2(100);
+      dung2 = random2(100);
 
       border_type = DNGN_ROCK_WALL;
       if (many_many == 60)
@@ -873,15 +874,15 @@
       for (bi = 0; bi < MNST; bi++)
       {
          menv[bi].type = -1;
-         menv[bi].target_x = random3(80);
-         menv[bi].target_y = random3(70);
+         menv[bi].target_x = random2(80);
+         menv[bi].target_y = random2(70);
          menv[bi].behavior = 0;
          menv[bi].enchantment1 = 0;
          menv[bi].enchantment[0] = 0;
          menv[bi].enchantment[1] = 0;
          menv[bi].enchantment[2] = 0;
 
-         if (random3(10) == 0)
+         if (random2(10) == 0)
             menv[bi].behavior = 1;
 
          for (bj = 0; bj < 8; bj++)
@@ -909,14 +910,14 @@
         // Could do spotty_level, but that doesn't always put all paired
         // stairs reachable from each other which isn't a problem in normal
         // dungeon but could be in Pandemonium
-         if (random() % 7 == 0)
+         if (random2(7) == 0)
          {
             char which_demon = 0;
 
             do
             {
-               which_demon = random() % 4;
-               if (random() % 4 == 0)
+               which_demon = random2(4);
+               if (random2(4) == 0)
                   goto normal_pan;    // makes these things less likely as you find more
 
             }
@@ -932,9 +933,9 @@
 
       normal_pan:
          plan_main(0);
-      //          if (random3(3) == 0)
+      //          if (random2(3) == 0)
          {
-            build_minivaults(300 + random3(9));
+            build_minivaults(300 + random2(9));
             done_city = 1;
             goto skip_level;
          }
@@ -1042,9 +1043,9 @@
       if (you.where_are_you == BRANCH_SLIME_PITS
          || you.where_are_you == BRANCH_ORCISH_MINES
          || you.where_are_you == BRANCH_HIVE
-         || (you.where_are_you == BRANCH_LAIR && random3(3) != 0))
+         || (you.where_are_you == BRANCH_LAIR && random2(3) != 0))
       {
-         spotty_level(0, 100 + random3(500), 0);
+         spotty_level(0, 100 + random2(500), 0);
          done_city = 1;
          goto skip_level;
       }
@@ -1096,7 +1097,7 @@
          goto skip_level;
       }
 
-      if (many_many > 7 && many_many < 23 && random() % 7 == 0
+      if (many_many > 7 && many_many < 23 && random2(7) == 0
          && level_type == LEVEL_DUNGEON
          && you.where_are_you == BRANCH_MAIN_DUNGEON)
       {
@@ -1106,7 +1107,7 @@
          goto skip_level;
       }
 
-      if (random3(3) == 0 && many_many != 65)
+      if (random2(3) == 0 && many_many != 65)
          skipped = 1;
 
       if (you.where_are_you == BRANCH_DIS || you.where_are_you == BRANCH_VAULTS)
@@ -1114,24 +1115,24 @@
          goto do_city;
       }
 
-      if (random3(18) == 0 && many_many > 7 && many_many < 23)
+      if (random2(18) == 0 && many_many > 7 && many_many < 23)
       {
-         spotty_level(0, 0, random() % 2);
+         spotty_level(0, 0, random2(2));
          done_city = 1;
          goto skip_level;
       }
 
-      if (random3(18) == 0 && many_many > 7 && many_many < 23)
+      if (random2(18) == 0 && many_many > 7 && many_many < 23)
       {
          bigger_room();
          done_city = 1;
          goto skip_level;
       }
 
-      if (random3(3) == 0 && many_many > 2 && many_many < 23)
+      if (random2(3) == 0 && many_many > 2 && many_many < 23)
       {
          plan_main(0);
-         if (random3(3) == 0)
+         if (random2(3) == 0)
             build_minivaults(200);
          done_city = 1;
          goto skip_level;
@@ -1139,7 +1140,7 @@
 
 
     //V was 3
-      if ((random3(7) == 0 && skipped == 0))
+      if ((random2(7) == 0 && skipped == 0))
       {
 
         // is_a_specroom can be changed to 2 in this function:
@@ -1147,7 +1148,7 @@
 
          roguey_level();
 
-         if (random3(4) == 0 && many_many > 6
+         if (random2(4) == 0 && many_many > 6
             && you.where_are_you == BRANCH_MAIN_DUNGEON
             && you.level_type == LEVEL_DUNGEON)
          {
@@ -1161,7 +1162,7 @@
       }
       else
       {
-         if (random3(8) == 0 && skipped == 0 && many_many > 13
+         if (random2(8) == 0 && skipped == 0 && many_many > 13
             && !(you.where_are_you == BRANCH_DIS
                 || you.where_are_you == BRANCH_GEHENNA
                 || you.where_are_you == BRANCH_COCYTUS
@@ -1170,7 +1171,7 @@
          do_city:
             if (many_many == 33 && you.where_are_you == 1)
                build_vaults(51);
-            else if (random() % 3 == 0)
+            else if (random2(3) == 0)
             {
                city_level();
             }
@@ -1184,7 +1185,7 @@
 
 
    // is_a_specroom: 0 = none, 2 = in roguey_level (no need for specr_2), 1 = special_room (vault)
-      if (random3(5) == 0 && is_a_specroom != 2 && many_many > 5
+      if (random2(5) == 0 && is_a_specroom != 2 && many_many > 5
          && done_city == 0
          && !(you.where_are_you == BRANCH_DIS
              || you.where_are_you == BRANCH_GEHENNA
@@ -1197,25 +1198,25 @@
       }
 
    basic_level:
-      doorlevel = random3(11);
-      corrlength = random3(14) + 2;
-      roomsize = random3(5) + 4 + random3(6);
-      no_corr = random3(200) + 30;
+      doorlevel = random2(11);
+      corrlength = random2(14) + 2;
+      roomsize = random2(5) + 4 + random2(6);
+      no_corr = random2(200) + 30;
 
-      if (random3(100) == 0)
-         no_corr = 500 + random3(500);
+      if (random2(100) == 0)
+         no_corr = 500 + random2(500);
 
-      intersect_chance = random3(20);
+      intersect_chance = random2(20);
 
-      if (random3(20) == 0)
+      if (random2(20) == 0)
          intersect_chance = 400;
 
       if (done_city == 0)
       {
          do
          {
-            x_start = random3(30) + 35;
-            y_start = random3(20) + 35;
+            x_start = random2(30) + 35;
+            y_start = random2(20) + 35;
          }
          while (grd[x_start][y_start] != DNGN_ROCK_WALL && grd[x_start][y_start] != DNGN_FLOOR);
          grd[x_start][y_start] = DNGN_STONE_STAIRS_DOWN_I;
@@ -1226,8 +1227,8 @@
 
          do
          {
-            x_start = random3(15) + 10;
-            y_start = random3(15) + 10;
+            x_start = random2(15) + 10;
+            y_start = random2(15) + 10;
          }
          while (grd[x_start][y_start] != DNGN_ROCK_WALL && grd[x_start][y_start] != DNGN_FLOOR);
          grd[x_start][y_start] = DNGN_STONE_STAIRS_DOWN_II;
@@ -1239,8 +1240,8 @@
 
          do
          {
-            x_start = random3(20) + 50;
-            y_start = random3(15) + 10;
+            x_start = random2(20) + 50;
+            y_start = random2(15) + 10;
          }
          while (grd[x_start][y_start] != DNGN_ROCK_WALL && grd[x_start][y_start] != DNGN_FLOOR);
          grd[x_start][y_start] = DNGN_STONE_STAIRS_DOWN_III;
@@ -1250,12 +1251,12 @@
          make_trail();
          grd[x_ps][y_ps] = DNGN_STONE_STAIRS_UP_III;
 
-         if (random3(4) == 0)
+         if (random2(4) == 0)
          {
             do
             {
-               x_start = random3(20) + 10;
-               y_start = random3(20) + 40;
+               x_start = random2(20) + 10;
+               y_start = random2(20) + 40;
             }
             while (grd[x_start][y_start] != DNGN_ROCK_WALL && grd[x_start][y_start] != DNGN_FLOOR);
             grd[x_start][y_start] = DNGN_ROCK_STAIRS_DOWN;
@@ -1266,12 +1267,12 @@
          }
 
 
-         if (random3(4) == 0)
+         if (random2(4) == 0)
          {
             do
             {
-               x_start = random3(20) + 50;
-               y_start = random3(20) + 40;
+               x_start = random2(20) + 50;
+               y_start = random2(20) + 40;
             }
             while (grd[x_start][y_start] != DNGN_ROCK_WALL && grd[x_start][y_start] != DNGN_FLOOR);
             grd[x_start][y_start] = DNGN_STONE_STAIRS_UP_III;
@@ -1284,25 +1285,25 @@
       }                           // end of done_city
 
 
-      if (random3(16) == 0 && done_city == 0 && many_many > 1)
+      if (random2(16) == 0 && done_city == 0 && many_many > 1)
       {
          big_room();
       }
 
-      if (done_city == 0 && ((random3(many_many) >= 7 && random3(3) == 0) || (you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5)))
+      if (done_city == 0 && ((random2(many_many) >= 7 && random2(3) == 0) || (you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5)))
       {
          diamond_rooms();
       }
 
-      no_rooms = random3(15) + random3(15) + 5;
+      no_rooms = random2(15) + random2(15) + 5;
 
 
-      if (random3(15) == 0)
+      if (random2(15) == 0)
       {
          no_rooms = 100;
       }
 
-      if (random3(50) == 0)
+      if (random2(50) == 0)
       {
          no_rooms = 1;
       }
@@ -1310,16 +1311,16 @@
       if (done_city == 1)
          no_rooms = 0;
 
-      max_doors = 2 + random3(8);
+      max_doors = 2 + random2(8);
 
 
 
       for (bk = 0; bk < no_rooms; bk++)
       {
-         room_x1 = random3(50) + 8;
-         room_y1 = random3(40) + 8;
-         room_x2 = room_x1 + random3(roomsize) + 2;
-         room_y2 = room_y1 + random3(roomsize) + 2;
+         room_x1 = random2(50) + 8;
+         room_y1 = random2(40) + 8;
+         room_x2 = room_x1 + random2(roomsize) + 2;
+         room_y2 = room_y1 + random2(roomsize) + 2;
 
          make_room();
          if (time_run > 30)
@@ -1331,7 +1332,7 @@
 
       }
 
-      no_rooms = random3(3) + 1;
+      no_rooms = random2(3) + 1;
       max_doors = 1;
 
       if (done_city == 1)
@@ -1339,10 +1340,10 @@
 
       for (bk = 0; bk < no_rooms; bk++)
       {
-         room_x1 = random3(55) + 8;
-         room_y1 = random3(45) + 8;
-         room_x2 = room_x1 + random3(6) + 5;
-         room_y2 = room_y1 + random3(6) + 5;
+         room_x1 = random2(55) + 8;
+         room_y1 = random2(45) + 8;
+         room_x2 = room_x1 + random2(6) + 5;
+         room_y2 = room_y1 + random2(6) + 5;
 
          make_room();
          if (time_run > 30)
@@ -1354,25 +1355,25 @@
 
       }
 
-      if (random3(3) == 0 && many_many > 6 && you.where_are_you == 0 && you.level_type == 0)
+      if (random2(3) == 0 && many_many > 6 && you.where_are_you == 0 && you.level_type == 0)
       {
          build_minivaults(200);
          done_city = 1;
          goto skip_level;
       }
 
-      if (random3(10) == 0 && many_many > 5 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5))
+      if (random2(10) == 0 && many_many > 5 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5))
       {
-         many_pools(61 + random3(2));
+         many_pools(61 + random2(2));
       }
 
-      if (many_many >= 11 && many_many <= 23 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5) && random3(15) == 0)
+      if (many_many >= 11 && many_many <= 23 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5) && random2(15) == 0)
       {
          do
          {
-            bi = random3(80);
-            bj = random3(70);
-            if (random3(500) == 0)
+            bi = random2(80);
+            bj = random2(70);
+            if (random2(500) == 0)
                goto out_of_lab;
          }
          while (grd[bi][bj] != DNGN_FLOOR);
@@ -1398,12 +1399,12 @@
 
       bno_mons = 0;
 
-      bno_mons += random3(25) + random3(20) + random3(15);        // + random3 (many_many);// + random3 (15);
+      bno_mons += random2(25) + random2(20) + random2(15);        // + random2 (many_many);// + random2 (15);
 
       if (you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5 || you.where_are_you == 16)
-         bno_mons += random3(10) + random3(20) + random3(20);
+         bno_mons += random2(10) + random2(20) + random2(20);
       if (you.where_are_you == 16)
-         bno_mons += random3(10) + random3(20) + random3(20);
+         bno_mons += random2(10) + random2(20) + random2(20);
 
       if (bno_mons > 120)
          bno_mons = 120;         // unlikely
@@ -1451,30 +1452,30 @@
 
    // Unique beasties:
    do_uniques:
-      if (many_many > 0 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5 || you.where_are_you == 10 || you.where_are_you == 11 || you.where_are_you == 12 || you.where_are_you == 18) && random() % 3 == 0)
+      if (many_many > 0 && !(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5 || you.where_are_you == 10 || you.where_are_you == 11 || you.where_are_you == 12 || you.where_are_you == 18) && random2(3) == 0)
       {
 
          int which_unique = 0;   //     30 in total
 
 
       redo_uniques:
-         which_unique = 20 + random() % 11;
+         which_unique = 20 + random2(11);
          if (many_many < 20)
-            which_unique = 13 + random() % 10;
+            which_unique = 13 + random2(10);
          if (many_many < 17)
-            which_unique = 9 + random() % 9;
+            which_unique = 9 + random2(9);
          if (many_many < 14)
-            which_unique = 6 + random() % 5;
+            which_unique = 6 + random2(5);
          if (many_many < 10)
-            which_unique = 4 + random() % 4;
+            which_unique = 4 + random2(4);
          if (many_many < 8)
-            which_unique = 2 + random() % 4;
+            which_unique = 2 + random2(4);
          if (many_many < 4)
-            which_unique = random() % 4;
+            which_unique = random2(4);
 
          if (you.unique_creatures[which_unique] != 0)
          {
-            if (random() % 3 == 0)
+            if (random2(3) == 0)
                goto redo_uniques;
             goto finished_uniques;
          }
@@ -1496,7 +1497,7 @@
                               many_many,
                               passed);
 
-         if (random() % 3 == 0)
+         if (random2(3) == 0)
             goto do_uniques;
 
       }
@@ -1522,15 +1523,15 @@
       {
          for (bcount_x = 0; bcount_x < 4; bcount_x++)
          {
-            swimming_things[bcount_x] = MLAVA0 + random3(3);
+            swimming_things[bcount_x] = MLAVA0 + random2(3);
          }
-         aq_creatures = random3(5) + random3(5) + random3(lava_spaces) / 10;
+         aq_creatures = random2(5) + random2(5) + random2(lava_spaces) / 10;
          if (aq_creatures > 25)
             aq_creatures = 25;
          for (bcount_x = 0; bcount_x < aq_creatures; bcount_x++)
          {
-         //  type_of_aq = MLAVA0 + random3(3);
-            type_of_aq = swimming_things[random3(4)];
+         //  type_of_aq = MLAVA0 + random2(3);
+            type_of_aq = swimming_things[random2(4)];
             int passed2[2];
 
             passed2[1] = 1;
@@ -1555,23 +1556,23 @@
       {
          for (bcount_x = 0; bcount_x < 4; bcount_x++)
          {
-            swimming_things[bcount_x] = MWATER0 + random3(4);
-            if (you.where_are_you == 22 && random3(3) != 0)
+            swimming_things[bcount_x] = MWATER0 + random2(4);
+            if (you.where_are_you == 22 && random2(3) != 0)
                swimming_things[bcount_x] = MWATER5;
          }
-         if (random() % 5 == 0 && many_many >= 25)
+         if (random2(5) == 0 && many_many >= 25)
             swimming_things[0] = MWATER4;       // water elemental
 
          if (many_many == 89)
             swimming_things[3] = MWATER4;       // Cocytus
 
-         aq_creatures = random3(5) + random3(5) + random3(water_spaces) / 7;
+         aq_creatures = random2(5) + random2(5) + random2(water_spaces) / 7;
          if (aq_creatures > 25)
             aq_creatures = 25;
          for (bcount_x = 0; bcount_x < aq_creatures; bcount_x++)
          {
-         //                      type_of_aq = MWATER0 + random3(4);
-            type_of_aq = swimming_things[random3(4)];
+         //                      type_of_aq = MWATER0 + random2(4);
+            type_of_aq = swimming_things[random2(4)];
             int passed2[2];
 
             passed2[1] = 1;
@@ -1603,31 +1604,31 @@
       {
          do
          {
-            bi = random3(70);
-            bj = random3(60);
+            bi = random2(70);
+            bj = random2(60);
          }
          while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != MNG);
          grd[bi][bj] = DNGN_ENTER_HELL;
       }
 
-      if (many_many >= 20 && many_many <= 50 && (many_many == 23 || random() % 4 == 0) && level_type == 0 && you.where_are_you == 0)
+      if (many_many >= 20 && many_many <= 50 && (many_many == 23 || random2(4) == 0) && level_type == 0 && you.where_are_you == 0)
       {
          do
          {
-            bi = random3(70);
-            bj = random3(60);
+            bi = random2(70);
+            bj = random2(60);
          }
          while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != MNG);
          grd[bi][bj] = DNGN_ENTER_PANDEMONIUM;       // gate to Pandemonium
 
       }
 
-      if (many_many >= 20 && many_many <= 30 && (many_many == 24 || random() % 3 == 0) && level_type == 0 && you.where_are_you == 0)
+      if (many_many >= 20 && many_many <= 30 && (many_many == 24 || random2(3) == 0) && level_type == 0 && you.where_are_you == 0)
       {
          do
          {
-            bi = random3(70);
-            bj = random3(60);
+            bi = random2(70);
+            bj = random2(60);
          }
          while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != MNG);
          grd[bi][bj] = DNGN_ENTER_ABYSS;       // gate to Abyss
@@ -1644,8 +1645,8 @@
             {
                do
                {
-                  bi = random3(70);
-                  bj = random3(60);
+                  bi = random2(70);
+                  bj = random2(60);
                }
                while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != MNG);
                grd[bi][bj] = DNGN_ENTER_ORCISH_MINES + count_x;    /* staircase to slime pits */
@@ -1654,8 +1655,8 @@
             {
                do
                {
-                  bi = random3(70);
-                  bj = random3(60);
+                  bi = random2(70);
+                  bj = random2(60);
                }
                while (grd[bi][bj] != DNGN_FLOOR || mgrd[bi][bj] != MNG);
                grd[bi][bj] = DNGN_ENTER_ORCISH_MINES + count_x;    // staircase to branch level
@@ -1672,10 +1673,10 @@
       if (you.where_are_you != 18)
          place_traps();
 
-      int no_it = random3(12) + random3(12) + random3(10);
+      int no_it = random2(12) + random2(12) + random2(10);
 
-      if (random3(500 - many_many) <= 3 && many_many > 5)
-         no_it += random3(100);  // rich level!
+      if (random2(500 - many_many) <= 3 && many_many > 5)
+         no_it += random2(100);  // rich level!
 
       int plojy = 0;
       int specif_type = 250;
@@ -1712,7 +1713,7 @@
       // Add some guaranteed knives
          if (you.where_are_you == BRANCH_MAIN_DUNGEON
             && level_type == LEVEL_DUNGEON
-            && many_many < 5 && random3(many_many) == 0)
+            && many_many < 5 && random2(many_many) == 0)
          {
             int item_no = items(0, OBJ_WEAPONS, WPN_KNIFE, 0, 0, 250);
 
@@ -1786,7 +1787,7 @@
                vault_wall = 2;
             if (many_many > you.branch_stairs[4] + 4)
                vault_wall = 4;
-            if (many_many > you.branch_stairs[4] + 6 && random3(10) == 0)
+            if (many_many > you.branch_stairs[4] + 6 && random2(10) == 0)
                vault_wall = 6;
          }
 
@@ -1870,13 +1871,13 @@
          } /* bottom level of branch - replaces down stairs with up ladders */
       }
 
-      if (you.where_are_you == BRANCH_CRYPT && random3(3) == 0)
+      if (you.where_are_you == BRANCH_CRYPT && random2(3) == 0)
          place_curse_skull();
-      if (you.where_are_you == BRANCH_CRYPT && random3(7) == 0)
+      if (you.where_are_you == BRANCH_CRYPT && random2(7) == 0)
          place_curse_skull();
 
       if (you.where_are_you >= BRANCH_ORCISH_MINES
-         && you.level_type == LEVEL_DUNGEON && random3(5) == 0)
+         && you.level_type == LEVEL_DUNGEON && random2(5) == 0)
       {
          place_altar();
       }
@@ -1978,20 +1979,20 @@
       if (typed == 250)
       {
       monster_cla:
-         if (random3(4) == 0 && you.where_are_you == 0 && lev_mons != 51)
-            lev_mons = random3(many_many);
+         if (random2(4) == 0 && you.where_are_you == 0 && lev_mons != 51)
+            lev_mons = random2(many_many);
          else
             lev_mons = many_many;
 
          if (lev_mons <= 27 && you.where_are_you == 0)
          {
-            if (random3(5000) == 0)
-               lev_mons = random3(27);
+            if (random2(5000) == 0)
+               lev_mons = random2(27);
             // a potentially nasty surprise, but very rare
 
             // slightly out of depth monsters are more common:
-            if (random3(50) == 0)
-               lev_mons += random3(6);
+            if (random2(50) == 0)
+               lev_mons += random2(6);
             if (lev_mons >= 27)
                lev_mons = 27;
          }
@@ -2006,12 +2007,12 @@
             {
                do
                {
-                  menv[bk].type = random3(400);
+                  menv[bk].type = random2(400);
                }
                while (mons_level_abyss(menv[bk].type) == 0);
             //                      if (mons_level_abyss(menv [bk].type) == 0) continue;
             }
-            while (random3(50) + random3(51) >
+            while (random2(50) + random2(51) >
                   mons_rare_abyss(menv[bk].type));
          }
          else
@@ -2020,14 +2021,14 @@
             {
                do
                {
-                  menv[bk].type = random3(400);
+                  menv[bk].type = random2(400);
                }
                while (mons_rarity(menv[bk].type) == 0);
 
             }
             while (!(lev_mons > mons_level(menv[bk].type) - 5 &&
-                    lev_mons < mons_level(menv[bk].type) + 5 && random3(50) +
-                    random3(51) <= mons_rarity(menv[bk].type) -
+                    lev_mons < mons_level(menv[bk].type) + 5 && random2(50) +
+                    random2(51) <= mons_rarity(menv[bk].type) -
                     (mons_level(menv[bk].type) - lev_mons) *
                     (mons_level(menv[bk].type) - lev_mons)));
          }
@@ -2104,15 +2105,15 @@
          case 2:
             if (band_no > 0)
                menv[bk].type = 14;
-            if (random3(5) == 0)
+            if (random2(5) == 0)
                menv[bk].type = 54;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                menv[bk].type = 112;
             break;
          case 12:
          case 3:
             if (band_no > 0)
-               switch (random3(16))
+               switch (random2(16))
                {
                   case 9:
                   case 10:
@@ -2139,7 +2140,7 @@
                      menv[bk].type = 45;
                      break;
                   case 7:
-                     if (random3(2) == 0)
+                     if (random2(2) == 0)
                         menv[bk].type = 14;
                      else
                         menv[bk].type = 103;
@@ -2174,7 +2175,7 @@
          case 8:
             if (band_no > 0)
                menv[bk].type = 20;
-            if (band_no > 0 && random3(4) == 0 && many_many > 21)
+            if (band_no > 0 && random2(4) == 0 && many_many > 21)
                menv[bk].type = 102;
             break;                  // ugly thing
 
@@ -2191,7 +2192,7 @@
          case 11:
             if (band_no > 0)
                menv[bk].type = 109;
-            if (random3(4) == 0)
+            if (random2(4) == 0)
                menv[bk].type = 110;
             break;
         // 12 is orc high priest
@@ -2223,7 +2224,7 @@
          case 20:
             if (band_no > 0)
                menv[bk].type = 40;
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                menv[bk].type = 30;
             break;                  // ogre mage
 
@@ -2236,7 +2237,7 @@
             if (band_no > 0)        // necromancer
 
                if (band_no > 0)
-                  switch (random3(13))
+                  switch (random2(13))
                   {
                      case 0:
                      case 1:
@@ -2265,7 +2266,7 @@
             break;
          case 23:
             if (band_no > 0)
-               menv[bk].type = 225 + random() % 2;
+               menv[bk].type = 225 + random2(2);
             break;                  // CYAN demon
 
          case 24:
@@ -2275,18 +2276,18 @@
 
          case 25:
             if (band_no > 0)
-               menv[bk].type = 23 + (random() % 2) * 26;
+               menv[bk].type = 23 + (random2(2)) * 26;
             break;                  // DARKGREY demon - either x/X
 
          case 26:
             if (band_no > 0)
-               menv[bk].type = 227 + random() % 2;
+               menv[bk].type = 227 + random2(2);
             break;                  // LIGHTGREY demons
 
          case 27:                    // deep elf fighter
 
             if (band_no > 0)
-               switch (random3(11))
+               switch (random2(11))
                {
                   case 1:
                   case 2:
@@ -2315,7 +2316,7 @@
             break;
          case 28:                    // deep elf knight
 
-            switch (random3(13))
+            switch (random2(13))
             {
                case 1:
                case 2:
@@ -2344,8 +2345,8 @@
                   menv[bk].type = 269;
                   break;
                case 12:
-                  if (random() % 4 == 0)
-                     menv[bk].type = 271 + random() % 4;
+                  if (random2(4) == 0)
+                     menv[bk].type = 271 + random2(4);
                   else
                      menv[bk].type = 266;
                   break;
@@ -2354,7 +2355,7 @@
 
          case 29:                    // deep elf high priest
 
-            switch (random3(16))
+            switch (random2(16))
             {
                case 1:
                case 2:
@@ -2386,14 +2387,14 @@
                case 14:
                case 15:
                case 12:
-                  menv[bk].type = 271 + random() % 4;
+                  menv[bk].type = 271 + random2(4);
             }
             break;
          case 30:
             menv[bk].type = 36;
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                menv[bk].type = 58;
-            if (random3(13) == 0)
+            if (random2(13) == 0)
                menv[bk].type = 53;
             break;
       // kobold demonologist
@@ -2424,7 +2425,7 @@
          case 37:                    // ghoul
 
             menv[bk].type = 156;
-            if (random3(2) != 0)
+            if (random2(2) != 0)
                menv[bk].type = 13;
             break;
          case 38:                    // deep troll
@@ -2525,8 +2526,8 @@
             {
             do
             {
-            menv [bk].x = 10 + random3(70);
-            menv [bk].y = 10 + random3(60);
+            menv [bk].x = 10 + random2(70);
+            menv [bk].y = 10 + random2(60);
             } while (grd [menv [bk].x] [menv [bk].y] < 67 || mgrd [menv [bk].x] [menv [bk].y] != MNG || grd [menv [bk].x + 1] [menv [bk].y] < 67 || mgrd [menv [bk].x + 1] [menv [bk].y] != MNG || grd [menv [bk].x + 2] [menv [bk].y] < 67 || mgrd [menv [bk].x + 2] [menv [bk].y] != MNG || grd [menv [bk].x + 3] [menv [bk].y] < 67 || mgrd [menv [bk].x + 3] [menv [bk].y] != MNG || grd [menv [bk].x + 4] [menv [bk].y] < 67 || mgrd [menv [bk].x + 4] [menv [bk].y] != MNG);
             //(grd [menv [bk].x] [mons [bk].y] < 17 || grd [mons [bk].x] [mons [bk].y] >= 50 || grd [mons [bk].x + 1] [mons [bk].y] < 67 || grd [mons [bk].x + 1] [mons [bk].y] >= 50 || grd [mons [bk].x + 2] [mons [bk].y] < 67 || grd [mons [bk].x + 2] [mons [bk].y] >= 50 || grd [mons [bk].x + 3] [mons [bk].y] < 67 || grd [mons [bk].x + 3] [mons [bk].y] >= 50 || grd [mons [bk].x + 4] [mons [bk].y] < 17 || grd [mons [bk].x + 4] [mons [bk].y] >= 50);
             // forget checking for x_pos/y_pos
@@ -2541,24 +2542,24 @@
                {
                   do
                   {
-                     menv[bk].x = 10 + random3(70);
-                     menv[bk].y = 10 + random3(60);
-                  //   if (passed [1] == 0 && menv [bk].x < you.x_pos + 7 && menv [bk].x > you.x_pos - 7 && menv [bk].y < you.y_pos + 7 && menv [bk].y > you.y_pos - 7 && random3(100) != 0) continue; // avoids (hopefully) monsters being generated on the same screen as you
+                     menv[bk].x = 10 + random2(70);
+                     menv[bk].y = 10 + random2(60);
+                  //   if (passed [1] == 0 && menv [bk].x < you.x_pos + 7 && menv [bk].x > you.x_pos - 7 && menv [bk].y < you.y_pos + 7 && menv [bk].y > you.y_pos - 7 && random2(100) != 0) continue; // avoids (hopefully) monsters being generated on the same screen as you
                   }
                   while ((grd[menv[bk].x][menv[bk].y] < 67 |
                          mgrd[menv[bk].x][menv[bk].y] != MNG) |
                         (passed[1] == 0 && menv[bk].x < you.x_pos +
                         7 && menv[bk].x > you.x_pos - 7 &&
                         menv[bk].y < you.y_pos + 7 && menv[bk].y >
-                        you.y_pos - 7 && random3(100) != 0));
+                        you.y_pos - 7 && random2(100) != 0));
                }                   // end if
 
                else
                {
                   do
                   {
-                     menv[bk].x = 10 + random3(70);
-                     menv[bk].y = 10 + random3(60);
+                     menv[bk].x = 10 + random2(70);
+                     menv[bk].y = 10 + random2(60);
                   }
                   while ((grd[menv[bk].x][menv[bk].y] != grid_ok && (grid_ok != 62 || grd[menv[bk].x][menv[bk].y] != 65)) || (menv[bk].x == you.x_pos && menv[bk].y == you.y_pos));
                }
@@ -2589,8 +2590,8 @@
 
                do
                {
-                  menv[bk].x += random3(3) - 1;
-                  menv[bk].y += random3(3) - 1;
+                  menv[bk].x += random2(3) - 1;
+                  menv[bk].y += random2(3) - 1;
                   if (menv[bk].x > 79 || menv[bk].x < 5 || menv[bk].y > 69 || menv[bk].y < 5)
                   {
                      menv[bk].x = menv[bk - 1].x;
@@ -2617,7 +2618,7 @@
             switch (menv[bk].type)
             {
                case 14:
-                  if (random3(2) == 0)
+                  if (random2(2) == 0)
                      break;
                case 52:
                   if (bk < MNST - 50 && band == 0 && band_no == 0)        // && many_many > 10)
@@ -2625,7 +2626,7 @@
                   {
                      band = 2;   // orcs
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -2636,7 +2637,7 @@
                   //  menv ly[bk].type = 36;
                      band = 1;   // K
 
-                     band_no = 2 + random3(6);
+                     band_no = 2 + random2(6);
                   }
                   break;
 
@@ -2647,7 +2648,7 @@
                   {
                      band = 3;   // orcs + knight
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
@@ -2656,7 +2657,7 @@
                   {
                      band = 4;   // killer bees
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2665,7 +2666,7 @@
                   {
                      band = 5;   // flying skulls
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2674,7 +2675,7 @@
                   {
                      band = 6;   // slime creatures
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2684,7 +2685,7 @@
                   {
                      band = 7;   // yaks
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2694,7 +2695,7 @@
                   {
                      band = 8;   // ugly things
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2704,7 +2705,7 @@
                   {
                      band = 9;   // hell hound
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -2713,7 +2714,7 @@
                   {
                      band = 10;  // jackal
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
@@ -2724,7 +2725,7 @@
                   {
                      band = 11;  // hell knight
 
-                     band_no = 4 + random3(4);
+                     band_no = 4 + random2(4);
                   }
                   break;
 
@@ -2737,7 +2738,7 @@
                   {
                      band = 22;  // necromancer
 
-                     band_no = 4 + random3(4);
+                     band_no = 4 + random2(4);
                   }
                   break;
 
@@ -2746,7 +2747,7 @@
                   {
                      band = 12;  // orc high priest
 
-                     band_no = 4 + random3(4);
+                     band_no = 4 + random2(4);
                   }
                   break;
 
@@ -2755,7 +2756,7 @@
                   {
                      band = 13;  // gnoll
 
-                     band_no = 2 + random3(2);
+                     band_no = 2 + random2(2);
                   }
                   break;
 
@@ -2764,27 +2765,27 @@
                   {
                      band = 16;  // bumble bees
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
                case 376:
                case 2:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random3(3) == 0 && many_many > 9)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(3) == 0 && many_many > 9)
                   {
                      band = 17;  // centaurs
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
                case 377:
                case 133:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random3(2) == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 18;  // yaktaurs
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -2793,7 +2794,7 @@
                   {
                      band = 21;  // death yaks
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2803,7 +2804,7 @@
                   {
                      band = 19;  // wisps
 
-                     band_no = 4 + random3(5);
+                     band_no = 4 + random2(5);
                   }
                   break;
 
@@ -2812,7 +2813,7 @@
                   {
                      band = 20;  // ogre mage
 
-                     band_no = 4 + random3(4);
+                     band_no = 4 + random2(4);
                   }
                   break;
 
@@ -2821,7 +2822,7 @@
                   {
                      band = 23;  // RED gr demon
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -2830,61 +2831,61 @@
                   {
                      band = 24;  // BROWN gr demon
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
                case 230:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 25;  // DARKGREY gr demon
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
                case 227:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 26;  // LIGHTGREY gr demon
 
-                     band_no = 1 + random3(4);
+                     band_no = 1 + random2(4);
                   }
                   break;
 
                case 264:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 27;  // deep elf warrior
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
                case 265:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 28;  // deep elf knight
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
                case 270:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 29;  // deep elf high priest
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
                case 53:
-                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random() % 2 == 0)
+                  if (bk < MNST - 50 && band == 0 && band_no == 0 && random2(2) == 0)
                   {
                      band = 30;  // kobold demonologist
 
-                     band_no = 3 + random3(6);
+                     band_no = 3 + random2(6);
                   }
                   break;
 
@@ -2894,7 +2895,7 @@
                   {
                      band = 31;  // Nagas
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
@@ -2903,7 +2904,7 @@
                   {
                      band = 32;  // war dogs
 
-                     band_no = 2 + random3(4);
+                     band_no = 2 + random2(4);
                   }
                   break;
 
@@ -2912,7 +2913,7 @@
                   {
                      band = 33;  // grey rats
 
-                     band_no = 4 + random3(6);
+                     band_no = 4 + random2(6);
                   }
                   break;
 
@@ -2921,7 +2922,7 @@
                   {
                      band = 34;  // green rats
 
-                     band_no = 4 + random3(6);
+                     band_no = 4 + random2(6);
                   }
                   break;
 
@@ -2931,7 +2932,7 @@
                   {
                      band = 35;  // orange rats
 
-                     band_no = 3 + random3(4);
+                     band_no = 3 + random2(4);
                   }
                   break;
 
@@ -2941,7 +2942,7 @@
                   {
                      band = 36;  // sheep
 
-                     band_no = 3 + random3(5);
+                     band_no = 3 + random2(5);
                   }
                   break;
 
@@ -2950,7 +2951,7 @@
                   {
                      band = 37;  // ghoul
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -2959,7 +2960,7 @@
                   {
                      band = 39;  // hog
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
@@ -2968,7 +2969,7 @@
                   {
                      band = 41;  // mosquito
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
@@ -2977,7 +2978,7 @@
                   {
                      band = 38;  // deep troll
 
-                     band_no = 3 + random3(3);
+                     band_no = 3 + random2(3);
                   }
                   break;
 
@@ -2986,7 +2987,7 @@
                   {
                      band = 40;  // hell-hog
 
-                     band_no = 1 + random3(3);
+                     band_no = 1 + random2(3);
                   }
                   break;
 
@@ -2995,7 +2996,7 @@
                   {
                      band = 42;  // boggart
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -3004,7 +3005,7 @@
                   {
                      band = 43;  // blink frog
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -3013,7 +3014,7 @@
                   {
                      band = 44;  // skeletal warrior
 
-                     band_no = 2 + random3(3);
+                     band_no = 2 + random2(3);
                   }
                   break;
 
@@ -3181,13 +3182,13 @@
       {
          if (grd[room_x1 - 1][bcount_y] == 67 && grd[room_x1 - 1][bcount_y - 1] <= 16 && grd[room_x1 - 1][bcount_y + 1] <= 16 && bcount_y > room_y1 && bcount_y < room_y2)
          {
-            if (random3(10) < doorlevel)
+            if (random2(10) < doorlevel)
                grd[room_x1 - 1][bcount_y] = 3;
          }
 
          if (grd[room_x2][bcount_y] == 67 && grd[room_x2][bcount_y - 1] <= 16 && grd[room_x2][bcount_y + 1] <= 16 && bcount_y > room_y1 && bcount_y < room_y2)
          {
-            if (random3(10) < doorlevel)
+            if (random2(10) < doorlevel)
                grd[room_x2][bcount_y] = 3;
          }
       }
@@ -3197,13 +3198,13 @@
       {
          if (grd[bcount_x][room_y1 - 1] == 67 && grd[bcount_x - 1][room_y1 - 1] <= 16 && grd[bcount_x + 1][room_y1 - 1] <= 16 && bcount_x > room_x1 && bcount_x < room_x2)
          {
-            if (random3(10) < doorlevel)
+            if (random2(10) < doorlevel)
                grd[bcount_x][room_y1 - 1] = 3;
          }
 
          if (grd[bcount_x][room_y2] == 67 && grd[bcount_x - 1][room_y2] <= 16 && grd[bcount_x + 1][room_y2] <= 16 && bcount_x > room_x1 && bcount_x < room_x2)
          {
-            if (random3(10) < doorlevel)
+            if (random2(10) < doorlevel)
                grd[bcount_x][room_y2] = 3;
          }
       }
@@ -3220,17 +3221,17 @@
       unsigned char type_2 = 67;
       int i, j, k, l;
 
-      if (random3(4) == 0)
+      if (random2(4) == 0)
       {
-         oblique = random3(20) + 5;
+         oblique = random2(20) + 5;
          oblique_max = oblique;
 
-         room_x1 = random3(30) + 8;
-         room_y1 = random3(22) + 8;
-         room_x2 = room_x1 + random3(10) + 20;
-         room_y2 = room_y1 + random3(8) + 20;
+         room_x1 = random2(30) + 8;
+         room_y1 = random2(22) + 8;
+         room_x2 = room_x1 + random2(10) + 20;
+         room_y2 = room_y1 + random2(8) + 20;
 
-         if (random3(5) != 0 || many_many <= 7 + random3(8))
+         if (random2(5) != 0 || many_many <= 7 + random2(8))
          {
             octa_room(67);
          //              chequerboard(grd, type_floor, 67, type_floor, room_x1 + 1, room_y1 + 1, room_x2 - 1, room_y2 - 1);
@@ -3240,7 +3241,7 @@
          type_floor = 61;
          if (many_many > 7)      // stops water on level 1
 
-            if (random3(many_many) <= 13)
+            if (random2(many_many) <= 13)
                type_floor = 62;
             else
                type_floor = 61;
@@ -3261,10 +3262,10 @@
          return;
       }
 
-      room_x1 = random3(30) + 8;
-      room_y1 = random3(22) + 8;
-      room_x2 = room_x1 + random3(10) + 20;
-      room_y2 = room_y1 + random3(8) + 20;
+      room_x1 = random2(30) + 8;
+      room_y1 = random2(22) + 8;
+      room_x2 = room_x1 + random2(10) + 20;
+      room_y2 = room_y1 + random2(8) + 20;
 
       for (bi = room_x1; bi < room_x2; bi++)
       {
@@ -3278,12 +3279,12 @@
 
       }                           // end of for i
 
-      if (random3(4) == 0 && many_many > 7)
+      if (random2(4) == 0 && many_many > 7)
       {
          type_floor = 61;
          if (many_many > 7)      // stops water on level 1
 
-            if (random3(many_many) <= 13)
+            if (random2(many_many) <= 13)
                type_floor = 62;
             else
                type_floor = 61;
@@ -3292,10 +3293,10 @@
       if (many_many >= 75 && many_many < 80)
          return;                 // Is this even possible?
 
-      if (many_many >= 80 && many_many < 85 && random3(3) != 0)
+      if (many_many >= 80 && many_many < 85 && random2(3) != 0)
          type_floor = 61;        // G
 
-      if (many_many >= 85 && many_many < 90 && random3(3) != 0)
+      if (many_many >= 85 && many_many < 90 && random2(3) != 0)
          type_floor = 62;        // C
     //  if (many_many >= 90 && many_many < 95) return; // T
 
@@ -3312,10 +3313,10 @@
       }                           // end of for i
 
       if (type_floor == 67)
-         type_2 = 1 + random3(4);
-      if (random3(4) == 0)
+         type_2 = 1 + random2(4);
+      if (random2(4) == 0)
          chequerboard(type_floor, type_2, type_floor, room_x1 + 1, room_y1 + 1, room_x2 - 1, room_y2 - 1);
-      else if (random3(6) == 0)
+      else if (random2(6) == 0)
       {
          i = room_x1;
          j = room_y1;
@@ -3323,10 +3324,10 @@
          l = room_y2;
          do
          {
-            i = i + 2 + random3(3);
-            j = j + 2 + random3(3);
-            k = k - 2 - random3(3);
-            l = l - 2 - random3(3);
+            i = i + 2 + random2(3);
+            j = j + 2 + random2(3);
+            k = k - 2 - random2(3);
+            l = l - 2 - random2(3);
             if (i >= k - 3)
                break;
             if (j >= l - 3)
@@ -3344,22 +3345,22 @@
    void diamond_rooms(void)
    {
 
-      char numb_diam = random3(10) + 1;
+      char numb_diam = random2(10) + 1;
       char type_floor = 62;
       int runthru = 0;
 
-      if (many_many >= 6 + random3(5) && random3(2) != 0)
+      if (many_many >= 6 + random2(5) && random2(2) != 0)
          type_floor = 65;        // shallow water
 
-      if (many_many >= 11 + random3(5) && random3(2) != 0)
+      if (many_many >= 11 + random2(5) && random2(2) != 0)
          type_floor = 62;        // water
 
-      if (many_many >= 18 && random3(2) == 0)
+      if (many_many >= 18 && random2(2) == 0)
          type_floor = 61;        // lava
 
-      if (random3(15) == 0 && many_many > 10)
-         type_floor = random3(2) + 1;
-      if (random3(20) == 0 && many_many > 12)
+      if (random2(15) == 0 && many_many > 10)
+         type_floor = random2(2) + 1;
+      if (random2(20) == 0 && many_many > 12)
          type_floor = 4;
 
       if (you.where_are_you == 2)
@@ -3378,12 +3379,12 @@
 
       for (bk = 0; bk < numb_diam; bk++)
       {
-         room_x1 = random3(43) + 8;
-         room_y1 = random3(35) + 8;
-         room_x2 = room_x1 + random3(15) + 5;
-         room_y2 = room_y1 + random3(10) + 5;
+         room_x1 = random2(43) + 8;
+         room_y1 = random2(35) + 8;
+         room_x2 = room_x1 + random2(15) + 5;
+         room_y2 = room_y1 + random2(10) + 5;
 
-         oblique = (room_x2 - room_x1) / 2;      //random3(20) + 5;
+         oblique = (room_x2 - room_x1) / 2;      //random2(20) + 5;
 
          oblique_max = oblique;
 
@@ -3503,16 +3504,16 @@
          if (y_ps > 55)
             dir_y2 = -1;
 
-         rannumber = random3(10);
+         rannumber = random2(10);
 
-         if (random3(2) == 0)    // Put something in to make it go to parts of map it isn't in now
+         if (random2(2) == 0)    // Put something in to make it go to parts of map it isn't in now
 
          {
             if (dir_x2 != 0 && rannumber < 6)
                dir_x = dir_x2;
             if (dir_x2 == 0 || rannumber >= 6)
             {
-               switch (random3(2))
+               switch (random2(2))
                {
                   case 0:
                      dir_x = -1;
@@ -3530,7 +3531,7 @@
                dir_y = dir_y2;
             if (dir_y2 == 0 || rannumber >= 6)
             {
-               switch (random3(2))
+               switch (random2(2))
                {
                   case 0:
                      dir_y = -1;
@@ -3575,25 +3576,25 @@
 
 
          if (dir_x == 0)
-            length = random3(corrlength) + 2;
+            length = random2(corrlength) + 2;
 
          bi = 0;
          for (bi = 0; bi < length; bi++)
          {
 
             //      Below, I've changed the values of the unimportant variable from 0
-            //      to random3(3) - 1 to avoid getting stuck on the "stuck!!" bit.
+            //      to random2(3) - 1 to avoid getting stuck on the "stuck!!" bit.
 
             if (x_ps < 9)
             {
-               dir_y = 0;      //random3(3) - 1;
+               dir_y = 0;      //random2(3) - 1;
 
                dir_x = 1;
             }
 
             if (x_ps > 71)
             {
-               dir_y = 0;      //random3(3) - 1;
+               dir_y = 0;      //random2(3) - 1;
 
                dir_x = -1;
             }
@@ -3601,14 +3602,14 @@
             if (y_ps < 9)
             {
                dir_y = 1;
-               dir_x = 0;      //random3(3) - 1;
+               dir_x = 0;      //random2(3) - 1;
 
             }
 
             if (y_ps > 61)
             {
                dir_y = -1;
-               dir_x = 0;      //random3(3) - 1;
+               dir_x = 0;      //random2(3) - 1;
 
             }
 
@@ -3619,7 +3620,7 @@
 
 
          // Shouldn't this be:
-            if (grd[x_ps + 2 * dir_x][y_ps + 2 * dir_y] == 67 && random3(intersect_chance) != 0)
+            if (grd[x_ps + 2 * dir_x][y_ps + 2 * dir_y] == 67 && random2(intersect_chance) != 0)
                break;
 
             x_ps += dir_x;
@@ -3696,7 +3697,7 @@
          if (bp == 380)
             return 501;
       }
-      mitm.base_type[bp] = random3(12);
+      mitm.base_type[bp] = random2(12);
 
       mitm.id[bp] = 0;
       mitm.special[bp] = 0;
@@ -3705,26 +3706,26 @@
       mitm.sub_type[bp] = 0;
 
 
-      if (((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random3(5) < 2))
+      if (((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random2(5) < 2))
          mitm.base_type[bp] = 1; // missiles
 
-      if ((mitm.base_type[bp] == 10 || mitm.base_type[bp] == 11) && random3(5) != 0)
+      if ((mitm.base_type[bp] == 10 || mitm.base_type[bp] == 11) && random2(5) != 0)
          mitm.base_type[bp] = 6;
-      if (mitm.base_type[bp] == 11 && random3(2) != 0)
+      if (mitm.base_type[bp] == 11 && random2(2) != 0)
          mitm.base_type[bp] = 6;
-      if ((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random3(4) == 0)
+      if ((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random2(4) == 0)
          mitm.base_type[bp] = 1; // missile
 
-      if ((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random3(4) == 0)
+      if ((mitm.base_type[bp] == 3 || mitm.base_type[bp] == 7) && random2(4) == 0)
          mitm.base_type[bp] = 5; // potion
 
-      if (random3(15) == 0)
+      if (random2(15) == 0)
          mitm.base_type[bp] = 15;        // money
 
-      if (random3(20) == 0)
+      if (random2(20) == 0)
          mitm.base_type[bp] = 4; // food
 
-      if (20 + many_many >= random3(3500) && many_many > 7)
+      if (20 + many_many >= random2(3500) && many_many > 7)
          mitm.base_type[bp] = 13;
 
       if (force_class != 250)
@@ -3735,39 +3736,39 @@
          case OBJ_WEAPONS:
             do
             {
-               mitm.sub_type [bp] = random3(50);
-            } while(random3(11) >= rare_weapon(mitm.sub_type [bp]));
+               mitm.sub_type [bp] = random2(50);
+            } while(random2(11) >= rare_weapon(mitm.sub_type [bp]));
 
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_KNIFE;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_QUARTERSTAFF;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_SLING;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_SPEAR;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_HAND_AXE;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_DAGGER;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_MACE;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_DAGGER;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_CLUB;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_HAMMER;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_WHIP;
-            if (random3(200) < 20 - many_many)
+            if (random2(200) < 20 - many_many)
                mitm.sub_type[bp] = WPN_SABRE;
 
-            if (many_many > 6 && random3(100) < 10 + many_many && random3(30) == 0)
+            if (many_many > 6 && random2(100) < 10 + many_many && random2(30) == 0)
             {
                do
                {
-                  mitm.sub_type [bp] = random3(50);
+                  mitm.sub_type [bp] = random2(50);
                } while(rare_weapon(mitm.sub_type [bp]) > 0 || rare_weapon(mitm.sub_type [bp]) == -1);
             }
 
@@ -3775,10 +3776,10 @@
             {
             // Note there is nothing to stop randarts being reproduced,
             // except vast improbability.
-               if (mitm.sub_type[bp] > 0 && random3(2000) <= 100 + many_many * 3
-                  && random3(2) == 0 && many_many > 2)
+               if (mitm.sub_type[bp] > 0 && random2(2000) <= 100 + many_many * 3
+                  && random2(2) == 0 && many_many > 2)
                {
-                  if (random3(50) == 0 && you.level_type != LEVEL_ABYSS
+                  if (random2(50) == 0 && you.level_type != LEVEL_ABYSS
                      && you.level_type != LEVEL_PANDEMONIUM)
                   {
                      icky = find_okay_unrandart(OBJ_WEAPONS);
@@ -3790,32 +3791,32 @@
                      }
                   }
 
-                  mitm.special[bp] = 26 + random3(4);
+                  mitm.special[bp] = 26 + random2(4);
                   mitm.pluses[bp] = 50;
                   mitm.pluses2[bp] = 50;
-                  mitm.pluses[bp] += random3(7);
-                  mitm.pluses2[bp] += random3(7);
+                  mitm.pluses[bp] += random2(7);
+                  mitm.pluses2[bp] += random2(7);
 
-                  if (random3(3) == 0)
-                     mitm.pluses[bp] += random3(7);
+                  if (random2(3) == 0)
+                     mitm.pluses[bp] += random2(7);
 
-                  if (random3(3) == 0)
-                     mitm.pluses2[bp] += random3(7);
+                  if (random2(3) == 0)
+                     mitm.pluses2[bp] += random2(7);
 
-                  if (random3(9) == 0)
-                     mitm.pluses[bp] -= random3(7);
+                  if (random2(9) == 0)
+                     mitm.pluses[bp] -= random2(7);
 
-                  if (random3(9) == 0)
-                     mitm.pluses2[bp] -= random3(7);
+                  if (random2(9) == 0)
+                     mitm.pluses2[bp] -= random2(7);
 
                   quant = 1;
 
-                  if (random3(4) == 0)
+                  if (random2(4) == 0)
                   {
-                     mitm.pluses[bp] = 150 - random3(6);
-                     mitm.pluses2[bp] = 50 - random3(6);
+                     mitm.pluses[bp] = 150 - random2(6);
+                     mitm.pluses2[bp] = 50 - random2(6);
                   }
-                  else if (random3(3) != 0 && (mitm.pluses[bp] < 50
+                  else if (random2(3) != 0 && (mitm.pluses[bp] < 50
                                             || mitm.pluses2[bp] < 50))
                   {
                      mitm.pluses[bp] += 100;     /* cursed! nasty */
@@ -3823,10 +3824,10 @@
                   break;
                }
 
-               if (random3(3000) <= 30 + many_many * 3
-                  && random3(20) == 0 && many_many > 6)
+               if (random2(3000) <= 30 + many_many * 3
+                  && random2(20) == 0 && many_many > 6)
                {
-                  no_unique = random3(12);
+                  no_unique = random2(12);
                   if (no_unique <= 6)
                   {
                      if (you.unique_items[no_unique] == 1
@@ -3876,8 +3877,8 @@
                      case 3:
                         mitm.sub_type[bp] = 1;
                         mitm.special[bp] = NWPN_MACE_OF_VARIABILITY;
-                        mitm.pluses[bp] += random3(12) - 4;
-                        mitm.pluses2[bp] += random3(12) - 4;
+                        mitm.pluses[bp] += random2(12) - 4;
+                        mitm.pluses2[bp] += random2(12) - 4;
                         break;
                      case 4:
                         mitm.sub_type[bp] = 17;
@@ -3900,7 +3901,7 @@
                     // dam 188 - sword of Okawaru. This is not a 'unique_items' item because it's only ever generated with Okawaru
                     // talking axe, muttering club, sword of terror?
                      case 7:
-                        if (random3(2))
+                        if (random2(2))
                         {
                            mitm.sub_type[bp] = 7;
                            mitm.special[bp] = NWPN_SWORD_OF_POWER;
@@ -3962,12 +3963,12 @@
             mitm.pluses2[bp] = 50;
             mitm.special[bp] = 0;
 
-            if (force_spec == 250 && random() % 2 == 0)
+            if (force_spec == 250 && random2(2) == 0)
             {
                switch (mitm.sub_type[bp])
                {
                   case WPN_CLUB:             // club
-                     if (random() % 2 == 0)
+                     if (random2(2) == 0)
                         mitm.special[bp] = 90;
                      break;
 
@@ -3976,54 +3977,54 @@
                   case WPN_SPIKED_FLAIL:
                   case WPN_GREAT_MACE:
                   case WPN_GREAT_FLAIL:
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 150;
-                     if (random() % 6 == 0)
+                     if (random2(6) == 0)
                         mitm.special[bp] = 120;
                      break;
 
                   case WPN_MORNINGSTAR:             // morningstar
                   case WPN_HAMMER:            // hammer
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 150;
                      break;
 
                   case WPN_DAGGER:             // dagger
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 150;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
 
                   case WPN_SHORT_SWORD:             // sh sword
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 150;
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 120;
                      break;
 
                   case WPN_LONG_SWORD:             // long sword
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 2 == 0)
+                     if (random2(2) == 0)
                         mitm.special[bp] = 120;
                      break;
 
                   case WPN_GREAT_SWORD:             // gr sword
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
                      break;
 
                   case WPN_SCIMITAR:             // scimitar
-                     if (random() % 2 == 0)
+                     if (random2(2) == 0)
                         mitm.special[bp] = 90;
                      break;
 
@@ -4031,16 +4032,16 @@
                   case WPN_HAND_AXE:             // hand axe
                   case WPN_BROAD_AXE:             // hand axe
                   case WPN_BATTLEAXE:            // battleaxe
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 2 == 0)
+                     if (random2(2) == 0)
                         mitm.special[bp] = 150;
                      break;
 
                   case WPN_SPEAR:            // spear
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
 
@@ -4048,12 +4049,12 @@
                   case WPN_GLAIVE:            // glaive
                   case WPN_TRIDENT:            // glaive
                   case WPN_EXECUTIONERS_AXE:            // exec axe
-                     if (random() % 5 == 0)
+                     if (random2(5) == 0)
                         mitm.special[bp] = 90;
                      break;
 
                   case WPN_QUICK_BLADE:            // quick blade
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
 
@@ -4065,19 +4066,19 @@
                 // 13 - sling
 
                   case WPN_BOW:            // bow
-                     if (random() % 6 == 0)
+                     if (random2(6) == 0)
                         mitm.special[bp] = 90;
-                     if (random() % 2 == 0)
+                     if (random2(2) == 0)
                         mitm.special[bp] = 120;
                      break;
 
                   case WPN_CROSSBOW:            // xbow
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 90;
                      break;
 
                   case WPN_HAND_CROSSBOW:            // hand xbow
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 120;     // deep elf
 
                      break;
@@ -4108,24 +4109,24 @@
             {
                case 120:               // elf
 
-                  mitm.pluses[bp] += random() % 2;
+                  mitm.pluses[bp] += random2(2);
                   break;
 
                case 150:               // dwarf
 
-                  mitm.pluses2[bp] += random() % 2;
-                  mitm.pluses[bp] += random() % 2;
+                  mitm.pluses2[bp] += random2(2);
+                  mitm.pluses[bp] += random2(2);
                   break;
 
                case 90:                // orc
 
-                  mitm.pluses[bp] -= random() % 2;
-                  mitm.pluses2[bp] += random() % 2;
+                  mitm.pluses[bp] -= random2(2);
+                  mitm.pluses2[bp] += random2(2);
                   break;
             }
 
 
-            if ((random3(200) <= 50 + many_many || many_many == 351
+            if ((random2(200) <= 50 + many_many || many_many == 351
                 || mitm.sub_type[bp] == 32 || mitm.sub_type[bp] == 33)
                 // nobody would bother enchanting a club
                && mitm.sub_type[bp] != WPN_CLUB
@@ -4134,32 +4135,32 @@
             {
                if (many_many == 351)
                   many_many = 200;
-               mitm.pluses[bp] += random3(3);
-               mitm.pluses2[bp] += random3(3);
-               if (random3(350) <= 20 + many_many)
+               mitm.pluses[bp] += random2(3);
+               mitm.pluses2[bp] += random2(3);
+               if (random2(350) <= 20 + many_many)
                {
-                  mitm.pluses[bp] += random3(3);
-                  if (random3(350) <= 20 + many_many)
+                  mitm.pluses[bp] += random2(3);
+                  if (random2(350) <= 20 + many_many)
                   {
-                     mitm.pluses[bp] += random3(3);
-                     if (random3(350) <= 20 + many_many)
-                        mitm.pluses[bp] += random3(3);
+                     mitm.pluses[bp] += random2(3);
+                     if (random2(350) <= 20 + many_many)
+                        mitm.pluses[bp] += random2(3);
                   }
                }
 
-               if (random3(500) <= 50 + many_many)
+               if (random2(500) <= 50 + many_many)
                {
-                  mitm.pluses2[bp] += random3(3);
-                  if (random3(500) <= 50 + many_many)
+                  mitm.pluses2[bp] += random2(3);
+                  if (random2(500) <= 50 + many_many)
                   {
-                     mitm.pluses2[bp] += random3(3);
-                     if (random3(500) <= 50 + many_many)
-                        mitm.pluses2[bp] += random3(3);
+                     mitm.pluses2[bp] += random2(3);
+                     if (random2(500) <= 50 + many_many)
+                        mitm.pluses2[bp] += random2(3);
                   }
                }
 
-               if (random3(300) <= 100 + many_many
-                  || (many_many == 351 && random() % 2 == 0)
+               if (random2(300) <= 100 + many_many
+                  || (many_many == 351 && random2(2) == 0)
                   || mitm.sub_type[bp] == WPN_DEMON_BLADE
                   || mitm.sub_type[bp] == WPN_DEMON_WHIP
                   || mitm.sub_type[bp] == WPN_DEMON_TRIDENT)
@@ -4178,24 +4179,24 @@
 
 
                      case WPN_EVENINGSTAR:
-                        if (random() % 2 == 0)
+                        if (random2(2) == 0)
                            set_weapon_special( bp, SPWPN_DRAINING );
 
                      case WPN_MORNINGSTAR:
-                        if (random() % 4 == 0)
+                        if (random2(4) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
-                        if (random() % 4 == 0)
-                           set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+                        if (random2(4) == 0)
+                           set_weapon_special( bp, SPWPN_FLAMING + random2(2) );
 
-                        if (random() % 20 == 0)
+                        if (random2(20) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                      case WPN_MACE:
                      case WPN_GREAT_MACE:
                         if ((mitm.sub_type[bp] == WPN_MACE
                             || mitm.sub_type[bp] == WPN_GREAT_MACE)
-                           && random() % 4 == 0)
+                           && random2(4) == 0)
                         {
                            set_weapon_special( bp, SPWPN_DISRUPTION );
                         }
@@ -4204,76 +4205,76 @@
                      case WPN_SPIKED_FLAIL:
                      case WPN_GREAT_FLAIL:
                      case WPN_HAMMER:
-                        if (random() % 15 == 0)
+                        if (random2(15) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 4 == 0)
+                        if (random2(4) == 0)
                            set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
-                        if (random() % 3 == 0)
+                        if (random2(3) == 0)
                            set_weapon_special( bp, SPWPN_PROTECTION );
 
-                        if (random() % 10 == 0)
+                        if (random2(10) == 0)
                            set_weapon_special( bp, SPWPN_DRAINING );
 
-                        if (random() % 3 == 0)
+                        if (random2(3) == 0)
                            set_weapon_special( bp, SPWPN_VORPAL );
                         break;
 
 
                      case WPN_DAGGER:
-                        if (random() % 3 == 0)
+                        if (random2(3) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
-                        if (random() % 10 == 0)
+                        if (random2(10) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                      case WPN_SHORT_SWORD:
-                        if (random() % 8 == 0)
+                        if (random2(8) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
                      case WPN_SCIMITAR:
-                        if (random() % 7 == 0)
+                        if (random2(7) == 0)
                            set_weapon_special( bp, SPWPN_SPEED );
 
                      case WPN_LONG_SWORD:
-                        if (random() % 12 == 0)
+                        if (random2(12) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
                      case WPN_GREAT_SWORD:
                      case WPN_DOUBLE_SWORD:
                      case WPN_TRIPLE_SWORD:
-                        if (random() % 10 == 0)
+                        if (random2(10) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
-                        if (random() % 15 == 0)
+                        if (random2(15) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 5 == 0)
-                           set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+                        if (random2(5) == 0)
+                           set_weapon_special( bp, SPWPN_FLAMING + random2(2) );
 
-                        if (random() % 7 == 0)
+                        if (random2(7) == 0)
                            set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
-                        if (random() % 7 == 0)
+                        if (random2(7) == 0)
                            set_weapon_special( bp, SPWPN_PROTECTION );
 
-                        if (random() % 8 == 0)
+                        if (random2(8) == 0)
                            set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
-                        if (random() % 12 == 0)
+                        if (random2(12) == 0)
                            set_weapon_special( bp, SPWPN_DRAINING );
 
-                        if (random() % 4 == 0)
+                        if (random2(4) == 0)
                            set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
-                        if (random() % 2 == 0)
+                        if (random2(2) == 0)
                            set_weapon_special( bp, SPWPN_VORPAL );
 
                         break;
@@ -4283,127 +4284,127 @@
                      case WPN_BROAD_AXE:
                      case WPN_BATTLEAXE:
                      case WPN_EXECUTIONERS_AXE:
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
-                        if (random() % 14 == 0)
+                        if (random2(14) == 0)
                            set_weapon_special( bp, SPWPN_DRAINING );
 
                      case WPN_HAND_AXE:
-                        if (random() % 10 == 0)
+                        if (random2(10) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
-                        if (random() % 15 == 0)
+                        if (random2(15) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
-                        if (random() % 4 == 0)
-                           set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+                        if (random2(4) == 0)
+                           set_weapon_special( bp, SPWPN_FLAMING + random2(2) );
 
-                        if (random() % 8 == 0)
+                        if (random2(8) == 0)
                            set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
-                        if (random() % 12 == 0)
+                        if (random2(12) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
-                        if (random() % 2 == 0)
+                        if (random2(2) == 0)
                            set_weapon_special( bp, SPWPN_VORPAL );
 
                         break;
 
                      case WPN_WHIP:
-                        if (random() % 20 == 0)
+                        if (random2(20) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 6 == 0)
-                           set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+                        if (random2(6) == 0)
+                           set_weapon_special( bp, SPWPN_FLAMING + random2(2) );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_REACHING );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_SPEED );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_ELECTROCUTION );
                         break;
 
                      case WPN_HALBERD:
                      case WPN_GLAIVE:
-                        if (random() % 30 == 0)
+                        if (random2(30) == 0)
                            set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
-                        if (random() % 4 == 0)
+                        if (random2(4) == 0)
                            set_weapon_special( bp, SPWPN_PROTECTION );
 
                      case WPN_SCYTHE:
                      case WPN_TRIDENT:
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_SPEED );
 
                      case WPN_SPEAR:
-                        if (random() % 10 == 0)
+                        if (random2(10) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
-                        if (random() % 20 == 0)
+                        if (random2(20) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
-                        if (random() % 6 == 0)
-                           set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+                        if (random2(6) == 0)
+                           set_weapon_special( bp, SPWPN_FLAMING + random2(2) );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
 
-                        if (random() % 6 == 0)
+                        if (random2(6) == 0)
                            set_weapon_special( bp, SPWPN_REACHING );
 
-                        if (random() % 3 == 0)
+                        if (random2(3) == 0)
                            set_weapon_special( bp, SPWPN_VORPAL );
                         break;
 
 
                      case WPN_SLING:
-                        if (random() % 4 != 0)
+                        if (random2(4) != 0)
                            break;
 
                      case WPN_HAND_CROSSBOW:
-                        if (random() % 2 != 0)
+                        if (random2(2) != 0)
                            break;
 
                      case WPN_BOW:
                      case WPN_CROSSBOW:
-                        if (random() % 2 == 0)
-                           set_weapon_special( bp, SPWPN_FLAME + random3(2) );
+                        if (random2(2) == 0)
+                           set_weapon_special( bp, SPWPN_FLAME + random2(2) );
                         break;
 
 
                   // quarterstaff - not powerful, as this would make
                   // the 'staves' skill just too good
                      case WPN_QUARTERSTAFF:
-                        if (random() % 15 == 0)
+                        if (random2(15) == 0)
                            set_weapon_special( bp, SPWPN_DISTORTION );
 
-                        if (random() % 25 == 0)
+                        if (random2(25) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_PROTECTION );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_SPEED );
                         break;
 
@@ -4414,32 +4415,32 @@
                         if (mitm.special[bp] >= 90)
                            mitm.special[bp] = mitm.special[bp] % 30;
 
-                        if (random() % 3 == 0
+                        if (random2(3) == 0
                            && (mitm.sub_type[bp] == WPN_DEMON_WHIP
                               || mitm.sub_type[bp] == WPN_DEMON_TRIDENT))
                         {
                            set_weapon_special( bp, SPWPN_REACHING );
                         }
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_DRAINING );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_FLAMING );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_FREEZING );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_PAIN );
 
-                        if (random() % 5 == 0)
+                        if (random2(5) == 0)
                            set_weapon_special( bp, SPWPN_VENOM );
                         break;
                   }
@@ -4447,12 +4448,12 @@
             }
             else
             {
-               if (random3(12) == 0)
+               if (random2(12) == 0)
                {
                   mitm.pluses[bp] = 150;
-                  mitm.pluses[bp] -= random3(4);
+                  mitm.pluses[bp] -= random2(4);
                   mitm.pluses2[bp] = 50;
-                  mitm.pluses2[bp] -= random3(4);
+                  mitm.pluses2[bp] -= random2(4);
                   mitm.special[bp] = (mitm.special[bp] / 30) * 30;
                }
             }
@@ -4461,7 +4462,7 @@
 
             {
                if (mitm.special[bp] % 30 != 0)
-                  if (random() % 2 == 0 || mitm.special[bp] % 30 == 3
+                  if (random2(2) == 0 || mitm.special[bp] % 30 == 3
                      || mitm.special[bp] % 30 == 5)
                   {               // no holy wrath or slay orc
 
@@ -4473,16 +4474,16 @@
 
 
             if ((mitm.special[bp] != 0
-                || (mitm.pluses[bp] != 50 && random3(3) == 0))
+                || (mitm.pluses[bp] != 50 && random2(3) == 0))
                && mitm.sub_type[bp] != 0 && mitm.special[bp] / 30 == 0)
             {
-               mitm.special[bp] += 30 + random3(2) * 30;
+               mitm.special[bp] += 30 + random2(2) * 30;
             }
             break;
 
          case OBJ_MISSILES:
             mitm.pluses[bp] = 0;
-            mitm.sub_type[bp] = random3(4);
+            mitm.sub_type[bp] = random2(4);
 
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
@@ -4505,43 +4506,43 @@
                }
             else
             {
-               if (random() % 4 == 0
+               if (random2(4) == 0
                   && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 3))
                   mitm.special[bp] = 120;         // elven
 
-               if (random() % 4 == 0
+               if (random2(4) == 0
                   && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 2
                      || mitm.sub_type[bp] == 3))
                   mitm.special[bp] = 90;  // orcish
 
-               if (random() % 6 == 0 && mitm.sub_type[bp] == 3)
+               if (random2(6) == 0 && mitm.sub_type[bp] == 3)
                   mitm.special[bp] = 150;         // dwarf
 
             }
 
-            if (random() % 7 == 0 && mitm.sub_type[bp] >= 1
+            if (random2(7) == 0 && mitm.sub_type[bp] >= 1
                && mitm.sub_type[bp] <= 3)
             {
                mitm.special[bp] = mitm.special[bp] % 30 + 1;
             }
 
-            if (random() % 7 == 0 && mitm.sub_type[bp] >= 1
+            if (random2(7) == 0 && mitm.sub_type[bp] >= 1
                && mitm.sub_type[bp] <= 3)
             {
                mitm.special[bp] = mitm.special[bp] % 30 + 2;
             }
 
-            if ((random() % 5 == 0 || mitm.special[bp] == 90 && random() % 3 == 0)
+            if ((random2(5) == 0 || mitm.special[bp] == 90 && random2(3) == 0)
                && mitm.sub_type[bp] >= 1 && mitm.sub_type[bp] <= 3)
             {
                mitm.special[bp] = mitm.special[bp] % 30 + 3;
             }
 
-            quant = random3(9) + random3(12) + random3(15) + random3(12) + 1;
-            if (mitm.sub_type [bp] == MI_LARGE_ROCK) quant = 1 + random3(3) + random3(3);
+            quant = random2(9) + random2(12) + random2(15) + random2(12) + 1;
+            if (mitm.sub_type [bp] == MI_LARGE_ROCK) quant = 1 + random2(3) + random2(3);
 
-            if (10 + many_many >= random3(100))
-               mitm.pluses[bp] = random3(5);
+            if (10 + many_many >= random2(100))
+               mitm.pluses[bp] = random2(5);
 
             mitm.pluses[bp] += 50;
             break;
@@ -4549,37 +4550,37 @@
          case OBJ_ARMOUR:
             quant = 1;
 
-            mitm.sub_type[bp] = random3(3);
+            mitm.sub_type[bp] = random2(3);
             mitm.pluses[bp] = 0;
             mitm.pluses2[bp] = 0;
-            if (random3(35) <= many_many + 10)
+            if (random2(35) <= many_many + 10)
             {
-               mitm.sub_type[bp] = random3(5);
-               if (random3(4) == 0)
+               mitm.sub_type[bp] = random2(5);
+               if (random2(4) == 0)
                   mitm.sub_type[bp] = 30;         // animal skin
 
             }
-            if (random3(60) <= many_many + 10)
-               mitm.sub_type[bp] = random3(8);
-            if (10 + many_many >= random3(400) && random3(10) == 0)
-               mitm.sub_type[bp] = 15 + random3(7);
-            if (10 + many_many >= random3(500) && random3(20) == 0)
+            if (random2(60) <= many_many + 10)
+               mitm.sub_type[bp] = random2(8);
+            if (10 + many_many >= random2(400) && random2(10) == 0)
+               mitm.sub_type[bp] = 15 + random2(7);
+            if (10 + many_many >= random2(500) && random2(20) == 0)
             {
-               mitm.sub_type[bp] = 22 + random3(11);
+               mitm.sub_type[bp] = 22 + random2(11);
                if (mitm.sub_type[bp] == 30)
                   mitm.sub_type[bp] = 17;         // replaces animal skin w/ crystal plate
 
             }
-            if (random3(4) == 0)
-               mitm.sub_type[bp] = 8 + random3(7);
+            if (random2(4) == 0)
+               mitm.sub_type[bp] = 8 + random2(7);
 
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
 
-            if (allow_uniques == 1 && random3(2000) <= 100 + many_many * 3 && random() % 2 == 0 && many_many > 2)
+            if (allow_uniques == 1 && random2(2000) <= 100 + many_many * 3 && random2(2) == 0 && many_many > 2)
             {
 
-               if (random3(50) == 0 && you.level_type != 2 && you.level_type != 3)
+               if (random2(50) == 0 && you.level_type != 2 && you.level_type != 3)
                {
                   icky = find_okay_unrandart(OBJ_ARMOUR);
                   if (icky != -1)
@@ -4604,105 +4605,105 @@
                   mitm.sub_type[bp] = 29;
                if (mitm.sub_type[bp] == 31)
                   mitm.sub_type[bp] = 32;
-               mitm.special[bp] = 26 + random3(4);
+               mitm.special[bp] = 26 + random2(4);
                mitm.pluses[bp] = 50;
-               mitm.pluses2[bp] = random3(150);
+               mitm.pluses2[bp] = random2(150);
                if (mitm.sub_type[bp] == 12)
                {
                   mitm.pluses2[bp] = 0;
-                  if (random3(6) == 0)
-                     mitm.pluses2[bp] += random3(3);
+                  if (random2(6) == 0)
+                     mitm.pluses2[bp] += random2(3);
                }
                if (mitm.sub_type[bp] == 10)
                {
                   mitm.pluses2[bp] = 0;
-                  if (random3(3) == 0)
-                     mitm.pluses2[bp] += random3(4);
+                  if (random2(3) == 0)
+                     mitm.pluses2[bp] += random2(4);
                }
-               mitm.pluses[bp] += random3(4);
-               if (random3(5) == 0)
-                  mitm.pluses[bp] += random3(4);
-               if (random3(6) == 0)
-                  mitm.pluses[bp] -= random3(8);
+               mitm.pluses[bp] += random2(4);
+               if (random2(5) == 0)
+                  mitm.pluses[bp] += random2(4);
+               if (random2(6) == 0)
+                  mitm.pluses[bp] -= random2(8);
                quant = 1;
-               if (random3(5) == 0)
+               if (random2(5) == 0)
                {
-                  mitm.pluses[bp] = 150 - random3(6);
+                  mitm.pluses[bp] = 150 - random2(6);
                }
-               else if (random3(3) != 0 && mitm.pluses[bp] < 50)
+               else if (random2(3) != 0 && mitm.pluses[bp] < 50)
                   mitm.pluses[bp] += 100;         /* cursed! nasty */
                break;
             }
 
             mitm.pluses[bp] = 0;
 
-            if (mitm.sub_type[bp] == 10 && random3(2) == 0)
+            if (mitm.sub_type[bp] == 10 && random2(2) == 0)
             {
-               mitm.pluses2[bp] = random3(4);
+               mitm.pluses2[bp] = random2(4);
             }
 
 
          // 180 - orc, 150 - dwar, 120 - elf
 
-            if (force_spec == 250 && random() % 2 == 0)
+            if (force_spec == 250 && random2(2) == 0)
             {
                switch (mitm.sub_type[bp])
                {
                   case 8:             // shield - must do special things for this!
 
                   case 13:
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 150;
                   case 14:
-                     if (random() % 3 == 0)
+                     if (random2(3) == 0)
                         mitm.special[bp] = 180;
                      break;
                   case 9:             // cloak
 
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 180;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 150;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
                 // no helmet, for various reasons
                   case 11:            // gloves
 
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
                   case 12:            // boots
 
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                      {
                         mitm.pluses2[bp] = 1;
                         break;      /* naga barding */
                      }
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                      {
                         mitm.pluses2[bp] = 2;
                         break;      /* naga barding */
                      }
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 180;
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
-                     if (random() % 6 == 0)
+                     if (random2(6) == 0)
                         mitm.special[bp] = 150;
                      break;
                   case 0:             // robe:
 
-                     if (random() % 4 == 0)
+                     if (random2(4) == 0)
                         mitm.special[bp] = 120;
                      break;
                   default:            // other body armours:
 
-                     if (mitm.sub_type[bp] <= 4 && random() % 6 == 0)
+                     if (mitm.sub_type[bp] <= 4 && random2(6) == 0)
                         mitm.special[bp] = 120;
-                     if (mitm.sub_type[bp] >= 2 && random() % 5 == 0)
+                     if (mitm.sub_type[bp] >= 2 && random2(5) == 0)
                         mitm.special[bp] = 150;
-                     if (random() % 5 == 0)
+                     if (random2(5) == 0)
                         mitm.special[bp] = 180;
                      break;
                }
@@ -4720,7 +4721,7 @@
                case 2:         // dwarf
 
                   mitm.special[bp] = 150;
-                  mitm.pluses[bp] += random() % 2;
+                  mitm.pluses[bp] += random2(2);
                   break;
 
                case 3:         // orc
@@ -4733,12 +4734,12 @@
 
 
             {
-               if (50 + many_many >= random3(250) || (mitm.sub_type[bp] == 10 && mitm.pluses2[bp] == 3))
+               if (50 + many_many >= random2(250) || (mitm.sub_type[bp] == 10 && mitm.pluses2[bp] == 3))
                {
-                  mitm.pluses[bp] += random3(3);
-                  if (mitm.sub_type[bp] <= 7 && 20 + many_many >= random3(300))
-                     mitm.pluses[bp] += random3(3);
-                  if (30 + many_many >= random3(350) && (mitm.special[bp] != 180 || mitm.sub_type[bp] <= 7))
+                  mitm.pluses[bp] += random2(3);
+                  if (mitm.sub_type[bp] <= 7 && 20 + many_many >= random2(300))
+                     mitm.pluses[bp] += random2(3);
+                  if (30 + many_many >= random2(350) && (mitm.special[bp] != 180 || mitm.sub_type[bp] <= 7))
                      switch (mitm.sub_type[bp])
                      {
                         case 8:     // shield - must do special things for this!
@@ -4753,7 +4754,7 @@
 
                            if (mitm.special[bp] == 150)
                               break;
-                           switch (random3(4))
+                           switch (random2(4))
                            {
                               case 0:
                                  mitm.special[bp] += 12;
@@ -4771,12 +4772,12 @@
                            break;
                         case 10:    // helmet
 
-                           if (mitm.pluses2[bp] == 2 && random3(4) == 0)
+                           if (mitm.pluses2[bp] == 2 && random2(4) == 0)
                               mitm.special[bp] += 6;
-                           else if (mitm.pluses2[bp] == 3 && random3(4) == 0)
+                           else if (mitm.pluses2[bp] == 3 && random2(4) == 0)
                               mitm.special[bp] += 12;
                            else
-                              switch (random3(3))
+                              switch (random2(3))
                               {
                                  case 0:
                                     mitm.special[bp] += 5;
@@ -4791,7 +4792,7 @@
                            break;
                         case 11:    // gloves
 
-                           switch (random3(2))
+                           switch (random2(2))
                            {
                               case 0:
                                  mitm.special[bp] += 7;
@@ -4803,7 +4804,7 @@
                            break;
                         case 12:    // boots
 
-                           switch (random3(3))
+                           switch (random2(3))
                            {
                               case 0:
                                  mitm.special[bp] += 1;
@@ -4818,19 +4819,19 @@
                            break;
                         case 0:     // robe:
 
-                           switch (random3(4))
+                           switch (random2(4))
                            {
                               case 0:
-                                 mitm.special[bp] += random3(2) + 2;
+                                 mitm.special[bp] += random2(2) + 2;
                                  break;
                               case 1:
                                  mitm.special[bp] += 12;
                                  break;
                               case 2:
-                                 mitm.special[bp] += 15 + random3(2);
+                                 mitm.special[bp] += 15 + random2(2);
                                  break;
                               case 3:
-                                 if (force_type != 250 || random() % 50 > many_many + 10 || mitm.special[bp] != 0)
+                                 if (force_type != 250 || random2(50) > many_many + 10 || mitm.special[bp] != 0)
                                     break;
                                  mitm.special[bp] += 17;     // archmagi
                             //mitm.pluses [bp] = 50;
@@ -4840,35 +4841,35 @@
 
                         default:    // other body armours:
 
-                           mitm.special[bp] += 2 + random3(2);
-                           if (random3(9) == 0)
+                           mitm.special[bp] += 2 + random2(2);
+                           if (random2(9) == 0)
                               mitm.special[bp] = 16;      /* prot_life */
-                           if (random3(5) == 0)
+                           if (random2(5) == 0)
                               mitm.special[bp] = 12;      /* magic res */
-                           if (random3(5) == 0)
+                           if (random2(5) == 0)
                               mitm.special[bp] = 4;       /* res poison */
-                           if (mitm.sub_type[bp] == 7 && random3(15) == 0)
+                           if (mitm.sub_type[bp] == 7 && random2(15) == 0)
                            {
                               mitm.special[bp] += 10;
-                              mitm.pluses[bp] += 1 + random3(4);
+                              mitm.pluses[bp] += 1 + random2(4);
                            }
                            break;
                      }
 
 
                }
-               else if (random3(12) == 0)
+               else if (random2(12) == 0)
                {
-                  mitm.pluses[bp] = 99 - random3(2);
-                  if (random3(5) == 0)
-                     mitm.pluses[bp] -= random3(3);
+                  mitm.pluses[bp] = 99 - random2(2);
+                  if (random2(5) == 0)
+                     mitm.pluses[bp] -= random2(3);
                   mitm.special[bp] = 0;   // heh heh heh
 
                }
             }
 
-            if (mitm.special[bp] < 120 && (mitm.special[bp] != 0 || (mitm.pluses[bp] != 0 && random3(3) == 0)))
-               mitm.special[bp] += random3(3) * 30;
+            if (mitm.special[bp] < 120 && (mitm.special[bp] != 0 || (mitm.pluses[bp] != 0 && random2(3) == 0)))
+               mitm.special[bp] += random2(3) * 30;
 
             if (mitm.sub_type[bp] > 14)
                mitm.special[bp] = 0;       // sorry about that.
@@ -4901,23 +4902,23 @@
             break;
 
          case OBJ_WANDS:
-            mitm.sub_type[bp] = random3(20);
+            mitm.sub_type[bp] = random2(20);
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
-            mitm.pluses[bp] = random3(6) + random3(6) + random3(6);
+            mitm.pluses[bp] = random2(6) + random2(6) + random2(6);
             if (mitm.sub_type[bp] < 2 || mitm.sub_type[bp] == 4 || mitm.sub_type[bp] == 18)
-               mitm.pluses[bp] = random3(10) + random3(10) + random3(10);
+               mitm.pluses[bp] = random2(10) + random2(10) + random2(10);
             if (mitm.sub_type[bp] == 5)
-               mitm.pluses[bp] = random3(4) + random3(4) + random3(4);     /* healing */
+               mitm.pluses[bp] = random2(4) + random2(4) + random2(4);     /* healing */
             quant = 1;
             break;
 
          case OBJ_FOOD:
-            mitm.sub_type[bp] = random3(5);
-            if (random3(2) == 0)
-               mitm.sub_type[bp] = random3(2);
-            if (random3(16) == 0)
-               mitm.sub_type[bp] = random3(21);
+            mitm.sub_type[bp] = random2(5);
+            if (random2(2) == 0)
+               mitm.sub_type[bp] = random2(2);
+            if (random2(16) == 0)
+               mitm.sub_type[bp] = random2(21);
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
             if (allow_uniques > 1)
@@ -4927,10 +4928,10 @@
             else
             {
             quant = 1;
-            if (random3(80) == 0)
-               quant = random3(3) + 1;
+            if (random2(80) == 0)
+               quant = random2(3) + 1;
             if (mitm.sub_type[bp] == 12 || mitm.sub_type[bp] == 15 || mitm.sub_type[bp] == 16)
-               quant = random3(15) + 3;
+               quant = random2(15) + 3;
             }
             break;
 
@@ -4939,12 +4940,12 @@
 
             pot = 0;
 
-            pot = random3(9);       // general type of potion;
+            pot = random2(9);       // general type of potion;
 
             quant = 1;
-            if (random3(18) == 0)
+            if (random2(18) == 0)
                quant += 1;
-            if (random3(25) == 0)
+            if (random2(25) == 0)
                quant += 1;
 
             switch (pot)
@@ -4954,48 +4955,48 @@
                case 2:
                case 8:
                // healing potions
-                  if (random3(3) == 0)
+                  if (random2(3) == 0)
                      mitm.sub_type[bp] = 1;  // wound heal
 
                   else
                      mitm.sub_type[bp] = 0;  // healing
 
-                  if (random3(20) == 0)
+                  if (random2(20) == 0)
                      mitm.sub_type[bp] = 22;         // cure mutation
 
                   break;
                case 3:
                case 4:
                // enhancements
-                  if (random3(2) == 0)
+                  if (random2(2) == 0)
                      mitm.sub_type[bp] = 2;  // speed
 
                   else
                      mitm.sub_type[bp] = 3;  // might
 
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                      mitm.sub_type[bp] = 21;         // berserk
 
-                  if (random3(5) == 0)
+                  if (random2(5) == 0)
                      mitm.sub_type[bp] = 12;         // invis
 
-                  if (random3(6) == 0)
+                  if (random2(6) == 0)
                      mitm.sub_type[bp] = 7;  // levitation - an enhancement?
 
-                  if (random3(30) == 0)
+                  if (random2(30) == 0)
                      mitm.sub_type[bp] = 13;         // oatmeal
 
                   break;
 
                case 5:
                // gain ability
-                  mitm.sub_type[bp] = 4 + random3(3);         // str/dex/int
+                  mitm.sub_type[bp] = 4 + random2(3);         // str/dex/int
 
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                      mitm.sub_type[bp] = 17;
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                      mitm.sub_type[bp] = 18;
-                  if (random3(8) != 0)
+                  if (random2(8) != 0)
                      mitm.sub_type[bp] = 19;         // restore abilities
 
                   quant = 1;
@@ -5004,7 +5005,7 @@
                case 6:
                case 7:
                // bad things
-                  switch (random3(6))
+                  switch (random2(6))
                   {
                      case 4:
                      case 0:
@@ -5012,7 +5013,7 @@
                         {
                            mitm.sub_type[bp] = 8;      // poison
 
-                           if (many_many > 10 && random3(4) == 0)
+                           if (many_many > 10 && random2(4) == 0)
                               mitm.sub_type[bp] = 20;         //str poison
 
                            break;
@@ -5038,10 +5039,10 @@
                         break;          // confus
 
                   }
-                  if (random3(8) == 0)
+                  if (random2(8) == 0)
                      mitm.sub_type[bp] = 14;         // disease
 
-                  if (random3(1000) == 0)
+                  if (random2(1000) == 0)
                      mitm.sub_type[bp] = 15;         // decay! nasty...
 
                   break;
@@ -5055,11 +5056,11 @@
 
          case OBJ_SCROLLS:           // mitm.base_type [bp] = 15; // scrolls
 
-            mitm.sub_type[bp] = random3(23);
-            if (random3(6) == 0)
+            mitm.sub_type[bp] = random2(23);
+            if (random2(6) == 0)
                mitm.sub_type[bp] = 0;      // identify should be very common
 
-            if (random3(10) == 0)
+            if (random2(10) == 0)
                mitm.sub_type[bp] = 4;      // so should remove curse
 
             if (many_many < 4 && mitm.sub_type[bp] == 13)
@@ -5068,19 +5069,19 @@
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
             quant = 1;
-            if (random3(16) == 0)
-               quant = random3(3) + 1;
+            if (random2(16) == 0)
+               quant = random2(3) + 1;
             if (mitm.sub_type[bp] == 20 || mitm.sub_type[bp] == 18 || mitm.sub_type[bp] == 9)
                quant = 1;
-            if (mitm.sub_type[bp] == 6 && (random3(many_many + 1) < 4 || random3(2) != 0))
+            if (mitm.sub_type[bp] == 6 && (random2(many_many + 1) < 4 || random2(2) != 0))
                mitm.sub_type[bp] = 5;
-            if (mitm.sub_type[bp] == 9 && (random3(many_many + 1) < 7 || random3(2) != 0))
+            if (mitm.sub_type[bp] == 9 && (random2(many_many + 1) < 7 || random2(2) != 0))
                mitm.sub_type[bp] = 5;
-            if (mitm.sub_type[bp] == 20 && (random3(many_many + 1) < 7 || random3(2) != 0))
+            if (mitm.sub_type[bp] == 20 && (random2(many_many + 1) < 7 || random2(2) != 0))
                mitm.sub_type[bp] = 1;
-            if (mitm.sub_type[bp] == 18 && (random3(many_many + 1) < 4 || random3(2) != 0))
+            if (mitm.sub_type[bp] == 18 && (random2(many_many + 1) < 4 || random2(2) != 0))
                mitm.sub_type[bp] = 1;
-            if (mitm.sub_type[bp] == 22 && (random3(many_many + 1) < 4 || random3(2) != 0))
+            if (mitm.sub_type[bp] == 22 && (random2(many_many + 1) < 4 || random2(2) != 0))
                mitm.sub_type[bp] = 1;
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
@@ -5089,7 +5090,7 @@
 
          case OBJ_JEWELLERY: // rings
 
-            if (random3(2000) <= 100 + many_many * 3 && random() % 4 == 0
+            if (random2(2000) <= 100 + many_many * 3 && random2(4) == 0
                && many_many > 2 && you.level_type != 2 && you.level_type != 3)
             {
                icky = find_okay_unrandart(OBJ_JEWELLERY);
@@ -5101,9 +5102,9 @@
                }
             }
 
-            mitm.sub_type[bp] = random3(24);
-            if (random() % 4 == 0)
-               mitm.sub_type[bp] = 35 + random() % 10;
+            mitm.sub_type[bp] = random2(24);
+            if (random2(4) == 0)
+               mitm.sub_type[bp] = 35 + random2(10);
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
             quant = 1;
@@ -5111,32 +5112,32 @@
             if (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 5 || mitm.sub_type[bp] == 6 || mitm.sub_type[bp] == 11 || mitm.sub_type[bp] == 14 || mitm.sub_type[bp] == 15)
             {
                mitm.pluses[bp] = 50;
-               mitm.pluses[bp] += random3(3) + 1;
-               if (random3(3) == 0)
-                  mitm.pluses[bp] += random3(4);
+               mitm.pluses[bp] += random2(3) + 1;
+               if (random2(3) == 0)
+                  mitm.pluses[bp] += random2(4);
 
-               if (random3(5) == 0)
+               if (random2(5) == 0)
                {
                   mitm.pluses[bp] = 150;
-                  mitm.pluses[bp] -= random3(2) + 1;
-                  if (random3(3) == 0)
-                     mitm.pluses[bp] -= random3(4);
+                  mitm.pluses[bp] -= random2(2) + 1;
+                  if (random2(3) == 0)
+                     mitm.pluses[bp] -= random2(4);
                }
 
                if (mitm.sub_type[bp] == 6)         /* =oslaying */
                {
                   mitm.pluses2[bp] = 50;
-                  mitm.pluses2[bp] += random3(3) + 1;
-                  if (random3(3) == 0)
-                     mitm.pluses2[bp] += random3(4);
-                  if (random3(5) == 0)
+                  mitm.pluses2[bp] += random2(3) + 1;
+                  if (random2(3) == 0)
+                     mitm.pluses2[bp] += random2(4);
+                  if (random2(5) == 0)
                   {
                      mitm.pluses[bp] = 50;
                      mitm.pluses2[bp] += 2;
                   }
                   else
                   {
-                     if (random3(5) == 0)
+                     if (random2(5) == 0)
                      {
                         mitm.pluses[bp] = 50;
                         mitm.pluses2[bp] += 2;
@@ -5145,22 +5146,22 @@
                }
 
             }
-            if (allow_uniques == 1 && random3(2000) <= 100 + many_many * 3 && random() % 2 == 0 && many_many > 2)
+            if (allow_uniques == 1 && random2(2000) <= 100 + many_many * 3 && random2(2) == 0 && many_many > 2)
             {
                if (mitm.sub_type[bp] == 1)
-                  mitm.sub_type[bp] = 2 + random3(3);
+                  mitm.sub_type[bp] = 2 + random2(3);
                if (mitm.sub_type[bp] == 5 || mitm.sub_type[bp] == 6)
-                  mitm.sub_type[bp] = 7 + random3(4);
+                  mitm.sub_type[bp] = 7 + random2(4);
                if (mitm.sub_type[bp] == 11)
                   mitm.sub_type[bp] = 12;
                if (mitm.sub_type[bp] == 14 || mitm.sub_type[bp] == 15)
-                  mitm.sub_type[bp] = 16 + random3(8);
+                  mitm.sub_type[bp] = 16 + random2(8);
                if (mitm.sub_type[bp] == 43)
-                  mitm.sub_type[bp] = 35 + random3(8);
+                  mitm.sub_type[bp] = 35 + random2(8);
             /* Can't allow base ring types with +s */
                mitm.special[bp] = 200;
-               mitm.pluses[bp] = random3(70);
-               mitm.pluses2[bp] = random3(150);
+               mitm.pluses[bp] = random2(70);
+               mitm.pluses2[bp] = random2(150);
                quant = 1;
                break;
             }
@@ -5177,23 +5178,23 @@
          create_book:
             do
             {
-               mitm.sub_type[bp] = random3(44);
+               mitm.sub_type[bp] = random2(44);
                if (book_rarity(mitm.sub_type[bp]) == 100)
                   continue;
 
                if (mitm.sub_type[bp] != BOOK_DESTRUCTION
                   && mitm.sub_type[bp] != BOOK_MANUAL)
                {
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                   {
-                     if (random3(2) == 0)
+                     if (random2(2) == 0)
                         mitm.sub_type[bp] = BOOK_WIZARDRY;
                      else
                         mitm.sub_type[bp] = BOOK_POWER;
                   }
 
-                  if (random3(many_many + 1) + 1 >= book_rarity(mitm.sub_type[bp])
-                     || random3(100) == 0)
+                  if (random2(many_many + 1) + 1 >= book_rarity(mitm.sub_type[bp])
+                     || random2(100) == 0)
                   {
                      break;
                   }
@@ -5253,15 +5254,15 @@
 
             mitm.pluses[bp] = numbo + 64;
 
-            mitm.special[bp] = random3(5);
-            if (random3(10) == 0)
-               mitm.special[bp] += random3(8) * 10;
+            mitm.special[bp] = random2(5);
+            if (random2(10) == 0)
+               mitm.special[bp] += random2(8) * 10;
 
             quant = 1;
 
          // tome of destruction : rare!
             if (force_type == BOOK_DESTRUCTION
-               || (random() % 7000 <= many_many + 20 && many_many > 10
+               || (random2(7000) <= many_many + 20 && many_many > 10
                   && force_type == 250))
             {
                mitm.sub_type[bp] = BOOK_DESTRUCTION;
@@ -5269,28 +5270,28 @@
 
          // skill manuals - also rare
             if (force_type == BOOK_MANUAL
-               || (random() % 4000 <= many_many + 20 && many_many > 6
+               || (random2(4000) <= many_many + 20 && many_many > 6
                   && force_type == 250))
             {
                mitm.sub_type[bp] = BOOK_MANUAL;
-               mitm.pluses[bp] = random3(19);
-               if (random3(4) == 0)
-                  mitm.pluses[bp] = 25 + random3(12);
+               mitm.pluses[bp] = random2(19);
+               if (random2(4) == 0)
+                  mitm.pluses[bp] = 25 + random2(12);
             }
             break;
 
          case OBJ_STAVES:
-            mitm.sub_type[bp] = random3(10);
-            if (random3(5) == 0)
-               mitm.sub_type[bp] = 10 + random3(9);
-            if (random3(15) == 0)
-               mitm.sub_type[bp] = 25 + random3(3);
+            mitm.sub_type[bp] = random2(10);
+            if (random2(5) == 0)
+               mitm.sub_type[bp] = 10 + random2(9);
+            if (random2(15) == 0)
+               mitm.sub_type[bp] = 25 + random2(3);
 
-            if (mitm.sub_type[bp] >= 12 && mitm.sub_type[bp] <= 15 && random3(3) == 0)
-               mitm.sub_type[bp] = random3(6);
+            if (mitm.sub_type[bp] >= 12 && mitm.sub_type[bp] <= 15 && random2(3) == 0)
+               mitm.sub_type[bp] = random2(6);
             if (force_type != 250)
                mitm.sub_type[bp] = force_type;
-            mitm.special[bp] = random3(9);
+            mitm.special[bp] = random2(9);
             if (mitm.sub_type[bp] >= 10)
             {
                mitm.pluses[bp] = 127;
@@ -5349,21 +5350,21 @@
             break;
 
          case OBJ_MISCELLANY:
-            mitm.sub_type[bp] = random3(6);
+            mitm.sub_type[bp] = random2(6);
 
-            if (random3(6) == 0)
-               mitm.sub_type[bp] = MISC_BOX_OF_BEASTS + random3(10);
+            if (random2(6) == 0)
+               mitm.sub_type[bp] = MISC_BOX_OF_BEASTS + random2(10);
 
             if (mitm.sub_type[bp] == MISC_RUNE_OF_ZOT)
                mitm.sub_type[bp] = MISC_CRYSTAL_BALL_OF_FIXATION;
 
             if (mitm.sub_type[bp] == MISC_DECK_OF_POWER)
-               if (random3(4) == 0)
+               if (random2(4) == 0)
                   mitm.sub_type[bp] = MISC_DECK_OF_POWER;
                else
                   mitm.sub_type[bp] = MISC_DECK_OF_TRICKS;
 
-            if (random3(20) == 0)
+            if (random2(20) == 0)
                mitm.sub_type[bp] = MISC_DECK_OF_SUMMONINGS;
 
             if (force_type != 250)
@@ -5372,10 +5373,10 @@
             if (mitm.sub_type[bp] == MISC_DECK_OF_WONDERS
                || mitm.sub_type[bp] == MISC_DECK_OF_SUMMONINGS
                || mitm.sub_type[bp] == MISC_DECK_OF_POWER)
-               mitm.pluses[bp] = 4 + random3(10);
+               mitm.pluses[bp] = 4 + random2(10);
 
             if (mitm.sub_type[bp] == MISC_DECK_OF_TRICKS)
-               mitm.pluses[bp] = 6 + random3(8) + random3(8);
+               mitm.pluses[bp] = 6 + random2(8) + random2(8);
 
             if (mitm.sub_type[bp] == MISC_RUNE_OF_ZOT)
             {
@@ -5392,7 +5393,7 @@
 
          default:                    // money - class = 15
             mitm.base_type[bp] = 15;
-            quant = random3(10) + random3(10) + 1 + random3(many_many);     // + random3(many_many) + random3(many_many);
+            quant = random2(10) + random2(10) + 1 + random2(many_many);     // + random2(many_many) + random2(many_many);
 
             break;
       }
@@ -5409,8 +5410,8 @@
       {
          do
          {
-            mitm.x[bp] = random3(80);
-            mitm.y[bp] = random3(70);
+            mitm.x[bp] = random2(80);
+            mitm.y[bp] = random2(70);
          }
          while (grd[mitm.x[bp]][mitm.y[bp]] != 67);
       }
@@ -5437,10 +5438,10 @@
       char lordx = 0;
       char lordy = 0;
 
-      room_x1 = random3(55) + 8;
-      room_y1 = random3(45) + 8;
-      room_x2 = room_x1 + random3(4) + 6;
-      room_y2 = room_y1 + random3(4) + 6;
+      room_x1 = random2(55) + 8;
+      room_y1 = random2(45) + 8;
+      room_x2 = room_x1 + random2(4) + 6;
+      room_y2 = room_y1 + random2(4) + 6;
 
 
       for (bcount_x = room_x1; bcount_x < room_x2; bcount_x++)
@@ -5477,11 +5478,11 @@
       }
 
 
-      spec_room_type = random3(4);
+      spec_room_type = random2(4);
 
-      if (many_many < 23 && random3(4) == 0)
+      if (many_many < 23 && random2(4) == 0)
          spec_room_type = 3;
-      if (many_many < 17 && random3(4) == 0)
+      if (many_many < 17 && random2(4) == 0)
          spec_room_type = 0;
       if (many_many > 17 && spec_room_type == 1)
          spec_room_type = 0;
@@ -5500,7 +5501,7 @@
                   if (bno_mons > 80)
                      return;
 
-                  if (random3(4) == 0)
+                  if (random2(4) == 0)
                      continue;
 
                   for (bk = 0; bk < 85; bk++)
@@ -5576,7 +5577,7 @@
                   }               // end of switch (many_many)
 
 
-                  menv[bk].type = mons_alloc[random3(10)];
+                  menv[bk].type = mons_alloc[random2(10)];
                   define_monster(bk, menv);
 
                   menv[bk].x = bcount_x;
@@ -5598,8 +5599,8 @@
 
          case 1:                     // kobold lair
 
-            lordx = x1 + random3(x2 - x1);
-            lordy = y1 + random3(y2 - y1);
+            lordx = x1 + random2(x2 - x1);
+            lordy = y1 + random2(y2 - y1);
 
             for (bcount_x = x1; bcount_x < x2; bcount_x++)
             {
@@ -5608,7 +5609,7 @@
                   if (bno_mons > 80)
                      return;
 
-                  if (random3(4) == 0)
+                  if (random2(4) == 0)
                      continue;
 
                   for (bk = 0; bk < 85; bk++)
@@ -5683,7 +5684,7 @@
 
                   }               // end of switch (many_many)
 
-                  menv[bk].type = mons_alloc[random3(10)];
+                  menv[bk].type = mons_alloc[random2(10)];
 
                   if (bcount_x == lordx && bcount_y == lordy)     // && many_many < 7
 
@@ -5719,7 +5720,7 @@
                for (bcount_y = y1; bcount_y < y2; bcount_y++)
                {
 
-                  switch (random3(11))
+                  switch (random2(11))
                   {
                      case 9:
                      case 0:
@@ -5816,7 +5817,7 @@
 
          //                      if (no_it > 200) return;
 
-            if (random3(2) == 0)
+            if (random2(2) == 0)
                continue;
 
             for (bp = 0; bp < 210; bp++)
@@ -5830,7 +5831,7 @@
             mitm.base_type[bp] = 4;
 
             mitm.sub_type[bp] = 5;
-            if (random3(25) == 0)
+            if (random2(25) == 0)
                mitm.sub_type[bp] = 6;  // royal jelly
 
             quant = 1;
@@ -5868,7 +5869,7 @@
                   break;
             }
 
-            switch (random3(6))
+            switch (random2(6))
             {
                case 0:
                   menv[bk].type = 11;
@@ -5942,7 +5943,7 @@
                   break;
             }
 
-            switch (random3(6))
+            switch (random2(6))
             {
 
                case 0:
@@ -5951,7 +5952,7 @@
                //                      case 3:
                   menv[bk].type = 25;
                   define_zombie(3, 250, 250);
-                //menv [bk].number = random3(2);
+                //menv [bk].number = random2(2);
                   break;
 
                case 3:
@@ -5967,7 +5968,7 @@
 
                case 5:
                   menv[bk].type = 48;
-                  if (random3(4) == 0)
+                  if (random2(4) == 0)
                      menv[bk].type = 47;
                   define_monster(bk, menv);
                   break;
@@ -6001,7 +6002,7 @@
       {
          do
          {
-            menv[bk].number = random3(80);
+            menv[bk].number = random2(80);
          }
          while (mons_zombie_size(menv[bk].number) == 0 || mons_zombie_size(menv[bk].number) == not_zombsize || (cs > 100 && mons_skeleton(menv[bk].number) == 0));
 
@@ -6085,29 +6086,29 @@
    grolko:
       if (bkout > 100)
          return;
-      rd = random3(4);
+      rd = random2(4);
       switch (rd)
       {
          case 0:
-            cx = x1 + (random3(x2 - x1));
+            cx = x1 + (random2(x2 - x1));
             cy = y1;
             dx = 0;
             dy = -1;
             break;
          case 1:
-            cx = x1 + (random3(x2 - x1));
+            cx = x1 + (random2(x2 - x1));
             cy = y2;
             dx = 0;
             dy = 1;
             break;
          case 2:
-            cy = y1 + (random3(y2 - y1));
+            cy = y1 + (random2(y2 - y1));
             cx = x1;
             dx = -1;
             dy = 0;
             break;
          case 3:
-            cy = y1 + (random3(y2 - y1));
+            cy = y1 + (random2(y2 - y1));
             cx = x2;
             dx = 1;
             dy = 0;
@@ -6206,7 +6207,7 @@
       mitm.x[bp] = 1;
       mitm.y[bp] = 1;
 
-      if (menv[bk].type == 144 && you.where_are_you == 16 && random3(3) == 0)
+      if (menv[bk].type == 144 && you.where_are_you == 16 && random2(3) == 0)
          give_level = 351;
 
    /* dancing weapon in the Hall of Blades */
@@ -6214,11 +6215,11 @@
       {
          case MONS_KOBOLD:              // kobold
          case MONS_BIG_KOBOLD:
-            if (random3(5) < 3)     // < 1) // give hand weapon
+            if (random2(5) < 3)     // < 1) // give hand weapon
             {
                mitm.base_type[bp] = 0;
                mitm.colour[bp] = 11;
-               switch (random3(5))
+               switch (random2(5))
                {
                   case 0:
                      mitm.sub_type[bp] = WPN_CLUB;
@@ -6235,13 +6236,13 @@
                      break;
                }
             }
-            else if (random3(5) < 2)
+            else if (random2(5) < 2)
             {
                force_spec = 100;
                mitm.base_type[bp] = 1;
                mitm.sub_type[bp] = 3;
                mitm.colour[bp] = 11;
-               iquan = random3(5) + 1;
+               iquan = random2(5) + 1;
             }
             else
                goto give_armour;   //return;
@@ -6249,10 +6250,10 @@
             break;
 
          case MONS_HOBGOBLIN:   // hobgoblin
-            if (random() % 3 == 0)
+            if (random2(3) == 0)
                force_spec = 3;
 
-            if (random3(5) < 3)     // < 2 // give hand weapon
+            if (random2(5) < 3)     // < 2 // give hand weapon
             {
                mitm.base_type[bp] = 0;
                mitm.sub_type[bp] = 0;
@@ -6265,16 +6266,16 @@
 
          case MONS_GOBLIN:                     // goblin
 
-            if (random() % 3 == 0)
+            if (random2(3) == 0)
                force_spec = 3;
 
          case MONS_JESSICA:                   // Jessica
          case MONS_IJYB:                   // Ijyb
-            if (random3(5) < 3)     // < 1 // give hand weapon
+            if (random2(5) < 3)     // < 1 // give hand weapon
             {
                mitm.base_type[bp] = 0;
                mitm.colour[bp] = 11;
-               switch (random3(2))
+               switch (random2(2))
                {
                   case 0:
                      mitm.sub_type[bp] = WPN_CLUB;
@@ -6295,19 +6296,19 @@
          case MONS_NORRIS:                   // Norris
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
-            if (random3(6) == 0)
-               mitm.sub_type[bp] = WPN_AXE + random3(4);
+            if (random2(6) == 0)
+               mitm.sub_type[bp] = WPN_AXE + random2(4);
             else
-               mitm.sub_type[bp] = 1 + random3(12);
+               mitm.sub_type[bp] = 1 + random2(12);
 
-            if (random3(2) == 0)
+            if (random2(2) == 0)
             {
-               mitm.pluses[bp] += random3(3) + 1;
-               if (random3(10) == 0)
+               mitm.pluses[bp] += random2(3) + 1;
+               if (random2(10) == 0)
                   mitm.special[bp] = 2;
             }
 
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.pluses[bp] += 100;
 
             break;
@@ -6320,12 +6321,12 @@
          case MONS_DUANE:                   // Duane
             force_spec = 100;
 
-            if (random3(5) < 4)
+            if (random2(5) < 4)
             {
                mitm.base_type[bp] = 0;
                mitm.colour[bp] = 11;
 
-               switch (random3(5))
+               switch (random2(5))
                {
                   case 0:
                      mitm.sub_type[bp] = WPN_FLAIL;
@@ -6349,42 +6350,42 @@
             force_spec = 3;
 
          case MONS_TERENCE:                   // Terence
-            if (random3(5) < 4)
+            if (random2(5) < 4)
             {
                mitm.base_type[bp] = 0;
                mitm.colour[bp] = 11;
-               switch (random3(8))
+               switch (random2(8))
                {
                   case 0:
-                     if (random3(10) == 0)
+                     if (random2(10) == 0)
                         mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
                      else
                         mitm.sub_type[bp] = WPN_FLAIL;
                      break;
 
                   case 1:
-                     if (random3(3) == 0)
+                     if (random2(3) == 0)
                         mitm.sub_type[bp] = WPN_MORNINGSTAR;
                      else
                         mitm.sub_type[bp] = WPN_MACE;
                      break;
 
                   case 2:
-                     if (random3(3) == 0)
+                     if (random2(3) == 0)
                         mitm.sub_type[bp] = WPN_SCIMITAR;
                      else
                         mitm.sub_type[bp] = WPN_SHORT_SWORD;
                      break;
 
                   case 3:
-                     if (random3(5) == 0)
+                     if (random2(5) == 0)
                         mitm.sub_type[bp] = WPN_AXE;
                      else
                         mitm.sub_type[bp] = WPN_HAND_AXE;
                      break;
 
                   case 4:
-                     if (random3(3) == 0)
+                     if (random2(3) == 0)
                         mitm.sub_type[bp] = WPN_TRIDENT;
                      else
                         mitm.sub_type[bp] = WPN_HALBERD;
@@ -6399,7 +6400,7 @@
                      break;
 
                   case 7:
-                     if (random3(3) == 0)
+                     if (random2(3) == 0)
                         mitm.sub_type[bp] = WPN_WHIP;
                      else
                         mitm.sub_type[bp] = WPN_HAMMER;
@@ -6421,7 +6422,7 @@
          case MONS_DEEP_ELF_HIGH_PRIEST:              // deep elf high priest
             force_spec = 1;
             mitm.base_type[bp] = 0;
-            switch (random3(8))
+            switch (random2(8))
             {
                case 0:
                   mitm.sub_type[bp] = WPN_BOW;
@@ -6456,7 +6457,7 @@
          case MONS_DEEP_ELF_DEATH_MAGE:             // deep elf death mage
             force_spec = 1;
             mitm.base_type[bp] = 0;
-            switch (random3(2))
+            switch (random2(2))
             {
                case 0:
                   mitm.sub_type[bp] = WPN_SABRE;
@@ -6498,10 +6499,10 @@
          case MONS_SKELETAL_WARRIOR: // skeletal warrior
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
-            switch (random3(12))
+            switch (random2(12))
             {
                case 0:
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                      mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
                   else
                      mitm.sub_type[bp] = WPN_FLAIL;
@@ -6531,7 +6532,7 @@
                   mitm.sub_type[bp] = WPN_GLAIVE;
                   break;
                case 9:
-                  if (random3(10) == 0)
+                  if (random2(10) == 0)
                      mitm.sub_type[bp] = WPN_BROAD_AXE;
                   else
                      mitm.sub_type[bp] = WPN_AXE;
@@ -6556,7 +6557,7 @@
          case MONS_VAMPIRE_KNIGHT:   // vampire knight
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = LIGHTCYAN;
-            switch (random3(6))
+            switch (random2(6))
             {
                case 0:
                   mitm.sub_type[bp] = WPN_LONG_SWORD;
@@ -6571,13 +6572,13 @@
                   break;              // battleaxe
 
                case 3:
-                  if (random3(2) == 0) mitm.sub_type[bp] = WPN_GREAT_MACE;
+                  if (random2(2) == 0) mitm.sub_type[bp] = WPN_GREAT_MACE;
                   else mitm.sub_type[bp] = WPN_GREAT_FLAIL;
                   break;
 
                case 4:
-                  if (random3(2) == 0) mitm.sub_type[bp] = WPN_GLAIVE;
-                  else if (random3(2) == 0) mitm.sub_type[bp] = WPN_HALBERD;
+                  if (random2(2) == 0) mitm.sub_type[bp] = WPN_GLAIVE;
+                  else if (random2(2) == 0) mitm.sub_type[bp] = WPN_HALBERD;
                   else mitm.sub_type[bp] = WPN_BROAD_AXE;
                   break;
 
@@ -6587,8 +6588,8 @@
 
             }
 
-            if (random3(3) == 0)
-               mitm.pluses[bp] += random3(4);
+            if (random2(3) == 0)
+               mitm.pluses[bp] += random2(4);
 
             break;
 
@@ -6598,7 +6599,7 @@
             mitm.base_type[bp] = 1;
             mitm.sub_type[bp] = 5;
             mitm.colour[bp] = LIGHTGREY;
-            iquan = random3(3) + 1;
+            iquan = random2(3) + 1;
             break;
 
 
@@ -6613,14 +6614,14 @@
             mitm.colour[bp] = BROWN;
             mitm.sub_type[bp] = WPN_GIANT_CLUB; // giant club
 
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.sub_type[bp] = WPN_GIANT_SPIKED_CLUB;
 
-            if (random3(10) == 0)
+            if (random2(10) == 0)
             {
                mitm.colour[bp] = LIGHTCYAN;
 
-               if (random3(10) == 0)
+               if (random2(10) == 0)
                   mitm.sub_type[bp] = WPN_GREAT_FLAIL;
                else
                   mitm.sub_type[bp] = WPN_GREAT_MACE;
@@ -6647,14 +6648,14 @@
             break;
 
          case MONS_RED_DEVIL:
-            if (random3(3) != 0)
+            if (random2(3) != 0)
             {
                force_spec = 100;
                mitm.base_type[bp] = OBJ_WEAPONS;
-               if (random3(3) == 0)
+               if (random2(3) == 0)
                {
                   mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
-                  mitm.colour[bp] = 1 + random3(15);
+                  mitm.colour[bp] = 1 + random2(15);
                }
                else
                {
@@ -6673,14 +6674,14 @@
             mitm.colour[bp] = BROWN;
             mitm.sub_type[bp] = WPN_GIANT_CLUB; // giant club
 
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.sub_type[bp] = WPN_GIANT_SPIKED_CLUB;
 
-            if (random3(10) == 0)
+            if (random2(10) == 0)
             {
                mitm.colour[bp] = LIGHTCYAN;
 
-               if (random3(10) == 0)
+               if (random2(10) == 0)
                   mitm.sub_type[bp] = WPN_GREAT_FLAIL;
                else
                   mitm.sub_type[bp] = WPN_GREAT_MACE;
@@ -6713,8 +6714,8 @@
             mitm.base_type[bp] = 0;
             mitm.sub_type[bp] = WPN_SCIMITAR;
             mitm.special[bp] = 1;
-            mitm.pluses[bp] = 50 + random3(5);
-            mitm.pluses2[bp] = 50 + random3(5);
+            mitm.pluses[bp] = 50 + random2(5);
+            mitm.pluses2[bp] = 50 + random2(5);
             mitm.colour[bp] = RED;
             iquan = 1;
             force_item = 1;
@@ -6723,9 +6724,9 @@
          case MONS_ANGEL:                    // Angel
             mitm.base_type[bp] = 0;
 
-            if (random3(3) == 0)
+            if (random2(3) == 0)
             {
-               if (random3(3) == 0)
+               if (random2(3) == 0)
                   mitm.sub_type[bp] = WPN_GREAT_MACE;
                else
                   mitm.sub_type[bp] = WPN_MACE;
@@ -6738,8 +6739,8 @@
                mitm.special[bp] = 60;      /* glowing */
             }
 
-            mitm.pluses[bp] = 51 + random3(3);
-            mitm.pluses2[bp] = 51 + random3(3);
+            mitm.pluses[bp] = 51 + random2(3);
+            mitm.pluses2[bp] = 51 + random2(3);
 
             mitm.colour[bp] = WHITE;
             iquan = 1;
@@ -6749,10 +6750,10 @@
          case MONS_DAEVA:                   // Daeva
             mitm.base_type[bp] = 0;
             mitm.sub_type[bp] = WPN_LONG_SWORD;
-            if (random3(4) == 0) mitm.sub_type[bp] = WPN_GREAT_SWORD;
+            if (random2(4) == 0) mitm.sub_type[bp] = WPN_GREAT_SWORD;
             mitm.special[bp] = 63;  /* glowing, holy wrath */
-            mitm.pluses[bp] = 51 + random3(3);
-            mitm.pluses2[bp] = 51 + random3(3);
+            mitm.pluses[bp] = 51 + random2(3);
+            mitm.pluses2[bp] = 51 + random2(3);
             mitm.colour[bp] = WHITE;
             iquan = 1;
             force_item = 1;
@@ -6765,42 +6766,42 @@
             mitm.base_type[bp] = 0;
 
          // longsword, great sword, scimitar
-            mitm.sub_type[bp] = WPN_LONG_SWORD + random3(3);
+            mitm.sub_type[bp] = WPN_LONG_SWORD + random2(3);
 
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_HALBERD;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_GLAIVE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_GREAT_MACE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_BATTLEAXE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_AXE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_BROAD_AXE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_DEMON_BLADE;
-            if (random3(7) == 0)
+            if (random2(7) == 0)
                mitm.sub_type[bp] = WPN_DEMON_WHIP;
 
-            mitm.special[bp] = 30 * random3(3);
-            if (random3(5) == 0)
+            mitm.special[bp] = 30 * random2(3);
+            if (random2(5) == 0)
                mitm.special[bp] += 1;
-            if (random3(5) == 0)
+            if (random2(5) == 0)
                mitm.special[bp] += 8;
-            if (random3(5) == 0)
+            if (random2(5) == 0)
                mitm.special[bp] += 10;
 
-            mitm.pluses[bp] += random3(6);
-            mitm.pluses2[bp] = 50 + random3(6);
+            mitm.pluses[bp] += random2(6);
+            mitm.pluses2[bp] = 50 + random2(6);
 
             mitm.colour[bp] = RED;
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.colour[bp] = DARKGREY;
-            if (random3(5) == 0)
+            if (random2(5) == 0)
                mitm.colour[bp] = CYAN;
 
             iquan = 1;
@@ -6814,9 +6815,9 @@
             mitm.pluses[bp] = 50;
             mitm.pluses2[bp] = 50;
             mitm.colour[bp] = RED;
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.colour[bp] = DARKGREY;
-            if (random3(5) == 0)
+            if (random2(5) == 0)
                mitm.colour[bp] = CYAN;
             iquan = 1;
             force_item = 1;
@@ -6829,7 +6830,7 @@
             mitm.pluses[bp] = 50;
             mitm.pluses2[bp] = 50;
             mitm.colour[bp] = CYAN;
-            if (random3(3) == 0)
+            if (random2(3) == 0)
                mitm.colour[bp] = WHITE;
             iquan = 1;
             force_item = 1;
@@ -6982,7 +6983,7 @@
          }
 
          mitm.colour[bp] = LIGHTCYAN;
-         iquan = 3 + random3(10) + random3(7);
+         iquan = 3 + random2(10) + random2(7);
 
          mitm.special[bp] = (mitm.special[menv[bk].inv[0]] / 30) * 30;
 
@@ -7069,11 +7070,11 @@
          case 297:                   // Jozef
 
             iquan = 1;
-            if (random3(5) < 2)
+            if (random2(5) < 2)
             {
                mitm.base_type[bp] = 2;
                mitm.colour[bp] = 11;
-               switch (random3(8))
+               switch (random2(8))
                {
                   case 0:
                      mitm.sub_type[bp] = 1;  //break;
@@ -7123,7 +7124,7 @@
 
             mitm.base_type[bp] = 2;
             mitm.colour[bp] = 11;
-            switch (random3(8))
+            switch (random2(8))
             {
                case 0:
                   mitm.sub_type[bp] = 1;
@@ -7175,7 +7176,7 @@
 
             mitm.base_type[bp] = 2;
             mitm.colour[bp] = 11;
-            mitm.sub_type[bp] = 4 + random3(4);
+            mitm.sub_type[bp] = 4 + random2(4);
             iquan = 1;
             break;
 
@@ -7197,7 +7198,7 @@
 
          case 261:                   // naga warrior
 
-            if (random3(3) != 0)
+            if (random2(3) != 0)
                return;
          case 368:
          case 53:                    // kobold demonologist
@@ -7213,7 +7214,7 @@
             force_spec = 100;
             mitm.base_type[bp] = 2;
             mitm.sub_type[bp] = 0;
-            mitm.colour[bp] = 1 + random3(15);
+            mitm.colour[bp] = 1 + random2(15);
             iquan = 1;
             break;
 
@@ -7334,7 +7335,7 @@
                      mitm.colour[bp] = DARKGREY;
                      break;
                   case NWPN_MACE_OF_VARIABILITY:
-                     mitm.colour[bp] = random3(15) + 1;
+                     mitm.colour[bp] = random2(15) + 1;
                      break;
                   case NWPN_GLAIVE_OF_PRUNE:
                      mitm.colour[bp] = MAGENTA;
@@ -7391,7 +7392,7 @@
                case WPN_DEMON_BLADE:
                case WPN_DEMON_WHIP:
                case WPN_DEMON_TRIDENT:
-                  mitm.colour[bp] = random3(15) + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;
 
                default:
@@ -7402,8 +7403,8 @@
                   break;
             }
 
-            if (random3(5) == 0 && mitm.special[bp] % 30 >= 25)
-               mitm.colour[bp] = random3(15) + 1;
+            if (random2(5) == 0 && mitm.special[bp] % 30 >= 25)
+               mitm.colour[bp] = random2(15) + 1;
             break;
 
          case OBJ_MISSILES:
@@ -7417,7 +7418,7 @@
                case 10:
                   mitm.colour[bp] = LIGHTCYAN;
                   if (mitm.pluses2[bp] >= 2)
-                     mitm.colour[bp] = random3(15) + 1;
+                     mitm.colour[bp] = random2(15) + 1;
                   break;
 
                default:
@@ -7435,14 +7436,14 @@
             {
                case ARM_ROBE:
                case ARM_CLOAK:
-                  mitm.colour[bp] = random3(15) + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;
 
                case ARM_HELMET:
                   if (mitm.pluses2[bp] == 2 || mitm.pluses2[bp] == 3)
                   {
                   // caps and wizard's hats are random coloured
-                     mitm.colour[bp] = random3(15) + 1;
+                     mitm.colour[bp] = random2(15) + 1;
                   }
                   else
                   {
@@ -7511,8 +7512,8 @@
                   break;
             }
 
-            if (random3(5) == 0 && mitm.special[bp] % 30 >= 25)
-               mitm.colour[bp] = random3(15) + 1;
+            if (random2(5) == 0 && mitm.special[bp] % 30 >= 25)
+               mitm.colour[bp] = random2(15) + 1;
             break;
 
          case OBJ_WANDS:
@@ -7566,7 +7567,7 @@
                case 11:                //strcpy(fake_name [bp], "plastic wand");
                //              mitm.colour [bp] = DARKGREY;  break;
 
-                  mitm.colour[bp] = random3(15) + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;
             }                       // end of switch(randnum)
 
@@ -7663,7 +7664,7 @@
                   break;              //strcpy(fake_name [bp], "pear"); break;
 
                case FOOD_APPLE:
-                  switch (random3(2))
+                  switch (random2(2))
                   {
                      case 0:
                         mitm.colour[bp] = GREEN;
@@ -7720,7 +7721,7 @@
                   break;              // lemon
 
                case FOOD_GRAPE:
-                  switch (random3(2))
+                  switch (random2(2))
                   {
                      case 0:
                         mitm.colour[bp] = GREEN;
@@ -7762,7 +7763,7 @@
 
             if (mitm.special[bp] == 200)
             {
-               mitm.colour[bp] = 1 + random3(15);
+               mitm.colour[bp] = 1 + random2(15);
                break;
             }
             if (mitm.special[bp] == 201)
@@ -7865,7 +7866,7 @@
                      mitm.colour[bp] = GREEN;        //"jade amulet
 
                   case 13:
-                     mitm.colour[bp] = random() % 15 + 1;    //"plastic amulet
+                     mitm.colour[bp] = random2(15) + 1;    //"plastic amulet
 
                }
 
@@ -7890,12 +7891,12 @@
             {
                case 0:         //strcat(glog , "paperback book");
                case 1:         //strcat(glog , "hardcover book");
-                  mitm.colour[bp] = random3(15) + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;
 
                case 2:
                   mitm.colour[bp] = DARKGREY;  //strcat(glog , "leatherbound book");
-                  if (random3(3) == 0)
+                  if (random2(3) == 0)
                      mitm.colour[bp] = BROWN;
                   break;
 
@@ -7986,7 +7987,7 @@
 
                case 9:
                case 8:
-                  mitm.colour[bp] = random() % 15 + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;              // cards
 
                case 10:
@@ -8010,7 +8011,7 @@
                   break;              // rune of Zot
 
                default:
-                  mitm.colour[bp] = random() % 15 + 1;
+                  mitm.colour[bp] = random2(15) + 1;
                   break;
             }
             break;
@@ -8028,7 +8029,7 @@
    void place_traps(void)
    {
 
-      int num_traps = random3(5) + random3(5);
+      int num_traps = random2(5) + random2(5);
 
       for (bi = 0; bi < num_traps; bi++)
       {
@@ -8038,29 +8039,29 @@
 
          do
          {
-            env.trap_x[bi] = random3(60) + 10;
-            env.trap_y[bi] = random3(50) + 10;
+            env.trap_x[bi] = random2(60) + 10;
+            env.trap_y[bi] = random2(50) + 10;
          }
          while (grd[env.trap_x[bi]][env.trap_y[bi]] != 67);
 
          env.trap_type[bi] = 0;
 
-         if (random3(many_many + 1) > 1)
+         if (random2(many_many + 1) > 1)
             env.trap_type[bi] = 1;      /* arrow */
-         if (random3(many_many + 1) > 3)
+         if (random2(many_many + 1) > 3)
             env.trap_type[bi] = 2;      /* spear */
-         if (random3(many_many + 1) > 5)
+         if (random2(many_many + 1) > 5)
             env.trap_type[bi] = 3;      /* axe */
-         if (random3(many_many + 1) > 7)
+         if (random2(many_many + 1) > 7)
             env.trap_type[bi] = 7;      /* bolt trap */
-         if (random3(many_many + 1) > 11)
+         if (random2(many_many + 1) > 11)
             env.trap_type[bi] = 6;      // blade - nasty!
 
-         if ((random3(many_many + 1) > 14 && random3(3) == 0) || (you.where_are_you == 17 && random3(2) == 0))
+         if ((random2(many_many + 1) > 14 && random2(3) == 0) || (you.where_are_you == 17 && random2(2) == 0))
             env.trap_type[bi] = 8;      /* Zot trap */
-         if (random3(20) == 0)
+         if (random2(20) == 0)
             env.trap_type[bi] = 4;
-         if (random3(40) == 0)
+         if (random2(40) == 0)
             env.trap_type[bi] = 5;
 
          grd[env.trap_x[bi]][env.trap_y[bi]] = 78;
@@ -8175,11 +8176,11 @@
 
          // rooms:
 
-            rox1[cn] = bcount_x * 13 + random3(4) + 8;
-            roy1[cn] = bcount_y * 11 + random3(4) + 8;
+            rox1[cn] = bcount_x * 13 + random2(4) + 8;
+            roy1[cn] = bcount_y * 11 + random2(4) + 8;
 
-            rox2[cn] = rox1[cn] + random3(8) + 3;
-            roy2[cn] = roy1[cn] + random3(6) + 3;
+            rox2[cn] = rox1[cn] + random2(8) + 3;
+            roy2[cn] = roy1[cn] + random2(6) + 3;
 
             cn++;
 
@@ -8204,14 +8205,14 @@
          }                       // end of for bcount_x
 
          if (rox2[bi] - rox1[bi] > 5 && roy2[bi] - roy1[bi] > 5)
-            if (random3(100 - many_many) < 3)
+            if (random2(100 - many_many) < 3)
             {
-               if (random3(4) != 0)
-                  box_room(rox1[bi] + 2, rox2[bi] - 2, roy1[bi] + 2, roy2[bi] - 2, random3(2) + 1);
+               if (random2(4) != 0)
+                  box_room(rox1[bi] + 2, rox2[bi] - 2, roy1[bi] + 2, roy2[bi] - 2, random2(2) + 1);
                else
                   box_room(rox1[bi] + 2, rox2[bi] - 2, roy1[bi] + 2, roy2[bi] - 2, 4);
 
-               if (random3(2) == 0)
+               if (random2(2) == 0)
                   treasure_area(many_many, rox1[bi] + 3, rox2[bi] - 3, roy1[bi] + 3, roy2[bi] - 3);
             }
       }                           // end of for i
@@ -8244,29 +8245,29 @@
                   last_room = bi - 1;
                   pos[0] = rox1[bi];      // - 1;
 
-                  pos[1] = roy1[bi] + random3(roy2[bi] - roy1[bi]);
+                  pos[1] = roy1[bi] + random2(roy2[bi] - roy1[bi]);
 
                   jpos[0] = rox2[last_room];      // + 1;
 
-                  jpos[1] = roy1[last_room] + random3(roy2[last_room] - roy1[last_room]);
+                  jpos[1] = roy1[last_room] + random2(roy2[last_room] - roy1[last_room]);
                   break;
 
                case 1:
                   last_room = bi - 5;
                   pos[1] = roy1[bi];      // - 1;
 
-                  pos[0] = rox1[bi] + random3(rox2[bi] - rox1[bi]);
+                  pos[0] = rox1[bi] + random2(rox2[bi] - rox1[bi]);
 
                   jpos[1] = roy2[last_room];      // + 1;
 
-                  jpos[0] = rox1[last_room] + random3(rox2[last_room] - rox1[last_room]);
+                  jpos[0] = rox1[last_room] + random2(rox2[last_room] - rox1[last_room]);
                   break;
 
             }                   // end of switch p
 
             while (pos[0] != jpos[0] || pos[1] != jpos[1])
             {
-               doing = random3(2);
+               doing = random2(2);
 
                if (pos[doing] < jpos[doing])
                   pos[doing]++;
@@ -8289,10 +8290,10 @@
       }                           // end of for p
 
 
-      if (many_many > 8 && random3(10) == 0)
+      if (many_many > 8 && random2(10) == 0)
       {
 
-         int spec_room_done = random3(25);
+         int spec_room_done = random2(25);
 
          x1 = rox1[spec_room_done];
          x2 = rox2[spec_room_done];
@@ -8335,7 +8336,7 @@
 
       }
 
-      for (bj = 0; bj < 3 + random3(2); bj++)
+      for (bj = 0; bj < 3 + random2(2); bj++)
       {
          for (bi = 0; bi < 2; bi++)
          {
@@ -8343,8 +8344,8 @@
 
             do
             {
-               pos[0] = random3(60) + 10;
-               pos[1] = random3(50) + 10;
+               pos[0] = random2(60) + 10;
+               pos[1] = random2(50) + 10;
             }
             while (grd[pos[0]][pos[1]] != 67);
 
@@ -8375,9 +8376,9 @@
       int y2 = 0;
       char pos[2];
 
-      if (random3(4) != 0)
+      if (random2(4) != 0)
       {
-         wall_type = 1 + random3(2);
+         wall_type = 1 + random2(2);
       }
       else
          wall_type = 4;
@@ -8401,36 +8402,36 @@
 
             xs = (bi * 13) + 8;
             ys = (bj * 14) + 8;
-            x1 = xs + random3(3) + random3(3);
-            y1 = ys + random3(3) + random3(3);
-            x2 = xs + 11 - random3(3) - random3(3);
-            y2 = ys + 11 - random3(3) - random3(3);
+            x1 = xs + random2(3) + random2(3);
+            y1 = ys + random2(3) + random2(3);
+            x2 = xs + 11 - random2(3) - random2(3);
+            y2 = ys + 11 - random2(3) - random2(3);
 
-            if (random3(7) != 0)
+            if (random2(7) != 0)
             {
-               if (random3(10) != 0)
+               if (random2(10) != 0)
                   box_room(x1, x2, y1, y2, wall_type);
-               else if (random3(4) != 0)
-                  box_room(x1, x2, y1, y2, random3(2) + 1);
+               else if (random2(4) != 0)
+                  box_room(x1, x2, y1, y2, random2(2) + 1);
                else
                   box_room(x1, x2, y1, y2, 4);
-               if (random3(8) == 0 && x2 - x1 > 2 && y2 - y1 > 2)
+               if (random2(8) == 0 && x2 - x1 > 2 && y2 - y1 > 2)
                   box_room(x1 + 2, x2 - 2, y1 + 2, y2 - 2, wall_type);
-               if (random3(4) == 0 && many_many != 59)
+               if (random2(4) == 0 && many_many != 59)
                   treasure_area(many_many, x1 + 3, x2 - 3, y1 + 3, y2 - 3);
             }
          }                       // end for j
 
       }                           // end for i
 
-      for (bj = 0; bj < 1 + random3(2); bj++)
+      for (bj = 0; bj < 1 + random2(2); bj++)
       {
          for (bi = 0; bi < 2; bi++)
          {
             do
             {
-               pos[0] = random3(60) + 10;
-               pos[1] = random3(50) + 10;
+               pos[0] = random2(60) + 10;
+               pos[1] = random2(50) + 10;
             }
             while (grd[pos[0]][pos[1]] != 67);
 
@@ -8469,40 +8470,40 @@
             grd[bx2][bcount_y] = wall_type;
       }                           // end bcount_y
 
-      if (random3(2) == 0)
+      if (random2(2) == 0)
       {
-         if (random3(2) == 0)
+         if (random2(2) == 0)
          {
-            grd[bx1][by1 + random3(by2 - by1 + 1)] = 3;
+            grd[bx1][by1 + random2(by2 - by1 + 1)] = 3;
          }                       // end if random
 
          else
-            grd[bx2][by1 + random3(by2 - by1 + 1)] = 3;
+            grd[bx2][by1 + random2(by2 - by1 + 1)] = 3;
 
       }                           // end if random
 
-      else if (random3(2) == 0)
-         grd[bx1 + random3(bx2 - bx1 + 1)][by1] = 3;
+      else if (random2(2) == 0)
+         grd[bx1 + random2(bx2 - bx1 + 1)][by1] = 3;
       else
-         grd[bx1 + random3(bx2 - bx1 + 1)][by2] = 3;
+         grd[bx1 + random2(bx2 - bx1 + 1)][by2] = 3;
 
-      if (random3(3) == 0)
+      if (random2(3) == 0)
       {
-         if (random3(2) == 0)
+         if (random2(2) == 0)
          {
-            grd[bx1][by1 + random3(by2 - by1 + 1)] = 3;
+            grd[bx1][by1 + random2(by2 - by1 + 1)] = 3;
          }                       // end if random
 
          else
-            grd[bx2][by1 + random3(by2 - by1 + 1)] = 3;
-      }                           // end if random3(3)
+            grd[bx2][by1 + random2(by2 - by1 + 1)] = 3;
+      }                           // end if random2(3)
 
-      if (random3(3))
+      if (random2(3))
       {
-         if (random3(2) == 0)
-            grd[bx1 + random3(by2 - by1 + 1)][by1] = 3;
+         if (random2(2) == 0)
+            grd[bx1 + random2(by2 - by1 + 1)][by1] = 3;
          else
-            grd[bx1 + random3(bx2 - bx1 + 1)][by2] = 3;
+            grd[bx1 + random2(bx2 - bx1 + 1)][by2] = 3;
       }
 
    }                               // end box_room
@@ -8515,13 +8516,6 @@
 
 
 
-
-   int random3(unsigned int rmax)
-   {
-      if (rmax == 0)
-         return 0;
-      return (random() % rmax);
-   }
 
 
 
@@ -8583,18 +8577,18 @@
       char going_y = 0;
       unsigned char traps_put2 = 0;
 
-      if (random3(2) == 0)
+      if (random2(2) == 0)
          going_x = 1;
       else
          going_y = 1;
 
-      if (random3(2) == 0)
+      if (random2(2) == 0)
       {
          start_point_x = 70;
          if (going_x == 1)
             going_x = -1;
       }
-      if (random3(2) == 0)
+      if (random2(2) == 0)
       {
          start_point_y = 60;
          if (going_y == 1)
@@ -8609,7 +8603,7 @@
 
    do_x:                   // if (going_x != 0)
       traps_put2 = 0;
-      clear_space = 0;            //random3(2) + 2;
+      clear_space = 0;            //random2(2) + 2;
 
       do
       {
@@ -8642,7 +8636,7 @@
 
       clear_space = 1;
    // do_2 = 0 is the problem
-      if (random3(2) == 0)
+      if (random2(2) == 0)
       {
          clear_space = 0;
          do_2 = 0;
@@ -8719,14 +8713,14 @@
       goto do_x;
 
    finishing:
-      start_point_x = random3(60) + 10;
+      start_point_x = random2(60) + 10;
 
       int treasure_item = 0;
       int glopop = 0;
 
-      for (bcount_x = 0; bcount_x < 8 + random3(5) + random3(5); bcount_x++)
+      for (bcount_x = 0; bcount_x < 8 + random2(5) + random2(5); bcount_x++)
       {
-         switch (random3(11))
+         switch (random2(11))
          {
             case 9:
             case 0:
@@ -8787,9 +8781,9 @@
     // Turn rock walls into undiggable stone or metal
       unsigned char floory = DNGN_STONE_WALL;
 
-      if (random3(5) == 0)
+      if (random2(5) == 0)
          floory = DNGN_METAL_WALL;
-      if (random3(15) == 0)
+      if (random2(15) == 0)
          floory = 10;
 
       for (bcount_x = 0; bcount_x < 80; bcount_x++)
@@ -8800,7 +8794,7 @@
             {
                if (grd[bcount_x][bcount_y] == DNGN_ROCK_WALL)
                {
-                  if (random3(2))
+                  if (random2(2))
                      grd[bcount_x][bcount_y] = DNGN_STONE_WALL;
                   else
                      grd[bcount_x][bcount_y] = DNGN_METAL_WALL;
@@ -8821,7 +8815,7 @@
       int tcount = 0;
 
       if (spec_type == 100)
-         spec_type = random() % 9;
+         spec_type = random2(9);
 
 
       for (tcount = 0; tcount < NTRAPS; tcount++)
@@ -8854,10 +8848,10 @@
       char shop_place_y = 0;
       char force_stype = 100;
 
-      if (random3(5) == 0)
+      if (random2(5) == 0)
          no_shops = 1;
-      if (random3(25) == 0)
-         no_shops = random3(5);  //random3(5);
+      if (random2(25) == 0)
+         no_shops = random2(5);  //random2(5);
 
       if (no_shops == 0 || many_many <= 2)
          return;
@@ -8869,8 +8863,8 @@
          timeout = 0;
          do
          {
-            shop_place_x = random3(60) + 10;
-            shop_place_y = random3(50) + 10;
+            shop_place_x = random2(60) + 10;
+            shop_place_y = random2(50) + 10;
             timeout++;
             if (timeout > 20000)
                return;
@@ -8899,34 +8893,34 @@
             break;
       }
 
-      env.keeper_name[i][0] = random3(200) + 1;
-      env.keeper_name[i][1] = random3(200) + 1;
-      env.keeper_name[i][2] = random3(200) + 1;
+      env.keeper_name[i][0] = random2(200) + 1;
+      env.keeper_name[i][1] = random2(200) + 1;
+      env.keeper_name[i][2] = random2(200) + 1;
 
       env.sh_level[i] = many_many * 2;
 
       if (force_s_type == 100)
       {
-         env.sh_type[i] = random() % 12;
+         env.sh_type[i] = random2(12);
       }
       else
          env.sh_type[i] = force_s_type;
 
       if (env.sh_type[i] != 2 && env.sh_type[i] != 3 && env.sh_type[i] != 4)
-         env.sh_greed[i] = 10 + random3(5) + random3(many_many / 2);
+         env.sh_greed[i] = 10 + random2(5) + random2(many_many / 2);
       else
-         env.sh_greed[i] = 15 + random3(10) + random3(10) + random3(many_many);
+         env.sh_greed[i] = 15 + random2(10) + random2(10) + random2(many_many);
 
-      int plojy = 5 + random3(5) + random3(5) + random3(4);
+      int plojy = 5 + random2(5) + random2(5) + random2(4);
 
       for (j = 0; j < plojy; j++)
       {
          if (env.sh_type[i] != 2 && env.sh_type[i] != 3 && env.sh_type[i] != 4)
-            item_level = many_many + random() % ((many_many + 1) * 2);
+            item_level = many_many + random2( (many_many + 1) * 2 );
          else
-            item_level = many_many + random() % ((many_many + 1) * 3);
+            item_level = many_many + random2( (many_many + 1) * 3 );
 
-         if (random3(4) == 0)
+         if (random2(4) == 0)
             item_level = 351;
       //      orb = items(0, 1, item_in_shop(env.sh_type [i]), 250, 0, item_level, 250);
          orb = items(1, item_in_shop(env.sh_type[i]), 250, 0, item_level, 250);
@@ -8951,7 +8945,7 @@
       switch (shop_type)
       {
          case 0:
-            if (random() % 3 == 0)
+            if (random2(3) == 0)
                return 1;
             return 0;
          case 1:
@@ -8961,7 +8955,7 @@
          case 3:
             return 2;
          case 4:
-            return item_in_shop(random() % 10);
+            return item_in_shop(random2(10));
          case 5:
             return 7;
          case 6:
@@ -8975,7 +8969,7 @@
          case 10:
             return 6;
          case 11:
-            return item_in_shop(random() % 10);
+            return item_in_shop(random2(10));
 
       }
 
@@ -9013,9 +9007,9 @@
          {
             if (grd[cx][cy] != 67)
                continue;
-            if (random3(2) == 0)
+            if (random2(2) == 0)
                continue;
-            item_made = items(1, 250, 250, 1, random3(many_many * 2), 250);
+            item_made = items(1, 250, 250, 1, random2(many_many * 2), 250);
             mitm.x[item_made] = cx;
             mitm.y[item_made] = cy;
          }
@@ -9036,7 +9030,7 @@
          for (dy = 0; dy < 80; dy++)
          {
             if (((grd[dx - 1][dy] == 1) + (grd[dx + 1][dy] == 1) + (grd[dx][dy - 1] == 1) + (grd[dx][dy + 1] == 1)) >= 2)
-               if (grd[dx][dy] == 3 && random3(3) == 0)
+               if (grd[dx][dy] == 3 && random2(3) == 0)
                   grd[dx][dy] = 5;
          }
       }
@@ -9086,8 +9080,8 @@
                continue;
             do
             {
-               j = random3(60) + 10;
-               k = random3(50) + 10;
+               j = random2(60) + 10;
+               k = random2(50) + 10;
             }
             while (grd[j][k] != 1 && grd[j + 1][k] != 1);
             grd[j][k] = i;
@@ -9107,14 +9101,14 @@
       l = iterations;
 
       if (l == 0)
-         l = 200 + random3(1500);
+         l = 200 + random2(1500);
 
       for (i = 0; i < l; i++)
       {
          do
          {
-            j = random3(60) + 10;
-            k = random3(50) + 10;
+            j = random2(60) + 10;
+            k = random2(50) + 10;
          }
          while (grd[j][k] == 1 && grd[j - 1][k] == 1 && grd[j + 1][k] == 1 && grd[j][k - 1] == 1 && grd[j][k + 1] == 1 && grd[j - 2][k] == 1 && grd[j + 2][k] == 1 && grd[j][k - 2] == 1 && grd[j][k + 2] == 1);         // && grd [j - 1] [k - 1] == 1 && grd [j + 1] [k - 1] == 1 && grd [j + 1] [k + 1] == 1 && grd [j - 1] [k + 1] == 1);
 
@@ -9161,14 +9155,14 @@
 
       char pos[2];
 
-      for (bj = 0; bj < 3 + random3(2); bj++)
+      for (bj = 0; bj < 3 + random2(2); bj++)
       {
          for (bi = 0; bi < 2; bi++)
          {
             do
             {
-               pos[0] = random3(60) + 10;
-               pos[1] = random3(50) + 10;
+               pos[0] = random2(60) + 10;
+               pos[1] = random2(50) + 10;
             }
             while (grd[pos[0]][pos[1]] != 67);
 
@@ -9197,8 +9191,8 @@
       if (pool_y1 >= pool_y2 - 4)
          return;
 
-      left_edge = pool_x1 + 2 + random3(pool_x2 - pool_x1);
-      right_edge = pool_x2 - 2 - random3(pool_x2 - pool_x1);
+      left_edge = pool_x1 + 2 + random2(pool_x2 - pool_x1);
+      right_edge = pool_x2 - 2 - random2(pool_x2 - pool_x1);
 
 
       for (j = pool_y1 + 1; j < pool_y2 - 1; j++)
@@ -9208,14 +9202,14 @@
             if (i >= left_edge && i <= right_edge && grd[i][j] == 67)
                grd[i][j] = pool_type;
          }
-         if ((j - pool_y1 < (pool_y2 - pool_y1) / 2 || random3(4) == 0) && left_edge > pool_x1 + 1)
-            left_edge -= random3(3);
-         if ((j - pool_y1 < (pool_y2 - pool_y1) / 2 || random3(4) == 0) && right_edge < pool_x2 - 1)
-            right_edge += random3(3);
-         if ((j - pool_y1 >= (pool_y2 - pool_y1) / 2 || random3(4) == 0 || left_edge <= pool_x1 + 2) && left_edge < pool_x2 - 1)
-            left_edge += random3(3);
-         if ((j - pool_y1 >= (pool_y2 - pool_y1) / 2 || random3(4) == 0 || right_edge >= pool_x2 - 2) && right_edge > pool_x1 + 1)
-            right_edge -= random3(3);
+         if ((j - pool_y1 < (pool_y2 - pool_y1) / 2 || random2(4) == 0) && left_edge > pool_x1 + 1)
+            left_edge -= random2(3);
+         if ((j - pool_y1 < (pool_y2 - pool_y1) / 2 || random2(4) == 0) && right_edge < pool_x2 - 1)
+            right_edge += random2(3);
+         if ((j - pool_y1 >= (pool_y2 - pool_y1) / 2 || random2(4) == 0 || left_edge <= pool_x1 + 2) && left_edge < pool_x2 - 1)
+            left_edge += random2(3);
+         if ((j - pool_y1 >= (pool_y2 - pool_y1) / 2 || random2(4) == 0 || right_edge >= pool_x2 - 2) && right_edge > pool_x1 + 1)
+            right_edge -= random2(3);
 
       }
 
@@ -9228,7 +9222,7 @@
       int pools = 0;
       int i = 0, j = 0, k = 0, l = 0;
       int m = 0, n = 0;
-      int no_pools = 20 + random3(5) + random3(5);
+      int no_pools = 20 + random2(5) + random2(5);
       int timeout = 0;
 
       do
@@ -9236,10 +9230,10 @@
          timeout++;
          if (timeout >= 30000)
             break;
-         i = 10 + random3(50);
-         j = 10 + random3(40);
-         k = i + 4 + random3(8) + random3(7);
-         l = j + 4 + random3(8) + random3(7);
+         i = 10 + random2(50);
+         j = 10 + random2(40);
+         k = i + 4 + random2(8) + random2(7);
+         l = j + 4 + random2(8) + random2(7);
          for (m = i; m < k; m++)
          {
             for (n = j; n < l; n++)
@@ -9268,11 +9262,11 @@
       for (i = 0; i < 5; i++)
       {
          replaced[i] = 1;
-         if (random() % 3 == 0)
+         if (random2(3) == 0)
             replaced[i] = 2;
-         if (random() % 10 == 0)
+         if (random2(10) == 0)
             replaced[i] = 4;
-         if (random() % 1000 == 0)
+         if (random2(1000) == 0)
             replaced[i] = 3;
       }
 
@@ -9281,8 +9275,8 @@
       {
          for (j = 5; j < 65; j++)
          {
-            if (random() % 4 == 0)
-               grd[i][j] = replaced[random() % 5];
+            if (random2(4) == 0)
+               grd[i][j] = replaced[random2(5)];
             else
                grd[i][j] = 67;
          }
@@ -9322,7 +9316,7 @@
 
       unsigned char special_grid = 2;
 
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
          special_grid = 4;
 
    // do_stairs:
@@ -9332,7 +9326,7 @@
     // 3 - no stairs, do spotty
 
       if (force_plan == 0)
-         force_plan = random3(12) + 1;
+         force_plan = random2(12) + 1;
 
       switch (force_plan)
       {
@@ -9351,7 +9345,7 @@
             break;                  // city
 
          case 5:
-            if (random() % 9 != 0)
+            if (random2(9) != 0)
                do_stairs = plan_3();
             else
                do_stairs = plan_5();
@@ -9362,18 +9356,18 @@
       }
 
       if (do_stairs == 3 || do_stairs == 1)
-         spotty_level(1, 0, random() % 2);
+         spotty_level(1, 0, random2(2));
 
 
       if (do_stairs == 2 || do_stairs == 3)
-         for (bj = 0; bj < 3 + random3(2); bj++)
+         for (bj = 0; bj < 3 + random2(2); bj++)
          {
             for (bi = 0; bi < 2; bi++)
             {
                do
                {
-                  pos[0] = random3(60) + 10;
-                  pos[1] = random3(50) + 10;
+                  pos[0] = random2(60) + 10;
+                  pos[1] = random2(50) + 10;
                }
                while (grd[pos[0]][pos[1]] != 67);
 
@@ -9387,7 +9381,7 @@
          }                       // end for j
 
 
-      if (random() % 20 == 0)
+      if (random2(20) == 0)
       {
          for (bi = 0; bi < 80; bi++)
          {
@@ -9407,9 +9401,9 @@
       char width = 10;
       char width2 = 5;
 
-      if (random() % 2 == 0)
-         width2 -= random() % 5;
-      width -= random() % 7;
+      if (random2(2) == 0)
+         width2 -= random2(5);
+      width -= random2(7);
 
       clear_area(10, 10, 70, 10 + width, 1, 67);
       clear_area(10, 60 - width, 70, 60, 1, 67);
@@ -9417,17 +9411,17 @@
       clear_area(10, 10, 10 + width, 60, 1, 67);
       clear_area(60 - width, 10, 70, 60, 1, 67);
 
-      if (random() % 4 == 0)
+      if (random2(4) == 0)
          return 2;
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
          return 3;
 
       clear_area(10, 35 - width2, 70, 35 + width2, 1, 67);
       clear_area(40 - width2, 10, 40 + width2, 60, 1, 67);
 
-      if (random() % 4 == 0)
+      if (random2(4) == 0)
          return 2;
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
          return 3;
 
       room_x1 = 25;
@@ -9436,24 +9430,24 @@
       room_y2 = 45;
 
 
-      if (random() % 2 == 0)
+      if (random2(2) == 0)
       {
-         oblique_max = random() % 20 + 5;
+         oblique_max = random2(20) + 5;
       }
 
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
       {
          octa_room(67);
       }
       else
       {
-         if (random() % 5 == 0)
+         if (random2(5) == 0)
          {
-            octa_room(61 + random() % 2);
+            octa_room(61 + random2(2));
          }
       }
 
-      if (random() % 5 == 0)
+      if (random2(5) == 0)
          return 3;
 
       return 2;
@@ -9465,12 +9459,12 @@
 
       char width2 = 5;
 
-      width2 -= random() % 5;
+      width2 -= random2(5);
 
       clear_area(10, 35 - width2, 70, 35 + width2, 1, 67);
       clear_area(40 - width2, 10, 40 + width2, 60, 1, 67);
 
-      if (random() % 4 == 0)
+      if (random2(4) == 0)
          return 2;
 
       return 3;
@@ -9485,15 +9479,15 @@
 
 
       char cnx, cny;
-      char roomsss = 30 + random() % 90;
+      char roomsss = 30 + random2(90);
       char exclusive = 1;
 
-      if (random() % 10 == 0)
+      if (random2(10) == 0)
          exclusive = 0;
 
       char exclusive2 = 1;
 
-      if (random() % 2 == 0)
+      if (random2(2) == 0)
          exclusive2 = 0;
 
       char romx1[30], romy1[30], romx2[30], romy2[30];
@@ -9502,10 +9496,10 @@
 
       for (bi = 0; bi < roomsss; bi++)
       {
-         romx1[which_room] = 10 + random() % 50;
-         romy1[which_room] = 10 + random() % 40;
-         romx2[which_room] = romx1[which_room] + 2 + random() % 8;
-         romy2[which_room] = romy1[which_room] + 2 + random() % 8;
+         romx1[which_room] = 10 + random2(50);
+         romy1[which_room] = 10 + random2(40);
+         romx2[which_room] = romx1[which_room] + 2 + random2(8);
+         romy2[which_room] = romy1[which_room] + 2 + random2(8);
 
          if (exclusive == 1)
          {
@@ -9524,7 +9518,7 @@
          if (which_room > 0 && exclusive2 == 0)
          {
 
-            join_the_dots(romx1[which_room] + random() % (romx2[which_room] - romx1[which_room]), romy1[which_room] + random() % (romy2[which_room] - romy1[which_room]), romx1[which_room - 1] + random() % (romx2[which_room - 1] - romx1[which_room - 1]), romy1[which_room - 1] + random() % (romy2[which_room - 1] - romy1[which_room - 1]), 0, 0, 0, 0);
+            join_the_dots(romx1[which_room] + random2(romx2[which_room] - romx1[which_room]), romy1[which_room] + random2(romy2[which_room] - romy1[which_room]), romx1[which_room - 1] + random2(romx2[which_room - 1] - romx1[which_room - 1]), romy1[which_room - 1] + random2(romy2[which_room - 1] - romy1[which_room - 1]), 0, 0, 0, 0);
 
          }
 
@@ -9541,7 +9535,7 @@
          for (bi = 0; bi < which_room; bi++)
          {
             if (bi > 0)
-               join_the_dots(romx1[bi] + random() % (romx2[bi] - romx1[bi]), romy1[bi] + random() % (romy2[bi] - romy1[bi]), romx1[bi - 1] + random() % (romx2[bi - 1] - romx1[bi - 1]), romy1[bi - 1] + random() % (romy2[bi - 1] - romy1[bi - 1]), 0, 0, 0, 0);
+               join_the_dots(romx1[bi] + random2(romx2[bi] - romx1[bi]), romy1[bi] + random2(romy2[bi] - romy1[bi]), romx1[bi - 1] + random2(romx2[bi - 1] - romx1[bi - 1]), romy1[bi - 1] + random2(romy2[bi - 1] - romy1[bi - 1]), 0, 0, 0, 0);
          }
 
       return 2;
@@ -9556,14 +9550,14 @@
 
       int number_boxes = 5000;
 
-      if (random3(3) == 0)
-         number_boxes -= random3(1000);
-      if (random3(3) == 0)
-         number_boxes -= random3(1000);
-      if (random3(3) == 0)
-         number_boxes -= random3(1000);
-      if (random3(3) == 0)
-         number_boxes -= random3(1000);
+      if (random2(3) == 0)
+         number_boxes -= random2(1000);
+      if (random2(3) == 0)
+         number_boxes -= random2(1000);
+      if (random2(3) == 0)
+         number_boxes -= random2(1000);
+      if (random2(3) == 0)
+         number_boxes -= random2(1000);
 
       unsigned char drawing = 1;
 
@@ -9571,9 +9565,9 @@
 
       char cnx, cny;
 
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
          drawing = 2;
-      if (random() % 6 == 0)
+      if (random2(6) == 0)
          drawing = 4;
 
       if (force_wall != 99)
@@ -9581,7 +9575,7 @@
 
       char boxy_type = 0;
 
-      if (random() % 3 == 0)
+      if (random2(3) == 0)
          boxy_type = 1;
 
 
@@ -9592,11 +9586,11 @@
       for (bi = 0; bi < number_boxes; bi++)
       {
 
-         b1x = 11 + random() % 45;
-         b1y = 11 + random() % 35;
+         b1x = 11 + random2(45);
+         b1y = 11 + random2(35);
 
-         b2x = b1x + 3 + random() % 7 + random() % 5;
-         b2y = b1y + 3 + random() % 7 + random() % 5;
+         b2x = b1x + 3 + random2(7) + random2(5);
+         b2y = b1y + 3 + random2(7) + random2(5);
 
          if (forbid_x1 != 0 || forbid_x2 != 0)
          {
@@ -9617,17 +9611,17 @@
 
          if (force_wall == 99)
          {
-            if (random() % 4 == 0)
+            if (random2(4) == 0)
                drawing = 1;
-            if (random() % 10 == 0)
+            if (random2(10) == 0)
                drawing = 2;
-            if (random() % 30 == 0)
+            if (random2(30) == 0)
                drawing = 4;
          }
 
-         if (random() % 7 == 0)
+         if (random2(7) == 0)
             clear_area(b1x, b1y, b2x, b2y, 67, drawing);
-         else if (random() % 10 == 0)
+         else if (random2(10) == 0)
             box_room(b1x, b2x - 1, b1y, b2y - 1, drawing);
          else if (boxy_type == 0)
             clear_area(b1x, b1y, b2x, b2y, 67, drawing);
@@ -9638,7 +9632,7 @@
          continue;
       }
 
-      if (random() % 4 == 0 && forbid_x1 == 0)    // a market square
+      if (random2(4) == 0 && forbid_x1 == 0)    // a market square
 
       {
          room_x1 = 25;
@@ -9647,14 +9641,14 @@
          room_y2 = 45;
 
 
-         if (random() % 4 != 0)
+         if (random2(4) != 0)
          {
-            oblique_max = random() % 20 + 5;
+            oblique_max = random2(20) + 5;
          }
-         if (random() % 10 != 0)
+         if (random2(10) != 0)
             octa_room(67);
          else
-            octa_room(61 + random() % 2);
+            octa_room(61 + random2(2));
       }
 
       return 2;
@@ -9665,20 +9659,20 @@
    {
 
       char glop = 0;
-      char glop2 = 5 + random() % 20;
+      char glop2 = 5 + random2(20);
 
       do
       {
 
-         join_the_dots(random() % 60 + 10, random() % 50 + 10, random() % 60 + 10, random() % 50 + 10, 0, 0, 0, 0);
+         join_the_dots(random2(60) + 10, random2(50) + 10, random2(60) + 10, random2(50) + 10, 0, 0, 0, 0);
 
          glop++;
 
       }
       while (glop < glop2);
 
-      if (random() % 4 != 0)
-         spotty_level(1, 100, random() % 2);
+      if (random2(4) != 0)
+         spotty_level(1, 100, random2(2));
 
       return 2;
 
@@ -9694,7 +9688,7 @@
       room_y1 = 10;
       room_y2 = 60;
 
-      oblique_max = 14;           //5 + random() % 10;
+      oblique_max = 14;           //5 + random2(10);
 
       octa_room(67);
 
@@ -9727,7 +9721,7 @@
       grd[10][35] = 87;
       grd[10][36] = 88;
 
-      if (many_many > 20 && random() % 2 == 0)
+      if (many_many > 20 && random2(2) == 0)
       {
          grd[40][36] = 96;       // remember pandemonium
 
@@ -9817,7 +9811,7 @@
 
       int mons_array[7];
 
-      char roomsss = 10 + random() % 90;
+      char roomsss = 10 + random2(90);
       char exclusive = 1;
       char which_room = 0;
 
@@ -9917,10 +9911,10 @@
 
       char cnx, cny;
 
-      if (random() % 10 == 0)
+      if (random2(10) == 0)
          exclusive = 0;
 
-      if (random() % 2 == 0)
+      if (random2(2) == 0)
          exclusive2 = 0;
 
       char romx1[30], romy1[30], romx2[30], romy2[30];
@@ -9931,10 +9925,10 @@
 
          do
          {
-            romx1[which_room] = 10 + random() % 50;
-            romy1[which_room] = 10 + random() % 40;
-            romx2[which_room] = romx1[which_room] + 2 + random() % 8;
-            romy2[which_room] = romy1[which_room] + 2 + random() % 8;
+            romx1[which_room] = 10 + random2(50);
+            romy1[which_room] = 10 + random2(40);
+            romx2[which_room] = romx1[which_room] + 2 + random2(8);
+            romy2[which_room] = romy1[which_room] + 2 + random2(8);
          }
          while ((romx1[which_room] >= v1x && romx1[which_room] <= v2x && romy1[which_room] >= v1y && romy1[which_room] <= v2y) || (romx2[which_room] >= v1x && romx2[which_room] <= v2x && romy2[which_room] >= v1y && romy2[which_room] <= v2y));
 
@@ -9960,7 +9954,7 @@
          if (which_room > 0)     // && exclusive2 == 0)
 
          {
-            join_the_dots(romx1[which_room] + random() % (romx2[which_room] - romx1[which_room]), romy1[which_room] + random() % (romy2[which_room] - romy1[which_room]), romx1[which_room - 1] + random() % (romx2[which_room - 1] - romx1[which_room - 1]), romy1[which_room - 1] + random() % (romy2[which_room - 1] - romy1[which_room - 1]), v1x, v1y, v2x, v2y);
+            join_the_dots(romx1[which_room] + random2(romx2[which_room] - romx1[which_room]), romy1[which_room] + random2(romy2[which_room] - romy1[which_room]), romx1[which_room - 1] + random2(romx2[which_room - 1] - romx1[which_room - 1]), romy1[which_room - 1] + random2(romy2[which_room - 1] - romy1[which_room - 1]), v1x, v1y, v2x, v2y);
          }
 
 
@@ -10018,7 +10012,7 @@
       }
 
 
-      for (bj = 0; bj < 3 + random3(2); bj++)
+      for (bj = 0; bj < 3 + random2(2); bj++)
       {
          for (bi = 0; bi < 2; bi++)
          {
@@ -10028,8 +10022,8 @@
 
             do
             {
-               pos[0] = random3(60) + 10;
-               pos[1] = random3(50) + 10;
+               pos[0] = random2(60) + 10;
+               pos[1] = random2(50) + 10;
             }
             while (grd[pos[0]][pos[1]] != 67 || (pos[0] >= v1x && pos[0] <= v2x && pos[1] >= v1y && pos[1] <= v2y));
 
@@ -10070,7 +10064,7 @@
       char vgrid[81][81];
 
       if (force_vault == 200)
-         force_vault = 200 + random3(34);
+         force_vault = 200 + random2(34);
 
    //char gluggy =
       vault_main(vgrid, mons_array, force_vault, many_many);
@@ -10081,14 +10075,14 @@
    /* find a target area which can be safely overwritten: */
       do
       {
-      // if (random3(1000) == 0) return;
-         v1x = 12 + random3(45);
-         v1y = 12 + random3(35);
+      // if (random2(1000) == 0) return;
+         v1x = 12 + random2(45);
+         v1y = 12 + random2(35);
          for (vx = v1x; vx < v1x + 12; vx++)
          {
             for (vy = v1y; vy < v1y + 12; vy++)
             {
-               if (random3(2000) == 0)
+               if (random2(2000) == 0)
                   return;
                if ((grd[vx][vy] != 67 && grd[vx][vy] != 1 && grd[vx][vy] != 3 && grd[vx][vy] != 5) || igrd[vx][vy] != 501 || mgrd[vx][vy] != MNG)
                   goto out_of_check;
@@ -10212,7 +10206,7 @@
          case 'C':
             do
             {
-               grd[vx][vy] = 180 + random3(12);
+               grd[vx][vy] = 180 + random2(12);
             }
             while (grd[vx][vy] == 183 || grd[vx][vy] == 185 || grd[vx][vy] == 190);
             break;
@@ -10223,7 +10217,7 @@
          case 'R':
             grd[vx][vy] = 67;       // honey / Royal Jelly
 
-            item_made = items(1, 4, 5 + (random3(3) == 0), 1, many_many, 250);
+            item_made = items(1, 4, 5 + (random2(3) == 0), 1, many_many, 250);
             mitm.x[item_made] = vx;
             mitm.y[item_made] = vy;
             break;
@@ -10271,17 +10265,17 @@
             break;
          case '|':
             grd[vx][vy] = 67;
-            item_made = items(1, acq_item_class[random() % 7], 250, 1, 351, 250);
+            item_made = items(1, acq_item_class[random2(7)], 250, 1, 351, 250);
             mitm.x[item_made] = vx;
             mitm.y[item_made] = vy;
             break;
 
          case 'P':                   // maybe rune of Zot
 
-            if (random3(3) != 0)
+            if (random2(3) != 0)
             {
                grd[vx][vy] = 67;
-               item_made = items(1, acq_item_class[random() % 7], 250, 1, 351, 250);
+               item_made = items(1, acq_item_class[random2(7)], 250, 1, 351, 250);
                mitm.x[item_made] = vx;
                mitm.y[item_made] = vy;
                break;
@@ -10432,8 +10426,8 @@
       do
       {
       rand_px:
-         px = 15 + random3(55);
-         py = 15 + random3(45);
+         px = 15 + random2(55);
+         py = 15 + random2(45);
          k++;
          if (k == 5000)
             return;
@@ -10493,15 +10487,15 @@
 
       do
       {
-         altar_type = 180 + random3(12);
+         altar_type = 180 + random2(12);
       }
       while (altar_type == 183 || altar_type == 185 || altar_type == 190);
 
       do
       {
       rand_px:
-         px = 15 + random3(55);
-         py = 15 + random3(45);
+         px = 15 + random2(55);
+         py = 15 + random2(45);
          k++;
          if (k == 5000)
             return;
@@ -10549,13 +10543,13 @@
          {
             if (grd[i][j] == 3 || grd[i][j] == 5)
                grd[i][j] = 67;
-            if (grd[i][j] == 67 && random3(3) == 0)
+            if (grd[i][j] == 67 && random2(3) == 0)
                grd[i][j] = 65;
             if (grd[i][j] != 1)
                continue;
-            if (random3(3) != 0)
+            if (random2(3) != 0)
                grd[i][j] = 62;
-            if (random3(2) == 0)
+            if (random2(2) == 0)
                grd[i][j] = 65;
          }
       }
@@ -10584,12 +10578,12 @@
                {
                   if (k == 0 && l == 0)
                      continue;
-                  if (grd[i + k][j + l] != 62 && grd[i + k][j + l] != 65 && random3(6) != 0)
+                  if (grd[i + k][j + l] != 62 && grd[i + k][j + l] != 65 && random2(6) != 0)
                   {
                      grd[i][j] = 65;
                      continue;
                   }
-                  if (grd[i + k][j + l] == 65 && random3(8) == 0)
+                  if (grd[i + k][j + l] == 65 && random2(8) == 0)
                   {
                      grd[i][j] = 65;
                      continue;

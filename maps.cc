@@ -136,7 +136,7 @@ char vault_main(char vgrid[81][81], int mons_array[7], int vault_force, int many
 
 random_vault:
     if (vault_force == 100)
-        vault_force2 = random() % 14;
+        vault_force2 = random2(14);
     else
         vault_force2 = vault_force;
 

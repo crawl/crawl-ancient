@@ -3314,7 +3314,7 @@ unsigned char check_item_knowledge(void)
 
         }
 
-        for (j = 0; j < 30; j++)
+        for (j = 0; j < 50; j++)  // no more 50 types of any object -- cdl
         {
 
             if (lines > NUMBER_OF_LINES - 2 && inv_count > 0)

@@ -738,17 +738,17 @@
       {
          strcpy(info, "You freeze!");
          mpr(info);
-         ouch(3 + random2(7) + random2(7) + random2(pow) / 20, 0, 16);
+         ouch(3 + random2(7) + random2(7) + random2(pow) / 20, 0, KILLED_BY_FREEZING);
       }
       if (player_res_cold() > 100)
       {
          strcpy(info, "You feel very cold.");
          mpr(info);
-         ouch((3 + random2(7) + random2(7) + random2(pow) / 20) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, 16);
+         ouch((3 + random2(7) + random2(7) + random2(pow) / 20) / (2 + (player_res_cold() - 100) * (player_res_cold() - 100)), 0, KILLED_BY_FREEZING);
       }
       if (player_res_cold() < 100)
       {
-         ouch(3 + random2(7) + random2(pow) / 30, 0, 16);        /* this is extra damage */
+         ouch(3 + random2(7) + random2(pow) / 30, 0, KILLED_BY_FREEZING);        /* this is extra damage */
       }
       scrolls_burn(12, 8);
 

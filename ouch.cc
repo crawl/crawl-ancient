@@ -137,7 +137,7 @@
                hurted /= 3;
             }
             else
-               you.poison += random() % 2 + 1;
+               you.poison += random2(2) + 1;
             break;
 
          case BEAM_NEG:
@@ -205,7 +205,7 @@
       {
          if (you.equip[splc] == -1)
          {
-            ouch(random2(acid_strength) / 5, 0, 3);
+            ouch(random2(acid_strength) / 5, 0, KILLED_BY_BEAM);
 
             continue;
             /* should take extra damage if little armour worn */
@@ -270,7 +270,7 @@
       || you.inv_class[itco] == OBJ_MISSILES)
       {
         /* dwarven stuff is resistant to acids */
-         if (you.inv_dam[itco] / 30 == 5 && random() % 5 != 0)
+         if (you.inv_dam[itco] / 30 == 5 && random2(5) != 0)
          {
             item_name(you.inv_plus2[itco], you.inv_class[itco],
                you.inv_type[itco], you.inv_dam[itco],
@@ -294,7 +294,7 @@
       if (you.inv_class[itco] == OBJ_ARMOUR && you.inv_dam[itco] % 30 >= 25)
          return;                 // unique
 
-      if (wearing_amulet(AMU_RESIST_CORROSION) == 1 && random() % 10 != 0)
+      if (wearing_amulet(AMU_RESIST_CORROSION) == 1 && random2(10) != 0)
       {
       #ifdef WIZARD
         strcpy(info, "Amulet protects.");
@@ -368,7 +368,7 @@
       unsigned char burn2;
       unsigned char burn_no = 0;
 
-      if (wearing_amulet(AMU_CONSERVATION) == 1 && random() % 10 != 0)
+      if (wearing_amulet(AMU_CONSERVATION) == 1 && random2(10) != 0)
       {
       #ifdef WIZARD
         strcpy(info, "Amulet conserves.");
@@ -654,16 +654,16 @@
       switch (death_type)
       {
 
-         case 0:                     // monster
+         case KILLED_BY_MONSTER:                     // monster
 
-            /* BCR
-             * Note: There was a bug where deep elves weren't getting the 'a' before
-             *       their names.  It turns out that the code originally assumed that
-             *       Monsters with type between 250 and 310 would be uniques.  However,
-             *       Some new monsters were added between 260 and 280 that are not unique.
-             *       For now, I've updated the check to be accurate, but there may be other
-             *       issues with this.
-             */
+/* BCR
+ * Note: There was a bug where deep elves weren't getting the 'a' before
+ *       their names.  It turns out that the code originally assumed that
+ *       Monsters with type between 250 and 310 would be uniques.  However,
+ *       Some new monsters were added between 260 and 280 that are not unique.
+ *       For now, I've updated the check to be accurate, but there may be other
+ *       issues with this.
+ */
             strcat(death_string, " killed by ");
             if (   (menv[death_source].type < 250)
                 || ((menv[death_source].type < 280) && (menv[death_source].type >= 260))
@@ -673,18 +673,18 @@
             strcat(death_string, monam(menv[death_source].number, menv[death_source].type, 0, 99));
             break;
 
-         case 1:                     // you.poison
+         case KILLED_BY_POISON:                     // you.poison
          //              if (dam == -9999) strcat(death_string, "an overload of ");
 
             strcat(death_string, " killed by a lethal dose of poison");
             break;
 
-         case 2:                     // cloud
+         case KILLED_BY_CLOUD:                     // cloud
 
             strcat(death_string, " killed by a cloud");
             break;
 
-         case 3:                     // beam - beam[0].name is a local variable, so can't access it without horrible hacks
+         case KILLED_BY_BEAM:                     // beam - beam[0].name is a local variable, so can't access it without horrible hacks
 
             strcat(death_string, " killed from afar by ");
             if (menv[death_source].type < 250 || menv[death_source].type > 310 && menv[death_source].type != 400)
@@ -696,12 +696,12 @@
       strcat(death_string, " ran out of time");
       break; */
 
-         case 5:                     // falling into lava
+         case KILLED_BY_LAVA:                     // falling into lava
 
             strcat(death_string, " took a swim in molten lava");
             break;
 
-         case 6:                     // falling into water
+         case KILLED_BY_WATER:                     // falling into water
 
             if (you.species == SP_MUMMY)
                strcat(death_string, " soaked and fell apart");
@@ -711,70 +711,74 @@
         // these three are probably only possible if you wear a you.ring of >= +3 ability,
         //  get drained to 3, then take it off, or have a very low abil and wear a -ve you.ring.
         // or, as of 2.7x, mutations can cause this
-         case 7:                     // lack of intelligence
+         case KILLED_BY_STUPIDITY:                     // lack of intelligence
 
             strcat(death_string, " died of stupidity");
             break;
-         case 8:                     // lack of str
+         case KILLED_BY_WEAKNESS:                     // lack of str
 
             strcat(death_string, " died of muscular atrophy");
             break;
-         case 9:                     // lack of dex
+         case KILLED_BY_CLUMSINESS:                     // lack of dex
 
             strcat(death_string, " died of clumsiness");    // crappy message
 
             break;
 
-         case 10:
+         case KILLED_BY_TRAP:
             strcat(death_string, " killed by a trap");
             break;
 
-         case 11:
+         case KILLED_BY_LEAVING:
             strcat(death_string, " got out of the dungeon alive.");
             break;
 
-         case 12:
+         case KILLED_BY_WINNING:
             strcat(death_string, " escaped with the Orb.");
             break;
 
-         case 13:
+         case KILLED_BY_QUITTING:
             strcat(death_string, " quit");
             break;
 
-         case 14:
+         case KILLED_BY_DRAINING:
             strcat(death_string, " was drained of all life");
             break;
 
-         case 15:
+         case KILLED_BY_STARVATION:
             strcat(death_string, " starved to death");
             break;
 
-         case 16:
+         case KILLED_BY_FREEZING:
             strcat(death_string, " froze to death");
             break;
 
-         case 17:
+         case KILLED_BY_BURNING:
             strcat(death_string, " burned to death");
             break;
 
-         case 18:                    /* from function miscast_effect */
+         case KILLED_BY_WILD_MAGIC:                    /* from function miscast_effect */
             strcat(death_string, " killed by wild magic");
             break;
 
-         case 19:
+         case KILLED_BY_XOM:
             strcat(death_string, " killed by Xom");
             break;
 
-         case 20:
+         case KILLED_BY_STATUE:
             strcat(death_string, " killed by a statue");
             break;
 
-         case 21:
+         case KILLED_BY_ROTTING:
             strcat(death_string, " rotted away");
             break;
 
-         case 22:
+         case KILLED_BY_TARGETTING:
             strcat(death_string, " killed by bad targetting");
+            break;
+
+         case KILLED_BY_SPORE:
+            strcat(death_string, " killed by an exploding spore");
             break;
 
 
@@ -1271,7 +1275,7 @@
 
       if (you.experience_level == 1)
       {
-         ouch(-9999, 0, 14);
+         ouch(-9999, 0, KILLED_BY_DRAINING);
       }
    // because you.experience is unsigned long, if it's going to be -ve must die straightaway.
 
@@ -1295,7 +1299,7 @@
       if (you.experience_level >= 21)
          brek = random2(2) + 2;
 
-      ouch(brek, 0, 14);
+      ouch(brek, 0, KILLED_BY_DRAINING);
       you.base_hp2 -= brek;
 
       brek = random2(4) + 3;
@@ -1352,7 +1356,7 @@
 
       if (you.experience == 0)
       {
-         ouch(-9999, 0, 14);
+         ouch(-9999, 0, KILLED_BY_DRAINING);
       }
 
       if (you.experience_level == 1)
@@ -1362,7 +1366,7 @@
       }
 
       unsigned long total_exp = exp_needed(you.experience_level + 2, you.species) - exp_needed(you.experience_level + 1, you.species);
-      unsigned long exp_drained = total_exp * (10 + random() % 11);
+      unsigned long exp_drained = total_exp * (10 + random2(11));
 
       exp_drained /= 100;
 

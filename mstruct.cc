@@ -5,7 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *   <2>    11/04/99        cdl     added a break to spell selection
+ *                                  for kobold Summoners
+ *                                  print just "[Ii]t" for invisible undead
+ *                                  renamed params to monam()
+ *   <1>     -/--/--        LRH     Created
  */
 
 // $pellbinder: (c) D.G.S.E 1998
@@ -27,6 +31,8 @@
 #include "externs.h"
 #include "enum.h"
 #include "player.h"
+#include "stuff.h"
+
 
 char mcolour[1000];
 char *gmo_n;                    /* used in monam - could possibly be static to that function */
@@ -369,7 +375,7 @@ char mons_shouts(int mc)
     int u = smc->shouts;
 
     if (u == -1)
-        u = random() % 12;
+        u = random2(12);
     return u;
 }
 char mons_see_invis(int mc)
@@ -537,7 +543,7 @@ int hit_points(int hit_dice, int min_hp, int rand_hp)
 
     for (hroll = 0; hroll < hit_dice; hroll++)
     {
-        hrolled += random() % (rand_hp + 1);
+        hrolled += random2(rand_hp + 1);
         hrolled += min_hp;
     }
     return hrolled;
@@ -567,72 +573,73 @@ void define_monster(int k, struct monsters mns[MNST])
 
     case 23:                    // x????
 
-        m2_HD = 4 + random() % 4;
-        m2_AC = 3 + random() % 7;       //gmon_AC [2];
+        m2_HD = 4 + random2(4);
+        m2_AC = 3 + random2(7);       //gmon_AC [2];
 
-        m2_ev = 7 + random() % 6;       //gmon_ev [2];   // Look at this one!!!
+        m2_ev = 7 + random2(6);       //gmon_ev [2];   // Look at this one!!!
 
-        m2_speed = 7 + random() % 5 + random() % 5;
+        m2_speed = 7 + random2(5) + random2(5);
         if (m2_sec == 250)
-            m2_sec = random() % 15 + 1;
+            m2_sec = random2(15) + 1;
         break;
     case 25:
-        m2_HD = random() % 2 + 1;
+        m2_HD = random2(2) + 1;
         break;                  // small zombie
 
     case 37:
-        m2_sec = random() % 4 + 20;
+        m2_sec = random2(4) + 20;
         break;                  // lich
 
     case 49:                    // Abomination
 
-        m2_HD = 8 + random() % 4;
-        m2_AC = 5 + random() % 5 + random() % 5;        //gmon_AC [2];
+        m2_HD = 8 + random2(4);
+        m2_AC = 5 + random2(5) + random2(5);        //gmon_AC [2];
 
-        m2_ev = 3 + random() % 5;       //gmon_ev [2];
+        m2_ev = 3 + random2(5);       //gmon_ev [2];
 
-        m2_speed = 6 + random() % 4 + random() % 4;
+        m2_speed = 6 + random2(4) + random2(4);
         if (m2_sec == 250)
-            m2_sec = random() % 15 + 1;
+            m2_sec = random2(15) + 1;
         break;
     case 51:
-        m2_HD = random() % 5 + 3;
+        m2_HD = random2(5) + 3;
         break;                  // large zombie
 
     case 53:
         m2_sec = 105;           // kobold demonologist
+        break;
 
     case 54:
-        m2_sec = random() % 3;
+        m2_sec = random2(3);
         break;                  // orc wizard
 
     case 66:
-        m2_sec = random() % 15 + 1;
+        m2_sec = random2(15) + 1;
         break;                  // butterfly
 
     case 88:                    // beast
 
-        m2_HD = 4 + random() % 4;
-        m2_AC = 2 + random() % 5;
-        m2_ev = 7 + random() % 5;
-        m2_speed = 8 + random() % 5;
+        m2_HD = 4 + random2(4);
+        m2_AC = 2 + random2(5);
+        m2_ev = 7 + random2(5);
+        m2_speed = 8 + random2(5);
         break;
     case 106:
-        m2_sec = 4 + random() % 5;
+        m2_sec = 4 + random2(5);
         break;                  // hydra
 
     case 109:
-        m2_sec = 58 + random() % 2;
+        m2_sec = 58 + random2(2);
         break;                  // hell knight
 
     case 110:
-        m2_sec = 60 + random() % 2;
+        m2_sec = 60 + random2(2);
         break;                  // necromancer
 
     case 111:                   // wizard
 
     case 142:
-        m2_sec = 62 + random() % 5;
+        m2_sec = 62 + random2(5);
         break;                  // ogre mage
 
     case 263:                   // deep elf soldier
@@ -640,15 +647,15 @@ void define_monster(int k, struct monsters mns[MNST])
     case 264:                   // deep elf fighter
 
     case 265:
-        m2_sec = random() % 3;
+        m2_sec = random2(3);
         break;                  // deep elf knight
 
     case 266:
-        m2_sec = 62 + random() % 5;
+        m2_sec = 62 + random2(5);
         break;                  // deep elf mage
 
     case 268:
-        m2_sec = 97 + random() % 2;
+        m2_sec = 97 + random2(2);
         break;                  // deep elf conjurer
 
     case 220:
@@ -684,7 +691,7 @@ void define_monster(int k, struct monsters mns[MNST])
         break;                  // gr demon
 
     case 244:
-        m2_sec = random() % 15 + 1;
+        m2_sec = random2(15) + 1;
         break;                  // gr demon
 
     case 251:
@@ -800,26 +807,26 @@ void define_monster(int k, struct monsters mns[MNST])
         break;                  // Ereshkigal
 
     case 356:
-        m2_sec = random() % 4 + 20;
+        m2_sec = random2(4) + 20;
         break;                  // ancient lich - same as normal one
 
     case 390:
     case 391:                   // mimics
 
-        if (random() % 4 == 0)
+        if (random2(4) == 0)
             m2_sec = LIGHTCYAN;
         else
             m2_sec = BROWN;
-        if (random() % 10 == 0)
+        if (random2(10) == 0)
             m2_sec = CYAN;
-        if (random() % 20 == 0)
-            m2_sec = random() % 15 + 1;
+        if (random2(20) == 0)
+            m2_sec = random2(15) + 1;
         break;
 
     case 392:
     case 393:                   // mimics
 
-        m2_sec = 1 + random() % 15;
+        m2_sec = 1 + random2(15);
         break;
 
 
@@ -834,7 +841,7 @@ void define_monster(int k, struct monsters mns[MNST])
         m2_sec = m->sec;
 
     m2_speed_inc *= 10;
-    m2_speed_inc += random() % 10;
+    m2_speed_inc += random2(10);
 
     // so let it be written, so let it be done
     mns[k].hit_dice = m2_HD;
@@ -903,7 +910,7 @@ void def_letters(char letters[52][1])
 }
 
 
-char *monam(int mons_num, int mons, char desc, char see_invis)
+char *monam(int mons_num, int mons, char mench, char desc)
 {
     char gmo_n2[40];
 
@@ -915,21 +922,28 @@ char *monam(int mons_num, int mons, char desc, char see_invis)
 
     strcpy(gmo_n, "");
 
+    // if you can't see the critter, let moname() print [Ii]t.
+    if (mench == 6 && ! player_see_invis() )
+    {
+        moname(mons, mench, player_see_invis(), desc, gmo_n);
+        return gmo_n;
+    }
+
     if (mons == MONS_SMALL_ZOMBIE || mons == MONS_BIG_ZOMBIE)
     {
-        moname(mons_num, desc, player_see_invis(), see_invis, gmo_n);
+        moname(mons_num, mench, player_see_invis(), desc, gmo_n);
         strcat(gmo_n, " zombie");
 
     }
     else if (mons == MONS_SMALL_SKELETON || mons == MONS_LARGE_SKELETON)
     {
-        moname(mons_num, desc, player_see_invis(), see_invis, gmo_n);
+        moname(mons_num, mench, player_see_invis(), desc, gmo_n);
         strcat(gmo_n, " skeleton");
 
     }
     else if (mons == MONS_SPECTRAL_THING)
     {
-        switch (see_invis)
+        switch (desc)
         {
         case 0:
             strcpy(gmo_n, "The ");
@@ -945,11 +959,11 @@ char *monam(int mons_num, int mons, char desc, char see_invis)
             break;
         case 4:         /* do nothing */ ;
             break;
-//                      default: DEBUGSTR("bad see_invis flag");
+//                      default: DEBUGSTR("bad desc flag");
         }
 
         strcat(gmo_n, "spectral ");
-        moname(mons_num, desc, player_see_invis(), 4, gmo_n2);
+        moname(mons_num, mench, player_see_invis(), 4, gmo_n2);
         strcat(gmo_n, gmo_n2);
 
     }
@@ -965,7 +979,7 @@ char *monam(int mons_num, int mons, char desc, char see_invis)
 
     }
     else
-        moname(mons, desc, player_see_invis(), see_invis, gmo_n);
+        moname(mons, mench, player_see_invis(), desc, gmo_n);
 
     return gmo_n;
 }

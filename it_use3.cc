@@ -1052,7 +1052,7 @@
             strcpy(info, "A cloud of choking fumes pours from the book's pages!");
             mpr(info);
             big_cloud(4, you.x_pos, you.y_pos, 20);
-         //if (random() % 3 == 0) return; else break;
+         //if (random2(3) == 0) return; else break;
             return;
 
          case 2:
@@ -1060,7 +1060,7 @@
             strcpy(info, "A cloud of freezing gas pours from the book's pages!");
             mpr(info);
             big_cloud(3, you.x_pos, you.y_pos, 20);
-         //if (random() % 3 == 0) return; else break;
+         //if (random2(3) == 0) return; else break;
             return;
 
          case 3:

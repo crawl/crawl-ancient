@@ -5,7 +5,8 @@
 *
 *  Change History (most recent first):
 *
-*               <1>     -/--/--        LRH             Created
+*  <2>    11/05/99        cdl             new ouch() call for spores
+*  <1>     -/--/--        LRH             Created
 */
 
 #include "AppHdr.h"
@@ -429,7 +430,7 @@ void explosion(char ex_size, struct bolt beam[1])
                 }
 
                 if (you.equip[EQ_BODY_ARMOUR] != -1)
-                    if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 4 == 0)
+                    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(4) == 0)
                         exercise(SK_ARMOUR, 1);
 
                 if (hurted <= 0)
@@ -446,9 +447,11 @@ void explosion(char ex_size, struct bolt beam[1])
                     scrolls_burn(2, OBJ_FOOD);         // spores!
 
                 if (beam[0].thing_thrown == 1 || beam[0].thing_thrown == 3)
-                    ouch(hurted, 0, 22);
+                    ouch(hurted, 0, KILLED_BY_TARGETTING);
+                else if (beam[0].flavour == BEAM_SPORE)  // cdl
+                     ouch(hurted, 0, KILLED_BY_SPORE);
                 else
-                    ouch(hurted, beam[0].beam_source, 3);
+                    ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
 
                 you.redraw_hit_points = 1;
                     //n++; // reduces beam's range

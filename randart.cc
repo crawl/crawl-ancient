@@ -5,7 +5,9 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *   <6>     11/06/99    cdl    random4 -> random2
+ *
+ *   <1>     -/--/--     LRH    Created
  */
 
 #include "AppHdr.h"
@@ -690,7 +692,7 @@ void set_unrandart_exist(int whun, char is_exist);
 void standard_name_weap(unsigned char item_typ, char glog[80]);
 void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char glorg[80]);
 
-int random4(unsigned int randmax);
+int random2(unsigned int randmax);
 
 
 
@@ -727,7 +729,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         power_level = ((aplus % 100) - 50) / 2 + 2;
 
     if (aclass == OBJ_JEWELLERY)
-        power_level = 1 + random4(3) + random4(2);
+        power_level = 1 + random2(3) + random2(2);
 
     if (power_level < 0)
         power_level = 0;
@@ -739,15 +741,15 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
 
     if (aclass == OBJ_WEAPONS)  /* Only weapons get brands, of course */
     {
-        proprt[RAP_BRAND] = SPWPN_FLAMING + random4(15);        /* brand */
+        proprt[RAP_BRAND] = SPWPN_FLAMING + random2(15);        /* brand */
 
-        if (random4(6) == 0)
-            proprt[RAP_BRAND] = SPWPN_FLAMING + random4(2);
+        if (random2(6) == 0)
+            proprt[RAP_BRAND] = SPWPN_FLAMING + random2(2);
 
-        if (random4(6) == 0)
-            proprt[RAP_BRAND] = SPWPN_ORC_SLAYING + random4(4);
+        if (random2(6) == 0)
+            proprt[RAP_BRAND] = SPWPN_ORC_SLAYING + random2(4);
 
-        if (random4(6) == 0)
+        if (random2(6) == 0)
             proprt[RAP_BRAND] = SPWPN_VORPAL;
 
         if (proprt[RAP_BRAND] == SPWPN_FLAME
@@ -763,8 +765,8 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
 
         if (atype >= WPN_SLING && atype <= WPN_HAND_CROSSBOW)
         {
-            if (random4(3) == 0)
-                proprt[RAP_BRAND] = SPWPN_FLAME + random4(2);
+            if (random2(3) == 0)
+                proprt[RAP_BRAND] = SPWPN_FLAME + random2(2);
             else
                 proprt[RAP_BRAND] = SPWPN_NORMAL;
         }
@@ -772,7 +774,7 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
         if (atype == WPN_DEMON_BLADE || atype == WPN_DEMON_WHIP
                                                 || atype == WPN_DEMON_TRIDENT)
         {
-            switch (random4(9))
+            switch (random2(9))
             {
             case 0:
                 proprt[RAP_BRAND] = SPWPN_DRAINING;
@@ -800,190 +802,190 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
             }
             power_level += 2;
         }
-        else if (random4(3) == 0)
+        else if (random2(3) == 0)
             proprt[RAP_BRAND] = SPWPN_NORMAL;
         else
             power_level++;
     }
 
-    if (random4(5) == 0)
+    if (random2(5) == 0)
         goto skip_mods;
 
-    if (random4(4 + power_level) == 0 && aclass != OBJ_ARMOUR)  /* AC mod - not for armours */
+    if (random2(4 + power_level) == 0 && aclass != OBJ_ARMOUR)  /* AC mod - not for armours */
     {
-        proprt[RAP_AC] = 1 + random4(3) + random4(3) + random4(3);
+        proprt[RAP_AC] = 1 + random2(3) + random2(3) + random2(3);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_AC] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_AC] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
-    if (random4(4 + power_level) == 0)  /* ev mod */
+    if (random2(4 + power_level) == 0)  /* ev mod */
     {
-        proprt[RAP_EVASION] = 1 + random4(3) + random4(3) + random4(3);
+        proprt[RAP_EVASION] = 1 + random2(3) + random2(3) + random2(3);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_EVASION] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_EVASION] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
-    if (random4(4 + power_level) == 0)  /* str mod */
+    if (random2(4 + power_level) == 0)  /* str mod */
     {
-        proprt[RAP_STRENGTH] = 1 + random4(3) + random4(2);
+        proprt[RAP_STRENGTH] = 1 + random2(3) + random2(2);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_STRENGTH] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_STRENGTH] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
-    if (random4(4 + power_level) == 0)  /* int mod */
+    if (random2(4 + power_level) == 0)  /* int mod */
     {
-        proprt[RAP_INTELLIGENCE] = 1 + random4(3) + random4(2);
+        proprt[RAP_INTELLIGENCE] = 1 + random2(3) + random2(2);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_INTELLIGENCE] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_INTELLIGENCE] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
-    if (random4(4 + power_level) == 0)  /* dex mod */
+    if (random2(4 + power_level) == 0)  /* dex mod */
     {
-        proprt[RAP_DEXTERITY] = 1 + random4(3) + random4(2);
+        proprt[RAP_DEXTERITY] = 1 + random2(3) + random2(2);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_DEXTERITY] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_DEXTERITY] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
 skip_mods:
-    if (random4(15) < power_level || aclass == OBJ_WEAPONS)
+    if (random2(15) < power_level || aclass == OBJ_WEAPONS)
         goto skip_combat;
 /* Weapons can't get these */
 
-    if (random4(4 + power_level) == 0)  /* to-hit */
+    if (random2(4 + power_level) == 0)  /* to-hit */
     {
-        proprt[RAP_ACCURACY] = 1 + random4(3) + random4(2);
+        proprt[RAP_ACCURACY] = 1 + random2(3) + random2(2);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_ACCURACY] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_ACCURACY] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
-    if (random4(4 + power_level) == 0)  /* to-dam */
+    if (random2(4 + power_level) == 0)  /* to-dam */
     {
-        proprt[RAP_DAMAGE] = 1 + random4(3) + random4(2);
+        proprt[RAP_DAMAGE] = 1 + random2(3) + random2(2);
         power_level++;
-        if (random4(4) == 0)
+        if (random2(4) == 0)
         {
-            proprt[RAP_DAMAGE] -= 1 + random4(3) + random4(3) + random4(3);
+            proprt[RAP_DAMAGE] -= 1 + random2(3) + random2(3) + random2(3);
             power_level--;
         }
     }
 
 skip_combat:
-    if (random4(12) < power_level)
+    if (random2(12) < power_level)
         goto finished_powers;
 
 /* res_fire */
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_FIRE && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_FIRE && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
     {
         proprt[RAP_FIRE] = 1;
-        if (random4(5) == 0)
+        if (random2(5) == 0)
             proprt[RAP_FIRE] += 1;
         power_level++;
     }
 
 /* res_cold */
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_COLD && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || (atype != RING_PROTECTION_FROM_COLD && atype != RING_FIRE && atype != RING_ICE)) && (aclass != OBJ_ARMOUR || (atype != ARM_DRAGON_ARMOUR && atype != ARM_ICE_DRAGON_ARMOUR && atype != ARM_GOLD_DRAGON_ARMOUR)))
     {
         proprt[RAP_COLD] = 1;
-        if (random4(5) == 0)
+        if (random2(5) == 0)
             proprt[RAP_COLD] += 1;
         power_level++;
     }
 
-    if (random4(12) < power_level || power_level > 7)
+    if (random2(12) < power_level || power_level > 7)
         goto finished_powers;
 
 /* res_elec */
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_ARMOUR || atype != ARM_STORM_DRAGON_ARMOUR))
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_ARMOUR || atype != ARM_STORM_DRAGON_ARMOUR))
     {
         proprt[RAP_ELECTRICITY] = 1;
         power_level++;
     }
 /* res_poison */
-    if (random4(5 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_POISON_RESISTANCE) && (aclass != OBJ_ARMOUR || atype != ARM_GOLD_DRAGON_ARMOUR || atype != ARM_SWAMP_DRAGON_ARMOUR))
+    if (random2(5 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_POISON_RESISTANCE) && (aclass != OBJ_ARMOUR || atype != ARM_GOLD_DRAGON_ARMOUR || atype != ARM_SWAMP_DRAGON_ARMOUR))
     {
         proprt[RAP_POISON] = 1;
         power_level++;
     }
 
 /* prot_life - no necromantic brands on weapons allowed */
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION) && proprt[RAP_BRAND] != SPWPN_DRAINING && proprt[RAP_BRAND] != SPWPN_VAMPIRICISM && proprt[RAP_BRAND] != SPWPN_PAIN)
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION) && proprt[RAP_BRAND] != SPWPN_DRAINING && proprt[RAP_BRAND] != SPWPN_VAMPIRICISM && proprt[RAP_BRAND] != SPWPN_PAIN)
     {
         proprt[RAP_NEGATIVE_ENERGY] = 1;
         power_level++;
     }
 
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC))      /* res magic */
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_PROTECTION_FROM_MAGIC))      /* res magic */
     {
-        proprt[RAP_MAGIC] = 20 + random4(100);
+        proprt[RAP_MAGIC] = 20 + random2(100);
         power_level++;
     }
 
 /* see_invis */
-    if (random4(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
+    if (random2(4 + power_level) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
     {
         proprt[RAP_EYESIGHT] = 1;
         power_level++;
     }
 
-    if (random4(12) < power_level || power_level > 10)
+    if (random2(12) < power_level || power_level > 10)
         goto finished_powers;
 
 /* turn invis */
-    if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
+    if (random2(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
     {
         proprt[RAP_INVISIBLE] = 1;
         power_level++;
     }
 
-    if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_LEVITATION))      /* levitate */
+    if (random2(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_LEVITATION))      /* levitate */
     {
         proprt[RAP_LEVITATE] = 1;
         power_level++;
     }
 
-    if (random4(10) == 0)       /* blink */
+    if (random2(10) == 0)       /* blink */
     {
         proprt[RAP_BLINK] = 1;
         power_level++;
     }
 
-    if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION))   /* teleport */
+    if (random2(10) == 0 && (aclass != OBJ_JEWELLERY || atype != RING_TELEPORTATION))   /* teleport */
     {
         proprt[RAP_CAN_TELEPORT] = 1;
         power_level++;
     }
 
-    if (random4(10) == 0 && (aclass != OBJ_JEWELLERY || atype != AMU_RAGE))     /* go berserk */
+    if (random2(10) == 0 && (aclass != OBJ_JEWELLERY || atype != AMU_RAGE))     /* go berserk */
     {
         proprt[RAP_BERSERK] = 1;
         power_level++;
     }
 
-    if (random4(10) == 0)       /* sense surr */
+    if (random2(10) == 0)       /* sense surr */
     {
         proprt[RAP_MAPPING] = 1;
         power_level++;
@@ -994,15 +996,15 @@ finished_powers:
     if (aclass == OBJ_ARMOUR)
         power_level -= 4;       /* Armours get less powers, and are also less likely to be cursed that wpns */
 
-    if (random4(17) >= power_level || power_level < 2)
+    if (random2(17) >= power_level || power_level < 2)
         goto finished_curses;
 
-    switch (random4(9))
+    switch (random2(9))
     {
     case 0:                     /* makes noise */
         if (aclass != 0)
             break;
-        proprt[RAP_NOISES] = 1 + random4(4);
+        proprt[RAP_NOISES] = 1 + random2(4);
         break;
     case 1:                     /* no magic */
         proprt[RAP_PREVENT_SPELLCASTING] = 1;
@@ -1010,7 +1012,7 @@ finished_powers:
     case 2:                     /* random teleport */
         if (aclass != OBJ_WEAPONS)
             break;
-        proprt[RAP_CAUSE_TELEPORTATION] = 5 + random4(15);
+        proprt[RAP_CAUSE_TELEPORTATION] = 5 + random2(15);
         break;
     case 3:                     /* no teleport - doesn't affect some instantaneous teleports */
         if (aclass == OBJ_JEWELLERY && atype == RING_TELEPORTATION)
@@ -1024,7 +1026,7 @@ finished_powers:
     case 4:                     /* berserk on attack */
         if (aclass != OBJ_WEAPONS)
             break;
-        proprt[RAP_ANGRY] = 1 + random4(8);
+        proprt[RAP_ANGRY] = 1 + random2(8);
         break;
     case 5:                     /* susceptible to fire */
         if (aclass == OBJ_JEWELLERY && (atype == RING_PROTECTION_FROM_FIRE || atype == RING_FIRE || atype == RING_ICE))
@@ -1045,10 +1047,10 @@ finished_powers:
             break;              /* already is a ring of hunger */
         if (aclass == OBJ_JEWELLERY && atype == RING_SUSTENANCE)
             break;              /* already is a ring of sustenance */
-        proprt[RAP_METABOLISM] = 1 + random4(3);
+        proprt[RAP_METABOLISM] = 1 + random2(3);
         break;
     case 8:                     /* emits mutagenic radiation - increases magic_contamination */
-        proprt[RAP_MUTAGENIC] = 2 + random4(4);         /* property is chance (1 in ...) of increasing magic_contamination */
+        proprt[RAP_MUTAGENIC] = 2 + random2(4);         /* property is chance (1 in ...) of increasing magic_contamination */
         break;
     }
 /*
@@ -1095,7 +1097,7 @@ char *randart_name(unsigned char aclass, unsigned char atype, unsigned char adam
 
     if (ident_lev == 0)
     {
-        switch (random4(21))
+        switch (random2(21))
         {
         case 0:
             strcat(art_n, "brightly glowing ");
@@ -1171,22 +1173,22 @@ char *randart_name(unsigned char aclass, unsigned char atype, unsigned char adam
 
     char st_p[50];
 
-    if (random4(2) == 0)
+    if (random2(2) == 0)
     {
         char st_p[80];
 
         standard_name_weap(atype, st_p);
         strcat(art_n, st_p);
-        strcat(art_n, rand_wpn_names[random4(390)]);
+        strcat(art_n, rand_wpn_names[random2(390)]);
     }
     else
     {
         char st_p2[80];
 
-        make_name(random4(250), random4(250), random4(250), 3, st_p);
+        make_name(random2(250), random2(250), random2(250), 3, st_p);
         standard_name_weap(atype, st_p2);
         strcat(art_n, st_p2);
-        if (random4(3) == 0)
+        if (random2(3) == 0)
         {
             strcat(art_n, " of ");
             strcat(art_n, st_p);
@@ -1237,7 +1239,7 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
 
     if (ident_lev == 0)
     {
-        switch (random4(21))
+        switch (random2(21))
         {
         case 0:
             strcat(art_n, "brightly glowing ");
@@ -1313,22 +1315,22 @@ char *randart_armour_name(unsigned char aclass, unsigned char atype, unsigned ch
 
     char st_p[50];
 
-    if (random4(2) == 0)
+    if (random2(2) == 0)
     {
         char st_p[80];
 
         standard_name_armour(atype, aplus2, st_p);
         strcat(art_n, st_p);
-        strcat(art_n, rand_armour_names[random4(71)]);
+        strcat(art_n, rand_armour_names[random2(71)]);
     }
     else
     {
         char st_p2[80];
 
-        make_name(random4(250), random4(250), random4(250), 3, st_p);
+        make_name(random2(250), random2(250), random2(250), 3, st_p);
         standard_name_armour(atype, aplus2, st_p2);
         strcat(art_n, st_p2);
-        if (random4(3) == 0)
+        if (random2(3) == 0)
         {
             strcat(art_n, " of ");
             strcat(art_n, st_p);
@@ -1379,7 +1381,7 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char
 
     if (ident_lev == 0)
     {
-        switch (random4(21))
+        switch (random2(21))
         {
         case 0:
             strcat(art_n, "brightly glowing ");
@@ -1453,22 +1455,22 @@ char *randart_ring_name(unsigned char aclass, unsigned char atype, unsigned char
         return art_n;
     }
 
-    if (random4(5) == 0)
+    if (random2(5) == 0)
     {
         if (atype < AMU_RAGE)
             strcat(art_n, "ring");
         else
             strcat(art_n, "amulet");
-        strcat(art_n, rand_armour_names[random4(71)]);
+        strcat(art_n, rand_armour_names[random2(71)]);
     }
     else
     {
-        make_name(random4(250), random4(250), random4(250), 3, st_p);
+        make_name(random2(250), random2(250), random2(250), 3, st_p);
         if (atype < AMU_RAGE)
             strcat(art_n, "ring");
         else
             strcat(art_n, "amulet");
-        if (random4(3) == 0)
+        if (random2(3) == 0)
         {
             strcat(art_n, " of ");
             strcat(art_n, st_p);
@@ -1515,7 +1517,7 @@ int find_okay_unrandart(unsigned char aclass)
         if (unranddata[x].ura_cl == aclass && does_unrandart_exist(x) == 0)
         {
             count++;
-            if (random4(count) == 0)
+            if (random2(count) == 0)
                 ret = x;
         }
     }
@@ -1821,13 +1823,4 @@ void standard_name_armour(unsigned char item_typ, unsigned char item_plus2, char
         strcat(glorg, "swamp dragon armour");
         break;
     }
-}
-
-
-int random4(unsigned int randmax)
-{
-    if (randmax <= 0)
-        return 0;
-
-    return random() % randmax;
 }

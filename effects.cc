@@ -54,7 +54,7 @@
 
          if (tormdam <= 0)
             tormdam = 0;
-         ouch(tormdam, 0, 0);
+         ouch(tormdam, 0, KILLED_BY_MONSTER);
          you.redraw_hit_points = 1;
       }
 
@@ -216,7 +216,7 @@
 
             hurted = check_your_resists(hurted, beam[0].flavour);
             scrolls_burn(4, 6);
-            ouch(hurted, beam[0].beam_source, 3);
+            ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
             you.redraw_hit_points = 1;
             break;
 
@@ -226,7 +226,7 @@
             hurted = random2(6) + random2(6) + 7;
             strcpy(beam[0].beam_name, "smiting");   // for ouch
 
-            ouch(hurted, beam[0].beam_source, 3);
+            ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
             you.redraw_hit_points = 1;
             break;
 

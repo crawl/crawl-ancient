@@ -20,6 +20,8 @@
 #include "externs.h"
 #include "enum.h"
 
+#include "stuff.h"
+
 void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsigned char gy2);
 char area_shift(void);
 
@@ -230,7 +232,7 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
 
     int items_placed = 0;
 
-    int thickness = random() % 70 + 30;
+    int thickness = random2(70) + 30;
 
     int what_was_there;
     int thing_created;
@@ -242,48 +244,48 @@ void generate_area(unsigned char gx1, unsigned char gy1, unsigned char gx2, unsi
     unsigned char replaced[5];
     unsigned char base_type = 1;
 
-    if (random() % 4 == 0)
+    if (random2(4) == 0)
         base_type = 2;
-    if (random() % 15 == 0)
+    if (random2(15) == 0)
         base_type = 4;
-    if (random() % 20 == 0)
+    if (random2(20) == 0)
         base_type = 61;
-    if (random() % 25 == 0)
+    if (random2(25) == 0)
         base_type = 62;
-    if (random() % 1000 == 0)
+    if (random2(1000) == 0)
         base_type = 3;
 
 
     for (i = 0; i < 5; i++)
     {
         replaced[i] = base_type;
-        if (random() % 5 == 0)
+        if (random2(5) == 0)
             replaced[i] = 1;
-        if (random() % 10 == 0)
+        if (random2(10) == 0)
             replaced[i] = 2;
-        if (random() % 15 == 0)
+        if (random2(15) == 0)
             replaced[i] = 4;
-        if (random() % 20 == 0)
+        if (random2(20) == 0)
             replaced[i] = 61;
-        if (random() % 25 == 0)
+        if (random2(25) == 0)
             replaced[i] = 62;
-        if (random() % 15 == 0)
+        if (random2(15) == 0)
             replaced[i] = 65;
-        if (random() % 1000 == 0)
+        if (random2(1000) == 0)
             replaced[i] = 3;
     }
 
 
-    if (random() % 3 == 0)
+    if (random2(3) == 0)
     {
-        rooms_to_do = 1 + random() % 10;
+        rooms_to_do = 1 + random2(10);
         do
         {
-            x1 = 10 + random() % 60;
-            y1 = 10 + random() % 50;
-            x2 = x1 + 1 + random() % 10;
-            y2 = y1 + 1 + random() % 10;
-            if (random() % 100 == 0)
+            x1 = 10 + random2(60);
+            y1 = 10 + random2(50);
+            x2 = x1 + 1 + random2(10);
+            y2 = y1 + 1 + random2(10);
+            if (random2(100) == 0)
                 goto out_of_rooms;
             for (i = x1; i < x2; i++)
             {
@@ -315,18 +317,18 @@ out_of_rooms:
     {
         for (j = gy1; j < gy2 + 1; j++)
         {
-            if (grd[i][j] == 30 && random() % 100 <= thickness)
+            if (grd[i][j] == 30 && random2(100) <= thickness)
             {
                 grd[i][j] = 67;
-                if (random() % 200 == 0 && items_placed < 150)  // % 200
+                if (random2(200) == 0 && items_placed < 150)  // % 200
 
                 {
-                    if (random() % 500 == 0)
+                    if (random2(500) == 0)
                     {
 /*         do
    {
-   k = 4 + random() % 16;
-   if (random() % 100 == 0) goto creation;
+   k = 4 + random2(16);
+   if (random2(100) == 0) goto creation;
    } while (you.unique_items [k + 3] == 1); */
 
                         thing_created = items(1, 13, 14, 1, 51, 250);
@@ -351,14 +353,14 @@ out_of_rooms:
         for (j = gy1; j < gy2 + 1; j++)
         {
             if (grd[i][j] == 30)
-                grd[i][j] = replaced[random() % 5];
-            if (random() % 7500 == 0)
+                grd[i][j] = replaced[random2(5)];
+            if (random2(7500) == 0)
                 grd[i][j] = 97; /* gate out of abyss */
-            if (random() % 10000 == 0)  /* altar */
+            if (random2(10000) == 0)  /* altar */
             {
                 do
                 {
-                    grd[i][j] = 180 + random() % 12;
+                    grd[i][j] = 180 + random2(12);
                 }
                 while (grd[i][j] == 183 || grd[i][j] == 185 || grd[i][j] == 190);
             }

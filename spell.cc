@@ -693,7 +693,7 @@
             if (you.hp > 1)
                you.hp--;
             you.redraw_hit_points = 1;
-            zapping(ZAP_AGONY_I, powc, beam);
+            zapping(ZAP_PAIN, powc, beam);
             return 1;               // Pain
 
          case 68:
@@ -1045,7 +1045,7 @@
                mpr("Why would you want to do that?");
                return 1;
             }
-            zapping(ZAP_AGONY_II, powc, beam);
+            zapping(ZAP_AGONY, powc, beam);
             return 1;               // Agony
 
          case 149:                   // spider form

@@ -54,7 +54,7 @@ void zapping(char ztype, int power, struct bolt beams[1])
 
     char luggy = zappy(func_pass, str_pass, ztype);
 
-    if (ztype == 14)
+    if (ztype == ZAP_LIGHTNING)
     {
         strcpy(info, "You hear a mighty clap of thunder!");
         mpr(info);
@@ -77,8 +77,8 @@ void zapping(char ztype, int power, struct bolt beams[1])
 
     func_pass[8] = power;
 
-    if (beams[0].beam_name[0] == 48)
-        beams[0].damage = power;
+    if (beams[0].beam_name[0] == 48)  // ?? the first char of the name
+        beams[0].damage = power;      // ?? is an ascii zero?
 
     beams[0].thing_thrown = 3;
 
@@ -1639,7 +1639,6 @@ void unwear_armour(char unw)
             case SPARM_PONDEROUSNESS:
                 strcpy(info, "You feel rather less ponderous.");
                 you.speed -= 2;
-                /* player_evasion(you) += 1; */
                 you.redraw_evasion = 1;
                 break;
 

@@ -5,9 +5,11 @@
  *
  *  Change History (most recent first):
  *
- *      <3>     6/2/99         DML              Added enums
- *      <2>     5/20/99        BWR              Added refreshs for curses
- *      <1>     -/--/--        LRH              Created
+ *   <4>    11/14/99     cdl    evade beams with random40(ev) vice random2(ev)
+ *                              all armour now protects against shrapnel
+ *   <3>     6/ 2/99     DML    Added enums
+ *   <2>     5/20/99     BWR    Added refreshs for curses
+ *   <1>     -/--/--     LRH    Created
  */
 
 #include "AppHdr.h"
@@ -370,7 +372,7 @@ out_of_cloud_bit:
             if (beam[0].beam_name[0] != '0')     // ie enchantments always hit
 
             {
-                if (player_light_armour() && random() % 2 == 0
+                if (player_light_armour() && random2(2) == 0
                                 && beam[0].move_x != 0 && beam[0].move_y != 0)
                     exercise(SK_DODGING, 1);
 
@@ -381,7 +383,7 @@ out_of_cloud_bit:
                 if (you.duration[DUR_DEFLECT_MISSILES] != 0)
                     beam[0].hit = random2(beam[0].hit / 2);
 
-                if (beam[0].hit < random2(player_evasion())
+                if (beam[0].hit < random40(player_evasion())
                                             + random2(you.dex) / 3 - 2
                             && (beam[0].move_x != 0 || beam[0].move_y != 0))
                 {
@@ -478,18 +480,18 @@ out_of_cloud_bit:
                     mpr(info);
                     strcpy(beam[0].beam_name, "spell");
                     if (YOU_KILL(beam[0].thing_thrown))
-                        ouch(random2(beam[0].hit), 0, 22);
+                        ouch(random2(beam[0].hit), 0, KILLED_BY_TARGETTING);
                     else
-                        ouch(random2(beam[0].hit), beam[0].beam_source, 3);
+                        ouch(random2(beam[0].hit), beam[0].beam_source, KILLED_BY_BEAM);
                     beam[0].wand_id = 1;
                     return;
                 case WHITE:
                     mpr("You are blasted!");
                     strcpy(beam[0].beam_name, "spell");
                     if (YOU_KILL(beam[0].thing_thrown))
-                        ouch(random2(beam[0].hit), 0, 22);
+                        ouch(random2(beam[0].hit), 0, KILLED_BY_TARGETTING);
                     else
-                        ouch(random2(beam[0].hit), beam[0].beam_source, 3);
+                        ouch(random2(beam[0].hit), beam[0].beam_source, KILLED_BY_BEAM);
                     beam[0].wand_id = 1;
                     return;
 
@@ -522,7 +524,7 @@ out_of_cloud_bit:
             you.shield_blocks++;
 
             // shrapnel
-            if (beam[0].flavour == BEAM_FRAG && !player_light_armour())
+            if (beam[0].flavour == BEAM_FRAG )
             {
                 hurted -= random2(player_AC() + 1);
                 hurted -= random2(player_AC() + 1);
@@ -533,10 +535,10 @@ out_of_cloud_bit:
 
             if (you.equip[EQ_SHIELD] != -1)
                 if (beam[0].move_x != 0 || beam[0].move_y != 0)
-                    exercise(SK_SHIELDS, (random() % 3) / 2);
+                    exercise(SK_SHIELDS, (random2(3)) / 2);
 
             if (you.equip[EQ_BODY_ARMOUR] != -1)
-                if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 4 == 0)
+                if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(4) == 0)
                     exercise(SK_ARMOUR, 1);
 
             if (hurted <= 0)
@@ -556,9 +558,9 @@ out_of_cloud_bit:
                 scrolls_burn(3, 8);
 
             if (YOU_KILL(beam[0].thing_thrown))
-                ouch(hurted, 0, 22);
+                ouch(hurted, 0, KILLED_BY_TARGETTING);
             else
-                ouch(hurted, beam[0].beam_source, 3);
+                ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
 
             you.redraw_hit_points = 1;
 
@@ -1253,7 +1255,7 @@ void missile(struct bolt beam[1], int throw_2)
                     /* Start of : if it's not a tracer */
                     if (you.equip[EQ_SHIELD] != -1)
                         if (beam[0].move_x != 0 || beam[0].move_y != 0)
-                            exercise(SK_SHIELDS, random() % 2);
+                            exercise(SK_SHIELDS, random2(2));
 
                     if (player_shield_class() > 0
                             && random2(beam[0].hit * 5 + 5 * you.shield_blocks)
@@ -1279,14 +1281,14 @@ void missile(struct bolt beam[1], int throw_2)
                         break;
                     }           // end of block
 
-                    if (player_light_armour() && random() % 2 == 0
+                    if (player_light_armour() && random2(2) == 0
                                 && beam[0].move_x != 0 && beam[0].move_y != 0)
                         exercise(SK_DODGING, 1);
 
                     if (you.duration[DUR_REPEL_MISSILES] != 0 || you.mutation[MUT_REPULSION_FIELD] == 3)
                         beam[0].hit = random2(beam[0].hit);
 
-                    if (beam[0].hit >= random2(player_evasion())
+                    if (beam[0].hit >= random40(player_evasion())
                                                 + random2(you.dex) / 3 - 2
                                     && you.duration[DUR_DEFLECT_MISSILES] == 0)
                     {
@@ -1343,13 +1345,13 @@ void missile(struct bolt beam[1], int throw_2)
 
 
                         if (you.equip[EQ_BODY_ARMOUR] != -1)
-                            if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 4 == 0)
+                            if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(4) == 0)
                                 exercise(SK_ARMOUR, 1);
 
                         if (YOU_KILL(beam[0].thing_thrown))
-                            ouch(hurted, 0, 22);
+                            ouch(hurted, 0, KILLED_BY_TARGETTING);
                         else
-                            ouch(hurted, beam[0].beam_source, 3);
+                            ouch(hurted, beam[0].beam_source, KILLED_BY_BEAM);
 
                         you.redraw_hit_points = 1;
 
@@ -1780,7 +1782,7 @@ int check_mons_resists(struct bolt beam[1], int o, int hurted)
                 strcat(info, " is drained.");
                 mpr(info);
             }
-            if (random() % 5 == 0)
+            if (random2(5) == 0)
                 menv[o].hit_dice--;
             menv[o].max_hit_points -= 2 + random2(3);
             menv[o].hit_points -= 2 + random2(3);

@@ -1,3 +1,20 @@
+Daniel Ligon (makmorn@qis.net)
+11/18/99
+
+* right justify prices in shops
+* fixed the yellow Xom patch
+* Xom sometimes answers prayers
+* strengthen evasion
+* enumerate the 'killed by' list, added "killed by an exploding spore".
+* replaced many calls to "random() % x" to random2(x)
+* eliminated calls to random3 and random4
+* tone down Makhleb's minor destruction
+* put amulets in the discovery listing
+* fix beginning spells for kobold summoners
+* invisible undead are now referred to as "it".
+* permit Spriggan assassins.  The speed and low food requirements of a
+  Spriggan are a great complement to the assassin's hand crossbow.
+
 Brian Robinson (bcr19374@pegasus.cc.ucf.edu)
 10/15/99
 

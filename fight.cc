@@ -5,18 +5,19 @@
  *
  *  Change History (most recent first):
  *
- *      <7>      10/8/99        BCR             Large races get a smaller
- *                                              penalty for large shields
- *      <6>      9/09/99        BWR             Code for 1-1/2 hand weapons
- *      <5>      8/08/99        BWR             Reduced power of EV/shields
- *      <4>      6/22/99        BWR             Changes to stabbing code, made
- *                                              most gods not care about the
- *                                              deathes of summoned monsters
- *      <3>      5/21/99        BWR             Upped learning of armour skill
- *                                              in combat slightly.
- *      <2>      5/12/99        BWR             Fixed a bug where burdened
- *                                              barehanded attacks where free
- *      <1>      -/--/--        LRH             Created
+ *   <8>   11/14/99      cdl    evade with random40(ev) vice random2(ev)
+ *   <7>   10/ 8/99      BCR    Large races get a smaller
+ *                                    penalty for large shields
+ *   <6>    9/09/99      BWR    Code for 1-1/2 hand weapons
+ *   <5>    8/08/99      BWR    Reduced power of EV/shields
+ *   <4>    6/22/99      BWR    Changes to stabbing code, made
+ *                                      most gods not care about the
+ *                                      deathes of summoned monsters
+ *   <3>    5/21/99      BWR    Upped learning of armour skill
+ *                                    in combat slightly.
+ *   <2>    5/12/99      BWR    Fixed a bug where burdened
+ *                                    barehanded attacks where free
+ *   <1>    -/--/--      LRH    Created
  */
 
 #include "AppHdr.h"
@@ -1786,7 +1787,7 @@ void monster_attack(int monster_attacking)
 
         if (blocked == 0
                 && (random2(mons_to_hit)
-                        >= random2(player_evasion()) + random2(you.dex) / 3 - 2
+                        >= random40(player_evasion()) + random2(you.dex) / 3 - 2
                     || random2(15) == 0))
         {
             hit = 1;
@@ -2538,7 +2539,7 @@ void monster_attack(int monster_attacking)
 
                     if (menv[monster_attacking].hit_points > menv[monster_attacking].max_hit_points)
                         menv[monster_attacking].hit_points = menv[monster_attacking].max_hit_points;
-//   if (you.hunger <= 11000) you.hunger += random() % 30;
+//   if (you.hunger <= 11000) you.hunger += random2(30);
                     if (menv[monster_attacking].enchantment[2] != 6 || player_see_invis() != 0)
                     {
                         if (menv[monster_attacking].type == MONS_DANCING_WEAPON)
@@ -2623,7 +2624,7 @@ void monster_attack(int monster_attacking)
 
         if (damage_taken > 0 && damage_taken < 150)
         {                       /* ultra-high damages are assumed buggy - I wish there was a more elegant way to fix this (there probably is) */
-            ouch(damage_taken, monster_attacking, 0);
+            ouch(damage_taken, monster_attacking, KILLED_BY_MONSTER);
             you.redraw_hit_points = 1;
             if (you.religion == GOD_XOM && you.hp <= you.hp_max / 3 && random2(10) == 0)
                 Xom_acts(1, you.experience_level, 0);
@@ -3420,7 +3421,7 @@ char monsters_fight(int monster_attacking, int monster_attacked)
 
                     if (menv[monster_attacking].hit_points > menv[monster_attacking].max_hit_points)
                         menv[monster_attacking].hit_points = menv[monster_attacking].max_hit_points;
-//   if (you.hunger <= 11000) you.hunger += random() % 30;
+//   if (you.hunger <= 11000) you.hunger += random2(30);
                     if (mons_near(monster_attacking) && (menv[monster_attacking].enchantment[2] != 6 || player_see_invis() != 0))
                     {
                         if (menv[monster_attacking].type == MONS_DANCING_WEAPON)

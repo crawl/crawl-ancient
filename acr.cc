@@ -1493,7 +1493,7 @@ static bool Use_No_Black = false;
 
       if (random2(10) == 0)
       {
-         if ((player_teleport() > 0 && random2(100 / player_teleport()) == 0) || (you.level_type == 2 && random() % 30 == 0))
+         if ((player_teleport() > 0 && random2(100 / player_teleport()) == 0) || (you.level_type == 2 && random2(30) == 0))
          {
             you_teleport2(1);   // this is instantaneous
 
@@ -1523,13 +1523,13 @@ static bool Use_No_Black = false;
 
 
          if (player_res_fire() > 100)
-            ouch((((random2(5) + random2(5) + 1) / 2 + (player_res_fire() - 100) * (player_res_fire() - 100)) * you.time_taken) / 10, 0, 17);
+            ouch((((random2(5) + random2(5) + 1) / 2 + (player_res_fire() - 100) * (player_res_fire() - 100)) * you.time_taken) / 10, 0, KILLED_BY_BURNING);
 
          if (player_res_fire() <= 100)
-            ouch(((random2(5) + random2(5) + 1) * you.time_taken) / 10, 0, 17);
+            ouch(((random2(5) + random2(5) + 1) * you.time_taken) / 10, 0, KILLED_BY_BURNING);
 
          if (player_res_fire() < 100)
-            ouch(((random2(5) + random2(5) + 1) * you.time_taken) / 10, 0, 17);
+            ouch(((random2(5) + random2(5) + 1) * you.time_taken) / 10, 0, KILLED_BY_BURNING);
 
       }
 
@@ -2000,7 +2000,7 @@ static bool Use_No_Black = false;
             you.rotting = 0;
          else if (random2(20) <= (you.rotting - 1) || (you.species == SP_GHOUL && random2(200) == 0))
          {
-            ouch(1, 0, 21);
+            ouch(1, 0, KILLED_BY_ROTTING);
             you.hp_max--;
             you.base_hp--;
             you.redraw_hit_points = 1;
@@ -2027,14 +2027,14 @@ static bool Use_No_Black = false;
          {
             if (you.poison > 10 && random2(you.poison) >= 8)
             {
-               ouch(random2(10) + 5, 0, 1);
+               ouch(random2(10) + 5, 0, KILLED_BY_POISON);
                you.redraw_hit_points = 1;
                strcpy(info, "You feel extremely sick.");
                mpr(info);
             }
             else if (you.poison > 5 && random2(2) == 0)
             {
-               ouch(random2(2) + 2, 0, 1);
+               ouch(random2(2) + 2, 0, KILLED_BY_POISON);
                you.redraw_hit_points = 1;
                strcpy(info, "You feel very sick.");
                mpr(info);
@@ -2042,7 +2042,7 @@ static bool Use_No_Black = false;
             }
             else
             {
-               ouch(1, 0, 1);
+               ouch(1, 0, KILLED_BY_POISON);
                you.redraw_hit_points = 1;
                strcpy(info, "You feel sick.");         // //the poison running through your veins.");
 
@@ -2216,7 +2216,7 @@ static bool Use_No_Black = false;
          {
             strcpy(info, "You have starved to death.");
             mpr(info);
-            ouch(-9999, 0, 15);
+            ouch(-9999, 0, KILLED_BY_STARVATION);
          }
       }
 
@@ -2890,7 +2890,7 @@ static bool Use_No_Black = false;
 
       if (attacking == 0 && (grd[you.x_pos + move_x][you.y_pos + move_y] >= MINMOVE))
       {
-         if (grd[you.x_pos + move_x][you.y_pos + move_y] == 78 && random() % (you.skills[SK_TRAPS_DOORS] + 1) > 3)
+         if (grd[you.x_pos + move_x][you.y_pos + move_y] == 78 && random2( you.skills[SK_TRAPS_DOORS] + 1 ) > 3)
          {
             strcpy(info, "Wait a moment, ");
             strcat(info, you.your_name);

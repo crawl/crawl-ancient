@@ -1,19 +1,21 @@
 /*
  *  File:       enum.h
  *  Summary:    Global (ick) enums.
- *  Written by: Linley Henzell
+ *  Written by: Daniel Ligon
  *
  *  Change History (most recent first):
  *
- *      <7>     9/29/99         BCR             Added comments showing where uniques are
- *      <6>     9/25/99         CDL             Added commands
- *      <5>     9/9/99          BWR             Removed Great Swords skill
- *      <4>     8/6/99          BWR             added branch and level types
- *      <3>     6/2/99          DML             beams, clouds, ench, ms, kill,
-                                                other minor changes
- *      <2>     5/26/99         JDJ             Added a header guard.
- *      <1>     -/--/--         CDL             Created
+ *      <8>    11/04/99         cdl    added killed_by
+ *      <7>     9/29/99         BCR    Added comments showing where uniques are
+ *      <6>     9/25/99         CDL    Added commands
+ *      <5>     9/9/99          BWR    Removed Great Swords skill
+ *      <4>     8/6/99          BWR    added branch and level types
+ *      <3>     6/2/99          DML    beams, clouds, ench, ms, kill,
+ *                                     other minor changes
+ *      <2>     5/26/99         JDJ    Added a header guard.
+ *      <1>     -/--/--         CDL    Created
  */
+
 #ifndef ENUM_H
 #define ENUM_H
 
@@ -735,6 +737,33 @@ enum KILLER
      KILL_MON_MISSILE,
      KILL_MISC,
      KILL_RESET  /*abjuration, etc.*/
+};
+
+enum KILLBY
+{
+    KILLED_BY_MONSTER,
+    KILLED_BY_POISON,
+    KILLED_BY_CLOUD,
+    KILLED_BY_BEAM,
+    KILLED_BY_LAVA = 5,
+    KILLED_BY_WATER,
+    KILLED_BY_STUPIDITY,
+    KILLED_BY_WEAKNESS,
+    KILLED_BY_CLUMSINESS,
+    KILLED_BY_TRAP,
+    KILLED_BY_LEAVING,
+    KILLED_BY_WINNING,
+    KILLED_BY_QUITTING,
+    KILLED_BY_DRAINING,
+    KILLED_BY_STARVATION,
+    KILLED_BY_FREEZING,
+    KILLED_BY_BURNING,
+    KILLED_BY_WILD_MAGIC,
+    KILLED_BY_XOM,
+    KILLED_BY_STATUE,
+    KILLED_BY_ROTTING,
+    KILLED_BY_TARGETTING,
+    KILLED_BY_SPORE
 };
 
 //
@@ -1910,7 +1939,7 @@ enum ZAPS
     ZAP_BEAM_OF_ENERGY,
     ZAP_ORB_OF_ENERGY,
     ZAP_ENSLAVEMENT,
-    ZAP_AGONY_I,
+    ZAP_PAIN,
     ZAP_STICKY_FLAME,
     ZAP_DISPEL_UNDEAD,
     ZAP_CLEANSING_FLAME,
@@ -1932,7 +1961,7 @@ enum ZAPS
     ZAP_BREATHE_POISON,
     ZAP_BREATHE_POWER,
     ZAP_ENSLAVE_UNDEAD,
-    ZAP_AGONY_II,
+    ZAP_AGONY,
     ZAP_DISRUPTION,
     ZAP_DISINTEGRATION,
     ZAP_BREATHE_STEAM = 48,

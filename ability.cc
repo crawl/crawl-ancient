@@ -5,14 +5,17 @@
  *
  *  Change History (most recent first):
  *
- *      <4>      9/25/99        CDL             linuxlib -> liblinux
+ *  <5>     11/06/99     cdl    reduced power of minor destruction
  *
- *      <3>      5/20/99        BWR             Now use scan_randarts to
- *                                              check for flags, rather than
- *                                              only checking the weapon.
- *      <2>      5/20/99        BWR             Extended screen line support
+ *  <4>      9/25/99     cdl    linuxlib -> liblinux
  *
- *      <1>      -/--/--        LRH             Created
+ *  <3>      5/20/99     BWR    Now use scan_randarts to
+ *                              check for flags, rather than
+ *                              only checking the weapon.
+ *
+ *  <2>      5/20/99     BWR    Extended screen line support
+ *
+ *  <1>      -/--/--     LRH             Created
  */
 
 #include "AppHdr.h"
@@ -67,6 +70,8 @@
  */
 void species_ability()          /* Now handles all special abilities */
 {
+    int power;
+
     if (you.berserker > 0)
     {
         mpr("You're too berserk!");
@@ -1618,22 +1623,26 @@ unknown:
         you.magic_points -= 1;
         you.redraw_magic_points = 1;
         you.hunger -= 20 + random2(20) + random2(20);
+
+        power = random22( you.skills[SK_INVOCATIONS] * 6 );
+
         switch (random2(5))
         {
         case 0:
-            zapping(ZAP_FLAME, you.skills[SK_INVOCATIONS] * 6, beam);
+            zapping(ZAP_FLAME, power, beam);
             break;
         case 1:
-            zapping(ZAP_AGONY_I, you.skills[SK_INVOCATIONS] * 6, beam);
+            zapping(ZAP_PAIN, power, beam);
             break;
         case 2:
-            zapping(ZAP_STONE_ARROW, you.skills[SK_INVOCATIONS] * 6, beam);
+            zapping(ZAP_STONE_ARROW, power, beam);
             break;
         case 3:
-            zapping(ZAP_ELECTRICITY, you.skills[SK_INVOCATIONS] * 6, beam);
+            zapping(ZAP_ELECTRICITY, power, beam);
             break;
         case 4:
-            zapping(ZAP_BREATHE_ACID, you.skills[SK_INVOCATIONS] * 6, beam);
+            power = power / 2;
+            zapping(ZAP_BREATHE_ACID, power, beam);
             break;
         }
         exercise(SK_INVOCATIONS, 1 + random2(2));

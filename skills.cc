@@ -356,7 +356,6 @@ cut_through:
     if (you.skill_points[exsk] > (skill_exp_needed(you.skills[exsk] + 2) * species_skills(exsk, you.species) / 100) && you.skills[exsk] < 27)
 //#endif
     {
-/*        if (exsk == SK_DODGING) player_evasion(you) -= ev_mod(); */
 
         you.skills[exsk]++;
         strcpy(info, "Your ");

@@ -5,13 +5,17 @@
  *
  *  Change History (most recent first):
  *
- *               <1>     -/--/--        LRH             Created
+ *   <3>    11/14/99     cdl    added random40
+ *   <2>    11/06/99     cdl    added random22
+ *   <1>     -/--/--     LRH    Created
  */
 
 #ifndef STUFF_H
 #define STUFF_H
 
-int random2(unsigned int randmax);
+int random2(int randmax);
+int random22(int randmax);
+int random40(int max);
 unsigned char get_ch(void);
 char see_grid(unsigned char grx, unsigned char gry);
 int magic_ability(int mag_abil, int intel);

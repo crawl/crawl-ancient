@@ -193,7 +193,7 @@ char monsters_fight(int monster_attacking, int monster_attacked)
 
 //you[0].hp_ch = 1;
 
-        }                       // end of if mons_to_hit >= player_evasion()
+        }
 
         else
         {
@@ -797,7 +797,7 @@ char monsters_fight(int monster_attacking, int monster_attacked)
 
                     if (menv[monster_attacking].m_hp > menv[monster_attacking].m_hp_max)
                         menv[monster_attacking].m_hp = menv[monster_attacking].m_hp_max;
-//   if (you[0].hunger <= 11000) you[0].hunger += random() % 30;
+//   if (you[0].hunger <= 11000) you[0].hunger += random2(30);
                     if (mons_near(monster_attacking) && (menv[monster_attacking].m_ench[2] != 6 || player_see_invis() != 0))
                     {
                         if (menv[monster_attacking].m_class == MONS_DANCING_WEAPON)

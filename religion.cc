@@ -5,10 +5,13 @@
  *
  *  Change History (most recent first):
  *
- *      <4>      10/11/99       BCR     Added Daniel's yellow Xom patch
- *      <3>      6/13/99        BWR     Vehumet book giving code.
- *      <2>      5/20/99        BWR     Added screen redraws
- *      <1>      -/--/--        LRH     Created
+ *
+ *   <5>   11/15/99      cdl    Fixed Daniel's yellow Xom patch  :)
+ *                              Xom will sometimes answer prayers
+ *   <4>   10/11/99      BCR    Added Daniel's yellow Xom patch
+ *   <3>    6/13/99      BWR    Vehumet book giving code.
+ *   <2>    5/20/99      BWR    Added screen redraws
+ *   <1>    -/--/--      LRH    Created
  */
 
 #include "AppHdr.h"
@@ -70,6 +73,9 @@ void pray(void)
 
     unsigned char was_praying = you.duration[DUR_PRAYER];
 
+    // all prayers take time
+    you.turn_is_over = 1;
+
     if (you.religion != GOD_NO_GOD && grd[you.x_pos][you.y_pos] == 179 + you.religion)
     {
         altar_prayer();
@@ -97,7 +103,28 @@ void pray(void)
 
     if (you.religion == GOD_XOM)
     {
-        mpr("Xom ignores you.");
+        if ( random2( 10 ) )
+        {
+          mpr("Xom ignores you.");
+        }
+        else
+        {
+          // Every now and then, Xom listens
+          // This is for flavor, not effect, so praying should not be
+          // encouraged.
+
+          // Xom is nicer to experienced players  (0 is bad, 1 is nice)
+          char nice  = 27 <= random2( 27 + you.experience_level ) ;
+
+          // and he's not very nice even then
+          int  sever = ( nice ) ? random2( random2( you.experience_level ) )
+                                : you.experience_level;
+
+          // bad results are enforced, good are not
+          char force = ! nice;
+
+          Xom_acts( nice, 1+sever, force );
+        }
         return;
     }
     strcpy(info, "You offer a prayer to ");
@@ -150,7 +177,6 @@ void pray(void)
    strcat(info, st_prn);
    mpr(info); */
 
-    you.turn_is_over = 1;
 
     if (was_praying == 0)
     {
@@ -412,16 +438,6 @@ char *god_name_long(int which_god)
 
 
 void Xom_acts(char niceness, int sever, char force_sever)
-#ifdef XOM_ACTS_YELLOW
-{
-  void Xom_acts0(char, int, char);
-
-  set_colour( YELLOW );
-  Xom_acts0( niceness, sever, force_sever );
-
-}
-void Xom_acts0(char niceness, int sever, char force_sever)
-#endif
 {
 
 /*
@@ -438,6 +454,10 @@ void Xom_acts0(char niceness, int sever, char force_sever)
 
     if (sever == 0)
         return;
+
+#ifdef XOM_ACTS_YELLOW
+    set_colour( YELLOW );
+#endif
 
 okay_try_again:
     if (niceness == 0 || random2(3) == 0)
@@ -569,6 +589,7 @@ okay_try_again:
             {
                 mpr("A wave of agony tears through your body!");
                 you.hp = you.hp / 2 + 1;
+                you.redraw_hit_points = 1;
             }
         }
 
@@ -839,6 +860,8 @@ okay_try_again:
 
     if (random2(4) != 0)
         goto okay_try_again;
+
+    mpr("You hear Xom's maniacal laughter.");
 
 }
 

@@ -42,7 +42,7 @@ void quit_game()
 
     if (keyin == 'y' || keyin == 'Y')
     {
-        ouch(-9999, 0, 13);
+        ouch(-9999, 0, KILLED_BY_QUITTING);
 
     }
 }                               // end of void quit_game

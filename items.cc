@@ -1564,7 +1564,7 @@ void handle_time(int time_delta)
         goto practise_stealth;
 
     // lowered the random roll from % 7 to % 6 -- bwross
-    if (random() % 1000 <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random() % 6 == 0)
+    if (random2(1000) <= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) && random2(6) == 0)
         exercise(SK_ARMOUR, 1);
 
     // also skills:
@@ -1576,7 +1576,7 @@ practise_stealth:
     {
         if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 != 4)   /* elven armours don't hamper stealth */
             if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 1 && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < 22 || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > 25))  /* neither do robes or steam/mottled DSM */
-                if (random() % mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) >= 100 || random() % 3 != 0)
+                if (random2( mass(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) ) >= 100 || random2(3) != 0)
                     return;
     }
 
@@ -1585,7 +1585,7 @@ practise_stealth:
     if (you.special_wield == 50)
         return;                 // shadow lantern stops stealth
 
-    if (random() % 6 == 0)
+    if (random2(6) == 0)
         exercise(SK_STEALTH, 1);
 }                               // end handle_time
 

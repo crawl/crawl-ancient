@@ -1823,7 +1823,7 @@ void level_change(void)         // Look at this !!!!
             case SP_HUMAN:      // human
 
                 if (you.experience_level % 5 == 0)
-                    increase_stats(random() % 3);
+                    increase_stats(random2(3));
                 break;
             case SP_ELF:        // elf
 
@@ -1837,7 +1837,7 @@ void level_change(void)         // Look at this !!!!
                     you.base_magic_points2++;
                 }
                 if (you.experience_level % 4 == 0)
-                    increase_stats(1 + random() % 2);
+                    increase_stats(1 + random2(2));
                 break;
             case SP_HIGH_ELF:   // high elf
 
@@ -1852,7 +1852,7 @@ void level_change(void)         // Look at this !!!!
                 }
 //you.res_magic ++;
                 if (you.experience_level % 3 == 0)
-                    increase_stats(1 + random() % 2);
+                    increase_stats(1 + random2(2));
                 break;
             case SP_GREY_ELF:   // grey elf
 
@@ -1867,7 +1867,7 @@ void level_change(void)         // Look at this !!!!
                 }
 //you.res_magic ++;
                 if (you.experience_level % 4 == 0)
-                    increase_stats(1 + random() % 2);
+                    increase_stats(1 + random2(2));
                 break;
             case SP_DEEP_ELF:   // deep elf
 
@@ -1897,7 +1897,7 @@ void level_change(void)         // Look at this !!!!
                     you.base_magic_points2++;
                 }
                 if (you.experience_level % 4 == 0)
-                    increase_stats(1 + random() % 2);
+                    increase_stats(1 + random2(2));
                 break;
             case SP_HILL_DWARF: // hill dwarf
 

@@ -948,13 +948,13 @@ void extension(int pow)
     }
 
     if (you.duration[DUR_VORPAL_BLADE] > 0 && you.duration[DUR_VORPAL_BLADE] < 80)
-        you.duration[DUR_VORPAL_BLADE] += 10 + random() % 10;
+        you.duration[DUR_VORPAL_BLADE] += 10 + random2(10);
     if (you.duration[DUR_FIRE_BRAND] > 0 && you.duration[DUR_FIRE_BRAND] < 80)
-        you.duration[DUR_FIRE_BRAND] += 10 + random() % 10;
+        you.duration[DUR_FIRE_BRAND] += 10 + random2(10);
     if (you.duration[DUR_ICE_BRAND] > 0 && you.duration[DUR_ICE_BRAND] < 80)
-        you.duration[DUR_ICE_BRAND] += 10 + random() % 10;
+        you.duration[DUR_ICE_BRAND] += 10 + random2(10);
     if (you.duration[DUR_LETHAL_INFUSION] > 0 && you.duration[DUR_LETHAL_INFUSION] < 80)
-        you.duration[DUR_LETHAL_INFUSION] += 10 + random() % 10;
+        you.duration[DUR_LETHAL_INFUSION] += 10 + random2(10);
 
     if (you.duration[DUR_SWIFTNESS] > 0)
         cast_swiftness(pow);
@@ -1047,8 +1047,6 @@ void stone_scales(int pow)
     if (you.duration[DUR_STONEMAIL] == 0)
     {
         strcpy(info, "A set of stone scales covers your body!");
-/* player_AC(you) += 7;
-   player_evasion(you) -= 2; */
         you.redraw_evasion = 1;
         you.redraw_armor_class = 1;
     }

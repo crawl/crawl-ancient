@@ -5,18 +5,20 @@
  *
  *  Change History (most recent first):
  *
- *      <6>     7/13/99         BWR             Lowered learning rates for
- *                                              throwing skills, and other
- *                                              balance tweaks
- *      <5>     5/28/99         JDJ             Changed wear_armour to allow Spriggan's to wear bucklers.
- *      <4>     5/26/99         JDJ             body armor can be removed and worn if an uncursed cloak is being worn.
- *                                                                      Removed lots of unnessary mpr string copying. Added missing
- *                                                                      ponderous message.
- *      <3>     5/20/99         BWR             Fixed staff of air bug, output of trial identified
- *                                                                      items, a few wield_changes so that the weapon gets
- *                                                                      updated.
- *      <2>     5/08/99         JDJ             Added armour_prompt.
- *      <1>     -/--/--         LRH             Created
+ *   <6>     7/13/99     BWR    Lowered learning rates for
+ *                              throwing skills, and other
+ *                              balance tweaks
+ *   <5>     5/28/99     JDJ    Changed wear_armour to allow Spriggan's to
+ *                              wear bucklers.
+ *   <4>     5/26/99     JDJ    body armor can be removed and worn if an
+ *                              uncursed cloak is being worn.
+ *                              Removed lots of unnessary mpr string copying.
+ *                              Added missing ponderous message.
+ *   <3>     5/20/99     BWR    Fixed staff of air bug, output of trial
+ *                              identified items, a few wield_changes so
+ *                              that the weapon gets updated.
+ *   <2>     5/08/99     JDJ    Added armour_prompt.
+ *   <1>     -/--/--     LRH    Created
  */
 
 #include "AppHdr.h"
@@ -1892,11 +1894,7 @@ void puton_ring()
         /*      player_teleport() += 1; */
         break;
 
-    case RING_EVASION:          // player_evasion()
-        //      you.hunger_inc += 1;
-        /*      if (you.inv_plus [ring_wear_2] > 130) player_evasion() -= 100;
-           player_evasion() += you.inv_plus [ring_wear_2];
-           player_evasion() -= 50; */
+    case RING_EVASION:
         you.redraw_evasion = 1;
         if (you.inv_plus[ring_wear_2] != 0 && you.inv_plus[ring_wear_2] != 100)
         {
@@ -2243,8 +2241,7 @@ void remove_ring()
 
         break;
 
-    case 11:                    // player_evasion()
-        //      you.hunger_inc -= 1;
+    case RING_EVASION:
 
         you.redraw_evasion = 1;
         break;
@@ -2606,20 +2603,12 @@ void eat_food()
 
 
     if (you.inv_type
-        [food_eat_2] == FOOD_CHUNK && you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 && you.
-        species !=
-        SP_KOBOLD &&
-        you.
-        species !=
-        SP_OGRE &&
-        you.
-        species !=
-        SP_TROLL &&
-        you.
-        species !=
-        SP_GHOUL &&
-        you.
-        mutation[MUT_CARNIVOROUS] ==
+        [food_eat_2] == FOOD_CHUNK && you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 &&
+        you.species != SP_KOBOLD &&
+        you.species != SP_OGRE &&
+        you.species != SP_TROLL &&
+        you.species != SP_GHOUL &&
+        you.mutation[MUT_CARNIVOROUS] ==
         0)
     {
         mpr("You aren't quite hungry enough to eat that!");
@@ -3414,10 +3403,6 @@ void read_scroll()
             mpr(info);
             you.redraw_armor_class = 1;
 
-            /* player_AC() -= property [2] [you.inv_type [you.equip [EQ_BODY_ARMOUR]]] [0] * (15 + you.skills [SK_ARMOUR]) / 15;
-
-
-               player_evasion() -= ev_mod(); */
 
             switch (you.inv_type[you.equip[EQ_BODY_ARMOUR]])
             {
@@ -3464,8 +3449,6 @@ void read_scroll()
                 break;
 
             }
-            /*        player_evasion() += ev_mod();
-               player_AC() += property [2] [you.inv_type [you.equip [EQ_BODY_ARMOUR]]] [0] * (15 + you.skills [SK_ARMOUR]) / 15; */
 
             set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
             return;
@@ -3495,15 +3478,8 @@ void read_scroll()
             strcpy(info, str_pass);
             strcat(info, " glows purple and changes!");
             mpr(info);
-            /*                player_AC() += 1; */
             you.redraw_armor_class = 1;
-            /*                you.rate_regen += 50; */
-            //                you.hunger_inc += 1;
-            /* player_AC() -= property [2] [you.inv_type [you.equip [EQ_BODY_ARMOUR]]] [0] * (15 + you.skills [SK_ARMOUR]) / 15;
-               player_evasion() -= ev_mod(); */
             you.inv_type[you.equip[EQ_BODY_ARMOUR]] = ARM_TROLL_LEATHER_ARMOUR;
-            /*        player_evasion() += ev_mod();
-               player_AC() += property [2] [you.inv_type [you.equip [EQ_BODY_ARMOUR]]] [0] * (15 + you.skills [SK_ARMOUR]) / 15; */
             set_id(you.inv_class[sc_read_2], you.inv_type[sc_read_2], 1);
             return;
         }

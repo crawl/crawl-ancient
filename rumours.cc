@@ -11,6 +11,7 @@
 #include "AppHdr.h"
 
 #include "defines.h"
+#include "stuff.h"
 
 #include <stdlib.h>
 
@@ -58,5 +59,5 @@ char *rumour[] =
 char *rumours(void);
 char *rumours(void)
 {
-    return rumour[random() % NO_RUMOURS];
+    return rumour[random2( NO_RUMOURS )] ;
 }

@@ -5,8 +5,8 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Added CRAWL_PIZZA.
- *      <1>      -/--/--        LRH             Created
+ *      <2>      5/20/99        BWR           Added CRAWL_PIZZA.
+ *      <1>      -/--/--        LRH           Created
  */
 
 #include "AppHdr.h"
@@ -237,13 +237,11 @@
                mpr("You can't eat raw meat!");
                return 0;
             }
-            if (you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0 && you.species != SP_KOBOLD && you.
-               species
-               != SP_OGRE
-               && you.species
-               != SP_TROLL
-               && you.species
-               != SP_GHOUL
+            if (you.hunger_state > 2 && wearing_amulet(AMU_THE_GOURMAND) == 0
+               && you.species != SP_KOBOLD
+               && you.species != SP_OGRE
+               && you.species != SP_TROLL
+               && you.species != SP_GHOUL
                && you.mutation[MUT_CARNIVOROUS] == 0)
             {
                strcpy(info, "You aren't quite hungry enough to eat that!");
@@ -682,8 +680,7 @@
                ghoul_eat_flesh(0);
                break;
             }
-            if (you.species == SP_HILL_ORC
-            || you.species == SP_KOBOLD
+            if ( you.species == SP_KOBOLD
             || you.species == SP_OGRE
             || you.species == SP_TROLL
             || you.mutation[MUT_CARNIVOROUS] > 0)

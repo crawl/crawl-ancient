@@ -5,6 +5,8 @@
  *
  *  Change History (most recent first):
  *
+ *     <10>      10/31/99       CDL             Allow Spriggan Assassins
+ *                                              Remove some old comments
  *      <9>      10/12/99       BCR             Made sure all the classes are
  *                                              capitalized correctly.
  *      <8>      9/09/99        BWR             Changed character selection
@@ -1127,7 +1129,7 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
             you.skills[SK_DODGING] = 1;
             you.skills[SK_STEALTH] = 1;
             you.skills[SK_STABBING] = 1;
-            you.skills[SK_DODGING + random() % 3]++;
+            you.skills[SK_DODGING + random2(3)]++;
         }
         else if (you.species != SP_OGRE && you.species != SP_TROLL)
         {
@@ -1140,7 +1142,7 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
                 you.skills[SK_ARMOUR] = 2;
 
             you.skills[SK_SHIELDS] = 2;
-            you.skills[SK_STABBING + random() % 2]++;
+            you.skills[SK_STABBING + random2(2)]++;
             you.skills[SK_THROWING] = 2;
             // you.skills[SK_UNARMED_COMBAT] = 1;
         }
@@ -1222,15 +1224,15 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
 
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 1;
-        you.skills[SK_DODGING + random() % 2]++;
+        you.skills[SK_DODGING + random2(2)]++;
 
 /*        if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
         you.skills[SK_SPELLCASTING] = 2;
         you.skills[SK_CONJURATIONS] = 1;
         you.skills[SK_ENCHANTMENTS] = 1;
-        you.skills[SK_SPELLCASTING + random() % 3]++;
-        you.skills[SK_SUMMONINGS + random() % 5]++;
+        you.skills[SK_SPELLCASTING + random2(3)]++;
+        you.skills[SK_SUMMONINGS + random2(5)]++;
 
         you.skills[SK_SHORT_BLADES] = 1;
         you.skills[SK_STAVES] = 1;
@@ -1419,7 +1421,7 @@ getkey:
         you.skills[SK_DODGING] = 2;
         you.skills[SK_STEALTH] = 2;
         you.skills[SK_STABBING] = 1;
-        you.skills[SK_DODGING + random() % 3]++;
+        you.skills[SK_DODGING + random2(3)]++;
 
 /* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
@@ -1544,7 +1546,7 @@ getkey:
 
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 1;
-        you.skills[SK_DODGING + random() % 2]++;
+        you.skills[SK_DODGING + random2(2)]++;
 /* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
         you.skills[SK_SPELLCASTING] = 1;
@@ -1607,7 +1609,7 @@ getkey:
         you.skills[SK_FIGHTING] = 2;
         you.skills[SK_ARMOUR] = 1;
         you.skills[SK_DODGING] = 1;
-        you.skills[SK_ARMOUR + random() % 2]++;
+        you.skills[SK_ARMOUR + random2(2)]++;
 
         you.skills[SK_SHIELDS] = 2;
         you.skills[SK_SHORT_BLADES] = 2;
@@ -1831,8 +1833,8 @@ getkey:
         you.inv_dam[1] = 0;
         you.inv_colour[1] = BROWN;
 
-        you.inv_quantity[2] = 15 + random() % 5 + random() % 5 + random() % 5
-                                                + random() % 5 + random() % 5;
+        you.inv_quantity[2] = 15 + random2(5) + random2(5) + random2(5)
+                                                + random2(5) + random2(5);
         you.inv_class[2] = OBJ_MISSILES;
         you.inv_type[2] = MI_ARROW;
         you.inv_plus[2] = 50;
@@ -1904,7 +1906,7 @@ getkey:
             default:
                 you.skills[SK_DODGING] = 1;
                 you.skills[SK_STEALTH] = 1;
-                you.skills[SK_STABBING + random() % 2]++; // stabbing or shield
+                you.skills[SK_STABBING + random2(2)]++; // stabbing or shield
                 you.skills[SK_BOWS] = 2;
                 break;
         }
@@ -1943,7 +1945,7 @@ getkey:
         if (you.char_class == JOB_WARPER)
             strcpy(you.class_name, "warper");
 
-        switch (random() % 8)   /* get a random lvl 1 attack spell - later overwritten for most classes */
+        switch (random2(8))   /* get a random lvl 1 attack spell - later overwritten for most classes */
         {
         case 0:
             you.spells[0] = SPELL_BURN;
@@ -1996,7 +1998,7 @@ getkey:
         if (you.char_class == JOB_ENCHANTER)
             you.inv_plus[1] = 51;
         you.inv_dam[1] = 0;
-        you.inv_colour[1] = random() % 15 + 1;
+        you.inv_colour[1] = random2(15) + 1;
         if (you.char_class == JOB_FIRE_ELEMENTALIST)
             you.inv_colour[1] = RED;
         if (you.char_class == JOB_ICE_ELEMENTALIST)
@@ -2056,24 +2058,24 @@ getkey:
             you.inv_quantity[3] = 1;
             you.inv_class[3] = OBJ_WANDS;
             you.inv_dam[3] = 0;
-            you.inv_colour[3] = random() % 15 + 1;
-            switch (random() % 4)
+            you.inv_colour[3] = random2(15) + 1;
+            switch (random2(4))
             {
             case 0:
                 you.inv_type[3] = WAND_SLOWING;
-                you.inv_plus[3] = 7 + random() % 5;
+                you.inv_plus[3] = 7 + random2(5);
                 break;
             case 1:
                 you.inv_type[3] = WAND_PARALYSIS;
-                you.inv_plus[3] = 5 + random() % 4;
+                you.inv_plus[3] = 5 + random2(4);
                 break;
             case 2:
                 you.inv_type[3] = WAND_INVISIBILITY;
-                you.inv_plus[3] = 4 + random() % 4;
+                you.inv_plus[3] = 4 + random2(4);
                 break;
             case 3:
                 you.inv_type[3] = WAND_PARALYSIS;
-                you.inv_plus[3] = 5 + random() % 4;
+                you.inv_plus[3] = 5 + random2(4);
                 break;
             }
             you.inv_plus2[3] = 0;
@@ -2160,7 +2162,7 @@ getkey:
         you.inv_quantity[2] = 1;
 //      you.inv_plus [2] = 124;
         you.inv_dam[2] = 0;
-        you.inv_colour[2] = random() % 15 + 1;
+        you.inv_colour[2] = random2(15) + 1;
         if (you.char_class == JOB_FIRE_ELEMENTALIST)
             you.inv_colour[2] = RED;
         if (you.char_class == JOB_ICE_ELEMENTALIST)
@@ -2171,7 +2173,7 @@ getkey:
 
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 1;
-        you.skills[SK_DODGING + random() % 2]++;
+        you.skills[SK_DODGING + random2(2)]++;
 /* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
         you.skills[SK_SPELLCASTING] = 1;
@@ -2217,7 +2219,7 @@ getkey:
         you.inv_type[1] = ARM_ROBE;
         you.inv_plus[1] = 50;
         you.inv_dam[1] = 0;
-        you.inv_colour[1] = 1 + random() % 15;
+        you.inv_colour[1] = 1 + random2(15);
 
 
         you.inv_class[2] = OBJ_BOOKS;
@@ -2225,7 +2227,7 @@ getkey:
         you.inv_quantity[2] = 1;
         you.inv_plus[2] = 127;
         you.inv_dam[2] = 0;
-        you.inv_colour[2] = 1 + random() % 15;
+        you.inv_colour[2] = 1 + random2(15);
 
 /*      you.AC = 1;
    you.evasion = 10; */
@@ -2378,7 +2380,7 @@ getkey:
         you.skills[SK_FIGHTING] = 3;
         you.skills[SK_ARMOUR] = 1;
         you.skills[SK_DODGING] = 1;
-        you.skills[SK_ARMOUR + random() % 2]++;
+        you.skills[SK_ARMOUR + random2(2)]++;
 
         you.skills[SK_STABBING] = 1;
 
@@ -2577,7 +2579,7 @@ getkey:
         you.skills[SK_DODGING] = 1;
         you.skills[SK_STEALTH] = 2;
         you.skills[SK_STABBING] = 2;
-        you.skills[SK_DODGING + random() % 3]++;
+        you.skills[SK_DODGING + random2(3)]++;
 
 /* if (you.skills [SK_DODGING] == 2) you.evasion ++; */
 
@@ -2646,17 +2648,17 @@ getkey:
         switch (random2(3))
         {
         case 0:
-            if (you.strength > 17 && random() % 2 != 0)
+            if (you.strength > 17 && random2(2) != 0)
                 continue;
             you.strength++;
             break;
         case 1:
-            if (you.dex > 17 && random() % 2 != 0)
+            if (you.dex > 17 && random2(2) != 0)
                 continue;
             you.dex++;
             break;
         case 2:
-            if (you.intel > 17 && random() % 2 != 0)
+            if (you.intel > 17 && random2(2) != 0)
                 continue;
             you.intel++;
             break;
@@ -3203,20 +3205,20 @@ char class_allowed(char speci, char char_class)
 {
     switch (char_class)
     {
-    case JOB_FIGHTER:           // fighter
+    case JOB_FIGHTER:
 
         switch (speci)
         {
         case SP_OGRE_MAGE:
-            return 0;           // O-mage
+            return 0;
 
         case SP_SPRIGGAN:
-            return 0;           // spriggan
+            return 0;
 
         }
         return 1;
 
-    case JOB_WIZARD:            // wizard
+    case JOB_WIZARD:
 
         switch (speci)
         {
@@ -3225,24 +3227,24 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_KOBOLD:
         case SP_MUMMY:
-        case SP_GNOME:          // gnome
-            // case 8:
+        case SP_GNOME:
+
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_SPRIGGAN:       // spriggan
+        case SP_SPRIGGAN:
 
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_PRIEST:            // priest
+    case JOB_PRIEST:
 
         switch (speci)
         {
@@ -3250,12 +3252,12 @@ char class_allowed(char speci, char char_class)
         case SP_KOBOLD:
         case SP_MUMMY:
         case SP_NAGA:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
         case SP_OGRE_MAGE:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3266,23 +3268,23 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_SPRIGGAN:       /* spriggan */
-        case SP_MINOTAUR:       // minotaur
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_SPRIGGAN:
+        case SP_MINOTAUR:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMONSPAWN:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_THIEF:             // thief
+    case JOB_THIEF:
 
         switch (speci)
         {
@@ -3290,20 +3292,20 @@ char class_allowed(char speci, char char_class)
         case SP_OGRE:
         case SP_TROLL:
         case SP_OGRE_MAGE:
-        case SP_CENTAUR:        /* Centaur */
-        case SP_SPRIGGAN:       // spriggan
+        case SP_CENTAUR:
+        case SP_SPRIGGAN:
 
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_GLADIATOR: // glad
+    case JOB_GLADIATOR:
 
         switch (speci)
         {
@@ -3311,7 +3313,7 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_MOUNTAIN_DWARF:
         case SP_HILL_ORC:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3322,20 +3324,20 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
+        case SP_UNK2_DRACONIAN:
         case SP_CENTAUR:
         case SP_DEMIGOD:
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_NECROMANCER:       // necromancer
+    case JOB_NECROMANCER:
 
         switch (speci)
         {
@@ -3346,17 +3348,17 @@ char class_allowed(char speci, char char_class)
         case SP_KOBOLD:
         case SP_MUMMY:
         case SP_NAGA:
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_OGRE_MAGE:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_PALADIN:           // Paladin
+    case JOB_PALADIN:
 
         switch (speci)
         {
@@ -3366,7 +3368,7 @@ char class_allowed(char speci, char char_class)
         }
         return 0;
 
-    case JOB_ASSASSIN:          // assassin
+    case JOB_ASSASSIN:
 
         switch (speci)
         {
@@ -3380,16 +3382,19 @@ char class_allowed(char speci, char char_class)
         case SP_KOBOLD:
         case SP_MUMMY:
         case SP_NAGA:
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
+
+        case SP_SPRIGGAN:
+
 
             return 1;
         }
         return 0;
 
-    case JOB_BERSERKER: // berserker
+    case JOB_BERSERKER:
 
         switch (speci)
         {
@@ -3398,10 +3403,10 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_OGRE:
         case SP_TROLL:
-        case SP_CENTAUR:        /* Centaur */
-        case SP_MINOTAUR:       // minotaur
+        case SP_CENTAUR:
+        case SP_MINOTAUR:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMONSPAWN:
 
             return 1;
         }
@@ -3446,50 +3451,50 @@ char class_allowed(char speci, char char_class)
         }
         return 0;
 
-    case JOB_CONJURER:          // Conjurer
+    case JOB_CONJURER:
 
         switch (speci)
         {
         case SP_KOBOLD:
         case SP_MUMMY:
         case SP_HALFLING:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_CENTAUR:        /* Centaur */
-        case SP_SPRIGGAN:       // spriggan
+        case SP_CENTAUR:
+        case SP_SPRIGGAN:
 
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
             return 0;
         }
         return 1;
 
-    case JOB_ENCHANTER: // Enchanter
+    case JOB_ENCHANTER:
 
         switch (speci)
         {
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_MUMMY:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_FIRE_ELEMENTALIST: // Fire elementalist
+    case JOB_FIRE_ELEMENTALIST:
 
         switch (speci)
         {
@@ -3501,18 +3506,18 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_MOUNTAIN_DWARF:
         case SP_HILL_ORC:
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_OGRE_MAGE:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_ICE_ELEMENTALIST:  // Ice elementalist
+    case JOB_ICE_ELEMENTALIST:
 
         switch (speci)
         {
@@ -3521,16 +3526,16 @@ char class_allowed(char speci, char char_class)
         case SP_HIGH_ELF:
         case SP_DEEP_ELF:
         case SP_SLUDGE_ELF:
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_OGRE_MAGE:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
             return 1;
         }
         return 0;
 
-    case JOB_SUMMONER:          // Summoner
+    case JOB_SUMMONER:
 
         switch (speci)
         {
@@ -3538,22 +3543,22 @@ char class_allowed(char speci, char char_class)
         case SP_MOUNTAIN_DWARF:
         case SP_HILL_DWARF:
         case SP_MUMMY:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_CENTAUR:        /* Centaur */
-        case SP_SPRIGGAN:       // spriggan
+        case SP_CENTAUR:
+        case SP_SPRIGGAN:
 
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
             return 0;
         }
         return 1;
 
-    case JOB_AIR_ELEMENTALIST:  // Air elementalist
+    case JOB_AIR_ELEMENTALIST:
 
         switch (speci)
         {
@@ -3563,19 +3568,19 @@ char class_allowed(char speci, char char_class)
         case SP_GREY_ELF:
         case SP_DEEP_ELF:
         case SP_SLUDGE_ELF:
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_OGRE_MAGE:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
 
-    case JOB_EARTH_ELEMENTALIST:        // Earth elementalist
+    case JOB_EARTH_ELEMENTALIST:
 
         switch (speci)
         {
@@ -3585,18 +3590,18 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_MOUNTAIN_DWARF:
         case SP_HILL_ORC:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_OGRE_MAGE:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
             return 1;
         }
         return 0;
 
-    case JOB_CRUSADER:          // Crusader
+    case JOB_CRUSADER:
 
         switch (speci)
         {
@@ -3608,7 +3613,7 @@ char class_allowed(char speci, char char_class)
         case SP_SLUDGE_ELF:
         case SP_HILL_ORC:
         case SP_OGRE_MAGE:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3619,16 +3624,16 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
             return 1;
         }
         return 0;
 
-    case JOB_DEATH_KNIGHT:      // Death knight
+    case JOB_DEATH_KNIGHT:
 
         switch (speci)
         {
@@ -3638,7 +3643,7 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_MUMMY:
         case SP_NAGA:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3649,18 +3654,18 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_VENOM_MAGE:        // tainter
+    case JOB_VENOM_MAGE:
 
         switch (speci)
         {
@@ -3670,8 +3675,8 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_NAGA:
-        case SP_OGRE_MAGE:      /* Ogre-mage */
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_OGRE_MAGE:
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3682,18 +3687,18 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_SPRIGGAN:       /* Spriggan */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_UNK2_DRACONIAN:
+        case SP_DEMIGOD:
+        case SP_SPRIGGAN:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_CHAOS_KNIGHT:      // chaos knight
+    case JOB_CHAOS_KNIGHT:
 
         switch (speci)
         {
@@ -3705,7 +3710,7 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_NAGA:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3716,17 +3721,17 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_MINOTAUR:       // minotaur
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_MINOTAUR:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMONSPAWN:
 
             return 1;
         }
         return 0;
 
-    case JOB_TRANSMUTER:        // transmuter
+    case JOB_TRANSMUTER:
 
         switch (speci)
         {
@@ -3735,11 +3740,11 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_KOBOLD:
         case SP_MUMMY:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3750,18 +3755,18 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_MINOTAUR:       // minotaur
+        case SP_UNK2_DRACONIAN:
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_HEALER:            // healer
+    case JOB_HEALER:
 
         switch (speci)
         {
@@ -3769,12 +3774,12 @@ char class_allowed(char speci, char char_class)
         case SP_KOBOLD:
         case SP_MUMMY:
         case SP_NAGA:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
         case SP_OGRE_MAGE:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3785,23 +3790,23 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_SPRIGGAN:       // spriggan
+        case SP_UNK2_DRACONIAN:
+        case SP_DEMIGOD:
+        case SP_SPRIGGAN:
 
-        case SP_MINOTAUR:       // minotaur
+        case SP_MINOTAUR:
 
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMONSPAWN:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }
         return 1;
 
-    case JOB_REAVER:            // Reaver
+    case JOB_REAVER:
 
         switch (speci)
         {
@@ -3813,7 +3818,7 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_NAGA:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3824,18 +3829,18 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_CENTAUR:        /* Centaur */
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_UNK2_DRACONIAN:
+        case SP_CENTAUR:
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_STALKER:           /* stalker */
+    case JOB_STALKER:
         switch (speci)
         {
         case SP_HUMAN:
@@ -3847,16 +3852,16 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_ORC:
         case SP_KOBOLD:
         case SP_NAGA:
-        case SP_DEMIGOD:        /* Demigod */
-        case SP_DEMONSPAWN:     // demonspawn
+        case SP_DEMIGOD:
+        case SP_DEMONSPAWN:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 1;
         }
         return 0;
 
-    case JOB_MONK:              // Monk
+    case JOB_MONK:
 
         switch (speci)
         {
@@ -3869,16 +3874,16 @@ char class_allowed(char speci, char char_class)
         case SP_TROLL:
         case SP_OGRE_MAGE:
         case SP_CENTAUR:
-        case SP_SPRIGGAN:       // spriggan
+        case SP_SPRIGGAN:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
             return 0;
         }
         return 1;
 
 
-    case JOB_WARPER:            // warper
+    case JOB_WARPER:
 
         switch (speci)
         {
@@ -3887,11 +3892,11 @@ char class_allowed(char speci, char char_class)
         case SP_HILL_DWARF:
         case SP_KOBOLD:
         case SP_MUMMY:
-        case SP_GNOME:          // gnome
+        case SP_GNOME:
 
         case SP_OGRE:
         case SP_TROLL:
-        case SP_RED_DRACONIAN:  /* Drac */
+        case SP_RED_DRACONIAN:
         case SP_WHITE_DRACONIAN:
         case SP_GREEN_DRACONIAN:
         case SP_GOLDEN_DRACONIAN:
@@ -3902,12 +3907,12 @@ char class_allowed(char speci, char char_class)
         case SP_PALE_DRACONIAN:
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
-        case SP_UNK2_DRACONIAN: /* Draconians */
-        case SP_MINOTAUR:       // minotaur
+        case SP_UNK2_DRACONIAN:
+        case SP_MINOTAUR:
 
-        case SP_GHOUL:          // Ghoul
+        case SP_GHOUL:
 
-        case SP_KENKU:          // Kenku
+        case SP_KENKU:
 
             return 0;
         }

@@ -172,7 +172,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 1:
                 mpr("A wave of violent energy washes through your body!");
                 mpr("Ouch.");
-                ouch(6 + random2(4) + random2(4), 0, 18);
+                ouch(6 + random2(4) + random2(4), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -184,7 +184,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 0:
                 mpr("Energy rips through your body!");
                 mpr("Ouch!");
-                ouch(9 + random2(9) + random2(9), 0, 18);
+                ouch(9 + random2(9) + random2(9), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "You conjure up a violent explosion!");
@@ -214,7 +214,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 0:
                 strcpy(info, "You are blasted with magical energy!");
                 mpr(info);
-                ouch(12 + random2(15) + random2(15), 0, 18);
+                ouch(12 + random2(15) + random2(15), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "There is a sudden explosion of magical energy!");
@@ -398,13 +398,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 strcpy(info, "Ouch!");
                 mpr(info);
-                ouch(4 + random2(5) + random2(5), 0, 18);
+                ouch(4 + random2(5) + random2(5), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "Space bends around you!");
                 mpr(info);
                 random_blink();
-                ouch(4 + random2(4) + random2(4), 0, 18);
+                ouch(4 + random2(4) + random2(4), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 2:
                 strcpy(info, "Space twists in upon itself!");
@@ -423,7 +423,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 strcpy(info, "Ouch!!");
                 mpr(info);
-                ouch(9 + random2(12) + random2(12), 0, 18);
+                ouch(9 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "Space warps around you!");
@@ -432,7 +432,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     you_teleport2(1);
                 else
                     random_blink();
-                ouch(5 + random2(5) + random2(5), 0, 18);
+                ouch(5 + random2(5) + random2(5), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 10);       // conf
 
                 break;
@@ -456,13 +456,13 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 strcpy(info, "Ouch!!!");
                 mpr(info);
-                ouch(15 + random2(15) + random2(15), 0, 18);
+                ouch(15 + random2(15) + random2(15), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "Space warps crazily around you!");
                 mpr(info);
                 you_teleport2(1);
-                ouch(9 + random2(9) + random2(9), 0, 18);
+                ouch(9 + random2(9) + random2(9), 0, KILLED_BY_WILD_MAGIC);
                 potion_effect(POT_CONFUSION, 30);       // conf
 
                 break;
@@ -536,7 +536,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 strcpy(info, "Ouch!");
                 mpr(info);
-                ouch(5 + random2(5) + random2(5), 0, 18);
+                ouch(5 + random2(5) + random2(5), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "Space twists in upon itself!");
@@ -817,7 +817,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 }
                 strcpy(info, "Pain shoots through your body!");
                 mpr(info);
-                ouch(5 + random2(8) + random2(8), 0, 18);
+                ouch(5 + random2(8) + random2(8), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "You feel horribly lethargic.");
@@ -861,7 +861,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 }
                 strcpy(info, "You convulse helplessly as pain tears through your body!");
                 mpr(info);
-                ouch(10 + random2(12) + random2(12) + 5, 0, 18);
+                ouch(10 + random2(12) + random2(12) + 5, 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -882,7 +882,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 loopj = (you.hp / 2) - 1;
                 if (loopj <= 0)
                     loopj = 0;
-                ouch(loopj, 0, 0);      // can never die from this, right?
+                ouch(loopj, 0, KILLED_BY_MONSTER);      // can never die from this, right?
 
                 you.redraw_hit_points = 1;
                 break;
@@ -972,7 +972,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("Your body is twisted painfully.");
-                ouch(1 + random2(6) + random2(6), 0, 18);
+                ouch(1 + random2(6) + random2(6), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 random_uselessness(2 + random2(7), 0);
@@ -986,7 +986,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("Your body is twisted very painfully!");
-                ouch(3 + random2(12) + random2(12), 0, 18);
+                ouch(3 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("Strange energies tear through your body!");
@@ -1013,12 +1013,12 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mutate(100);
                 mutate(100);
                 mutate(100);
-                ouch(7 + random2(12) + random2(12), 0, 18);
+                ouch(7 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 mpr("You feel very strange.");
                 delete_mutation(100);
-                ouch(5 + random2(12) + random2(12), 0, 18);
+                ouch(5 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 2:
                 mpr("Your body is distorted in a weirdly horrible way!");
@@ -1026,7 +1026,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                     if (give_bad_mutation() == 0)
                         if (give_bad_mutation() == 0)
                             give_bad_mutation();
-                ouch(5 + random2(12) + random2(12), 0, 18);
+                ouch(5 + random2(12) + random2(12), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -1092,7 +1092,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 scrolls_burn(3, 6);
                 if (player_res_fire() < 100)
-                    ouch(2 + random2(7) + random2(7), 0, 18);
+                    ouch(2 + random2(7) + random2(7), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -1104,7 +1104,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             case 0:
                 strcpy(info, "You are blasted with fire.");
                 mpr(info);
-                ouch(check_your_resists(5 + random2(15) + random2(15), 2), 0, 18);
+                ouch(check_your_resists(5 + random2(15) + random2(15), 2), 0, KILLED_BY_WILD_MAGIC);
                 scrolls_burn(5, 6);
                 break;
             case 1:
@@ -1133,7 +1133,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("You are blasted with searing flames!");
-                ouch(check_your_resists(9 + random2(17) + random2(17), 2), 0, 18);
+                ouch(check_your_resists(9 + random2(17) + random2(17), 2), 0, KILLED_BY_WILD_MAGIC);
                 scrolls_burn(10, 6);
                 break;
             case 1:
@@ -1217,7 +1217,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 mpr(info);
                 scrolls_burn(2, 8);
                 if (player_res_cold() < 100)
-                    ouch(4 + random2(3) + random2(3), 0, 18);
+                    ouch(4 + random2(3) + random2(3), 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -1228,7 +1228,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("Heat is drained from your body.");
-                ouch(check_your_resists(5 + random2(6) + random2(7), 3), 0, 18);
+                ouch(check_your_resists(5 + random2(6) + random2(7), 3), 0, KILLED_BY_WILD_MAGIC);
                 scrolls_burn(4, 8);
                 break;
             case 1:
@@ -1257,7 +1257,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("You are blasted with ice!");
-                ouch(check_your_resists(9 + random2(12) + random2(12), 3), 0, 18);
+                ouch(check_your_resists(9 + random2(12) + random2(12), 3), 0, KILLED_BY_WILD_MAGIC);
                 scrolls_burn(9, 8);
                 break;
             case 1:
@@ -1335,7 +1335,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
                 hurted = 10 + random2(7) + random2(7);
                 if (player_AC() > 0)
                     hurted -= random2(player_AC());
-                ouch(hurted, 0, 18);
+                ouch(hurted, 0, KILLED_BY_WILD_MAGIC);
                 break;
             }
             break;
@@ -1435,7 +1435,7 @@ char miscast_effect(char sp_type, char mag_pow, char mag_fail, char force_effect
             {
             case 0:
                 mpr("Electricity courses through your body.");
-                ouch(check_your_resists(4 + random2(5) + random2(5), 5), 0, 18);
+                ouch(check_your_resists(4 + random2(5) + random2(5), 5), 0, KILLED_BY_WILD_MAGIC);
                 break;
             case 1:
                 strcpy(info, "Noxious gasses pour from your hands!");
@@ -1830,7 +1830,7 @@ void which_spell()
     int i;
     int j = 0;
 
-    for (i = SK_SPELLCASTING; i < SK_POISON_MAGIC; i++)
+    for (i = SK_SPELLCASTING; i <= SK_POISON_MAGIC; i++)
     {
         if (you.skills[i] != 0)
             j++;

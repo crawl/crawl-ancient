@@ -5,14 +5,15 @@
  *
  *  Change History (most recent first):
  *
- *      <6>      9/29/99        BCR             Removed first argument from draw_border
- *      <5>      6/22/99        BWR             Fixed and improved the stealth
- *      <4>      5/20/99        BWR             show_map colours all portals,
- *                                              exits from subdungeons now
- *                                              look like up stairs.
- *      <3>      5/09/99        JDJ             show_map draws shops in yellow.
- *      <2>      5/09/99        JDJ             show_map accepts '\r' along with '.'.
- *      <1>      -/--/--        LRH             Created
+ *   <7>      9/29/99    BCR    Removed first argument from draw_border
+ *   <6>      9/11/99    LRH    Added calls to overmap functions
+ *   <5>      6/22/99    BWR    Fixed and improved the stealth
+ *   <4>      5/20/99    BWR    show_map colours all portals,
+ *                              exits from subdungeons now
+ *                              look like up stairs.
+ *   <3>      5/09/99    JDJ    show_map draws shops in yellow.
+ *   <2>      5/09/99    JDJ    show_map accepts '\r' along with '.'.
+ *   <1>      -/--/--    LRH    Created
  */
 
 #include "AppHdr.h"
@@ -32,6 +33,7 @@
 #include "externs.h"
 #include "enum.h"
 #include "mstruct.h"
+#include "overmap.h"
 #include "player.h"
 #include "stuff.h"
 
@@ -183,6 +185,7 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 69:
         *ch = 239;
         *color = RED;
+                seen_other_thing(object);
         break;                  // staircase to hell
 
     case 70:
@@ -215,12 +218,13 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 80:
         *ch = 239;
         *color = YELLOW;        // shop?
-
+                seen_other_thing(object);
         break;
         // if I change anything above here, must also change magic mapping!
     case 81:
         *ch = 239;
         *color = LIGHTGREY;
+                seen_other_thing(object);
         break;                  // labyrinth
 
     case 85:
@@ -262,6 +266,7 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 96:
         *color = random2(16);
         *ch = 239;
+                seen_other_thing(object);
         break;                  // To Abyss
 
     case 97:
@@ -277,6 +282,7 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 99:
         *color = LIGHTBLUE;
         *ch = 239;
+                seen_other_thing(object);
         break;                  // gate to pandemonium
 
     case 100:
@@ -307,11 +313,13 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 126:
         *color = YELLOW;
         *ch = '>';
+                seen_staircase(object);
         break;
 
     case 117:
         *color = MAGENTA;
         *ch = 239;
+                seen_staircase(object);
         break;
 
     case 130:
@@ -342,24 +350,29 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
     case 180:
         *color = WHITE;
         *ch = 220;
+        seen_altar(GOD_ZIN);
         break;                  /* Altar to Zin */
     case 181:
         *color = YELLOW;
         *ch = 220;
+        seen_altar(GOD_SHINING_ONE);
         break;                  /* Altar to TSO */
     case 182:
         *color = DARKGREY;
         *ch = 220;
+        seen_altar(GOD_KIKUBAAQUDGHA);
         break;                  /* Altar to Kiku */
     case 183:
         *color = DARKGREY;
         if (random2(3) == 0)
             *color = RED;
         *ch = 220;
+        seen_altar(GOD_YREDELEMNUL);
         break;                  /* Altar to Yredelemnul */
     case 184:
         *color = random2(15) + 1;
         *ch = 220;
+        seen_altar(GOD_XOM);
         break;                  /* Altar to Xom */
     case 185:
         *color = LIGHTBLUE;
@@ -368,10 +381,12 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         if (random2(3) == 0)
             *color = LIGHTRED;
         *ch = 220;
+        seen_altar(GOD_VEHUMET);
         break;                  /* Altar to Vehumet */
     case 186:
         *color = CYAN;
         *ch = 220;
+        seen_altar(GOD_OKAWARU);
         break;                  /* Altar to Okawaru */
     case 187:
         *color = RED;
@@ -380,22 +395,27 @@ static void get_ibm_symbol(unsigned int object, unsigned char *ch, unsigned char
         if (random2(3) == 0)
             *color = YELLOW;
         *ch = 220;
+        seen_altar(GOD_MAKHLEB);
         break;                  /* Altar to Makhleb */
     case 188:
         *color = BLUE;
         *ch = 220;
+        seen_altar(GOD_SIF_MUNA);
         break;                  /* Altar to Sif Muna */
     case 189:
         *color = RED;
         *ch = 220;
+        seen_altar(GOD_TROG);
         break;                  /* Altar to Trog */
     case 190:
         *color = LIGHTMAGENTA;
         *ch = 220;
+        seen_altar(GOD_NEMELEX_XOBEH);
         break;                  /* Altar to Nemelex */
     case 191:
         *color = LIGHTGREY;
         *ch = 220;
+        seen_altar(GOD_ELYVILON);
         break;                  /* Altar to Elyvilon */
 
     case 200:
@@ -2007,6 +2027,7 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
     }                           // end of the for (shad) above.
 }
 
+
 void draw_border(char your_name[kNameLen], char class_name[40], char tspecies)
 {
 
@@ -3087,6 +3108,7 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 69:
                         showed = '\\';
                         buffy[bufcount + 1] = RED;
+                                                seen_other_thing(69);
                         break;  // staircase to hell
 
                     case 70:
@@ -3119,11 +3141,13 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 80:
                         showed = '\\';
                         buffy[bufcount + 1] = YELLOW;
+                                                seen_other_thing(80);
                         break;
 // if I change anything above here, must also change magic mapping!
                     case 81:
                         showed = '\\';
                         buffy[bufcount + 1] = LIGHTGREY;
+                                                seen_other_thing(81);
                         break;  // labyrinth
 
                     case 85:
@@ -3166,6 +3190,7 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 96:
                         buffy[bufcount + 1] = random2(16);
                         showed = '\\';
+                                                seen_other_thing(96);
                         break;  // To Abyss
 
                     case 97:
@@ -3181,6 +3206,7 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 99:
                         buffy[bufcount + 1] = LIGHTBLUE;
                         showed = '\\';
+                                                seen_other_thing(99);
                         break;  // gate to pandemonium
 
                     case 100:
@@ -3211,11 +3237,13 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 116:
                         buffy[bufcount + 1] = YELLOW;
                         showed = '>';
+                                                seen_staircase(env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9]);
                         break;  // stair to orc mine
 
                     case 117:
                         buffy[bufcount + 1] = MAGENTA;
                         showed = '\\';
+                                                seen_staircase(env.show[count_x - you.x_pos + 9][count_y - you.y_pos + 9]);
                         break;
 
                     case 130:
@@ -3248,24 +3276,29 @@ void viewwindow3(char draw_it, bool do_updates)
                     case 180:
                         buffy[bufcount + 1] = WHITE;
                         showed = '_';
+                                        seen_altar(GOD_ZIN);
                         break;  /* Altar to Zin */
                     case 181:
                         buffy[bufcount + 1] = YELLOW;
                         showed = '_';
+                                        seen_altar(GOD_SHINING_ONE);
                         break;  /* Altar to TSO */
                     case 182:
                         buffy[bufcount + 1] = DARKGREY;
                         showed = '_';
+                                        seen_altar(GOD_KIKUBAAQUDGHA);
                         break;  /* Altar to Kiku */
                     case 183:
                         buffy[bufcount + 1] = DARKGREY;
                         if (random2(3) == 0)
                             buffy[bufcount + 1] = RED;
                         showed = '_';
+                                        seen_altar(GOD_YREDELEMNUL);
                         break;  /* Altar to Yredelemnul */
                     case 184:
                         buffy[bufcount + 1] = random2(15) + 1;
                         showed = '_';
+                                        seen_altar(GOD_XOM);
                         break;  /* Altar to Xom */
                     case 185:
                         buffy[bufcount + 1] = LIGHTBLUE;
@@ -3274,10 +3307,12 @@ void viewwindow3(char draw_it, bool do_updates)
                         if (random2(3) == 0)
                             buffy[bufcount + 1] = LIGHTRED;
                         showed = '_';
+                                        seen_altar(GOD_VEHUMET);
                         break;  /* Altar to Vehumet */
                     case 186:
                         buffy[bufcount + 1] = CYAN;
                         showed = '_';
+                                        seen_altar(GOD_OKAWARU);
                         break;  /* Altar to Okawaru */
                     case 187:
                         buffy[bufcount + 1] = RED;
@@ -3286,22 +3321,27 @@ void viewwindow3(char draw_it, bool do_updates)
                         if (random2(3) == 0)
                             buffy[bufcount + 1] = YELLOW;
                         showed = '_';
+                                        seen_altar(GOD_MAKHLEB);
                         break;  /* Altar to Makhleb */
                     case 188:
                         buffy[bufcount + 1] = BLUE;
                         showed = '_';
+                                        seen_altar(GOD_SIF_MUNA);
                         break;  /* Altar to Sif Muna */
                     case 189:
                         buffy[bufcount + 1] = RED;
                         showed = '_';
+                                        seen_altar(GOD_TROG);
                         break;  /* Altar to Trog */
                     case 190:
                         buffy[bufcount + 1] = LIGHTMAGENTA;
                         showed = '_';
+                                        seen_altar(GOD_NEMELEX_XOBEH);
                         break;  /* Altar to Nemelex */
                     case 191:
                         buffy[bufcount + 1] = LIGHTGREY;
                         showed = '_';
+                                        seen_altar(GOD_ELYVILON);
                         break;  /* Altar to Elyvilon */
 
                     case 200:
