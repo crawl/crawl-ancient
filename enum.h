@@ -1364,6 +1364,7 @@ enum SPECIAL_WEAPONS
     SPWPN_DISRUPTION,
     SPWPN_PAIN,
     SPWPN_DISTORTION,
+    SPWPN_REACHING,
     SPWPN_RANDART_I = 25,
     SPWPN_RANDART_II,
     SPWPN_RANDART_III,
@@ -1694,6 +1695,7 @@ enum WANDS
 
 enum WEAPONS
 {
+    // Base weapons
     WPN_CLUB,
     WPN_MACE,
     WPN_FLAIL,
@@ -1713,9 +1715,13 @@ enum WEAPONS
     WPN_HAND_CROSSBOW,
     WPN_GLAIVE,
     WPN_QUARTERSTAFF,
+
+    // These three not standardly created
     WPN_SCYTHE,
     WPN_GIANT_CLUB,
     WPN_GIANT_SPIKED_CLUB,
+
+    // "Rare" weapons -- some of these have special cases and are uncommon
     WPN_EVENINGSTAR,
     WPN_QUICK_BLADE,
     WPN_KATANA,
@@ -1728,6 +1734,17 @@ enum WEAPONS
     WPN_SABRE,
     WPN_DEMON_BLADE,
     WPN_DEMON_WHIP,
+    WPN_DEMON_TRIDENT,
+    WPN_BROAD_AXE,
+
+    // Base items continued
+    WPN_AXE,
+    WPN_TRIDENT,
+    WPN_SPIKED_FLAIL,
+    WPN_GREAT_MACE,
+    WPN_GREAT_FLAIL,
+    WPN_KNIFE,
+
     WPN_UNARMED = 500,
     WPN_UNKNOWN = 1000,
 };

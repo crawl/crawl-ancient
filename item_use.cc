@@ -129,7 +129,8 @@ void wield_weapon(char auto_wield)
             //inventory(0);
             nthing = get_invent(OBJ_WEAPONS);
             //invent(you.inv_plus2, 0, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [0], you.equip [6], you.equip [5], you.equip [2], you.equip [1], you.equip [3], you.equip [4], you.ring);
-            if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
+            if ((nthing >= 65 && nthing <= 90)
+                                    || (nthing >= 97 && nthing <= 122))
             {
                 keyin = nthing;
             }
@@ -147,8 +148,9 @@ void wield_weapon(char auto_wield)
         {
             //inventory(-1);
             nthing = get_invent(-1);
-            //invent(you.inv_plus2, -1, you.inv_quantity, you.inv_dam, you.inv_class, you.inv_type, you.inv_plus, you.inv_ident, you.equip [0], you.equip [6], you.equip [5], you.equip [2], you.equip [1], you.equip [3], you.equip [4], you.ring);
-            if ((nthing >= 65 && nthing <= 90) || (nthing >= 97 && nthing <= 122))
+
+            if ((nthing >= 65 && nthing <= 90)
+                                || (nthing >= 97 && nthing <= 122))
             {
                 keyin = nthing;
             }
@@ -177,7 +179,8 @@ void wield_weapon(char auto_wield)
         return;
     }
 
-    if (item_wield_1 < 65 || (item_wield_1 > 90 && item_wield_1 < 97) || item_wield_1 > 122)
+    if (item_wield_1 < 65 || (item_wield_1 > 90 && item_wield_1 < 97)
+                                                    || item_wield_1 > 122)
     {
         mpr("You don't have any such object.");
         return;
@@ -209,7 +212,8 @@ void wield_weapon(char auto_wield)
 
     if (you.inv_class[item_wield_2] != OBJ_WEAPONS)
     {
-        if (you.inv_class[item_wield_2] == OBJ_STAVES && you.equip[EQ_SHIELD] != -1)
+        if (you.inv_class[item_wield_2] == OBJ_STAVES
+                                                && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
             return;
@@ -217,24 +221,32 @@ void wield_weapon(char auto_wield)
 
         if (you.equip[EQ_WEAPON] != -1)
             unwield_item(you.equip[EQ_WEAPON]);
+
         you.equip[EQ_WEAPON] = item_wield_2;
     }
     else
     {
 
         if ((you.species < SP_OGRE || you.species > SP_OGRE_MAGE)
-            && mass(you.inv_class[item_wield_2], you.inv_type[item_wield_2]) >= 500)
+                                && mass(you.inv_class[item_wield_2],
+                                            you.inv_type[item_wield_2]) >= 500)
         {
             mpr("That's too large and heavy for you to wield.");
             return;
         }
 
         if ((you.species == SP_HALFLING || you.species == SP_GNOME
-             || you.species == SP_KOBOLD)
+             || you.species == SP_KOBOLD || you.species == SP_SPRIGGAN)
             && (you.inv_type[item_wield_2] == WPN_GREAT_SWORD
+                || you.inv_type[item_wield_2] == WPN_TRIPLE_SWORD
+                || you.inv_type[item_wield_2] == WPN_GREAT_MACE
+                || you.inv_type[item_wield_2] == WPN_GREAT_FLAIL
                 || you.inv_type[item_wield_2] == WPN_BATTLEAXE
+                || you.inv_type[item_wield_2] == WPN_EXECUTIONERS_AXE
                 || you.inv_type[item_wield_2] == WPN_HALBERD
                 || you.inv_type[item_wield_2] == WPN_GLAIVE
+                || you.inv_type[item_wield_2] == WPN_GIANT_CLUB
+                || you.inv_type[item_wield_2] == WPN_GIANT_SPIKED_CLUB
                 || you.inv_type[item_wield_2] == WPN_SCYTHE))
         {
             mpr("That's too large for you to wield.");
@@ -242,17 +254,9 @@ void wield_weapon(char auto_wield)
 
         }
 
-        if ((you.inv_type[item_wield_2] == WPN_GREAT_SWORD
-             || you.inv_type[item_wield_2] == WPN_BATTLEAXE
-             || you.inv_type[item_wield_2] == WPN_HALBERD
-             || you.inv_type[item_wield_2] == WPN_GLAIVE
-             || you.inv_type[item_wield_2] == WPN_QUARTERSTAFF
-             || you.inv_type[item_wield_2] == WPN_SCYTHE
-             || you.inv_type[item_wield_2] == WPN_GIANT_CLUB
-             || you.inv_type[item_wield_2] == WPN_GIANT_SPIKED_CLUB
-             || you.inv_type[item_wield_2] == WPN_EXECUTIONERS_AXE
-             || you.inv_type[item_wield_2] == WPN_TRIPLE_SWORD)
-            && you.equip[EQ_SHIELD] != -1)
+        if (hands_required_for_weapon( you.inv_class[item_wield_2],
+                                        you.inv_type[item_wield_2] ) == 2
+                && you.equip[EQ_SHIELD] != -1)
         {
             mpr("You can't wield that with a shield.");
             return;
@@ -294,19 +298,23 @@ void wield_weapon(char auto_wield)
     you.turn_is_over = 1;
     wield_change = 1;
 
-    if (you.inv_plus[item_wield_2] > 80 && you.inv_class[item_wield_2] == OBJ_WEAPONS)
+    if (you.inv_plus[item_wield_2] > 80
+                                && you.inv_class[item_wield_2] == OBJ_WEAPONS)
         mpr("It sticks to your hand!");
 
-    if (you.inv_class[item_wield_2] == OBJ_MISCELLANY && you.inv_type[item_wield_2] == MISC_LANTERN_OF_SHADOWS)
+    if (you.inv_class[item_wield_2] == OBJ_MISCELLANY
+                    && you.inv_type[item_wield_2] == MISC_LANTERN_OF_SHADOWS)
     {
         mpr("The area is filled with flickering shadows.");
         you.special_wield = SPWLD_SHADOW;
     }
 
-    if (you.inv_class[item_wield_2] == OBJ_WEAPONS && you.inv_ident[item_wield_2] == 0)
+    if (you.inv_class[item_wield_2] == OBJ_WEAPONS
+                                        && you.inv_ident[item_wield_2] == 0)
         you.inv_ident[item_wield_2] = 2;
 
-    if (you.inv_class[item_wield_2] == OBJ_WEAPONS && you.inv_dam[item_wield_2] != 0)
+    if (you.inv_class[item_wield_2] == OBJ_WEAPONS
+                                        && you.inv_dam[item_wield_2] != 0)
     {
 
         if (you.inv_ident[item_wield_2] == 1)
@@ -456,7 +464,8 @@ void wield_weapon(char auto_wield)
         }
 
         if ((you.inv_type[item_wield_2] == WPN_DEMON_BLADE
-             || you.inv_type[item_wield_2] == WPN_DEMON_WHIP)
+             || you.inv_type[item_wield_2] == WPN_DEMON_WHIP
+             || you.inv_type[item_wield_2] == WPN_DEMON_TRIDENT)
             && (you.religion == GOD_ZIN || you.religion == GOD_SHINING_ONE
                 || you.religion == GOD_ELYVILON))
             mpr("You really shouldn't be using a nasty item like this.");
@@ -467,10 +476,6 @@ void wield_weapon(char auto_wield)
     {
         switch (you.inv_type[item_wield_2])
         {
-        case STAFF_WIZARDRY:
-            /* you.mag_abil += 4; */
-            break;
-
         case STAFF_POWER:
             you.max_magic_points += 13;
             you.base_magic_points2 += 13;
@@ -490,50 +495,6 @@ void wield_weapon(char auto_wield)
                 wield_change = 1;
             }
             break;
-
-        case STAFF_AIR:
-            // you.attribute[ATTR_RESIST_LIGHTNING]++;  // res elec
-            break;
-
-            /* case STAFF_FIRE: // fire
-               you.spec_fire ++;
-               player_res_fire() ++;
-               break;
-
-               case STAFF_COLD: // cold
-               you.spec_cold ++;
-               player_res_cold() ++
-               break;
-
-               case STAFF_POISON:
-               you.spec_poison ++;
-               you.res_poison ++;
-               break;
-
-               case STAFF_ENERGY:
-               you.energy ++;
-               break;
-
-               case STAFF_DEATH:
-               you.spec_death ++;
-               break;
-
-               case STAFF_CONJURATION:
-               you.spec_conj ++;
-               break;
-
-               case STAFF_ENCHANTMENT:
-               you.spec_ench ++;
-               break;
-
-               case STAFF_SUMMONING_I:
-               you.spec_summ ++;
-               break;
-
-               case STAFF_EARTH:
-               you.attribute [ATTR_SPEC_EARTH] ++;
-               break;
-             */
         }
     }
 
@@ -665,20 +626,9 @@ void wear_armour()
          you.inv_type[armour_wear_2] == ARM_BUCKLER ||
          you.inv_type[armour_wear_2] == ARM_LARGE_SHIELD) &&
 
-    // and the wielded item is a two-handed weapon,
-        (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS &&
-
-         (you.inv_type[you.equip[EQ_WEAPON]] == WPN_GREAT_SWORD ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_BATTLEAXE ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_HALBERD ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_GLAIVE ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_QUARTERSTAFF ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_SCYTHE ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_GIANT_CLUB ||
-          you.inv_type[you.equip[EQ_WEAPON]] == WPN_GIANT_SPIKED_CLUB) ||
-
-    // or a staff then abort.
-         you.inv_class[you.equip[EQ_WEAPON]] == OBJ_STAVES))
+    // weapon is two-handed
+        hands_required_for_weapon( you.inv_class[you.equip[EQ_WEAPON]],
+                                    you.inv_type[you.equip[EQ_WEAPON]] ) == 2)
     {
         mpr("You can't wear a shield with a two-handed weapon.");
         return;
@@ -1506,7 +1456,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                 break;
 
             case WPN_BOW:       /* bow */
-                exercise(SK_BOWS, 1);
+                exercise(SK_BOWS, 1 + random2(2));
                 beam[0].hit += random2(you.skills[SK_BOWS] + 1)
                                 + random2(you.skills[SK_BOWS] + 1);
                 beam[0].damage += random2(you.skills[SK_BOWS] + 1)
@@ -1519,7 +1469,7 @@ void throw_it(struct bolt beam[1], int throw_2)
             // values of 10 and 5 make bows better at skill level 10.
 
             case WPN_CROSSBOW:  /* crossbow */
-                exercise(SK_CROSSBOWS, 1);
+                exercise(SK_CROSSBOWS, 1 + random2(2));
                 beam[0].hit += random2(you.skills[SK_CROSSBOWS] + 1)
                                                                 + random2(10);
                 beam[0].damage += random2(you.skills[SK_CROSSBOWS] + 1)
@@ -1528,7 +1478,7 @@ void throw_it(struct bolt beam[1], int throw_2)
                 break;
 
             case WPN_HAND_CROSSBOW:     /* hand crossbow */
-                exercise(SK_CROSSBOWS, 1);
+                exercise(SK_CROSSBOWS, 1 + random2(2));
                 beam[0].hit += random2(you.skills[SK_CROSSBOWS] + 1)
                                                                 + random2(6);
                 beam[0].damage += random2(you.skills[SK_CROSSBOWS] + 1)

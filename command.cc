@@ -32,125 +32,6 @@ void adjust_spells(void);
 
 extern char wield_change;
 
-#ifdef WIZARD
-
-void stethoscope(int mwh)
-{
-// STETH can't examine spaces in cardinal directions more than 1 space from you
-
-    int i, nothing;
-
-    if (mwh == 250)
-    {
-
-        strcpy(info, "Which monster?");
-        mpr(info);
-
-        struct dist stmove[1];
-
-        direction(1, stmove);
-
-        if (nothing == -1)
-            return;
-
-        if (env.cgrid[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y] != CNG)
-        {
-            itoa(env.cloud_type[env.cgrid[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y]], st_prn, 10);
-            strcpy(info, st_prn);
-            strcat(info, "/");
-            itoa(env.cloud_decay[env.cgrid[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y]], st_prn, 10);
-            strcat(info, st_prn);
-            strcat(info, "   ");
-            mpr(info);
-        }
-
-        if (mgrd[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y] == MNG)
-        {
-            itoa((int) igrd[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y], st_prn, 10);
-            strcpy(info, st_prn);
-            mpr(info);
-
-
-/*      move_x = 0;
-   move_y = 0; */
-            return;
-        }
-
-        i = mgrd[you.x_pos + stmove[0].move_x][you.y_pos + stmove[0].move_y];
-
-    }
-    else
-        i = mwh;
-
-    strcpy(info, monam(menv[i].number, menv[i].type, menv[i].enchantment[2], 0));       //gmon_name [mons_class [i]]);
-
-    strcat(info, ": ");
-
-    {
-/*
-   itoa(i, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, ": cl ");
-
-   itoa(menv [i].type, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, " - ");
-
-   itoa(menv [i].hit_points, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, "/");
-   itoa(menv [i].max_hit_points, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, "   ");
-
-   itoa(menv [i].behavior, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, "/");
-   itoa(menv [i].monster_foe, st_prn, 10);
-   strcat(info, st_prn);
-   mpr(info);
-
-   strcpy(info, "speed:");
-   itoa(menv [i].speed, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, "/");
-   itoa(menv [i].speed_increment, st_prn, 10);
-   strcat(info, st_prn);
-   mpr(info);
-
-
-   strcpy(info, "sec:");
-   itoa(menv [i].number, st_prn, 10);
-   strcat(info, st_prn);
-   mpr(info);
-
-   strcpy(info, "target: ");
-   itoa(menv [i].target_x, st_prn, 10);
-   strcat(info, st_prn);
-   strcat(info, ", ");
-   itoa(menv [i].target_y, st_prn, 10);
-   strcat(info, st_prn);
-   mpr(info);
- */
-//if (menv [i].type == 400)
-        //{
-        strcpy(info, "Ghost damage: ");
-        itoa(ghost.values[7], st_prn, 10);
-        strcat(info, st_prn);
-        mpr(info);
-//}
-
-    }
-    stmove[0].move_x = 0;
-    stmove[0].move_y = 0;
-
-    return;
-
-}                               // end of stethoscope()
-
-
-#endif
-
 void quit_game()
 {
     strcpy(info, "Really quit?");
@@ -163,11 +44,7 @@ void quit_game()
         ouch(-9999, 0, 13);
 
     }
-
 }                               // end of void quit_game
-
-
-
 
 void version(void)
 {
@@ -549,7 +426,10 @@ void list_armour( void )
             break;
 
         case EQ_BOOTS:
-            strcpy(info, "Boots  : ");
+            if (you.species == SP_CENTAUR || you.species == SP_NAGA)
+                strcpy(info, "Barding: ");
+            else
+                strcpy(info, "Boots  : ");
             break;
 
         case EQ_SHIELD:

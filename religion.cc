@@ -671,16 +671,12 @@ okay_try_again:
             }
             else
             {
-#ifdef USE_NEW_BERSERK
                 you.berserk_penalty = NO_BERSERK_PENALTY;
-#endif
                 potion_effect(POT_BERSERK_RAGE, 150);
             }
             break;
         case 6:
-#ifdef USE_NEW_BERSERK
             you.berserk_penalty = NO_BERSERK_PENALTY;
-#endif
             potion_effect(POT_BERSERK_RAGE, 150);
             break;
         }

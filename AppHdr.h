@@ -156,6 +156,10 @@
   #define NUMBER_OF_LINES   25
 #endif
 
+// Uncomment this if you find the labyrinth to be buggy and what to
+// remove it from the game.
+// #define SHUT_LABYRINTH
+
 // Define MACRO if you want to use the macro patch in macro.cc.
 // *BCR* Macros aren't working in Linux right now...
 #define MACROS
@@ -169,15 +173,6 @@
 
 // Number of top scores to keep.
 #define SCORE_FILE_ENTRIES      100
-
-// Define this to use my (bwross) new berserk code, which includes
-// incremental penalties for non-combat actions and an exhaust timeout
-// for removing haste-berserk abuse.
-//
-// Xom and Card berserks are immune from the non-combat penalties since
-// these are random occurances which are likely to occur outside
-// of combat (rage weapons happen during combat so they use the new code).
-#define USE_NEW_BERSERK
 
 #ifdef SOLARIS
     // Define SAVE_DIR to the directory where saves, bones, and score file

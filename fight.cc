@@ -78,8 +78,7 @@ void place_monster_corpse(unsigned char mcr);
 extern char wield_change;       /* defined in output.cc */
 int weapon_type_modify(int weap, char *st_prn, int damage);
 
-
-void you_attack(int monster_attacked)
+void you_attack(int monster_attacked, bool unarmed_attacks )
 {
     int your_to_hit;
     int damage_done = 0;
@@ -217,7 +216,8 @@ void you_attack(int monster_attacked)
     {
         your_to_hit -= 3;
     }
-    char heavy_armour = 0;
+
+    int heavy_armour = 0;
 
     if (you.equip[EQ_SHIELD] != -1)
     {
@@ -345,9 +345,11 @@ void you_attack(int monster_attacked)
     you.time_taken *= weapon_speed2;
     you.time_taken /= 10;
 
+    if (you.time_taken <= 0)
+        you.time_taken = 1;
+
 #ifdef WIZARD
-    itoa(you.time_taken, st_prn, 10);
-    strcpy(info, st_prn);
+    sprintf(info, "Time taken: %d", you.time_taken );
     mpr(info);
 #endif
 
@@ -643,12 +645,17 @@ void you_attack(int monster_attacked)
 
     if (hit == 1 && special_brand != 0 && you.equip[EQ_WEAPON] == -1)
     {
-        weap_dam = special_brand;       /* No electrocution - this references inv_plus2 */
+        /* No electrocution - this references inv_plus2 */
+        weap_dam = special_brand;
         goto dam_thing;
     }
-    if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && hit == 1)
+
+    if (you.equip[EQ_WEAPON] != -1
+            && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && hit == 1)
     {
-        if (you.inv_type[you.equip[EQ_WEAPON]] == WPN_DEMON_BLADE || you.inv_type[you.equip[EQ_WEAPON]] == WPN_DEMON_WHIP)
+        if (you.inv_type[you.equip[EQ_WEAPON]] == WPN_DEMON_BLADE
+                    || you.inv_type[you.equip[EQ_WEAPON]] == WPN_DEMON_WHIP
+                    || you.inv_type[you.equip[EQ_WEAPON]] == WPN_DEMON_TRIDENT)
             naughty(NAUGHTY_UNHOLY, 1);
 
         weap_dam = you.inv_dam[you.equip[EQ_WEAPON]] % 30;
@@ -656,7 +663,14 @@ void you_attack(int monster_attacked)
             weap_dam = 0;
 
         if (you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= SPWPN_RANDART_I)
-            weap_dam = randart_wpn_properties(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]], you.inv_dam[you.equip[EQ_WEAPON]], you.inv_plus[you.equip[EQ_WEAPON]], you.inv_plus2[you.equip[EQ_WEAPON]], 0, RAP_BRAND);
+            weap_dam = randart_wpn_properties(
+                                    you.inv_class[you.equip[EQ_WEAPON]],
+                                    you.inv_type[you.equip[EQ_WEAPON]],
+                                    you.inv_dam[you.equip[EQ_WEAPON]],
+                                    you.inv_plus[you.equip[EQ_WEAPON]],
+                                    you.inv_plus2[you.equip[EQ_WEAPON]],
+                                                    0, RAP_BRAND);
+
         switch (you.inv_dam[you.equip[EQ_WEAPON]])
         {
         case NWPN_SWORD_OF_CEREBOV:               /* sword of cerebov */
@@ -670,13 +684,13 @@ void you_attack(int monster_attacked)
         case NWPN_VAMPIRE_S_TOOTH:               /* vampire's tooth */
             weap_dam = 13;
             break;
-
         }
     }
-    if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && hit == 1)   // && you.inv_dam [you.equip [0]] <= 180)
 
+    if (you.equip[EQ_WEAPON] != -1
+            && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && hit == 1)
+            // && you.inv_dam [you.equip [0]] <= 180)
     {
-
 dam_thing:
         switch (weap_dam)
         {
@@ -685,26 +699,40 @@ dam_thing:
 
         case SPWPN_FLAMING:     /* flaming */
             specdam = 0;
+
             if (mons_res_fire(menv[monster_attacked].type) == 0)
             {
                 specdam = random2(damage_done) / 2 + 1;
-                if (menv[monster_attacked].inv[2] != 501 && mitm.special[menv[monster_attacked].inv[2]] % 30 == 2)
+                if (menv[monster_attacked].inv[2] != 501
+                    && mitm.special[menv[monster_attacked].inv[2]] % 30 == 2)
+                {
                     specdam = (random2(damage_done) / 2 + 1) / 3;
+                }
             }
-            if (mons_res_fire(menv[monster_attacked].type) == -1 && (menv[monster_attacked].inv[2] == 501 || mitm.special[menv[monster_attacked].inv[2]] % 30 != 2))
+
+            if (mons_res_fire(menv[monster_attacked].type) == -1
+                    && (menv[monster_attacked].inv[2] == 501
+                    || mitm.special[menv[monster_attacked].inv[2]] % 30 != 2))
             {
                 specdam = random2(damage_done) + 1;
             }
+
             if (specdam != 0)
             {
                 strcpy(info, "You burn ");
-                strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
+
                 if (specdam < 3)
                     strcat(info, ".");
+
                 if (specdam >= 3 && specdam < 7)
                     strcat(info, "!");
+
                 if (specdam >= 7)
                     strcat(info, "!!");
+
                 mpr(info);
             }
             break;
@@ -714,23 +742,36 @@ dam_thing:
             if (mons_res_cold(menv[monster_attacked].type) == 0)
             {
                 specdam = random2(damage_done) / 2 + 1;
-                if (menv[monster_attacked].inv[2] != 501 && mitm.special[menv[monster_attacked].inv[2]] % 30 == 3)
+                if (menv[monster_attacked].inv[2] != 501
+                    && mitm.special[menv[monster_attacked].inv[2]] % 30 == 3)
+                {
                     specdam = (random2(damage_done) / 2 + 1) / 3;
+                }
             }
-            if (mons_res_cold(menv[monster_attacked].type) == -1 && (menv[monster_attacked].inv[2] == 501 || mitm.special[menv[monster_attacked].inv[2]] % 30 != 3))
+
+            if (mons_res_cold(menv[monster_attacked].type) == -1
+                    && (menv[monster_attacked].inv[2] == 501
+                    || mitm.special[menv[monster_attacked].inv[2]] % 30 != 3))
             {
                 specdam = random2(damage_done) + 1;
             }
+
             if (specdam != 0)
             {
                 strcpy(info, "You freeze ");
-                strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
+
                 if (specdam < 3)
                     strcat(info, ".");
+
                 if (specdam >= 3)
                     strcat(info, "!");
+
                 if (specdam >= 7)
                     strcat(info, "!!");
+
                 mpr(info);
             }
             break;
@@ -739,17 +780,12 @@ dam_thing:
             specdam = 0;
             switch (mons_holiness(menv[monster_attacked].type))
             {
-/*    case -1:
-   damage_done -= 5 + random2(5);
-   break; */
-
             case 1:
                 specdam += random2(damage_done) + 1;
                 break;
 
             case 2:
-                specdam += (random2(damage_done * 15) / 10) + 1;        // does * 1.5 do anything?
-
+                specdam += (random2(damage_done * 15) / 10) + 1;
                 break;
             }
             break;
@@ -757,18 +793,18 @@ dam_thing:
 
         case SPWPN_ELECTROCUTION:       /* electrocution */
             specdam = 0;
+
             if (mons_flies(menv[monster_attacked].type))
                 break;
+
             if (mons_res_elec(menv[monster_attacked].type) != 0)
                 break;
-/*   if (you.inv_plus2 [you.equip [EQ_WEAPON]] <= 50 || you.inv_plus2 [you.equip [EQ_WEAPON]] > 130 && you.inv_plus2 [you.equip [EQ_WEAPON]] <= 150) break; */
+
             if (random2(3) == 0)
             {
                 strcpy(info, "There is a sudden explosion of sparks!");
                 mpr(info);
                 specdam += random2(10) + random2(10) + random2(10);
-/*    you.inv_plus2 [you.equip [EQ_WEAPON]] --;
-   wield_change = 1; */
             }
             break;
 
@@ -785,18 +821,29 @@ dam_thing:
             break;
 
         case SPWPN_DRAINING:
-            if (mons_holiness(menv[monster_attacked].type) > MH_NORMAL || random2(3) == 0)
+            if (mons_holiness(menv[monster_attacked].type) > MH_NORMAL
+                                                            || random2(3) == 0)
                 break;
+
             strcpy(info, "You drain ");
-            strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+            strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
             strcat(info, "!");
             mpr(info);
+
             if (random2(5) == 0)
                 menv[monster_attacked].hit_dice--;
+
             menv[monster_attacked].max_hit_points -= 2 + random2(3);
             menv[monster_attacked].hit_points -= 2 + random2(3);
-            if (menv[monster_attacked].hit_points >= menv[monster_attacked].max_hit_points)
-                menv[monster_attacked].hit_points = menv[monster_attacked].max_hit_points;
+            if (menv[monster_attacked].hit_points
+                                    >= menv[monster_attacked].max_hit_points)
+            {
+                menv[monster_attacked].hit_points
+                                    = menv[monster_attacked].max_hit_points;
+            }
+
             if (menv[monster_attacked].hit_dice <= 0)
                 menv[monster_attacked].hit_points = 0;
             specdam = random2(damage_done) / 2 + 1;
@@ -807,7 +854,9 @@ dam_thing:
 
         case SPWPN_VORPAL:      /* slicing etc */
             specdam = random2(damage_done) / 2 + 1;
-            if (menv[monster_attacked].type == MONS_WORM_TAIL && (damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) == 1 || damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) == 3))
+            if (menv[monster_attacked].type == MONS_WORM_TAIL
+                && (damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) == 1
+                || damage_type(0, you.inv_type[you.equip[EQ_WEAPON]]) == 3))
             {
                 strcpy(info, "You slice the worm tail!");
                 mpr(info);
@@ -818,32 +867,50 @@ dam_thing:
         case SPWPN_VAMPIRICISM: /* vampiric */
             specdam = 0;        /* note does no extra damage */
             if (mons_holiness(menv[monster_attacked].type) > MH_NORMAL)
-                break;          /* should really also prevent draining eg golems */
+                break;     /* should really also prevent draining eg golems */
+
             if (damage_done < 1)
                 break;
+
             if (random2(5) == 0 || you.hp == you.hp_max)
                 break;
-            if (you.equip[EQ_WEAPON] != -1 && you.inv_dam[you.equip[EQ_WEAPON]] == 194)
+
+            if (you.equip[EQ_WEAPON] != -1
+                                && you.inv_dam[you.equip[EQ_WEAPON]] == 194)
+            {
                 you.hp += damage_done;
+            }
             else
-                you.hp += random2(damage_done) + 1;     /* thus is probably more valuable on larger weapons? */
+            {
+                /* thus is probably more valuable on larger weapons? */
+                you.hp += random2(damage_done) + 1;
+            }
+
             you.redraw_hit_points = 1;
+
             if (you.hp > you.hp_max)
                 you.hp = you.hp_max;
+
             if (you.hunger <= 11000 && you.is_undead < 2)
                 you.hunger += random2(30) + random2(30);
-            strcpy(info, "You feel better.");
-            mpr(info);
+
+            mpr("You feel better.");
+
             naughty(NAUGHTY_NECROMANCY, 2);
             break;
 
         case SPWPN_DISRUPTION:  /* mace of disruption */
             specdam = 0;
-            if (mons_holiness(menv[monster_attacked].type) == MH_UNDEAD && random2(3) != 0)
+            if (mons_holiness(menv[monster_attacked].type) == MH_UNDEAD
+                                                            && random2(3) != 0)
             {
-                strcpy(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 0));
+                strcpy(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 0));
+
                 strcat(info, " shudders.");
                 mpr(info);
+
                 specdam += random2(damage_done + 1);
                 specdam += random2(damage_done + 1);
                 specdam += random2(damage_done + 1);
@@ -852,9 +919,12 @@ dam_thing:
 
         case SPWPN_PAIN:        /* pain */
             specdam = 0;
-            if (mons_holiness(menv[monster_attacked].type) <= MH_NORMAL && random2(8) <= you.skills[SK_NECROMANCY])
+            if (mons_holiness(menv[monster_attacked].type) <= MH_NORMAL
+                                    && random2(8) <= you.skills[SK_NECROMANCY])
             {
-                strcpy(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 0));
+                strcpy(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 0));
                 strcat(info, " convulses in agony.");
                 mpr(info);
                 specdam += random2((you.skills[SK_NECROMANCY] * 2) + 1);
@@ -866,58 +936,72 @@ dam_thing:
             if (random2(3) == 0)
             {
                 strcpy(info, "Space bends around ");
-                strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
                 strcat(info, ".");
                 mpr(info);
                 specdam += random2(5) + random2(3) + 1;
                 break;
             }
+
             if (random2(3) == 0)
             {
                 strcpy(info, "Space warps horribly around ");
-                strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
                 strcat(info, "!");
                 mpr(info);
                 specdam += random2(12) + random2(13) + 3;
                 break;
             }
+
             if (random2(3) == 0)
             {
                 monster_blink(monster_attacked);
                 break;
             }
+
             if (random2(2) == 0)
             {
                 monster_teleport(monster_attacked, 0);
                 break;
             }
+
             if (random2(2) == 0)
             {
                 monster_teleport(monster_attacked, 1);
                 break;
             }
+
             if (random2(2) == 0)
             {
                 monster_die(monster_attacked, KILL_RESET, 0);
                 return;
             }
             break;
-
-/* 11 & 12 are bow/xbow things */
-
         }                       /* end switch */
-
-
     }
+
     if (mons_holiness(menv[monster_attacked].type) < MH_NORMAL)
         naughty(NAUGHTY_ATTACK_HOLY, menv[monster_attacked].hit_dice);
 
     if (menv[monster_attacked].type == MONS_HYDRA)      // hydra
     {
-        if (you.equip[EQ_WEAPON] != -1 && (damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 1 || damage_type(you.inv_class[you.equip[EQ_WEAPON]], you.inv_type[you.equip[EQ_WEAPON]]) == 3))
+        if (you.equip[EQ_WEAPON] != -1
+                && (damage_type(you.inv_class[you.equip[EQ_WEAPON]],
+                        you.inv_type[you.equip[EQ_WEAPON]]) == 1
+                || damage_type(you.inv_class[you.equip[EQ_WEAPON]],
+                        you.inv_type[you.equip[EQ_WEAPON]]) == 3))
         {
-            if ((random2(2) != 0 || damage_done < 4) && (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS || you.inv_dam[you.equip[EQ_WEAPON]] != WPN_BATTLEAXE))
+            if ((random2(2) != 0 || damage_done < 4)
+                        && (you.inv_class[you.equip[EQ_WEAPON]] != OBJ_WEAPONS
+                        || you.inv_dam[you.equip[EQ_WEAPON]] != WPN_BATTLEAXE))
+            {
                 goto mons_dies;
+            }
+
             strcpy(info, "You ");
             switch (random2(4))
             {
@@ -934,18 +1018,26 @@ dam_thing:
                 strcat(info, "hack");
                 break;
             }
+
             strcat(info, " one of ");
-            strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
+            strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
             strcat(info, "'s heads off.");
             mpr(info);
+
             menv[monster_attacked].number--;
             if (menv[monster_attacked].number <= 0)
             {
                 menv[monster_attacked].hit_points = -1;
                 goto mons_dies;
             }
-            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_FLAMING)
+
+            if (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+                    && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_FLAMING)
+            {
                 goto mons_dies; // cauterised
+            }
 
             if (menv[monster_attacked].number >= 18)
                 goto mons_dies;
@@ -961,25 +1053,9 @@ dam_thing:
 mons_dies:
     if (menv[monster_attacked].hit_points <= 0)
     {
-        /* thing_thrown = 1; */
-        /* vampiric weapon: */
         monster_die(monster_attacked, 1, 0);
         return;
     }
-/*if (damage_done >= 1 && you.equip [EQ_WEAPON] != -1 && you.inv_class [you.equip [EQ_WEAPON]] == OBJ_WEAPONS && you.inv_type [you.equip [EQ_WEAPON]] > SPWPN_FROST && you.inv_type [you.equip [EQ_WEAPON]] < 17) //       18??
-   {
-   if (random2 (5) == 0)
-   {
-   item_name(you.inv_plus2 [you.equip [EQ_WEAPON]], you.inv_class [you.equip [EQ_WEAPON]], you.inv_type [you.equip [EQ_WEAPON]], you.inv_dam [you.equip [EQ_WEAPON]], you.inv_plus [you.equip [EQ_WEAPON]], you.inv_quantity [you.equip [EQ_WEAPON]], you.inv_ident [you.equip [EQ_WEAPON]], 4, str_pass);
-   strcpy(info, str_pass);
-   strcat(info, " breaks!");
-   mpr(info);
-   unwield_item(you.equip [EQ_WEAPON]);
-   you.inv_quantity [you.equip [EQ_WEAPON]] --;
-   you.equip [EQ_WEAPON] = -1;
-   wield_change = 1;
-   }
-   } */
 
     if (you.invis != 0 && menv[monster_attacked].behavior == BEH_SLEEP)
         menv[monster_attacked].behavior = BEH_CHASING_I;
@@ -990,219 +1066,309 @@ mons_dies:
         menv[monster_attacked].target_y = you.y_pos;
         menv[monster_attacked].behavior = BEH_CHASING_I;
     }
-    int scount = -1;
-    char attack_name[20] = "";
-    int sc_dam = 0;
 
-    int unarmed_attack = 0;
-
-    if (you.burden_state == 0 && random2(20) < you.skills[SK_UNARMED_COMBAT] && random2(heavy_armour + 1) <= 1)
+    if (unarmed_attacks)
     {
-        unarmed_attack = random2(2) + 1;
-        if (you.species >= SP_WHITE_DRACONIAN && you.species <= SP_UNK2_DRACONIAN && random2(3) == 0)
-            unarmed_attack = UNAT_TAILSLAP;
-        if (random2(2) == 0)
-            unarmed_attack = UNAT_PUNCH;
-    }
-    do
-    {
+        char attack_name[20] = "";
+        int sc_dam = 0;
 
-        scount++;
+        int unarmed_attack = 0;
 
-        switch (scount)
+        if (you.burden_state == 0
+                        && random2(20) < you.skills[SK_UNARMED_COMBAT]
+                        && random2(heavy_armour + 1) <= 1)
         {
-        case 0:
-            if (unarmed_attack != UNAT_KICK)
-                if (you.species != SP_CENTAUR || random2(2) == 0)
-                    continue;
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                continue;
-            strcpy(attack_name, "kick");
-            sc_dam = 5 + (you.species == SP_CENTAUR) * 5;
-            break;
-        case 1:
-            if (unarmed_attack != UNAT_HEADBUTT)
-                if ((you.species != SP_MINOTAUR && (you.mutation[MUT_HORNS] == 0 && you.species != SP_KENKU)) || random2(3) != 0)
-                    continue;
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                continue;
-            if (you.species == SP_KENKU)
-                strcpy(attack_name, "peck");
-            else                /* Kenku */
-                strcpy(attack_name, "head-butt");
-            sc_dam = 5 + you.mutation[MUT_HORNS] * 3;
-            if (you.species == SP_MINOTAUR)
-                sc_dam += 5;
-            if (you.equip[EQ_HELMET] != -1 && you.inv_plus2[you.equip[EQ_HELMET]] <= 1)
+            unarmed_attack = random2(2) + 1;
+
+            if ((you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
+                    || (you.species >= SP_WHITE_DRACONIAN
+                                && you.species <= SP_UNK2_DRACONIAN))
+                    && random2(3) == 0)
             {
-                sc_dam += 2;
-                if (you.inv_dam[you.equip[EQ_HELMET]] / 30 == DHELM_HORNED || you.inv_dam[you.equip[EQ_HELMET]] / 30 == DHELM_SPIKED)
-                    sc_dam += 3;
-            }                   /* horned/spiked helmets/helms do extra damage */
-            break;
-        case 2:         /* draconians */
-            if (unarmed_attack != UNAT_TAILSLAP)
-                if (you.species < SP_RED_DRACONIAN || you.species > SP_UNK2_DRACONIAN || random2(4) != 0)
-                    continue;
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST)
-                continue;
-            strcpy(attack_name, "tail-slap");
-            sc_dam = 6;
-            if (you.species == SP_GREY_DRACONIAN && you.experience_level >= 6)
-                sc_dam = 12;    /* grey dracs have spiny tails, or something */
-            break;
-        case 3:
-            if (unarmed_attack != UNAT_PUNCH)
-                continue;
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                continue;
-            if (random2(2) == 0 || you.equip[EQ_SHIELD] != -1 || (you.equip[EQ_WEAPON] != -1 && (you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && (you.inv_type[you.equip[EQ_WEAPON]] == WPN_GREAT_SWORD || you.inv_type[you.equip[EQ_WEAPON]] == WPN_BATTLEAXE || you.inv_type[you.equip[EQ_WEAPON]] == WPN_HALBERD || you.inv_type[you.equip[EQ_WEAPON]] == WPN_GLAIVE || you.inv_type[you.equip[EQ_WEAPON]] == WPN_SCYTHE || you.inv_type[you.equip[EQ_WEAPON]] == WPN_EXECUTIONERS_AXE || you.inv_type[you.equip[EQ_WEAPON]] == WPN_TRIPLE_SWORD))))
-                continue;
-            /* no punching with a shield or 2-handed wpn, except staves */
-            strcpy(attack_name, "punch");
-            sc_dam = 5 + you.skills[SK_UNARMED_COMBAT] / 3;     /* applied twice */
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
-            {
-                strcpy(attack_name, "slash");
-                sc_dam += 6;
+                unarmed_attack = UNAT_TAILSLAP;
             }
-            break;
-/* To add more, add to while part of loop below as well */
-        default:
-            continue;
 
+            if (random2(2) == 0)
+                unarmed_attack = UNAT_PUNCH;
         }
 
-        your_to_hit = 13 + you.dex / 2 + you.skills[SK_UNARMED_COMBAT] / 2 + you.skills[SK_FIGHTING] / 5;
-        if (wearing_amulet(AMU_INACCURACY) == 1)
-            your_to_hit -= 5;
-        if (you.is_undead != 2)
-            you.hunger -= 2;
-        if (you.hunger_state == 1)
+        for (int scount = 0; scount < 4; scount++)
         {
-            your_to_hit -= 3;
-        }
-        your_to_hit += slaying_bonus(0);
-        your_to_hit = random2(your_to_hit);
-        damage = sc_dam;        //4 + you.experience_level / 3;
-
-        alert();
-
-        if ((your_to_hit >= menv[monster_attacked].evasion || random2(15) == 0))
-        {
-            hit = 1;
-            int dammod = 10;
-
-            if (you.strength > 11)
-                dammod += random2(you.strength - 11) / 3;
-            if (you.strength < 9)
-                dammod -= random2(9 - you.strength) / 2;
-
-            damage *= dammod;
-            damage /= 10;
-
-            damage_done = (int) random2(damage);
-
-            damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
-            damage_done /= 40;
-            damage_done *= 25 + (random2(you.skills[SK_UNARMED_COMBAT] + 1));
-            damage_done /= 25;
-
-            if (you.might > 1)
-                damage_done += random2(10) + 1;
-            if (you.hunger_state == 1)
-                damage_done -= random2(5);
-
-            damage_done += slaying_bonus(1);
-
-            damage_done -= random2(menv[monster_attacked].armor_class + 1);
-
-            if (damage_done < 0)
-                damage_done = 0;
-            menv[monster_attacked].hit_points -= damage_done;
-
-            if (damage_done >= 1)
+            switch (scount)
             {
-                if (random2(5) == 0
-                            && (!helpless || you.skills[SK_FIGHTING] < 2))
+            case 0:
+                if (unarmed_attack != UNAT_KICK)
+                    if (you.species != SP_CENTAUR || random2(2) == 0)
+                        continue;
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
                 {
-                    exercise(SK_FIGHTING, 1);
+                    continue;
                 }
+
+                strcpy(attack_name, "kick");
+                sc_dam = 5 + (you.species == SP_CENTAUR) * 5;
+                break;
+
+            case 1:
+                if (unarmed_attack != UNAT_HEADBUTT)
+                {
+                    if ((you.species != SP_MINOTAUR
+                            && (you.mutation[MUT_HORNS] == 0
+                                    && you.species != SP_KENKU))
+                            || random2(3) != 0)
+                    {
+                        continue;
+                    }
+                }
+
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                {
+                    continue;
+                }
+
+                if (you.species == SP_KENKU)
+                    strcpy(attack_name, "peck");
+                else
+                    strcpy(attack_name, "head-butt");
+
+                sc_dam = 5 + you.mutation[MUT_HORNS] * 3;
+
+                if (you.species == SP_MINOTAUR)
+                    sc_dam += 5;
+
+                if (you.equip[EQ_HELMET] != -1
+                                && you.inv_plus2[you.equip[EQ_HELMET]] <= 1)
+                {
+                    sc_dam += 2;
+
+                    if (you.inv_dam[you.equip[EQ_HELMET]] / 30 == DHELM_SPIKED
+                            || you.inv_dam[you.equip[EQ_HELMET]] / 30
+                                                            == DHELM_HORNED)
+                    {
+                        sc_dam += 3;
+                    }
+                }             /* horned/spiked helmets/helms do extra damage */
+                break;
+
+            case 2:         /* draconians */
+                if (unarmed_attack != UNAT_TAILSLAP)
+                {
+                    if (you.species < SP_RED_DRACONIAN
+                        || you.species > SP_UNK2_DRACONIAN || random2(4) != 0)
+                    {
+                        continue;
+                    }
+                }
+
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST)
+                {
+                    continue;
+                }
+
+                strcpy(attack_name, "tail-slap");
+
+                sc_dam = 6;
+
+                /* grey dracs have spiny tails, or something */
+                if (you.species == SP_GREY_DRACONIAN
+                                            && you.experience_level >= 6)
+                {
+                    sc_dam = 12;
+                }
+                break;
+
+            case 3:
+                if (unarmed_attack != UNAT_PUNCH)
+                    continue;
+
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_SPIDER
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST
+                        || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                {
+                    continue;
+                }
+
+                /* no punching with a shield or 2-handed wpn, except staves */
+                if (random2(2) == 0 || you.equip[EQ_SHIELD] != -1
+                    || (you.equip[EQ_WEAPON] != -1
+                        && hands_required_for_weapon(
+                                    you.inv_class[you.equip[EQ_WEAPON]],
+                                    you.inv_type[you.equip[EQ_WEAPON]] ) == 2))
+                {
+                    continue;
+                }
+
+                strcpy(attack_name, "punch");
+
+                /* applied twice */
+                sc_dam = 5 + you.skills[SK_UNARMED_COMBAT] / 3;
+
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
+                {
+                    strcpy(attack_name, "slash");
+                    sc_dam += 6;
+                }
+                break;
+
+            /* To add more, add to while part of loop below as well */
+            default:
+                continue;
+
             }
-            if (menv[monster_attacked].hit_points <= 0)
+
+            your_to_hit = 13 + you.dex / 2 + you.skills[SK_UNARMED_COMBAT] / 2
+                                + you.skills[SK_FIGHTING] / 5;
+
+            if (wearing_amulet(AMU_INACCURACY) == 1)
+                your_to_hit -= 5;
+
+            if (you.is_undead != 2)
+                you.hunger -= 2;
+
+            if (you.hunger_state == 1)
+                your_to_hit -= 3;
+
+            your_to_hit += slaying_bonus(0);
+            your_to_hit = random2(your_to_hit);
+
+            damage = sc_dam;        //4 + you.experience_level / 3;
+
+            alert();
+
+            if ((your_to_hit >= menv[monster_attacked].evasion
+                                                        || random2(15) == 0))
             {
-#ifdef WIZARD
-                itoa(damage_done, st_prn, 10);
-                strcpy(info, "Kick for ");
-                strcat(info, st_prn);
-                strcat(info, ".");
-                mpr(info);
-#endif
-                monster_die(monster_attacked, 1, 0);
-                if (menv[monster_attacked].type == MONS_GIANT_SPORE)
+                int hit = 1;
+                int dammod = 10;
+
+                if (you.strength > 11)
+                    dammod += random2(you.strength - 11) / 3;
+                if (you.strength < 9)
+                    dammod -= random2(9 - you.strength) / 2;
+
+                damage *= dammod;
+                damage /= 10;
+
+                damage_done = (int) random2(damage);
+
+                damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
+                damage_done /= 40;
+                damage_done *= 25 + (random2(you.skills[SK_UNARMED_COMBAT] + 1));
+                damage_done /= 25;
+
+                if (you.might > 1)
+                    damage_done += random2(10) + 1;
+                if (you.hunger_state == 1)
+                    damage_done -= random2(5);
+
+                damage_done += slaying_bonus(1);
+
+                damage_done -= random2(menv[monster_attacked].armor_class + 1);
+
+                if (damage_done < 0)
+                    damage_done = 0;
+                menv[monster_attacked].hit_points -= damage_done;
+
+                if (damage_done >= 1)
+                {
+                    if (random2(5) == 0
+                                && (!helpless || you.skills[SK_FIGHTING] < 2))
+                    {
+                        exercise(SK_FIGHTING, 1);
+                    }
+                }
+
+                if (menv[monster_attacked].hit_points <= 0)
+                {
+    #ifdef WIZARD
+                    itoa(damage_done, st_prn, 10);
+                    strcpy(info, "Kick for ");
+                    strcat(info, st_prn);
+                    strcat(info, ".");
+                    mpr(info);
+    #endif
+                    monster_die(monster_attacked, 1, 0);
+                    if (menv[monster_attacked].type == MONS_GIANT_SPORE)
+                    {
+                        strcpy(info, "You ");
+                        strcat(info, attack_name);
+                        strcat(info, "the giant spore.");
+                        mpr(info);
+                    }
+                    return;
+                }
+
+                if (damage_done < 1
+                                && menv[monster_attacked].enchantment[2] != 6)
                 {
                     strcpy(info, "You ");
                     strcat(info, attack_name);
-                    strcat(info, "the giant spore.");
+                    strcat(info, " ");
+                    strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
+                    strcat(info, ", but do no damage.");
                     mpr(info);
+                    hit = 1;
                 }
-                return;
             }
-            if (damage_done < 1 && menv[monster_attacked].enchantment[2] != 6)
+            else
+            {
+                strcpy(info, "Your ");
+                strcat(info, attack_name);
+                strcat(info, " misses ");
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
+                strcat(info, ".");
+                mpr(info);
+                damage_done = -99;
+            }
+
+            if (damage_done >= 1
+                        || (damage_done < 1
+                                && menv[monster_attacked].enchantment[2] == 6
+                                && damage_done != -99))
             {
                 strcpy(info, "You ");
                 strcat(info, attack_name);
                 strcat(info, " ");
-                strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
-                strcat(info, ", but do no damage.");
+                strcat(info, monam(menv[monster_attacked].number,
+                                    menv[monster_attacked].type,
+                                    menv[monster_attacked].enchantment[2], 1));
+
+#ifdef WIZARD
+                itoa(damage_done, st_prn, 10);
+                strcat(info, " for ");
+                strcat(info, st_prn);
+#endif
+
+                if (damage_done < HIT_WEAK)
+                    strcat(info, ".");
+                else if (damage_done < HIT_MED)
+                     strcat(info, "!");
+                else if (damage_done < HIT_STRONG)
+                    strcat(info, "!!");
+                else
+                    strcat(info, "!!!");
                 mpr(info);
+
+                if (mons_holiness(menv[monster_attacked].type) == -1)
+                    done_good(4, 1);
                 hit = 1;
             }
-        }
-        else
-        {
-            strcpy(info, "Your ");
-            strcat(info, attack_name);
-            strcat(info, " misses ");
-            strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
-            strcat(info, ".");
-            mpr(info);
-            damage_done = -99;
-        }
 
-        if (damage_done >= 1 || (damage_done < 1 && menv[monster_attacked].enchantment[2] == 6 && damage_done != -99))
-        {
-            strcpy(info, "You ");
-            strcat(info, attack_name);
-            strcat(info, " ");
-            strcat(info, monam(menv[monster_attacked].number, menv[monster_attacked].type, menv[monster_attacked].enchantment[2], 1));
-#ifdef WIZARD
-            itoa(damage_done, st_prn, 10);
-            strcat(info, " for ");
-            strcat(info, st_prn);
-#endif
-            if (damage_done < HIT_WEAK)
-                strcat(info, ".");
-            else if (damage_done < HIT_MED)
-                 strcat(info, "!");
-            else if (damage_done < HIT_STRONG)
-                strcat(info, "!!");
-            else
-                strcat(info, "!!!");
-            mpr(info);
-
-            if (mons_holiness(menv[monster_attacked].type) == -1)
-                done_good(4, 1);
-            hit = 1;
+            if (!helpless || you.skills[SK_UNARMED_COMBAT] < 2)
+            {
+                exercise(SK_UNARMED_COMBAT, 1);
+            }
         }
-
-        if (!helpless || you.skills[SK_UNARMED_COMBAT] < 2)
-        {
-            exercise(SK_UNARMED_COMBAT, 1);
-        }
-
     }
-    while (scount < 4);
 
     if (hit != 0)
     {
@@ -1211,8 +1377,9 @@ mons_dies:
     return;
 }
 
-int
-weapon_type_modify(int weapnum, char *noise, int damage)
+
+
+int weapon_type_modify(int weapnum, char *noise, int damage)
 {
      /* Added by DML 6/10/99.
         For now, always returns damage: that is, it never modifies values,
@@ -1229,10 +1396,14 @@ weapon_type_modify(int weapnum, char *noise, int damage)
                     weap_type=you.inv_type[weapnum];
           }
      }
+
      switch(weap_type)
      {
+     case WPN_KNIFE:
      case WPN_DAGGER:
      case WPN_SHORT_SWORD:
+     case WPN_TRIDENT:
+     case WPN_DEMON_TRIDENT:
      case WPN_SPEAR:
           if(damage<HIT_MED)
                strcpy(noise,"puncture");
@@ -1254,6 +1425,8 @@ weapon_type_modify(int weapnum, char *noise, int damage)
      case WPN_HALBERD:
      case WPN_GLAIVE:
      case WPN_HAND_AXE:
+     case WPN_AXE:
+     case WPN_BROAD_AXE:
      case WPN_BATTLEAXE:
      case WPN_SCYTHE:
      case WPN_QUICK_BLADE:
@@ -1273,11 +1446,14 @@ weapon_type_modify(int weapnum, char *noise, int damage)
      case WPN_CLUB:
      case WPN_MACE:
      case WPN_FLAIL:
+     case WPN_GREAT_MACE:
+     case WPN_GREAT_FLAIL:
      case WPN_QUARTERSTAFF:
      case WPN_GIANT_CLUB:
      case WPN_HAMMER:
      case WPN_ANCUS:
      case WPN_MORNINGSTAR:  /*for now, just a bludgeoning weapon*/
+     case WPN_SPIKED_FLAIL:  /*for now, just a bludgeoning weapon*/
      case WPN_EVENINGSTAR:
      case WPN_GIANT_SPIKED_CLUB:
           if(damage<HIT_MED)

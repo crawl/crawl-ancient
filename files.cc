@@ -649,13 +649,14 @@ void load(unsigned char stair_taken, char moving_level, char was_a_labyrinth, ch
 found_stair:
         if (just_made_new_lev == 0)
         {
-            // This should fix the "monster occuring under the player" bug
-            if (mgrd[you.x_pos][you.y_pos] != MNG)
-                monster_teleport( mgrd[you.x_pos][you.y_pos], 1 );
-
             you.x_pos = count_x;
             you.y_pos = count_y;
         }
+
+        // This should fix the "monster occuring under the player" bug?
+        if (mgrd[you.x_pos][you.y_pos] != MNG)
+            monster_teleport( mgrd[you.x_pos][you.y_pos], 1 );
+
 
         if ((you.level_type == LEVEL_LABYRINTH)
                                         || (you.level_type == LEVEL_ABYSS))
@@ -1482,11 +1483,7 @@ void save_game(char leave_game)
     *p++ = you.slow;
     *p++ = you.shock_shield;
     *p++ = you.rotting;
-#ifdef USE_NEW_BERSERK
     *p++ = you.exhausted;
-#else
-    *p++ = 0;
-#endif
     *p++ = you.deaths_door;
     *p++ = your_sign;
     *p++ = your_colour;
@@ -1506,11 +1503,7 @@ void save_game(char leave_game)
     *p++ = you.is_undead;
     *p++ = you.special_wield;
     *p++ = you.berserker;
-#ifdef USE_NEW_BERSERK
     *p++ = you.berserk_penalty;
-#else
-    *p++ = 0;
-#endif
     *p++ = you.level_type;
     *p++ = you.synch_time;
     *p++ = you.disease;
@@ -1872,11 +1865,7 @@ void restore_game()
     you.slow = *p++;
     you.shock_shield = *p++;
     you.rotting = *p++;
-#ifdef USE_NEW_BERSERK
     you.exhausted = *p++;
-#else
-    ++p;
-#endif
     you.deaths_door = *p++;
     your_sign = *p++;
     your_colour = *p++;
@@ -1892,11 +1881,7 @@ void restore_game()
     you.is_undead = *p++;
     you.special_wield = *p++;
     you.berserker = *p++;
-#ifdef USE_NEW_BERSERK
     you.berserk_penalty = *p++;
-#else
-    ++p;
-#endif
     you.level_type = *p++;
     you.synch_time = *p++;
     you.disease = *p++;

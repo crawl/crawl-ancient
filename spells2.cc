@@ -389,8 +389,7 @@ void cast_twisted(int power, int corps_beh, int corps_hit)
 
 finished:                       // now to raise the thing
 #ifdef WIZARD
-    itoa(total_mass, st_prn, 10);
-    strcpy(info, st_prn);
+    sprintf( info, "Total mass: %d", total_mass );
     mpr(info);
 #endif
 

@@ -120,11 +120,14 @@ int player_teleport(void)
         tp += 8;
     if (you.equip[EQ_RIGHT_RING] != -1 && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_TELEPORTATION)
         tp += 8;
+
 /* mutations */
     tp += you.mutation[MUT_TELEPORT] * 3;
+
 /* randart weapons only */
     if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && you.inv_dam[you.equip[EQ_WEAPON]] % 30 >= 25)
         tp += scan_randarts(RAP_CAUSE_TELEPORTATION);
+
     return tp;
 }
 
@@ -806,14 +809,18 @@ int player_AC(void)
     {
         if (you.equip[i] == -1)
             continue;
+
         if (i == EQ_SHIELD)
             continue;
+
         if (you.inv_plus[you.equip[i]] > 130)
             AC += you.inv_plus[you.equip[i]] - 150;
         else
             AC += you.inv_plus[you.equip[i]] - 50;
+
         if (i == EQ_HELMET && you.inv_plus2[you.equip[i]] >= 2)
             continue;
+
         if (i == EQ_BOOTS && you.inv_plus2[you.equip[i]] != 0)
             AC += 3;            /* barding */
 
@@ -823,26 +830,35 @@ int player_AC(void)
         if (racial_type != 0
                     && (int) (you.inv_dam[you.equip[i]] / 30) == racial_type)
         {
-            racial_bonus = 1;
+            if (you.species == SP_MOUNTAIN_DWARF
+                                        || you.species == SP_HILL_DWARF)
+                racial_bonus = 3;
+            else
+                racial_bonus = 1;
         }
 
         AC += property(2, you.inv_type[you.equip[i]], 0) *
                             (15 + you.skills[SK_ARMOUR] + racial_bonus) / 15;
 
-        if ((you.species == SP_NAGA || you.species == SP_CENTAUR || you.mutation[MUT_DEFORMED] > 0) && i == EQ_BODY_ARMOUR)     /* Nagas/Centaurs/the deformed don't fit into body armour very well */
+        /* Nagas/Centaurs/the deformed don't fit into body armour very well */
+        if ((you.species == SP_NAGA || you.species == SP_CENTAUR
+                    || you.mutation[MUT_DEFORMED] > 0) && i == EQ_BODY_ARMOUR)
         {
             AC -= property(2, you.inv_type[you.equip[i]], 0) / 2;
         }
     }
 
-    if (you.equip[EQ_RIGHT_RING] != -1 && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_PROTECTION)
+    if (you.equip[EQ_RIGHT_RING] != -1
+                && you.inv_type[you.equip[EQ_RIGHT_RING]] == RING_PROTECTION)
     {
         if (you.inv_plus[you.equip[EQ_RIGHT_RING]] > 130)
             AC -= 100;
         AC += you.inv_plus[you.equip[EQ_RIGHT_RING]];
         AC -= 50;
     }
-    if (you.equip[EQ_LEFT_RING] != -1 && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION)
+
+    if (you.equip[EQ_LEFT_RING] != -1
+                && you.inv_type[you.equip[EQ_LEFT_RING]] == RING_PROTECTION)
     {
         if (you.inv_plus[you.equip[EQ_LEFT_RING]] > 130)
             AC -= 100;
@@ -850,25 +866,39 @@ int player_AC(void)
         AC -= 50;
     }
 
-    if (you.equip[EQ_WEAPON] != -1 && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_PROTECTION)
+    if (you.equip[EQ_WEAPON] != -1
+                && you.inv_class[you.equip[EQ_WEAPON]] == OBJ_WEAPONS
+                && you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_PROTECTION)
+    {
         AC += 5;
+    }
 
-    if (you.equip[EQ_SHIELD] != -1 && you.inv_dam[you.equip[EQ_SHIELD]] % 30 == SPARM_PROTECTION)
+    if (you.equip[EQ_SHIELD] != -1
+                && you.inv_dam[you.equip[EQ_SHIELD]] % 30 == SPARM_PROTECTION)
+    {
         AC += 3;
+    }
 
     AC += scan_randarts(RAP_AC);
 
     if (you.species == SP_NAGA)
         AC += you.experience_level / 3;         /* naga */
 
+    /* grey dracs have especially tough armour */
     if (you.species == SP_GREY_DRACONIAN && you.experience_level > 7)
-        AC += (you.experience_level - 6) / 2;   /* grey dracs have especially tough armour */
+    {
+        AC += (you.experience_level - 4) / 2 - 1;
+    }
+    else if (you.species >= SP_RED_DRACONIAN
+                                && you.species <= SP_UNK2_DRACONIAN
+                                            && you.experience_level > 7)
+    {
+        AC += you.experience_level / 4 - 1;
+    }
 
-    if (you.species == SP_GREY_DRACONIAN && you.experience_level >= 4)
-        AC++;
+    if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
+        AC += 2;
 
-    if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN && you.species != SP_GREY_DRACONIAN)
-        AC += you.experience_level / 4;
 
     if (you.species == SP_OGRE)
         AC++;                   /* ogre */
@@ -885,7 +915,7 @@ int player_AC(void)
     if (you.duration[DUR_STONEMAIL] > 0)
         AC += 5 + you.skills[SK_EARTH_MAGIC] / 2;       // stonemail
 
-/* mutations */
+    /* mutations */
     AC += you.mutation[MUT_TOUGH_SKIN];
 
     if (you.mutation[MUT_GREEN_SCALES] > 0)
@@ -897,7 +927,7 @@ int player_AC(void)
     if (you.mutation[MUT_BONEY_PLATES] > 0)
         AC += you.mutation[MUT_BONEY_PLATES] + 1;
 
-/* transformations */
+    /* transformations */
     switch (you.attribute[ATTR_TRANSFORMATION])
     {
     case TRAN_NONE:
@@ -988,12 +1018,6 @@ int player_evasion(void)
 
     if (emod > 0)
         ev += emod;
-
-#ifdef WIZARD
-    itoa(emod, st_prn, 10);
-    strcpy(info, st_prn);
-    mpr(info);
-#endif
 
     /* repulsion field */
     if (you.mutation[MUT_REPULSION_FIELD] > 0)
@@ -1092,10 +1116,13 @@ int player_see_invis(void)
         si++;
 
     if (you.mutation[MUT_ACUTE_VISION] > 0)
-        si++;
+        si += you.mutation[MUT_ACUTE_VISION];
 
     /* randart wpns */
-    si += scan_randarts(RAP_EYESIGHT);
+    int artefacts = scan_randarts(RAP_EYESIGHT);
+
+    if (artefacts > 0)
+        si += artefacts;
 
     return si;
 }
@@ -1943,19 +1970,19 @@ void level_change(void)         // Look at this !!!!
                 if (you.experience_level % 5 == 0)
                     increase_stats(random2(2) * 2);
                 break;
+
             case SP_RED_DRACONIAN:
             case SP_WHITE_DRACONIAN:
             case SP_GREEN_DRACONIAN:
             case SP_GOLDEN_DRACONIAN:
-/* Grey is later */
+            /* Grey is later */
             case SP_BLACK_DRACONIAN:
             case SP_PURPLE_DRACONIAN:
             case SP_MOTTLED_DRACONIAN:
             case SP_PALE_DRACONIAN:
             case SP_UNK0_DRACONIAN:
             case SP_UNK1_DRACONIAN:
-            case SP_UNK2_DRACONIAN:     // Draconian
-
+            case SP_UNK2_DRACONIAN:
                 if (you.experience_level == 7)
                 {
                     switch (you.species)
@@ -1997,10 +2024,15 @@ void level_change(void)         // Look at this !!!!
                         break;
                     }
                     more();
+
                     char title[40];
 
-                    strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
+                    strcpy(title, skill_title(best_skill(0, 50, 99),
+                                    you.skills[best_skill(0, 50, 99)],
+                                    you.char_class, you.experience_level));
+
                     draw_border(BROWN, you.your_name, title, you.species);
+
                     you.redraw_hit_points = 1;
                     you.redraw_magic_points = 1;
                     you.redraw_strength = 1;
@@ -2012,9 +2044,11 @@ void level_change(void)         // Look at this !!!!
                     you.redraw_experience = 1;
                     you.redraw_hunger = 1;
                     you.redraw_burden = 1;
+
                     print_stats();
                     new_level();
                 }
+
                 if (you.experience_level == 18)
                 {
                     switch (you.species)
@@ -2027,7 +2061,6 @@ void level_change(void)         // Look at this !!!!
                         break;
                     case SP_BLACK_DRACONIAN:
                         mpr("You feel resistant to electrical energy.");
-                        // you.attribute[ATTR_RESIST_LIGHTNING]++;
                         break;
                     }
                 }
@@ -2037,7 +2070,8 @@ void level_change(void)         // Look at this !!!!
                     you.hp_max += 1;
                     you.base_hp2 += 1;
                 }
-                if (you.experience_level % 4 == 0)      /* need to add to player_AC */
+
+                if (you.experience_level > 7 && you.experience_level % 4 == 0)
                 {
                     mpr("Your scales feel tougher.");
                     you.redraw_armor_class = 1;
@@ -2050,10 +2084,15 @@ void level_change(void)         // Look at this !!!!
                 {
                     mpr("Your scales start turning grey.");
                     more();
+
                     char title[40];
 
-                    strcpy(title, skill_title(best_skill(0, 50, 99), you.skills[best_skill(0, 50, 99)], you.char_class, you.experience_level));
+                    strcpy(title, skill_title(best_skill(0, 50, 99),
+                                    you.skills[best_skill(0, 50, 99)],
+                                    you.char_class, you.experience_level));
+
                     draw_border(BROWN, you.your_name, title, you.species);
+
                     you.redraw_hit_points = 1;
                     you.redraw_magic_points = 1;
                     you.redraw_strength = 1;
@@ -2065,6 +2104,7 @@ void level_change(void)         // Look at this !!!!
                     you.redraw_experience = 1;
                     you.redraw_hunger = 1;
                     you.redraw_burden = 1;
+
                     print_stats();
                     new_level();
                 }
@@ -2078,7 +2118,7 @@ void level_change(void)         // Look at this !!!!
                         you.base_hp2 += 1;
                     }
                 }
-                if (you.experience_level == 4 || (you.experience_level > 7 && you.experience_level % 2 == 0))   /* need to add to player_AC */
+                if (you.experience_level > 7 && you.experience_level % 2 == 0)
                 {
                     mpr("Your scales feel tougher.");
                     you.redraw_armor_class = 1;
@@ -2292,8 +2332,7 @@ void increase_stats(char which_stat)
 
 int check_stealth(void)
 {
-
-    int stealth = you.dex * 3 - 10;
+    int stealth = you.dex * 3;
 
     switch (you.species)
     {
@@ -2301,7 +2340,7 @@ int check_stealth(void)
         case SP_OGRE:
         case SP_OGRE_MAGE:
         case SP_CENTAUR:
-            stealth += (you.skills[SK_STEALTH] * 6);
+            stealth += (you.skills[SK_STEALTH] * 9);
             break;
 
         case SP_MINOTAUR:
@@ -2317,7 +2356,7 @@ int check_stealth(void)
         case SP_UNK0_DRACONIAN:
         case SP_UNK1_DRACONIAN:
         case SP_UNK2_DRACONIAN:
-            stealth += (you.skills[SK_STEALTH] * 9);
+            stealth += (you.skills[SK_STEALTH] * 12);
             break;
 
         case SP_GNOME:
@@ -2325,11 +2364,11 @@ int check_stealth(void)
         case SP_KOBOLD:
         case SP_SPRIGGAN:
         case SP_NAGA:           // not small but very good at stealth
-            stealth += (you.skills[SK_STEALTH] * 15);
+            stealth += (you.skills[SK_STEALTH] * 18);
             break;
 
         default:
-            stealth += (you.skills[SK_STEALTH] * 12);
+            stealth += (you.skills[SK_STEALTH] * 15);
             break;
     }
 
@@ -2338,14 +2377,11 @@ int check_stealth(void)
     if (you.burden_state == 5)
         stealth /= 5;
 
-    if (you.equip[EQ_BODY_ARMOUR] != -1)
+    if (you.equip[EQ_BODY_ARMOUR] != -1 && !player_light_armour())
     {
-        if (you.inv_dam[you.equip[EQ_BODY_ARMOUR]] / 30 != 4)
-            if (you.inv_type[you.equip[EQ_BODY_ARMOUR]] > ARM_LEATHER_ARMOUR && you.inv_type[you.equip[EQ_BODY_ARMOUR]] != ARM_ANIMAL_SKIN && (you.inv_type[you.equip[EQ_BODY_ARMOUR]] < ARM_STEAM_DRAGON_HIDE || you.inv_type[you.equip[EQ_BODY_ARMOUR]] > ARM_MOTTLED_DRAGON_ARMOUR))
-                stealth -= mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) / 10;
-/* reduces stealth if you're wearing heavy non-elven non-leather armour. Steam/mottled DSMs are okay. */
+        stealth -=
+                mass(OBJ_ARMOUR, you.inv_type[you.equip[EQ_BODY_ARMOUR]]) / 10;
     }
-
 
     if (you.equip[EQ_BOOTS] != -1)
     {
@@ -2367,14 +2403,11 @@ int check_stealth(void)
 
     if (you.levitation != 0)
         stealth += 10;
-    else if (grd[you.x_pos][you.y_pos] == 65)
+    else if (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER)
         stealth /= 2;           /* Walking through water */
 
-    if (you.special_wield == 50)
+    if (you.special_wield == SPWLD_SHADOW)
         stealth = 0;            // shadow lantern
-
-    // Large races aren't as capable of being stealthy.  Smaller races
-    // have an easier time.  Normal is the old standard (x2).
 
     if (stealth <= 0)
         stealth = 0;
@@ -2386,10 +2419,6 @@ int check_stealth(void)
 void ability_increase()
 {
     unsigned char keyin;
-
-#ifdef WIZARD
-    return;                     // that prompt was irritating when gaining levels via '$'
-#endif
 
     strcpy(info, "Your experience leads to an increase in your attributes!");
     mpr(info);
@@ -2508,10 +2537,8 @@ void display_char_status()
     if (you.paralysis != 0)
         mpr("You are paralysed.");
 
-#ifdef USE_NEW_BERSERK
     if (you.exhausted != 0)
         mpr("You are exhausted.");
-#endif
 
     if (you.slow != 0)
         mpr("You are moving very slowly.");

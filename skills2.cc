@@ -1893,7 +1893,10 @@ reprint_stuff:
             else
                 lcount++;
 
-            cprintf(" - ");
+            if (you.practise_skill[x] == 0)
+                cprintf(" - ");
+            else
+                cprintf(" + ");
 
             char bufff[15];
             sprintf(bufff, "%-14s", skills[x][0]);

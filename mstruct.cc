@@ -325,7 +325,7 @@ static monsterentry *seekmonster(int mc)
 
 // macro's that save some typing, nothing more
 #define smc seekmonster(mc)
-#define mf(bf) ((smc->bitfields)&bf)
+#define mf(bf) (((smc->bitfields)&bf) != 0)
 
 
 

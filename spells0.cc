@@ -364,7 +364,11 @@ char spell_fail(unsigned char spell)
 //chance += spell_value(spell) * spell_value(spell) * 3; //spell_value(spell);
 
     if (you.equip[EQ_BODY_ARMOUR] != -1)
-        chance += (abs(property(2, you.inv_type[you.equip[EQ_BODY_ARMOUR]], 1)) * 3) - 2;
+    {
+        chance += (abs(property(OBJ_ARMOUR,
+                        you.inv_type[you.equip[EQ_BODY_ARMOUR]],
+                            PARM_EVASION)) * 5) - 2;
+    }
 
     if (you.equip[EQ_SHIELD] != -1)
     {
@@ -1135,8 +1139,8 @@ int spell_type(unsigned char spell, unsigned char typy)
         break;                  // weapon of draining
 
     case 127:
-        stype = 1122;
-        break;                  // throw pebble
+        stype = 22;
+        break;                  // crush
 
     case 128:
         stype = 1122;

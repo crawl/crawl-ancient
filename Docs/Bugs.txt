@@ -1,6 +1,27 @@
 Bugs:
 
+*  "-5 stone" is heavily enchanted to do *more* damage and costs 100
+*  "+6" was missile weapon generated in a jewellery shop
+
+*  stop polearms of reaching from working over other monsters... might
+   be a feature, though
+
+*  backwards compatibility with save files is probably too far gone.
+
+*  miscast effects are too weak?
+
+*  targeting is off at times (possible rounding errors)
+
+*  fired beams sometimes take the wrong route and can't hit targets in los
+
+*  "deep elf" doesn't get an "a" in front of it in the score file
+
+*  killed by program bug when killed by exploding spore
+
+*  fix keypad... still broken
+
 * cannot make the program with -DWIZARD (some files won't compile)
+   -- fixed
 
 * "deep elf" doesn't get an "a" in front of it in the score file
 
@@ -96,10 +117,12 @@ The above code also effects the Abyss (level_type 2), which has a similar
 an open square, only to be told that hit/killed some monster
 that wasn't there.  After killing several non-existent monsters,
 I began killing "Program Bugs".
+    -- fixed
 
 * BTW you should not be reading the results of a monster stepping
 in a Zot trap when it's out of sight... IIRC you got a message
 saying "You hear a loud *Zot*!" or words to that effect.
+    -- fixed
 
 * I'm almost certain that monsters are triggering 'magic' traps
 (ie teleport, amnesia, Zot), but not the 'missile' traps (ie darts

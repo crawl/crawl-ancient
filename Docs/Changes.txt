@@ -1,4 +1,60 @@
 Brent Ross (bwross@csclub.uwaterloo.ca)
+8/27/99
+
+-- added '*' for level 27 skills in character dump
+-- removing the "skill_change /= 2" line from the spell skills was a bit
+   hard on early spellcasters.  Since there's no reason for it in the
+   mid-game, it seems logical to give it to low level characters and
+   phase it out by the mid-game.
+
+-- "Crush" was requiring conjurations (hold over from Throw Pebble)
+
+-- bug fix: Having 1xp in the pool was allowing a lot of free practising.
+
+-- upped penalty for heavy armour (to be more in line with the new penalty
+   for shields).  Are these values high enough?
+
+-- added Linley's suggested new weapons (Axe, Spiked Flail, Great mace,
+    Great flail)
+-- upped damage for some maces & flails (swords are quick and accurate,
+   but maces and flails hit harder).
+
+-- changed "Boots" to "Barding" in equipment list for centaurs and naga
+
+-- made crystal plate mail somewhat resistant to corrosion.
+
+-- added +/- markers to the Skills screen to help out people in monochrome.
+
+-- bug fix: fixed labyrinth problems
+
+-- bug fix: fix LOS corner problem
+
+-- bug fix: can now make with -DWIZARD
+
+-- removed spellcasting/invocation interference.
+
+-- added broad axe (rare, 15, +3, 17), trident (9, -2, 16),
+   and demon trident (evil -- wielded by red devils, 15, -2 16).
+
+-- polearms/whips of reaching
+
+-- gave gladiators the choice of using a trident to start.
+
+-- removed USE_NEW_BERSERK define
+
+-- fixed bug where the AC value of barding was incorrectly displayed.
+
+-- quite a bit of cleanup (converting ints to enums in the old code)
+
+-- cleaned up draconian AC gains... removed level four increase and gave
+   them two AC to start.
+
+-- added knife -- made guaranteed on the first three levels
+
+-- fixed bug where memorizing spells was impossible on some terminals.
+
+
+Brent Ross (bwross@csclub.uwaterloo.ca)
 8/08/99
 
 -- bug fix: Orange Brains could hang game (MS_SUMMON_LEVEL spell in abyss)

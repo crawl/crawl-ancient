@@ -88,6 +88,7 @@ void exercise2(char exsk, char deg)
     if (you.practise_skill[exsk] == 0 && random2(4) != 0)
         return;
 
+
     if (you.skills[exsk] >= 10)
         skill_change *= (you.skills[exsk] - 7) / 3;
 
@@ -176,18 +177,17 @@ void exercise2(char exsk, char deg)
         }
     }
 
+
     if (exsk >= SK_SPELLCASTING)
     {
-        // Removed, not sure it was needed -- bwross
-        // skill_change /= 2;
-
-        // Added this interference -- bwross
-        if (exsk == SK_SPELLCASTING || exsk == SK_INVOCATIONS
-           && (you.skills[SK_SPELLCASTING] > you.skills[exsk]
-                || you.skills[SK_INVOCATIONS] > you.skills[exsk]))
+        if (you.experience_level < 5)
         {
-            if (random2(3) == 0)
-                return;
+            skill_change /= 2;
+        }
+        else if (you.experience_level < 15)
+        {
+            skill_change *= (10 + (you.experience_level - 5));
+            skill_change /= 20;
         }
 
         // being good at elemental magic makes other elements harder to learn:
@@ -225,6 +225,7 @@ void exercise2(char exsk, char deg)
                 return;
         }
     }
+
 
     int fraction = 0;
 
@@ -268,14 +269,48 @@ void exercise2(char exsk, char deg)
         }
     }
 
+
     skill_change -= random2(5);
 
     if (skill_change <= 0)
-        skill_change = 0;
+    {
+        // No free lunch, this is a problem now that we don't
+        // have overspending.
+        if (deg > 0 || fraction > 0 || bonus > 0)
+            skill_change = 1;
+        else
+            skill_change = 0;
+    }
 
 // Can safely return at any stage before this
 
-    you.skill_points[exsk] += (deg + bonus) * 10 + fraction;
+    int skill_inc = (deg + bonus) * 10 + fraction;
+
+    // Starting to learn skills is easier if the appropriate stat is high
+    if (you.skills[exsk] == 0)
+    {
+        if ((exsk >= SK_FIGHTING && exsk <= SK_STAVES) || exsk == SK_ARMOUR)
+        {
+            // These skills are easier for the strong
+            skill_inc *= ((you.strength < 5) ? 5 : you.strength);
+            skill_inc /= 10;
+        }
+        else if (exsk >= SK_SLINGS && exsk <= SK_UNARMED_COMBAT)
+        {
+            // These skills are easier for the dexterous
+            // Note: Armour is handled above.
+            skill_inc *= ((you.dex < 5) ? 5 : you.dex);
+            skill_inc /= 10;
+        }
+        else if (exsk >= SK_SPELLCASTING && exsk <= SK_POISON_MAGIC)
+        {
+            // These skills are easier for the smart
+            skill_inc *= ((you.intel < 5) ? 5 : you.intel);
+            skill_inc /= 10;
+        }
+    }
+
+    you.skill_points[exsk] += skill_inc;
     you.exp_available -= skill_change;
     you.redraw_experience = 1;
 
@@ -329,8 +364,7 @@ cut_through:
 //       draw_border(BROWN, you.your_name, title);
         }
     }
+
     if (you.exp_available <= 0)
         you.exp_available = 0;
-
-
 }

@@ -1929,18 +1929,23 @@ too_high:
     strcat(info, spell_string);
     strcat(info, "?");
     mpr(info);
-    keyin = getch();
 
-    if (keyin == 0)
-        getch();
-
-    if (keyin != 'y' && keyin != 'Y')
+    for (;;)
     {
+        keyin = getch();
+
+        if (keyin == 'n' || keyin == 'N')
+        {
 #ifdef PLAIN_TERM
-        redraw_screen();
+            redraw_screen();
 #endif
-        return;
+            return;
+        }
+
+        if (keyin == 'y' || keyin == 'Y')
+            break;
     }
+
     mesclr();
 
     if (you.mutation[MUT_BLURRY_VISION] > 0 && random2(4) < you.mutation[MUT_BLURRY_VISION])

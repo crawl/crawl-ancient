@@ -36,13 +36,9 @@ const int kFileNameSize = 5 + kFileNameLen;
 // Length of Path + File Name
 const int kPathLen = 256;
 
-#ifdef USE_NEW_BERSERK
-
 // This value is used to mark that the current berserk is free from
 // penalty (Xom's granted or from a deck of cards).
 #define NO_BERSERK_PENALTY    -1
-
-#endif
 
 
 struct dist
@@ -192,11 +188,8 @@ struct player
     int rotting;
     int berserker;
 
-#ifdef USE_NEW_BERSERK
     int exhausted;              // fatigue counter for berserk
-
     int berserk_penalty;        // pelnalty for moving while berserk
-#endif
 
     unsigned char attribute[30];  // various attributes, eg resist lightning
     /* list in player.cc */

@@ -688,144 +688,172 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
     {
         switch (item_type)
         {
-        case 0:
+        case WPN_CLUB:
             description = "A heavy piece of wood. ";
             break;
 
-        case 1:
+        case WPN_MACE:
             description = "A long handle with a heavy lump on one end. ";
             break;
 
-        case 2:
+        case WPN_FLAIL:
             description = "Like a mace, but with a length of chain between the handle and the lump of metal. ";
             break;
 
-        case 3:
+        case WPN_DAGGER:
             description = "A long knife or a very short sword, which can be held or thrown. ";
             break;
 
-        case 4:
+        case WPN_KNIFE:
+            description = "A simple survival knife.  Designed more for utility than combat, it looks quite capable of butchering a corpse.";
+            break;
+
+        case WPN_MORNINGSTAR:
             description = "A mace covered in spikes. ";
             break;
 
-        case 5:
+        case WPN_SHORT_SWORD:
             description = "A sword with a short, slashing blade. ";
             break;
 
-        case 6:
+        case WPN_LONG_SWORD:
             description = "A sword with a long, slashing blade. ";
             break;
 
-        case 7:
+        case WPN_GREAT_SWORD:
             description = "A sword with a very long, heavy blade and a long handle, designed to be wielded with two hands. ";
             break;
 
-        case 8:
+        case WPN_SCIMITAR:
             description = "A long sword with a curved blade. ";
             break;
 
-        case 9:
+        case WPN_HAND_AXE:
             description = "An axe designed for either hand combat or throwing. ";
             break;
 
-        case 10:
+        case WPN_BATTLEAXE:
             description = "A large axe with a double-headed blade, held with two hands. ";
             break;
 
-        case 11:
+        case WPN_SPEAR:
             description = "A long stick with a pointy blade on one end, to be held or thrown. ";
             break;
 
-        case 12:
+        case WPN_TRIDENT:
+            description = "A hafted weapon with three points at one end. ";
+            break;
+
+        case WPN_HALBERD:
             description = "A long pole with a spiked axe head on one end. ";
             break;
 
-        case 13:
+        case WPN_SLING:
             description = "A piece of cloth and leather for launching stones, which do a small amount of damage on impact. ";
             break;
 
-        case 14:
+        case WPN_BOW:
             description = "A curved piece of wood and string, for shooting arrows. It does good damage in combat, and a skilled user can use it to great effect. ";
             break;
 
-        case 15:
+        case WPN_CROSSBOW:
             description = "A piece of machinery used for firing bolts, which takes some time to load and fire. It does very good damage in combat. ";
             break;
 
-        case 16:
+        case WPN_HAND_CROSSBOW:
             description = "A small crossbow, for firing darts. ";
             break;
 
-        case 17:
+        case WPN_GLAIVE:
             description = "A pole with a large, heavy blade on one end. ";
             break;
 
-        case 18:
+        case WPN_QUARTERSTAFF:
             description = "A pole, held with both hands. ";
             break;
 
-        case 19:
+        case WPN_SCYTHE:
             description = "A farm implement, usually unsuited to combat. ";
             break;
 
-        case 20:
+        case WPN_GIANT_CLUB:
             description = "A giant lump of wood, shaped for an ogre's hands. ";
             break;
 
-        case 21:
+        case WPN_GIANT_SPIKED_CLUB:
             description = "A giant lump of wood covered in sharp spikes. ";
             break;
 
-        case 22:
+        case WPN_EVENINGSTAR:
             description = "The opposite to a morningstar. ";
             break;
 
-        case 23:
+        case WPN_QUICK_BLADE:
             description = "A small and magically quick sword. ";
             break;
 
-        case 24:
+        case WPN_KATANA:
             description = "A very rare and extremely effective imported weapon. ";
             break;
 
-        case 25:
+        case WPN_EXECUTIONERS_AXE:
             description = "A huge axe. ";
             break;
 
-        case 26:
+        case WPN_DOUBLE_SWORD:
             description = "A magical weapon with two razor-sharp blades. ";
             break;
 
-        case 27:
+        case WPN_TRIPLE_SWORD:
             description = "A magical weapon with three great razor-sharp blades. ";
             break;
 
-        case 28:
+        case WPN_HAMMER:
             description = "The kind of thing you hit nails with, adapted for battle. ";
             break;
 
-        case 29:
+        case WPN_ANCUS:
             description = "A large and vicious toothed club. ";
             break;
 
-        case 30:
+        case WPN_WHIP:
             description = "A whip. ";
             break;
 
-        case 31:
+        case WPN_SABRE:
             description = "A sword with a medium length slashing blade. ";
             break;
 
-        case 32:
+        case WPN_DEMON_BLADE:
             description = "A terrible weapon, forged in the fires of Hell. ";
             break;
 
-        case 33:
+        case WPN_DEMON_WHIP:
             description = "A terrible weapon, woven in the depths of the inferno. ";
             break;
 
-        case 34:
-            description = " ";
+        case WPN_DEMON_TRIDENT:
+            description = "A terrible weapon, molded by fire and brimstone. ";
+            break;
+
+        case WPN_BROAD_AXE:
+            description = "An axe with a large blade.";
+            break;
+
+        case WPN_AXE:
+            description = "An axe intended for hand to hand combat.";
+            break;
+
+        case WPN_SPIKED_FLAIL:
+            description = "A flail with large spikes on the end.";
+            break;
+
+        case WPN_GREAT_MACE:
+            description = "A large two-handed mace.";
+            break;
+
+        case WPN_GREAT_FLAIL:
+            description = "A large two-handed flail.";
             break;
 
         default:
@@ -944,50 +972,56 @@ static string describe_weapon(int item_class, int item_type, int item_plus, int 
         {
             switch (spec_ench)
             {
-            case 1:
+            case SPWPN_FLAMING:
                 description += "It emits flame when wielded, causing extra injury to most foes and up to double damage against particularly susceptible opponents. ";
                 break;
-            case 2:
+            case SPWPN_FREEZING:
                 description += "It has been specially enchanted to freeze those struck by it, causing extra injury to most foes and up to double damage against particularly susceptible opponents. ";
                 break;
-            case 3:
+            case SPWPN_HOLY_WRATH:
                 description += "It has been blessed by the Shining One to harm undead and cause great damage to the unholy creatures of Hell or Pandemonium. ";
                 break;
-            case 4:
+            case SPWPN_ELECTROCUTION:
                 description += "Occasionally upon striking a foe it will discharge some electrical energy and cause terrible harm. ";
                 break;
-            case 5:
+            case SPWPN_ORC_SLAYING:
                 description += "It is especially effective against all of orcish descent. ";
                 break;
-            case 6:
+            case SPWPN_VENOM:
                 description += "It poisons the flesh of those it strikes. ";
                 break;
-            case 7:
+            case SPWPN_PROTECTION:
                 description += "It protects the one who wields it against injury. ";
                 break;
-            case 8:
+            case SPWPN_DRAINING:
                 description += "A truly terrible weapon, it drains the life of those it strikes. ";
                 break;
-            case 9:
+            case SPWPN_SPEED:
                 description += "It allows its wielder to attack twice when they would otherwise have struck only once. ";
                 break;
-            case 10:
+            case SPWPN_VORPAL:
                 description += "It inflicts extra damage upon your enemies. ";
                 break;
-            case 11:
+            case SPWPN_FLAME:
                 description += "It turns projectiles fired from it into bolts of fire. ";
                 break;
-            case 12:
+            case SPWPN_FROST:
                 description += "It turns projectiles fired from it into bolts of frost. ";
                 break;
-            case 13:
+            case SPWPN_VAMPIRICISM:
                 description += "It inflicts no extra harm, but heals its wielder somewhat when he or she strikes a living foe. ";
                 break;
-            case 14:
+            case SPWPN_DISRUPTION:
                 description += "It is a weapon blessed by Zin, and can inflict up to fourfold damage when used against the undead. ";
                 break;
-            case 15:
+            case SPWPN_PAIN:
                 description += "In the hands of one skilled in necromantic magic it inflicts extra damage on living creatures. ";
+                break;
+            case SPWPN_DISTORTION:
+                description += "It warps and distorts space around it. ";
+                break;
+            case SPWPN_REACHING:
+                description += "It can be invoked to extend its reach. ";
                 break;
             }
         }
@@ -1137,47 +1171,47 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
     {
         switch (item_type)
         {
-        case 0:
+        case ARM_ROBE:
             description += "A cloth robe. ";
             break;
 
-        case 1:
+        case ARM_LEATHER_ARMOUR:
             description += "A suit made of hardened leather. ";
             break;
 
-        case 2:
+        case ARM_RING_MAIL:
             description += "A leather suit covered in little rings. ";
             break;
 
-        case 3:
+        case ARM_SCALE_MAIL:
             description += "A leather suit covered in little metal plates. ";
             break;
 
-        case 4:
+        case ARM_CHAIN_MAIL:
             description += "A suit made of interlocking metal rings. ";
             break;
 
-        case 5:
+        case ARM_SPLINT_MAIL:
             description += "A suit made of splints of metal. ";
             break;
 
-        case 6:
+        case ARM_BANDED_MAIL:
             description += "A suit made of bands of metal. ";
             break;
 
-        case 7:
+        case ARM_PLATE_MAIL:
             description += "A suit of mail and large plates of metal. ";
             break;
 
-        case 8:
+        case ARM_SHIELD:
             description += "A piece of metal, to be strapped on one's arm. ";
             break;
 
-        case 9:
+        case ARM_CLOAK:
             description += "A cloth cloak. ";
             break;
 
-        case 10:
+        case ARM_HELMET:
             if (item_plus2 == 0)
                 description += "A piece of metal headgear. ";
             if (item_plus2 == 1)
@@ -1188,11 +1222,11 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
                 description += "A conical cloth hat. ";
             break;
 
-        case 11:
+        case ARM_GLOVES:
             description += "A pair of gloves. ";
             break;
 
-        case 12:
+        case ARM_BOOTS:
             if (item_plus2 == 1)
                 description += "A special armour made for Nagas, to wear on their tails. ";
             else if (item_plus2 == 2)
@@ -1201,83 +1235,83 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
                 description += "A pair of sturdy boots. ";
             break;
 
-        case 13:
+        case ARM_BUCKLER:
             description += "A small shield. ";
             break;
 
-        case 14:
+        case ARM_LARGE_SHIELD:
             description += "Like a normal shield, only larger. ";
             break;
 
-        case 15:
+        case ARM_DRAGON_HIDE:
             description += "The scaly skin of a dragon. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 16:
+        case ARM_TROLL_HIDE:
             description += "The rough and knobbly hide of a troll. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 17:
-            description += "An incredibly heavy but extremely effective suit of crystalline armour. ";
+        case ARM_CRYSTAL_PLATE_MAIL:
+            description += "An incredibly heavy but extremely effective suit of crystalline armour.  It is somewhat resistant to corrosion.";
             break;
 
-        case 18:
+        case ARM_DRAGON_ARMOUR:
             description += "A magical armour, made from the scales of a fire-breathing dragon. It provides great protection from the effects of fire, but renders its wearer more susceptible to the effects of cold. ";
             break;
 
-        case 19:
+        case ARM_TROLL_LEATHER_ARMOUR:
             description += "A magical armour, made from the skin of a common troll. It magically regenerates its wearer's flesh at a fairly slow rate (unless they're already a troll). ";
             break;
 
-        case 20:
+        case ARM_ICE_DRAGON_HIDE:
             description += "The scaly skin of a dragon. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 21:
+        case ARM_ICE_DRAGON_ARMOUR:
             description += "A magical armour, made from the scales of a cold-breathing dragon. It provides great protection from the effects of cold, but renders its wearer more susceptible to the effects of fire and heat. ";
             break;
 
-        case 22:
+        case ARM_STEAM_DRAGON_HIDE:
             description += "The soft and supple scaley skin of a steam dragon. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 23:
+        case ARM_STEAM_DRAGON_ARMOUR:
             description += "A magical armour, made from the scales of a steam-breathing dragon. Although unlike the armour made from the scales of some larger dragons it does not provide its wearer with any special magical protection, it is extremely light and as supple as cloth. ";
             break;
 
-        case 24:
+        case ARM_MOTTLED_DRAGON_HIDE:
             description += "The weirdly-patterned scaley skin of a mottled dragon. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 25:
+        case ARM_MOTTLED_DRAGON_ARMOUR:
             description += "A magical armour made from the scales of a mottled dragon. Although unlike the armour made from the scales of some larger dragons it does not provide its wearer with any special magical protection, it is as light and relatively uncumbersome as leather armour. ";
             break;
 
-        case 26:
+        case ARM_STORM_DRAGON_HIDE:
             description += "The hide of a storm dragon, covered in extremely hard blue scales. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 27:
+        case ARM_STORM_DRAGON_ARMOUR:
             description += "A magical armour made from the scales of a lightning-breathing dragon. It is heavier than most dragon scale armours, but gives its wearer great resistance to electrical discharges. ";
             break;
 
-        case 28:
+        case ARM_GOLD_DRAGON_HIDE:
             description += "The extremely tough and heavy skin of a golden dragon, covered in shimmering golden scales. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 29:
+        case ARM_GOLD_DRAGON_ARMOUR:
             description += "A magical armour made from the golden scales of a golden dragon. It is extremely heavy and cumbersome, but confers resistance to fire, cold, and poison on its wearer. ";
             break;
 
-        case 30:
+        case ARM_ANIMAL_SKIN:
             description += "The skins of several animals. ";
             break;
 
-        case 31:
+        case ARM_SWAMP_DRAGON_HIDE:
             description += "The slimy and smelly skin of a swamp-dwelling dragon. I suppose you could wear it if you really wanted to. ";
             break;
 
-        case 32:
+        case ARM_SWAMP_DRAGON_ARMOUR:
             description += "A magical armour made from the scales of a swamp dragon. It confers resistance to poison on its wearer. ";
             break;
 
@@ -1289,7 +1323,13 @@ static string describe_armour(int item_class, int item_type, int item_plus, int 
     if (item_type != 8 && item_type != 13 && item_type != 14)
     {
         description += "$Armour rating: ";
-        append_value(description, property(2, item_type, 0), 0);
+
+        if (item_type == ARM_BOOTS && item_plus2 != 0)
+            // Barding has AC value 4.
+            append_value(description, 4, 0);
+        else
+            append_value(description, property(2, item_type, 0), 0);
+
         description += "$Evasion modifier: ";
         append_value(description, property(2, item_type, 1), 0);
         description += "$";

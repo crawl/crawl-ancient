@@ -697,7 +697,7 @@ void monster_grid( bool do_updates )
                     menv[s].target_y = you.y_pos;
 
                     if (you.turn_is_over == 1 && mons_shouts(menv[s].type) > 0
-                                    && random2(100) >= you.skills[SK_STEALTH])
+                                    && random2(30) >= you.skills[SK_STEALTH])
                     {
                         switch (mons_shouts(menv[s].type))
                         {
@@ -1139,8 +1139,6 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
 
     see = 1;
 
-
-
 // int three; // etc
     // int four; // whatever
 
@@ -1244,195 +1242,6 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
             sh[startPoint_x + 4 * xs][startPoint_y + 4 * ys] = 0;
             see = 0;
         }
-/*  // new
-   if (gr [x_p + startPoint_x - 9] [y_p + startPoint_y - 9] < MINSEE) see = 0;
-   if (gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 5*ys - 9] < MINSEE) see = 0;
-   if (gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 4*ys - 9] < MINSEE) see = 0;
-
-   if (see == 1) sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] =  gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 6*ys - 9]; else sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] = 0;
- */
-
-/*  // new
-   if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
-   if (sh [startPoint_x + 4*xs] [startPoint_y + 5*ys] == 0)// see = 0;
-   if (!(gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 5*ys - 9] < MINSEE))
-   {
-   //see = 0;
-   if (!(gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 4*ys - 9] < MINSEE))
-   //see = 0;
-   {
-   if (see == 1) sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] =  gr [x_p + startPoint_x + 4*xs - 9] [y_p + startPoint_y + 6*ys - 9]; else sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] = 0;
-   } else sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] = 0;
-   } else sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] = 0;
-   else sh [startPoint_x + 4*xs] [startPoint_y + 6*ys] = 0;
- */
-        see = 1;
-//  if (sh [startPoint_x] [startPoint_y] == 0 && sh [startPoint_x + xs] [startPoint_y] == 0) see = 0;
-
-//  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
-        if (sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 3 * xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 6 * ys - 9];
-                    else
-                        sh[startPoint_x + 3 * xs][startPoint_y + 6 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 3 * xs][startPoint_y + 6 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 3 * xs][startPoint_y + 6 * ys] = 0;
-        else
-            sh[startPoint_x + 3 * xs][startPoint_y + 6 * ys] = 0;
-
-//  if (see == 0) sh [startPoint_x + 3*xs] [startPoint_y + 6*ys] = 0;
-
-
-//  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
-        if (sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 1 * xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 1 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 2 * xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 6 * ys - 9];
-                    else
-                        sh[startPoint_x + 2 * xs][startPoint_y + 6 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 2 * xs][startPoint_y + 6 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 2 * xs][startPoint_y + 6 * ys] = 0;
-        else
-            sh[startPoint_x + 2 * xs][startPoint_y + 6 * ys] = 0;
-
-//  if (see == 0) sh [startPoint_x + 2*xs] [startPoint_y + 6*ys] = 0;
-        //  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
-
-
-        if (sh[startPoint_x][startPoint_y + 5 * ys] != 0)       //see = 0;
-
-            if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))        //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))    //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x + xs - 9][y_p + startPoint_y + 6 * ys - 9];
-                    else
-                        sh[startPoint_x + xs][startPoint_y + 6 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + xs][startPoint_y + 6 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + xs][startPoint_y + 6 * ys] = 0;
-        else
-            sh[startPoint_x + xs][startPoint_y + 6 * ys] = 0;
-
-//  if (see == 0) sh [startPoint_x + xs] [startPoint_y + 6*ys] = 0;
-
-        if (sh[startPoint_x - xs][startPoint_y + 5 * ys] != 0)  //see = 0;
-
-            if (!(gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))   //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x][startPoint_y + 6 * ys] = gr[x_p + startPoint_x - 9][y_p + startPoint_y + 6 * ys - 9];
-                    else
-                        sh[startPoint_x][startPoint_y + 6 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x][startPoint_y + 6 * ys] = 0;
-            }
-            else
-                sh[startPoint_x][startPoint_y + 6 * ys] = 0;
-        else
-            sh[startPoint_x][startPoint_y + 6 * ys] = 0;
-
-
-        if (sh[startPoint_x - 2 * xs][startPoint_y + 5 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x - 2 * xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x - 2 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x - xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 6 * ys - 9];
-                    else
-                        sh[startPoint_x - xs][startPoint_y + 6 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x - xs][startPoint_y + 6 * ys] = 0;
-            }
-            else
-                sh[startPoint_x - xs][startPoint_y + 6 * ys] = 0;
-        else
-            sh[startPoint_x - xs][startPoint_y + 6 * ys] = 0;
-
-
-
-
-
-
-        if (sh[startPoint_x - xs][startPoint_y + 6 * ys] != 0)  //see = 0;
-
-            if (!(gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 6 * ys - 9] < MINSEE))   //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x][startPoint_y + 7 * ys] = gr[x_p + startPoint_x - 9][y_p + startPoint_y + 7 * ys - 9];
-                    else
-                        sh[startPoint_x][startPoint_y + 7 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x][startPoint_y + 7 * ys] = 0;
-            }
-            else
-                sh[startPoint_x][startPoint_y + 7 * ys] = 0;
-        else
-            sh[startPoint_x][startPoint_y + 7 * ys] = 0;
-
-
-        if (sh[startPoint_x - 2 * xs][startPoint_y + 6 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x - 2 * xs - 9][y_p + startPoint_y + 6 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x - 2 * xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x - xs][startPoint_y + 7 * ys] = gr[x_p + startPoint_x - xs - 9][y_p + startPoint_y + 7 * ys - 9];
-                    else
-                        sh[startPoint_x - xs][startPoint_y + 7 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x - xs][startPoint_y + 7 * ys] = 0;
-            }
-            else
-                sh[startPoint_x - xs][startPoint_y + 7 * ys] = 0;
-        else
-            sh[startPoint_x - xs][startPoint_y + 7 * ys] = 0;
 
 
 /*  if (sh [startPoint_x - 3*xs] [startPoint_y + 6*ys] != 0) //see = 0;
@@ -1569,7 +1378,12 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
         if (gr[x_p + 4 * xs][y_p + 2 * ys] < MINSEE && gr[x_p + 4 * xs][y_p + ys] < MINSEE)
             see = 0;
 
-
+        if ((gr[x_p + xs][y_p] < MINSEE && gr[x_p + xs][y_p + ys] < MINSEE) || (gr[x_p + 2 * xs][y_p] < MINSEE && gr[x_p + 2 * xs][y_p + ys] < MINSEE) || (gr[x_p + 3 * xs][y_p] < MINSEE && gr[x_p + 3 * xs][y_p + ys] < MINSEE))
+        {
+            sh[startPoint_x + 2 * xs][startPoint_y] = 0;
+        }
+        else
+            sh[startPoint_x + 2 * xs][startPoint_y] = gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y - 9];
 
 
         if ((gr[x_p + xs][y_p] < MINSEE && gr[x_p + xs][y_p + ys] < MINSEE) || (gr[x_p + 2 * xs][y_p] < MINSEE && gr[x_p + 2 * xs][y_p + ys] < MINSEE) || (gr[x_p + 3 * xs][y_p] < MINSEE && gr[x_p + 3 * xs][y_p + ys] < MINSEE) || (gr[x_p + 4 * xs][y_p] < MINSEE && gr[x_p + 4 * xs][y_p + ys] < MINSEE))
@@ -1593,21 +1407,171 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
 
         }                       // end of else
 
+        // These do the far two layers.
+        see = 1;
 
+        if (sh[startPoint_x + 4 * xs][startPoint_y + 3 * ys] != 0)      //see = 0;
 
+            if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))       //see = 0;
 
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
 
-
-
-        if ((gr[x_p + xs][y_p] < MINSEE && gr[x_p + xs][y_p + ys] < MINSEE) || (gr[x_p + 2 * xs][y_p] < MINSEE && gr[x_p + 2 * xs][y_p + ys] < MINSEE) || (gr[x_p + 3 * xs][y_p] < MINSEE && gr[x_p + 3 * xs][y_p + ys] < MINSEE))
-        {
-            sh[startPoint_x + 2 * xs][startPoint_y] = 0;
-        }
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 5 * xs][startPoint_y + 4 * ys] = gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 4 * ys - 9];
+                    else
+                        sh[startPoint_x + 5 * xs][startPoint_y + 4 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 5 * xs][startPoint_y + 4 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 5 * xs][startPoint_y + 4 * ys] = 0;
         else
-            sh[startPoint_x + 2 * xs][startPoint_y] = gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y - 9];
+            sh[startPoint_x + 5 * xs][startPoint_y + 4 * ys] = 0;
+
+//  if (see == 0) sh [startPoint_x + 3*xs] [startPoint_y + 6*ys] = 0;
+
+
+//  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
+        if (sh[startPoint_x + 4 * xs][startPoint_y + 2 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 2 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 2 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 5 * xs][startPoint_y + 3 * ys] = gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 3 * ys - 9];
+                    else
+                        sh[startPoint_x + 5 * xs][startPoint_y + 3 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 5 * xs][startPoint_y + 3 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 5 * xs][startPoint_y + 3 * ys] = 0;
+        else
+            sh[startPoint_x + 5 * xs][startPoint_y + 3 * ys] = 0;
+
+//  if (see == 0) sh [startPoint_x + 2*xs] [startPoint_y + 6*ys] = 0;
+        //  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
+
+
+        if (sh[startPoint_x + 4 * xs][startPoint_y + ys] != 0)       //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + ys - 9] < MINSEE))        //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + ys - 9] < MINSEE))    //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] = gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 2 * ys - 9];
+                    else
+                        sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] = 0;
+        else
+            sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] = 0;
+
+//  if (see == 0) sh [startPoint_x + xs] [startPoint_y + 6*ys] = 0;
+
+
+        if (sh[startPoint_x + 4 * xs][startPoint_y] != 0)  //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - 9] < MINSEE))   //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y - 9] < MINSEE))       //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 5 * xs][startPoint_y + ys] = gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + ys - 9];
+                    else
+                        sh[startPoint_x + 5 * xs][startPoint_y + ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 5 * xs][startPoint_y + ys] = 0;
+            }
+            else
+                sh[startPoint_x + 5 * xs][startPoint_y + ys] = 0;
+        else
+            sh[startPoint_x + 5 * xs][startPoint_y + ys] = 0;
 
 
 
+        if (sh[startPoint_x + 4 * xs][startPoint_y - 1 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 5 * xs][startPoint_y] = gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 9];
+                    else
+                        sh[startPoint_x + 5 * xs][startPoint_y] = 0;
+                }
+                else
+                    sh[startPoint_x + 5 * xs][startPoint_y] = 0;
+            }
+            else
+                sh[startPoint_x + 5 * xs][startPoint_y] = 0;
+        else
+            sh[startPoint_x + 5 * xs][startPoint_y] = 0;
+
+
+
+        if (sh[startPoint_x + 5 * xs][startPoint_y] != 0)  //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 9] < MINSEE))   //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - 9] < MINSEE))       //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 6 * xs][startPoint_y + ys] = gr[x_p + startPoint_x  + 6 * xs - 9][y_p + startPoint_y + ys - 9];
+                    else
+                        sh[startPoint_x + 6 * xs][startPoint_y + ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 6 * xs][startPoint_y + ys] = 0;
+            }
+            else
+                sh[startPoint_x + 6 * xs][startPoint_y + ys] = 0;
+        else
+            sh[startPoint_x + 6 * xs][startPoint_y + ys] = 0;
+
+
+
+        if (sh[startPoint_x + 5 * xs][startPoint_y - ys] != 0)      //see = 0;
+            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 6 * xs][startPoint_y] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y - 9];
+                    else
+                        sh[startPoint_x + 6 * xs][startPoint_y] = 0;
+                }
+                else
+                    sh[startPoint_x + 6 * xs][startPoint_y] = 0;
+            }
+            else
+                sh[startPoint_x + 6 * xs][startPoint_y] = 0;
+        else
+            sh[startPoint_x + 6 * xs][startPoint_y] = 0;
 
     }                           // end of the for (i) above.
 
@@ -1651,9 +1615,6 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
             startPoint_y = 7;
 
         }
-
-
-
 
 
         behind = 0;
@@ -1716,163 +1677,6 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
 // Okay.
 
 
-
-
-
-        see = 1;
-        if (sh[startPoint_x + 5 * xs][startPoint_y + 2 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 2 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 2 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 6 * xs][startPoint_y + 3 * ys] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y + 3 * ys - 9];
-                    else
-                        sh[startPoint_x + 6 * xs][startPoint_y + 3 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 6 * xs][startPoint_y + 3 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 6 * xs][startPoint_y + 3 * ys] = 0;
-        else
-            sh[startPoint_x + 6 * xs][startPoint_y + 3 * ys] = 0;
-
-
-
-        if (sh[startPoint_x + 5 * xs][startPoint_y + 1 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 1 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 1 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 6 * xs][startPoint_y + 2 * ys] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y + 2 * ys - 9];
-                    else
-                        sh[startPoint_x + 6 * xs][startPoint_y + 2 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 6 * xs][startPoint_y + 2 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 6 * xs][startPoint_y + 2 * ys] = 0;
-        else
-            sh[startPoint_x + 6 * xs][startPoint_y + 2 * ys] = 0;
-
-//  if (see == 0) sh [startPoint_x + 2*xs] [startPoint_y + 6*ys] = 0;
-        //  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
-
-
-        if (sh[startPoint_x + 5 * xs][startPoint_y + 0 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y + 0 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 0 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 6 * xs][startPoint_y + 1 * ys] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y + 1 * ys - 9];
-                    else
-                        sh[startPoint_x + 6 * xs][startPoint_y + 1 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 6 * xs][startPoint_y + 1 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 6 * xs][startPoint_y + 1 * ys] = 0;
-        else
-            sh[startPoint_x + 6 * xs][startPoint_y + 1 * ys] = 0;
-
-//  if (see == 0) sh [startPoint_x + xs] [startPoint_y + 6*ys] = 0;
-
-        if (sh[startPoint_x + 5 * xs][startPoint_y - 1 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 6 * xs][startPoint_y + 0 * ys] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y + 0 * ys - 9];
-                    else
-                        sh[startPoint_x + 6 * xs][startPoint_y + 0 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 6 * xs][startPoint_y + 0 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 6 * xs][startPoint_y + 0 * ys] = 0;
-        else
-            sh[startPoint_x + 6 * xs][startPoint_y + 0 * ys] = 0;
-
-
-        if (sh[startPoint_x + 5 * xs][startPoint_y - 2 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 2 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y - 2 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    if (see == 1)
-                        sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] = gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y - 1 * ys - 9];
-                    else
-                        sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] = 0;
-                }
-                else
-                    sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] = 0;
-        else
-            sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] = 0;
-
-
-        if (sh[startPoint_x + 6 * xs][startPoint_y - 1 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 1 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    sh[startPoint_x + 7 * xs][startPoint_y + 0 * ys] = gr[x_p + startPoint_x + 7 * xs - 9][y_p + startPoint_y + 0 * ys - 9];    //else sh [startPoint_x + 7*xs] [startPoint_y + 0*ys] = 0;
-
-                }
-                else
-                    sh[startPoint_x + 7 * xs][startPoint_y + 0 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 7 * xs][startPoint_y + 0 * ys] = 0;
-        else
-            sh[startPoint_x + 7 * xs][startPoint_y + 0 * ys] = 0;
-
-
-        if (sh[startPoint_x + 6 * xs][startPoint_y - 2 * ys] != 0)      //see = 0;
-
-            if (!(gr[x_p + startPoint_x + 6 * xs - 9][y_p + startPoint_y - 2 * ys - 9] < MINSEE))       //see = 0;
-
-            {
-                if (!(gr[x_p + startPoint_x + 5 * xs - 9][y_p + startPoint_y - 2 * ys - 9] < MINSEE))   //see = 0;
-
-                {
-                    sh[startPoint_x + 7 * xs][startPoint_y - 1 * ys] = gr[x_p + startPoint_x + 7 * xs - 9][y_p + startPoint_y - 1 * ys - 9];    //else sh [startPoint_x + 7*xs] [startPoint_y - 1*ys] = 0;
-
-                }
-                else
-                    sh[startPoint_x + 7 * xs][startPoint_y - 1 * ys] = 0;
-            }
-            else
-                sh[startPoint_x + 7 * xs][startPoint_y - 1 * ys] = 0;
-        else
-            sh[startPoint_x + 7 * xs][startPoint_y - 1 * ys] = 0;
 
 
 /*  if (sh [startPoint_x + 6*xs] [startPoint_y - 3*ys] != 0)
@@ -2039,10 +1843,167 @@ void losight(unsigned int sh[19][19], unsigned char gr[80][70], int x_p, int y_p
 
         }                       // end of else
 
-    }                           // end of the for (shad) above.
-
 //sh [5] [5] = 'X';
 
+
+        // These fo the far two layers
+
+        see = 1;
+        if (sh[startPoint_x + 3 * xs][startPoint_y + 4 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 4 * xs][startPoint_y + 5 * ys] = gr[x_p + startPoint_x + 4 * xs - 9][y_p + startPoint_y + 5 * ys - 9];
+                    else
+                        sh[startPoint_x + 4 * xs][startPoint_y + 5 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 4 * xs][startPoint_y + 5 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 4 * xs][startPoint_y + 5 * ys] = 0;
+        else
+            sh[startPoint_x + 4 * xs][startPoint_y + 5 * ys] = 0;
+
+
+
+        if (sh[startPoint_x + 2 * xs][startPoint_y + 4 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 3 * xs][startPoint_y + 5 * ys] = gr[x_p + startPoint_x + 3 * xs - 9][y_p + startPoint_y + 5 * ys - 9];
+                    else
+                        sh[startPoint_x + 3 * xs][startPoint_y + 5 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 3 * xs][startPoint_y + 5 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 3 * xs][startPoint_y + 5 * ys] = 0;
+        else
+            sh[startPoint_x + 3 * xs][startPoint_y + 5 * ys] = 0;
+
+//  if (see == 0) sh [startPoint_x + 2*xs] [startPoint_y + 6*ys] = 0;
+        //  if (sh [startPoint_x] [startPoint_y] == 0) see = 0;
+
+
+        if (sh[startPoint_x + xs][startPoint_y + 4 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x + xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x + xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] = gr[x_p + startPoint_x + 2 * xs - 9][y_p + startPoint_y + 5 * ys - 9];
+                    else
+                        sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] = 0;
+        else
+            sh[startPoint_x + 2 * xs][startPoint_y + 5 * ys] = 0;
+
+//  if (see == 0) sh [startPoint_x + xs] [startPoint_y + 6*ys] = 0;
+
+        if (sh[startPoint_x][startPoint_y + 4 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] = gr[x_p + startPoint_x + 1 * xs - 9][y_p + startPoint_y + 5 * ys - 9];
+                    else
+                        sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] = 0;
+        else
+            sh[startPoint_x + 1 * xs][startPoint_y + 5 * ys] = 0;
+
+
+        if (sh[startPoint_x - 1 * xs][startPoint_y + 4 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x - 1 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x - 1 * xs - 9][y_p + startPoint_y + 3 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    if (see == 1)
+                        sh[startPoint_x][startPoint_y + 5 * ys] = gr[x_p + startPoint_x - 9][y_p + startPoint_y + 5 * ys - 9];
+                    else
+                        sh[startPoint_x][startPoint_y + 5 * ys] = 0;
+                }
+                else
+                    sh[startPoint_x][startPoint_y + 5 * ys] = 0;
+            }
+            else
+                sh[startPoint_x][startPoint_y + 5 * ys] = 0;
+        else
+            sh[startPoint_x][startPoint_y + 5 * ys] = 0;
+
+
+        if (sh[startPoint_x][startPoint_y + 5 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    sh[startPoint_x + 1 * xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x + 1 * xs - 9][y_p + startPoint_y + 6 * ys - 9];    //else sh [startPoint_x + 7*xs] [startPoint_y + 0*ys] = 0;
+
+                }
+                else
+                    sh[startPoint_x + 1 * xs][startPoint_y + 6 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 1 * xs][startPoint_y + 6 * ys] = 0;
+        else
+            sh[startPoint_x + 1 * xs][startPoint_y + 6 * ys] = 0;
+
+
+        if (sh[startPoint_x - 1 * xs][startPoint_y + 5 * ys] != 0)      //see = 0;
+
+            if (!(gr[x_p + startPoint_x - 1 * xs - 9][y_p + startPoint_y + 5 * ys - 9] < MINSEE))       //see = 0;
+
+            {
+                if (!(gr[x_p + startPoint_x - 1 * xs - 9][y_p + startPoint_y + 4 * ys - 9] < MINSEE))   //see = 0;
+
+                {
+                    sh[startPoint_x + 0 * xs][startPoint_y + 6 * ys] = gr[x_p + startPoint_x + 0 * xs - 9][y_p + startPoint_y + 6 * ys - 9];    //else sh [startPoint_x + 7*xs] [startPoint_y - 1*ys] = 0;
+
+                }
+                else
+                    sh[startPoint_x + 0 * xs][startPoint_y + 6 * ys] = 0;
+            }
+            else
+                sh[startPoint_x + 0 * xs][startPoint_y + 6 * ys] = 0;
+        else
+            sh[startPoint_x + 0 * xs][startPoint_y + 6 * ys] = 0;
+
+    }                           // end of the for (shad) above.
 }
 
 

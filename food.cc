@@ -475,37 +475,26 @@ char butchery(void)
         return 0;
     }
 
-    if (you.equip
-        [EQ_WEAPON] == -1 && you.species != SP_TROLL && you.species != SP_GHOUL && you.attribute
-        [ATTR_TRANSFORMATION] !=
-        TRAN_BLADE_HANDS &&
-        you.
-        attribute[ATTR_TRANSFORMATION] !=
-        TRAN_DRAGON)
+    if (you.species != SP_TROLL
+            && you.species != SP_GHOUL
+            && you.attribute[ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS
+            && you.attribute[ATTR_TRANSFORMATION] != TRAN_DRAGON)
     {
-        strcpy(info, "What, with your bare hands?");
-        mpr(info);
-        return 0;
+        if (you.equip[EQ_WEAPON] == -1)
+        {
+            mpr( "What, with your bare hands?" );
+            return 0;
+        }
+        else if (damage_type(you.inv_class[you.equip[EQ_WEAPON]],
+                                    you.inv_type[you.equip[EQ_WEAPON]]) != 1
+                    && damage_type(you.inv_class[you.equip[EQ_WEAPON]],
+                                    you.inv_type[you.equip[EQ_WEAPON]]) != 3)
+        {
+            mpr( "Maybe you should try using a sharper implement." );
+            return 0;
+        }
     }
 
-    if (you.species != SP_TROLL && you.species != SP_GHOUL && you.attribute
-        [ATTR_TRANSFORMATION] != TRAN_BLADE_HANDS &&
-        you.
-        attribute[ATTR_TRANSFORMATION] !=
-        TRAN_DRAGON &&
-        damage_type(you.
-                    inv_class[you.equip[EQ_WEAPON]], you.
-                    inv_type[you.equip[EQ_WEAPON]]) !=
-        1 &&
-        damage_type(you.
-                    inv_class[you.equip[EQ_WEAPON]], you.
-                    inv_type[you.equip[EQ_WEAPON]]) !=
-        3)
-    {
-        strcpy(info, "Maybe you should try using a sharper implement.");
-        mpr(info);
-        return 0;
-    }
 
     int last_item = 501;
 
@@ -537,8 +526,8 @@ char butchery(void)
     if (items_here == 1)
     {
         if (mitm.base_type[igrd[you.x_pos][you.y_pos]] != OBJ_CORPSES ||
-            mitm.sub_type[igrd[you.x_pos][you.y_pos]] != CORPSE_BODY)
-            goto out_of_eating; // && mitm.base_type [igrd [you.x_pos] [you.y_pos]] != 14) return 0;
+                    mitm.sub_type[igrd[you.x_pos][you.y_pos]] != CORPSE_BODY)
+            goto out_of_eating;
 
         strcpy(info, "Butcher ");
         it_name(igrd[you.x_pos][you.y_pos], 3, str_pass);
@@ -563,13 +552,17 @@ char butchery(void)
         you.delay_t = 4;
         you.delay_doing = 4;
 
-        if (you.species == SP_TROLL || you.species == SP_GHOUL || you.attribute
-            [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+        if (you.species == SP_TROLL || you.species == SP_GHOUL
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
             mpr("You start tearing the corpse apart.");
         else
             mpr("You start hacking away.");
 
-        if (you.duration[DUR_PRAYER] != 0 && (you.religion == GOD_OKAWARU || you.religion == GOD_MAKHLEB || you.religion == GOD_TROG))
+        if (you.duration[DUR_PRAYER] != 0
+                    && (you.religion == GOD_OKAWARU
+                        || you.religion == GOD_MAKHLEB
+                        || you.religion == GOD_TROG))
         {
             offer_corpse(item_got);
             you.turn_is_over = 1;
@@ -580,7 +573,8 @@ char butchery(void)
         }
 
         you.turn_is_over = 1;
-        place_chunks(mitm.pluses[item_got], mitm.special[item_got], you.x_pos, you.y_pos, mitm.colour[item_got]);
+        place_chunks(mitm.pluses[item_got], mitm.special[item_got],
+                                you.x_pos, you.y_pos, mitm.colour[item_got]);
         destroy_item(item_got);
         return 1;
     }
@@ -590,19 +584,20 @@ char butchery(void)
 
     if (items_here > 1)
     {
-
         o = igrd[you.x_pos][you.y_pos];
 
         for (k = 0; k < items_here; k++)
         {
-            if (mitm.base_type[o] != OBJ_CORPSES || mitm.sub_type[o] != CORPSE_BODY)
-                goto out_of_eating;     // && mitm.base_type [o] != 14) goto out_of_eating;
+            if (mitm.base_type[o] != OBJ_CORPSES
+                                        || mitm.sub_type[o] != CORPSE_BODY)
+                goto out_of_eating;
 
             strcpy(info, "Butcher ");
             it_name(o, 3, str_pass);
             strcat(info, str_pass);
             strcat(info, "\?");
             mpr(info);
+
             keyin = getch();
             if (keyin == 0)
             {
@@ -614,6 +609,7 @@ char butchery(void)
             {
                 return 0;
             }
+
             if (keyin == 'y')
             {
 
@@ -622,14 +618,21 @@ char butchery(void)
                 you.delay_t = 4;
                 you.delay_doing = 4;
 
-                if (you.species == SP_TROLL || you.species == SP_GHOUL || you.attribute
-                    [ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                if (you.species == SP_TROLL || you.species == SP_GHOUL
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
+                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                {
                     mpr("You start tearing the corpse apart.");
+                }
                 else
+                {
                     mpr("You start hacking away.");
+                }
 
-                if (you.duration[DUR_PRAYER] != 0 && (you.religion == GOD_OKAWARU || you.religion == GOD_MAKHLEB
-                                               || you.religion == GOD_TROG))
+                if (you.duration[DUR_PRAYER] != 0
+                            && (you.religion == GOD_OKAWARU
+                                    || you.religion == GOD_MAKHLEB
+                                   || you.religion == GOD_TROG))
                 {
                     offer_corpse(item_got);
                     you.turn_is_over = 1;
@@ -639,8 +642,8 @@ char butchery(void)
                     return 1;   /* no chunks */
                 }
 
-                place_chunks(mitm.pluses[item_got], mitm.special[item_got], you.x_pos, you.y_pos, mitm.colour[item_got])
-                    ;
+                place_chunks(mitm.pluses[item_got], mitm.special[item_got],
+                                you.x_pos, you.y_pos, mitm.colour[item_got]);
                 you.turn_is_over = 1;
                 destroy_item(item_got);
                 return 1;
@@ -648,23 +651,20 @@ char butchery(void)
             }
 
 
-          out_of_eating:if (mitm.quantity[o] > 0)
+out_of_eating:
+            if (mitm.quantity[o] > 0)
                 last_item = o;
 
             hrg = mitm.link[o];
             o = hrg;
+
             if (o == 501)
                 goto failed;
 
             if (items_here == 0)
                 break;
         }                       // end of while k loop
-
-        //      strcpy(info, "That's all.");
     }
-    // end of if items_here
-    //itc = 0;
-
     //return 0;
 
 failed:

@@ -500,7 +500,7 @@ bool allow_control_teleport()
 {
     bool ret = true;
 
-    if (you.level_type == LEVEL_ABYSS)
+    if (you.level_type == LEVEL_ABYSS || you.level_type == LEVEL_LABYRINTH)
     {
         ret = false;
     }

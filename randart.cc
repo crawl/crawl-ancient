@@ -740,17 +740,25 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
     if (aclass == OBJ_WEAPONS)  /* Only weapons get brands, of course */
     {
         proprt[RAP_BRAND] = SPWPN_FLAMING + random4(15);        /* brand */
+
         if (random4(6) == 0)
             proprt[RAP_BRAND] = SPWPN_FLAMING + random4(2);
+
         if (random4(6) == 0)
             proprt[RAP_BRAND] = SPWPN_ORC_SLAYING + random4(4);
+
         if (random4(6) == 0)
             proprt[RAP_BRAND] = SPWPN_VORPAL;
-        if (proprt[RAP_BRAND] == SPWPN_FLAME || proprt[RAP_BRAND] == SPWPN_FROST)
+
+        if (proprt[RAP_BRAND] == SPWPN_FLAME
+                                        || proprt[RAP_BRAND] == SPWPN_FROST)
             proprt[RAP_BRAND] = 0;      /* missile wpns */
+
         if (proprt[RAP_BRAND] == SPWPN_PROTECTION)
             proprt[RAP_BRAND] = 0;      /* no protection */
-        if (proprt[RAP_BRAND] == SPWPN_DISRUPTION && atype != WPN_MACE)
+
+        if (proprt[RAP_BRAND] == SPWPN_DISRUPTION &&
+                             (atype != WPN_MACE && atype != WPN_GREAT_MACE))
             proprt[RAP_BRAND] = SPWPN_NORMAL;   /* Only maces get disruption */
 
         if (atype >= WPN_SLING && atype <= WPN_HAND_CROSSBOW)
@@ -761,7 +769,8 @@ int randart_wpn_properties(unsigned char aclass, unsigned char atype, unsigned c
                 proprt[RAP_BRAND] = SPWPN_NORMAL;
         }
 
-        if (atype == WPN_DEMON_BLADE || atype == WPN_DEMON_WHIP)
+        if (atype == WPN_DEMON_BLADE || atype == WPN_DEMON_WHIP
+                                                || atype == WPN_DEMON_TRIDENT)
         {
             switch (random4(9))
             {
@@ -1564,6 +1573,9 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
     case WPN_FLAIL:
         strcat(glorg, "flail");
         break;
+    case WPN_KNIFE:
+        strcat(glorg, "knife");
+        break;
     case WPN_DAGGER:
         strcat(glorg, "dagger");
         break;
@@ -1590,6 +1602,9 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
         break;
     case WPN_SPEAR:
         strcat(glorg, "spear");
+        break;
+    case WPN_TRIDENT:
+        strcat(glorg, "trident");
         break;
     case WPN_HALBERD:
         strcat(glorg, "halberd");
@@ -1665,20 +1680,23 @@ void standard_name_weap(unsigned char item_typ, char glorg[80])
     case WPN_DEMON_WHIP:
         strcat(glorg, "demon whip");
         break;
-    case 34:
-        strcat(glorg, "");
+    case WPN_DEMON_TRIDENT:
+        strcat(glorg, "demon trident");
         break;
-    case 35:
-        strcat(glorg, "");
+    case WPN_BROAD_AXE:
+        strcat(glorg, "broad axe");
         break;
-    case 36:
-        strcat(glorg, "");
+    case WPN_AXE:
+        strcat(glorg, "axe");
         break;
-    case 37:
-        strcat(glorg, "");
+    case WPN_SPIKED_FLAIL:
+        strcat(glorg, "spiked flail");
         break;
-    case 38:
-        strcat(glorg, "");
+    case WPN_GREAT_MACE:
+        strcat(glorg, "great mace");
+        break;
+    case WPN_GREAT_FLAIL:
+        strcat(glorg, "great flail");
         break;
     }
 }

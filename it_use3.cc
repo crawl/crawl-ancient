@@ -22,6 +22,8 @@
 #include "item_use.h"
 #include "spells.h"
 #include "stuff.h"
+#include "direct.h"
+#include "fight.h"
 #include "itemname.h"
 #include "decks.h"
 #include "spell.h"
@@ -331,8 +333,31 @@ void special_wielded()
 }                               // end void special_wielded
 
 
+static void reaching_weapon_attack()
+{
+    struct dist  beam;
 
+    mpr( "Attack whom?" );
 
+    direction(100, &beam);
+
+    if (abs(beam.target_x - you.x_pos) > 2
+                                    || abs(beam.target_y - you.y_pos) > 2)
+    {
+        mpr( "Your weapon cannot reach that far!" );
+        return;
+    }
+
+    if (beam.nothing == -1 || mgrd[beam.target_x][beam.target_y] == MNG
+            || (beam.target_x == you.x_pos && beam.target_y == you.y_pos))
+    {
+        return;
+    }
+
+    // XXX - no current check for if monsters are in the way, so you can
+    //       attack over a monster.  This may be desired, or a problem.
+    you_attack( mgrd[beam.target_x][beam.target_y], false );
+}
 
 void invoke_wielded(void)
 {
@@ -359,97 +384,117 @@ void invoke_wielded(void)
     switch (you.inv_class[you.equip[EQ_WEAPON]])
     {
     case OBJ_WEAPONS:
-        switch (you.inv_dam[you.equip[EQ_WEAPON]])
+        if (you.inv_dam[you.equip[EQ_WEAPON]] < 180 &&
+                    you.inv_dam[you.equip[EQ_WEAPON]] % 30 == SPWPN_REACHING)
         {
-        case NWPN_STAFF_OF_DISPATER:    // staff of Dispater
-
-            if (you.deaths_door != 0 || you.hp <= 10 || you.magic_points <= 4)
-                goto nothing_hap;
-            strcpy(info, "You feel the staff feeding on your energy!");
-            mpr(info);
-            you.hp -= random2(10) + random2(10) + 5;
-            if (you.hp <= 0)
-                you.hp = 1;
-            you.magic_points -= random2(3) + random2(3) + 2;
-            if (you.magic_points <= 0)
-                you.magic_points = 1;
-            you.redraw_hit_points = 1;
-            you.redraw_magic_points = 1;
-            your_spells(SPELL_HELLFIRE, 100, 0);        // power (2nd number) is meaningless
-
-            break;
-
-        case NWPN_SCEPTRE_OF_ASMODEUS:          // sceptre of Asmodeus
-
-            spell_casted = random2(21);
-            if (spell_casted == 0)
-                goto nothing_hap;       // nothing happens
-
-            if (spell_casted < 2)       // summon devils, maybe a Fiend
-
+            reaching_weapon_attack();
+        }
+        else
+        {
+            switch (you.inv_dam[you.equip[EQ_WEAPON]])
             {
-                spell_casted = MONS_HELLION + random2(10);
-                if (random2(4) == 0)
+            case NWPN_STAFF_OF_DISPATER:    // staff of Dispater
+                if (you.deaths_door != 0 || you.hp <= 10
+                                                || you.magic_points <= 4)
+                    goto nothing_hap;
+
+                strcpy(info, "You feel the staff feeding on your energy!");
+                mpr(info);
+
+                you.hp -= random2(10) + random2(10) + 5;
+
+                if (you.hp <= 0)
+                    you.hp = 1;
+
+                you.magic_points -= random2(3) + random2(3) + 2;
+
+                if (you.magic_points <= 0)
+                    you.magic_points = 1;
+
+                you.redraw_hit_points = 1;
+                you.redraw_magic_points = 1;
+
+                // power (2nd number) is meaningless
+                your_spells(SPELL_HELLFIRE, 100, 0);
+                break;
+
+            case NWPN_SCEPTRE_OF_ASMODEUS:          // sceptre of Asmodeus
+                spell_casted = random2(21);
+                if (spell_casted == 0)
+                    goto nothing_hap;       // nothing happens
+
+                if (spell_casted < 2)       // summon devils, maybe a Fiend
+
                 {
-                    strcpy(info, "\"Your arrogance condemns you, mortal!\"");
-                    spell_casted = MONS_FIEND;        /* Fiend! */
+                    spell_casted = MONS_HELLION + random2(10);
+                    if (random2(4) == 0)
+                    {
+                        strcpy(info, "\"Your arrogance condemns you, mortal!\"");
+                        spell_casted = MONS_FIEND;        /* Fiend! */
+                    }
+                    else
+                        strcpy(info, "The Sceptre summons one of its servants.");
+                    mpr(info);
+                    create_monster(spell_casted, 25, 1, you.x_pos, you.y_pos,
+                                                                MHITNOT, 250);
+                    break;
                 }
-                else
-                    strcpy(info, "The Sceptre summons one of its servants.");
+
+                spell_casted = SPELL_BOLT_OF_FIRE;  // firebolt
+
+                if (random2(3) == 0)
+                    spell_casted = SPELL_LIGHTNING_BOLT;    // lightning
+
+                if (random2(4) == 0)
+                    spell_casted = SPELL_BOLT_OF_DRAINING;  // draining
+
+                if (random2(20) == 0)
+                    spell_casted = SPELL_HELLFIRE;  // hellfire
+
+                your_spells(spell_casted, 10, 0);
+                break;
+
+            case NWPN_STAFF_OF_OLGREB:      // staff of Olgreb
+                if (you.magic_points <= 5
+                                || you.skills[SK_SPELLCASTING] <= random2(11))
+                {
+                    goto nothing_hap;
+                }
+
+                you.magic_points -= 4;
+                if (you.magic_points <= 0)
+                    you.magic_points = 0;
+                you.redraw_magic_points = 1;
+                your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 100, 0);  // toxic rad
+
+                your_spells(SPELL_VENOM_BOLT, 100, 0);      // venom bolt
+
+                break;
+
+            case NWPN_STAFF_OF_WUCAD_MU:    // staff of Wucad Mu
+
+                if (you.magic_points == you.max_magic_points
+                                                        || random2(4) == 0)
+                {
+                    strcpy(info, "Nothing appears to happen.");
+                    mpr(info);
+                    break;
+                }
+                you.magic_points += 3 + random2(5);
+                if (you.magic_points > you.max_magic_points)
+                    you.magic_points = you.max_magic_points;
+                you.redraw_magic_points = 1;
+                strcpy(info, "Magical energy flows into your mind!");
                 mpr(info);
-                create_monster(spell_casted, 25, 1, you.x_pos, you.y_pos, MHITNOT, 250);
+                if (random2(3) == 0)
+                    miscast_effect(19, random2(9), random2(70), 100);
+                break;
+
+            default:
+              nothing_hap:strcpy(info, "Nothing appears to happen.");
+                mpr(info);
                 break;
             }
-            spell_casted = SPELL_BOLT_OF_FIRE;  // firebolt
-
-            if (random2(3) == 0)
-                spell_casted = SPELL_LIGHTNING_BOLT;    // lightning
-
-            if (random2(4) == 0)
-                spell_casted = SPELL_BOLT_OF_DRAINING;  // draining
-
-            if (random2(20) == 0)
-                spell_casted = SPELL_HELLFIRE;  // hellfire
-
-            your_spells(spell_casted, 10, 0);
-            break;
-
-        case NWPN_STAFF_OF_OLGREB:      // staff of Olgreb
-
-            if (you.magic_points <= 5 || you.skills[SK_SPELLCASTING] <= random2(11))
-                goto nothing_hap;
-            you.magic_points -= 4;
-            if (you.magic_points <= 0)
-                you.magic_points = 0;
-            you.redraw_magic_points = 1;
-            your_spells(SPELL_OLGREBS_TOXIC_RADIANCE, 100, 0);  // toxic rad
-
-            your_spells(SPELL_VENOM_BOLT, 100, 0);      // venom bolt
-
-            break;
-
-        case NWPN_STAFF_OF_WUCAD_MU:    // staff of Wucad Mu
-
-            if (you.magic_points == you.max_magic_points || random2(4) == 0)
-            {
-                strcpy(info, "Nothing appears to happen.");
-                mpr(info);
-                break;
-            }
-            you.magic_points += 3 + random2(5);
-            if (you.magic_points > you.max_magic_points)
-                you.magic_points = you.max_magic_points;
-            you.redraw_magic_points = 1;
-            strcpy(info, "Magical energy flows into your mind!");
-            mpr(info);
-            if (random2(3) == 0)
-                miscast_effect(19, random2(9), random2(70), 100);
-            break;
-
-        default:
-          nothing_hap:strcpy(info, "Nothing appears to happen.");
-            mpr(info);
-            break;
         }
         break;
 

@@ -1671,7 +1671,7 @@ finished_monsters:
     if (you.where_are_you != 18)
         place_traps();
 
-    int no_it = random3(12) + random3(12) + random3(10);        // + random3(many_many / 2);// + random3 (10);// + random3(30);
+    int no_it = random3(12) + random3(12) + random3(10);
 
     if (random3(500 - many_many) <= 3 && many_many > 5)
         no_it += random3(100);  // rich level!
@@ -1680,24 +1680,50 @@ finished_monsters:
     int specif_type = 250;
     int items_levels = many_many;
 
-    if (you.where_are_you == 14)        // vaults
+    if (you.where_are_you == BRANCH_VAULTS)
 
     {
         items_levels *= 15;
         items_levels /= 10;
     }
-    if (you.where_are_you == 10)
+
+    if (you.where_are_you == BRANCH_ORCISH_MINES)
         specif_type = 15;       /* lots of gold in the orcish mines */
 
-    if (you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5 || you.where_are_you == 13 || you.where_are_you == 16 || you.where_are_you == 18)
+    if (you.where_are_you == BRANCH_DIS
+                || you.where_are_you == BRANCH_GEHENNA
+                || you.where_are_you == BRANCH_COCYTUS
+                || you.where_are_you == BRANCH_TARTARUS
+                || you.where_are_you == BRANCH_SLIME_PITS
+                || you.where_are_you == BRANCH_HALL_OF_BLADES
+                || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+    {
+        /* No items in hell, the slime pits, the Hall */
         no_it = 0;
-/* No items in hell, the slime pits, the Hall */
+    }
     else
+    {
         for (plojy = 0; plojy < no_it; plojy++)
         {
-
             items(1, specif_type, 250, 0, items_levels, 250);
         }
+
+        // Add some guaranteed knives
+        if (you.where_are_you == BRANCH_MAIN_DUNGEON
+                        && level_type == LEVEL_DUNGEON && many_many < 3)
+        {
+            int item_no = items(0, OBJ_WEAPONS, WPN_KNIFE, 0, 0, 250);
+
+            // Guarantee that the knife is uncursed and non-special
+
+            if (item_no != 501)
+            {
+                mitm.pluses[item_no] = 50;
+                mitm.pluses2[item_no] = 50;
+                mitm.special[item_no] = 0;
+            }
+        }
+    }
 
 
     int shcount = 0;
@@ -1707,13 +1733,17 @@ finished_monsters:
         env.sh_type[shcount] = 100;
     }
 
-    if (!(you.where_are_you == 1 || you.where_are_you == 2 || you.where_are_you == 4 || you.where_are_you == 5 || you.where_are_you == 12 || you.where_are_you == 18) && level_type == 0)
+    if ( !(you.where_are_you == BRANCH_DIS
+                || you.where_are_you == BRANCH_GEHENNA
+                || you.where_are_you == BRANCH_COCYTUS
+                || you.where_are_you == BRANCH_TARTARUS
+                || you.where_are_you == BRANCH_LAIR
+                || you.where_are_you == BRANCH_ECUMENICAL_TEMPLE)
+            && level_type == LEVEL_DUNGEON )
+    {
         place_shops();
+    }
 
-
-/* resets spec_room characters:
-   The numbers are -70 because of the bit above where all grd spaces which
-   are >70 get -70. */
 
     for (bcount_x = 0; bcount_x < 80; bcount_x++)
     {
@@ -1739,21 +1769,15 @@ finished_monsters:
     }
 
 
-
-
-
-
-
-
-
 /* If level is part of Dis, make all walls metal. If part of vaults,
    depends on level: */
 
-    if (you.where_are_you == 1 || you.where_are_you == 14 || you.where_are_you == 15)
+    if (you.where_are_you == BRANCH_DIS || you.where_are_you == BRANCH_VAULTS
+                                || you.where_are_you == BRANCH_CRYPT)
     {
         unsigned char vault_wall = 4;
 
-        if (you.where_are_you == 14)
+        if (you.where_are_you == BRANCH_VAULTS)
         {
             vault_wall = 1;
             if (many_many > you.branch_stairs[4] + 2)
@@ -1763,7 +1787,8 @@ finished_monsters:
             if (many_many > you.branch_stairs[4] + 6 && random3(10) == 0)
                 vault_wall = 6;
         }
-        if (you.where_are_you == 15)
+
+        if (you.where_are_you == BRANCH_CRYPT)
         {
             vault_wall = 2;
         }
@@ -1782,26 +1807,33 @@ finished_monsters:
 
 
 
-    if (many_many == 26 && level_type == 0 && you.where_are_you == 0)
+    if (many_many == 26 && level_type == LEVEL_DUNGEON
+                            && you.where_are_you == BRANCH_MAIN_DUNGEON)
     {
         for (bi = 1; bi < 80; bi++)
         {
             for (bj = 1; bj < 70; bj++)
             {
-                if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I && grd[bi][bj] <= DNGN_ROCK_STAIRS_DOWN)
+                if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I
+                                    && grd[bi][bj] <= DNGN_ROCK_STAIRS_DOWN)
                 {
                     grd[bi][bj] = DNGN_ENTER_ZOT;
                 }
             }
         }
-    }                           /* replaces all down stairs with staircases to Zot */
+    } /* replaces all down stairs with staircases to Zot */
 
-
+    /*
+     * top level of branch levels - replaces up stairs with stairs back
+     * to dungeon or wherever
+     */
     for (count_x = 0; count_x < 30; count_x++)
     {
         if (you.branch_stairs[count_x] == 0)
             break;
-        if (many_many == you.branch_stairs[count_x] + 1 && level_type == 0 && you.where_are_you == 10 + count_x)
+        if (many_many == you.branch_stairs[count_x] + 1
+                            && level_type == LEVEL_DUNGEON
+                            && you.where_are_you == 10 + count_x)
         {
             for (bi = 1; bi < 80; bi++)
             {
@@ -1813,35 +1845,41 @@ finished_monsters:
                     }
                 }
             }
-        }                       /* top level of branch levels - replaces up stairs with stairs back to dungeon or wherever */
+        }
     }
 
     for (count_x = 0; count_x < 30; count_x++)
     {
-        if (many_many == you.branch_stairs[count_x] + branch_depth(count_x) && level_type == 0 && you.where_are_you == 10 + count_x)
+        if (many_many == you.branch_stairs[count_x] + branch_depth(count_x)
+                                && level_type == LEVEL_DUNGEON
+                                && you.where_are_you == 10 + count_x)
         {
             for (bi = 1; bi < 80; bi++)
             {
                 for (bj = 1; bj < 70; bj++)
                 {
-                    if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I && grd[bi][bj] <= DNGN_ROCK_STAIRS_DOWN)
+                    if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I
+                                    && grd[bi][bj] <= DNGN_ROCK_STAIRS_DOWN)
                     {
                         grd[bi][bj] = DNGN_ROCK_STAIRS_UP;
                     }
                 }
             }
-        }                       /* bottom level of branch - replaces down stairs with up ladders */
+        } /* bottom level of branch - replaces down stairs with up ladders */
     }
 
-    if (you.where_are_you == 15 && random3(3) == 0)
+    if (you.where_are_you == BRANCH_CRYPT && random3(3) == 0)
         place_curse_skull();
-    if (you.where_are_you == 15 && random3(7) == 0)
+    if (you.where_are_you == BRANCH_CRYPT && random3(7) == 0)
         place_curse_skull();
 
-    if (you.where_are_you >= 10 && you.level_type == 0 && random3(5) == 0)
+    if (you.where_are_you >= BRANCH_ORCISH_MINES
+                    && you.level_type == LEVEL_DUNGEON && random3(5) == 0)
+    {
         place_altar();
+    }
 
-    if (you.where_are_you == 0)
+    if (you.where_are_you == BRANCH_MAIN_DUNGEON)
     {
         for (bi = 1; bi < 80; bi++)
         {
@@ -1849,20 +1887,13 @@ finished_monsters:
             {
                 switch (grd[bi][bj])
                 {
-                case DNGN_ENTER_SLIME_PITS:       // slime
-
-                case DNGN_ENTER_CRYPT_I:       // crypt
-
-                case DNGN_ENTER_HALL_OF_BLADES:       // hall of blades
-
-                case DNGN_ENTER_SNAKE_PIT:       // snake pit
-
-                case DNGN_ENTER_ELVEN_HALLS:       // elf hall
-
-                case DNGN_ENTER_TOMB:       // Tomb
-
-                case DNGN_ENTER_SWAMP:       // Swamp
-
+                case DNGN_ENTER_SLIME_PITS:
+                case DNGN_ENTER_CRYPT_I:
+                case DNGN_ENTER_HALL_OF_BLADES:
+                case DNGN_ENTER_SNAKE_PIT:
+                case DNGN_ENTER_ELVEN_HALLS:
+                case DNGN_ENTER_TOMB:
+                case DNGN_ENTER_SWAMP:
                     grd[bi][bj] = DNGN_FLOOR;
                     break;      /* this shouldn't be necessary, but is */
                 }
@@ -1870,16 +1901,17 @@ finished_monsters:
         }
     }
 
-    if (you.where_are_you == 16)
+    if (you.where_are_you == BRANCH_HALL_OF_BLADES)
     {
         for (bj = 1; bj < 70; bj++)
         {
             for (bi = 1; bi < 80; bi++)
             {
                  //dml stopped here.
-                if (grd[bi][bj] >= 82 && grd[bi][bj] <= 89)
+                if (grd[bi][bj] >= DNGN_STONE_STAIRS_DOWN_I
+                                    && grd[bi][bj] <= DNGN_ROCK_STAIRS_UP)
                 {
-                    grd[bi][bj] = 67;
+                    grd[bi][bj] = DNGN_FLOOR;
                 }
             }
         }
@@ -1892,9 +1924,7 @@ finished_monsters:
 
     return 0;
 
-}                               // end of int builder(unsigned int lev_numb, char level_type)
-
-
+} // end of int builder(unsigned int lev_numb, char level_type)
 
 
 int place_monster( unsigned char plus_seventy, int typed, int type_place,
@@ -3629,10 +3659,10 @@ void make_trail(void)
 }                               // end of void make_trail(void)
 
 
-
-
-
-
+static void set_weapon_special( int bp, int spwpn )
+{
+    mitm.special[bp] = (mitm.special[bp] / 30) * 30 + spwpn;
+}
 
 int items(unsigned char allow_uniques,
           int force_class,
@@ -3664,7 +3694,7 @@ int items(unsigned char allow_uniques,
 
     for (bp = 0; bp < 400; bp++)
     {
-/*              if (bp == 1) continue; */
+        /* if (bp == 1) continue; */
         if (mitm.base_type[bp] == 100 || mitm.quantity[bp] == 0)
             break;
         if (bp == 380)
@@ -3719,31 +3749,66 @@ int items(unsigned char allow_uniques,
     {
     case OBJ_WEAPONS:
         mitm.sub_type[bp] = random3(19);
+
+        if (random3(6) == 0)
+        {
+            switch (random3(11))
+            {
+            case 0:
+                mitm.sub_type[bp] = WPN_GREAT_FLAIL;
+                break;
+
+            case 1:
+            case 2:
+                mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
+                break;
+
+            case 3:
+            case 4:
+                mitm.sub_type[bp] = WPN_GREAT_MACE;
+                break;
+
+            case 5:
+            case 6:
+            case 7:
+                mitm.sub_type[bp] = WPN_AXE;
+                break;
+
+            case 8:
+            case 9:
+            case 10:
+                mitm.sub_type[bp] = WPN_TRIDENT;
+                break;
+            }
+        }
+
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 18;
+            mitm.sub_type[bp] = WPN_KNIFE;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 13;
+            mitm.sub_type[bp] = WPN_QUARTERSTAFF;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 11;
+            mitm.sub_type[bp] = WPN_SLING;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 9;
+            mitm.sub_type[bp] = WPN_SPEAR;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 3;
+            mitm.sub_type[bp] = WPN_HAND_AXE;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 1;
+            mitm.sub_type[bp] = WPN_DAGGER;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 3;
+            mitm.sub_type[bp] = WPN_MACE;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 0;
+            mitm.sub_type[bp] = WPN_DAGGER;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 28;
+            mitm.sub_type[bp] = WPN_CLUB;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 30;
+            mitm.sub_type[bp] = WPN_HAMMER;
         if (random3(200) < 20 - many_many)
-            mitm.sub_type[bp] = 31;
+            mitm.sub_type[bp] = WPN_WHIP;
+        if (random3(200) < 20 - many_many)
+            mitm.sub_type[bp] = WPN_SABRE;
 
         if (many_many > 6 && random3(100) < 10 + many_many && random3(30) == 0)
-            mitm.sub_type[bp] = 22 + random3(12);
+            mitm.sub_type[bp] = WPN_EVENINGSTAR + random3(14);
 
         if (allow_uniques == 1)
         {
@@ -3941,16 +4006,16 @@ out_of_uniques:
         {
             switch (mitm.sub_type[bp])
             {
-            case 0:             // club
-
+            case WPN_CLUB:             // club
                 if (random() % 2 == 0)
                     mitm.special[bp] = 90;
                 break;
 
-            case 1:             // mace
-
-            case 2:             // flail
-
+            case WPN_MACE:             // mace
+            case WPN_FLAIL:             // flail
+            case WPN_SPIKED_FLAIL:
+            case WPN_GREAT_MACE:
+            case WPN_GREAT_FLAIL:
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 4 == 0)
@@ -3959,18 +4024,15 @@ out_of_uniques:
                     mitm.special[bp] = 120;
                 break;
 
-            case 4:             // morningstar
-
-            case 28:            // hammer
-
+            case WPN_MORNINGSTAR:             // morningstar
+            case WPN_HAMMER:            // hammer
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 3 == 0)
                     mitm.special[bp] = 150;
                 break;
 
-            case 3:             // dagger
-
+            case WPN_DAGGER:             // dagger
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 4 == 0)
@@ -3979,8 +4041,7 @@ out_of_uniques:
                     mitm.special[bp] = 120;
                 break;
 
-            case 5:             // sh sword
-
+            case WPN_SHORT_SWORD:             // sh sword
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 3 == 0)
@@ -3989,90 +4050,73 @@ out_of_uniques:
                     mitm.special[bp] = 120;
                 break;
 
-            case 6:             // long sword
-
+            case WPN_LONG_SWORD:             // long sword
                 if (random() % 4 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 2 == 0)
                     mitm.special[bp] = 120;
                 break;
 
-            case 7:             // gr sword
-
+            case WPN_GREAT_SWORD:             // gr sword
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 break;
 
-            case 8:             // scimitar
-
+            case WPN_SCIMITAR:             // scimitar
                 if (random() % 2 == 0)
                     mitm.special[bp] = 90;
                 break;
 
-            case 9:             // hand axe
-
-                if (random() % 3 == 0)
-                    mitm.special[bp] = 90;
-                if (random() % 2 == 0)
-                    mitm.special[bp] = 150;
-                break;
-
-            case 10:            // battleaxe
-
+            case WPN_AXE:
+            case WPN_HAND_AXE:             // hand axe
+            case WPN_BROAD_AXE:             // hand axe
+            case WPN_BATTLEAXE:            // battleaxe
                 if (random() % 3 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 2 == 0)
                     mitm.special[bp] = 150;
                 break;
 
-            case 11:            // spear
-
+            case WPN_SPEAR:            // spear
                 if (random() % 4 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 4 == 0)
                     mitm.special[bp] = 120;
                 break;
 
-            case 12:            // halberd
-
-            case 17:            // glaive
-
-            case 25:            // exec axe
-
+            case WPN_HALBERD:            // halberd
+            case WPN_GLAIVE:            // glaive
+            case WPN_TRIDENT:            // glaive
+            case WPN_EXECUTIONERS_AXE:            // exec axe
                 if (random() % 5 == 0)
                     mitm.special[bp] = 90;
                 break;
 
-
-            case 23:            // quick blade
-
+            case WPN_QUICK_BLADE:            // quick blade
                 if (random() % 4 == 0)
                     mitm.special[bp] = 120;
                 break;
 
-            case 24:            // katana
-
+            case WPN_KATANA:            // katana
+            case WPN_KNIFE:
                 mitm.special[bp] = 0;
                 break;
 
                 // 13 - sling
 
-            case 14:            // bow
-
+            case WPN_BOW:            // bow
                 if (random() % 6 == 0)
                     mitm.special[bp] = 90;
                 if (random() % 2 == 0)
                     mitm.special[bp] = 120;
                 break;
 
-            case 15:            // xbow
-
+            case WPN_CROSSBOW:            // xbow
                 if (random() % 4 == 0)
                     mitm.special[bp] = 90;
                 break;
 
-            case 16:            // hand xbow
-
+            case WPN_HAND_CROSSBOW:            // hand xbow
                 if (random() % 3 == 0)
                     mitm.special[bp] = 120;     // deep elf
 
@@ -4154,245 +4198,288 @@ out_of_uniques:
                 }
             }
 
-            if (random3(300) <= 100 + many_many || (many_many == 351 && random() % 2 == 0) || mitm.sub_type[bp] == 32 || mitm.sub_type[bp] == 33)
+            if (random3(300) <= 100 + many_many
+                        || (many_many == 351 && random() % 2 == 0)
+                        || mitm.sub_type[bp] == WPN_DEMON_BLADE
+                        || mitm.sub_type[bp] == WPN_DEMON_WHIP
+                        || mitm.sub_type[bp] == WPN_DEMON_TRIDENT)
             {
                 // note: even this doesn't guarantee special enchantment
                 switch (mitm.sub_type[bp])
                 {
                 case WPN_CLUB:
-                    break;      // nothing for clubs. Can they even get this far?
+                case WPN_GIANT_CLUB:
+                case WPN_GIANT_SPIKED_CLUB:
+                case WPN_KATANA:
+                case WPN_KNIFE:
+                case WPN_QUICK_BLADE:
+                    // No standard ego types for these weapons.
+                    break;
 
-/* 23 - quick blade and 24 - katana aren't here - no specials */
 
-                case WPN_EVENINGSTAR:        // eveningstar
+                case WPN_EVENINGSTAR:
                     if (random() % 2 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // drain
+                        set_weapon_special( bp, SPWPN_DRAINING );
 
-                case WPN_MORNINGSTAR: // morningstar
+                case WPN_MORNINGSTAR:
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
 
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + random() % 2 + 1;     // flaming/freezing
+                        set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
 
                     if (random() % 20 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vamp
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                 case WPN_MACE:
-                    // mace of disruption
-                    if (mitm.sub_type[bp] == 1 && random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 14;   // disruption
+                case WPN_GREAT_MACE:
+                    if ((mitm.sub_type[bp] == WPN_MACE
+                                || mitm.sub_type[bp] == WPN_GREAT_MACE)
+                            && random() % 4 == 0)
+                    {
+                        set_weapon_special( bp, SPWPN_DISRUPTION );
+                    }
 
-                case WPN_FLAIL:          // maces & flails
-                case WPN_HAMMER:        // hammer
+                case WPN_FLAIL:
+                case WPN_SPIKED_FLAIL:
+                case WPN_GREAT_FLAIL:
+                case WPN_HAMMER:
                     if (random() % 15 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
+                        set_weapon_special( bp, SPWPN_DISTORTION );
 
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_PAIN );
 
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy wrath
+                        set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
                     if (random() % 3 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 7;    // prot
+                        set_weapon_special( bp, SPWPN_PROTECTION );
 
                     if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // drain
+                        set_weapon_special( bp, SPWPN_DRAINING );
 
                     if (random() % 3 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // crush
+                        set_weapon_special( bp, SPWPN_VORPAL );
                     break;
 
-                case WPN_DAGGER: // dagger
+
+                case WPN_DAGGER:
                     if (random() % 3 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
 
                     if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
-                case WPN_SHORT_SWORD: // short sword
+                case WPN_SHORT_SWORD:
                     if (random() % 8 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
 
-                case WPN_SCIMITAR: // scimitar
+                case WPN_SCIMITAR:
                     if (random() % 7 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
+                        set_weapon_special( bp, SPWPN_SPEED );
 
-                case WPN_LONG_SWORD: // long sword
+                case WPN_LONG_SWORD:
                     if (random() % 12 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
 
-                case WPN_GREAT_SWORD:         // great sword
-                case WPN_DOUBLE_SWORD:        // double blade
-                case WPN_TRIPLE_SWORD:        // triple blade
+                case WPN_GREAT_SWORD:
+                case WPN_DOUBLE_SWORD:
+                case WPN_TRIPLE_SWORD:
                     if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                     if (random() % 15 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
+                        set_weapon_special( bp, SPWPN_DISTORTION );
 
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_PAIN );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 1 + random() % 2;     // flame_freez
+                        set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
 
                     if (random() % 7 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 4;    // electro
+                        set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
                     if (random() % 7 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 7;    // prot
+                        set_weapon_special( bp, SPWPN_PROTECTION );
 
                     if (random() % 8 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 5;    // slay orc
+                        set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
                     if (random() % 12 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // draining
+                        set_weapon_special( bp, SPWPN_DRAINING );
 
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy
+                        set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
                     if (random() % 2 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // slicing
+                        set_weapon_special( bp, SPWPN_VORPAL );
 
                     break;
 
-                case WPN_BATTLEAXE:         // battleaxe
-                case WPN_EXECUTIONERS_AXE:  // exec axe
+
+                case WPN_AXE:
+                case WPN_BROAD_AXE:
+                case WPN_BATTLEAXE:
+                case WPN_EXECUTIONERS_AXE:
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy
+                        set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
                     if (random() % 14 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // drain
+                        set_weapon_special( bp, SPWPN_DRAINING );
 
-                case WPN_HAND_AXE: // h-axe
+                case WPN_HAND_AXE:
                     if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                     if (random() % 15 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
+                        set_weapon_special( bp, SPWPN_DISTORTION );
 
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_PAIN );
 
                     if (random() % 6 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 5;    // orc
+                        set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 1 + random() % 2;     // flame/freez
+                        set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
 
                     if (random() % 8 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 4;    // electro
+                        set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
                     if (random() % 12 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
 
                     if (random() % 2 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // chop
+                        set_weapon_special( bp, SPWPN_VORPAL );
 
                     break;
 
-                case WPN_HALBERD:       // halberd
-                case WPN_GLAIVE:        // glaive
+                case WPN_WHIP:
+                    if (random() % 20 == 0)
+                        set_weapon_special( bp, SPWPN_DISTORTION );
+
+                    if (random() % 6 == 0)
+                        set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
+
+                    if (random() % 6 == 0)
+                        set_weapon_special( bp, SPWPN_VENOM );
+
+                    if (random() % 6 == 0)
+                        set_weapon_special( bp, SPWPN_REACHING );
+
+                    if (random() % 5 == 0)
+                        set_weapon_special( bp, SPWPN_SPEED );
+
+                    if (random() % 5 == 0)
+                        set_weapon_special( bp, SPWPN_ELECTROCUTION );
+                    break;
+
+                case WPN_HALBERD:
+                case WPN_GLAIVE:
                     if (random() % 30 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 3;    // holy
+                        set_weapon_special( bp, SPWPN_HOLY_WRATH );
 
                     if (random() % 4 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 7;    // prot
+                        set_weapon_special( bp, SPWPN_PROTECTION );
 
                 case WPN_SCYTHE:
-                    if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
+                case WPN_TRIDENT:
+                    if (random() % 5 == 0)
+                        set_weapon_special( bp, SPWPN_SPEED );
 
-                case WPN_SPEAR:        // spear
+                case WPN_SPEAR:
                     if (random() % 10 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                     if (random() % 20 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
+                        set_weapon_special( bp, SPWPN_DISTORTION );
 
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_PAIN );
 
                     if (random() % 6 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 5;    // orc
+                        set_weapon_special( bp, SPWPN_ORC_SLAYING );
 
                     if (random() % 6 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 1 + random() % 2;     // flam/fre
+                        set_weapon_special( bp, SPWPN_FLAMING + random3(2) );
 
                     if (random() % 6 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_VENOM );
+
+                    if (random() % 6 == 0)
+                        set_weapon_special( bp, SPWPN_REACHING );
 
                     if (random() % 3 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 10;   // chop/pierce
+                        set_weapon_special( bp, SPWPN_VORPAL );
                     break;
 
-                case WPN_SLING:        // sling
 
+                case WPN_SLING:
                     if (random() % 4 != 0)
                         break;
 
-                case WPN_HAND_CROSSBOW:        // hand xbow
+                case WPN_HAND_CROSSBOW:
                     if (random() % 2 != 0)
                         break;
 
-                case WPN_BOW:        // bow
-                case WPN_CROSSBOW:        // crossbow
+                case WPN_BOW:
+                case WPN_CROSSBOW:
                     if (random() % 2 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 11 + random() % 2;
+                        set_weapon_special( bp, SPWPN_FLAME + random3(2) );
                     break;
 
-                case WPN_QUARTERSTAFF:
+
                 // quarterstaff - not powerful, as this would make
                 // the 'staves' skill just too good
+                case WPN_QUARTERSTAFF:
                     if (random() % 15 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 16;   // distortion
+                        set_weapon_special( bp, SPWPN_DISTORTION );
 
                     if (random() % 25 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_PAIN );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 7;    // prot
+                        set_weapon_special( bp, SPWPN_PROTECTION );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 9;    // speed
+                        set_weapon_special( bp, SPWPN_SPEED );
                     break;
 
-                case WPN_DEMON_BLADE:        // demon blade
-                case WPN_DEMON_WHIP:        // demon whip
+
+                case WPN_DEMON_TRIDENT:
+                case WPN_DEMON_WHIP:
+                    if (random() % 2 == 0)
+                        set_weapon_special( bp, SPWPN_REACHING );
+
+                case WPN_DEMON_BLADE:
                     if (mitm.special[bp] >= 90)
                         mitm.special[bp] = mitm.special[bp] % 30;
-                    if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 8;    // draining
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 1;    // flame
+                        set_weapon_special( bp, SPWPN_DRAINING );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 2;    // freeze
+                        set_weapon_special( bp, SPWPN_FLAMING );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 4;    // electr
+                        set_weapon_special( bp, SPWPN_FREEZING );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 13;   // vampiric
+                        set_weapon_special( bp, SPWPN_ELECTROCUTION );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 15;   // pain
+                        set_weapon_special( bp, SPWPN_VAMPIRICISM );
 
                     if (random() % 5 == 0)
-                        mitm.special[bp] = (mitm.special[bp] / 30) * 30 + 6;    // venom
+                        set_weapon_special( bp, SPWPN_PAIN );
 
+                    if (random() % 5 == 0)
+                        set_weapon_special( bp, SPWPN_VENOM );
                     break;
                 }
-/*           if (mitm.special [bp] % 30 == 4) mitm.pluses2 [bp] += random3(5) + random3(5) + 1;
-   if (mitm.special [bp] % 30 == 13)
-   {
-   mitm.pluses [bp] += 100;
-   } */
             }                   // end if specially enchanted
-
         }
         else
         {
@@ -4410,7 +4497,8 @@ out_of_uniques:
 
         {
             if (mitm.special[bp] % 30 != 0)
-                if (random() % 2 == 0 || mitm.special[bp] % 30 == 3 || mitm.special[bp] % 30 == 5)
+                if (random() % 2 == 0 || mitm.special[bp] % 30 == 3
+                                            || mitm.special[bp] % 30 == 5)
                 {               // no holy wrath or slay orc
 
                     if (mitm.special[bp] % 30 == 4)
@@ -4420,8 +4508,12 @@ out_of_uniques:
         }
 
 
-        if ((mitm.special[bp] != 0 || (mitm.pluses[bp] != 50 && random3(3) == 0)) && mitm.sub_type[bp] != 0 && mitm.special[bp] / 30 == 0)
+        if ((mitm.special[bp] != 0
+                    || (mitm.pluses[bp] != 50 && random3(3) == 0))
+                    && mitm.sub_type[bp] != 0 && mitm.special[bp] / 30 == 0)
+        {
             mitm.special[bp] += 30 + random3(2) * 30;
+        }
         break;
 
     case OBJ_MISSILES:
@@ -4448,10 +4540,13 @@ out_of_uniques:
             }
         else
         {
-            if (random() % 4 == 0 && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 3))
+            if (random() % 4 == 0
+                        && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 3))
                 mitm.special[bp] = 120;         // elven
 
-            if (random() % 4 == 0 && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 2 || mitm.sub_type[bp] == 3))
+            if (random() % 4 == 0
+                        && (mitm.sub_type[bp] == 1 || mitm.sub_type[bp] == 2
+                                                || mitm.sub_type[bp] == 3))
                 mitm.special[bp] = 90;  // orcish
 
             if (random() % 6 == 0 && mitm.sub_type[bp] == 3)
@@ -6130,33 +6225,26 @@ void give_item(void)
 /* dancing weapon in the Hall of Blades */
     switch (menv[bk].type)
     {
-
-    case 36:                    // kobold
-
+    case MONS_KOBOLD:           // kobold
+    case MONS_BIG_KOBOLD:
         if (random3(5) < 3)     // < 1) // give hand weapon
-
         {
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
             switch (random3(5))
             {
             case 0:
-                mitm.sub_type[bp] = 0;
+                mitm.sub_type[bp] = WPN_CLUB;
                 mitm.colour[bp] = 6;
                 break;
             case 1:
-                mitm.sub_type[bp] = 3;
-                break;
-            case 2:
-                mitm.sub_type[bp] = 5;  //mitm.colour [bp] = 6;
-
-                break;
-            case 3:
-                mitm.sub_type[bp] = 5;
-                break;
             case 4:
-                mitm.sub_type[bp] = 3;  //mitm.colour [bp] = 6;
+                mitm.sub_type[bp] = WPN_DAGGER;
+                break;
 
+            case 2:
+            case 3:
+                mitm.sub_type[bp] = WPN_SHORT_SWORD;
                 break;
             }
         }
@@ -6173,12 +6261,11 @@ void give_item(void)
 
         break;
 
-    case 33:                    // Hobgoblin
-
+    case MONS_HOBGOBLIN:        // hobgoblin
         if (random() % 3 == 0)
             force_spec = 3;
-        if (random3(5) < 3)     // < 2 // give hand weapon
 
+        if (random3(5) < 3)     // < 2 // give hand weapon
         {
             mitm.base_type[bp] = 0;
             mitm.sub_type[bp] = 0;
@@ -6189,31 +6276,26 @@ void give_item(void)
 
         break;
 
-    case 6:                     // goblin
+    case MONS_GOBLIN:                     // goblin
 
         if (random() % 3 == 0)
             force_spec = 3;
-    case 281:                   // Jessica
 
-    case 282:                   // Ijyb
-
+    case MONS_JESSICA:                   // Jessica
+    case MONS_IJYB:                   // Ijyb
         if (random3(5) < 3)     // < 1 // give hand weapon
-
         {
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
             switch (random3(2))
             {
             case 0:
-                mitm.sub_type[bp] = 0;
+                mitm.sub_type[bp] = WPN_CLUB;
                 mitm.colour[bp] = 6;
                 break;
             case 1:
-                mitm.sub_type[bp] = 3;
+                mitm.sub_type[bp] = WPN_DAGGER;
                 break;
-//                      case 2: mitm.sub_type [bp] = 12; break;
-                //                      case 3: mitm.sub_type [bp] = 5; break;
-                //                      case 4: mitm.sub_type [bp] = 14; break;
             }
         }
         else
@@ -6222,13 +6304,15 @@ void give_item(void)
         break;
 
 
-    case 60:                    // Wight
-
-    case 307:                   // Norris
-
+    case MONS_WIGHT:                    // Wight
+    case MONS_NORRIS:                   // Norris
         mitm.base_type[bp] = 0;
         mitm.colour[bp] = 11;
-        mitm.sub_type[bp] = 1 + random3(12);
+        if (random3(4) == 0)
+            mitm.sub_type[bp] = WPN_AXE + random3(4);
+        else
+            mitm.sub_type[bp] = 1 + random3(12);
+
         if (random3(2) == 0)
         {
             mitm.pluses[bp] += random3(3) + 1;
@@ -6241,83 +6325,91 @@ void give_item(void)
 
         break;
 
-    case 115:                   // gnoll
-
-    case 142:                   // ogre mage
-
-    case 261:                   // naga warrior
-
-    case 368:
-    case 285:                   // Edmund
-
-    case 305:                   // Duane
-
+    case MONS_GNOLL:                   // gnoll
+    case MONS_OGRE_MAGE:                   // ogre mage
+    case MONS_NAGA_WARRIOR:                   // naga warrior
+    case MONS_GREATER_NAGA:
+    case MONS_EDMUND:                   // Edmund
+    case MONS_DUANE:                   // Duane
         force_spec = 100;
-        //case 306:// Patrick
+
         if (random3(5) < 4)
         {
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
+
             switch (random3(5))
             {
             case 0:
-                mitm.sub_type[bp] = 2;
+                mitm.sub_type[bp] = WPN_FLAIL;
                 break;
             case 1:
-                mitm.sub_type[bp] = 11;
-                break;
             case 2:
-                mitm.sub_type[bp] = 11;
+                mitm.sub_type[bp] = WPN_SPEAR;
                 break;
             case 3:
-                mitm.sub_type[bp] = 12;
+                mitm.sub_type[bp] = WPN_HALBERD;
                 break;
             case 4:
-                mitm.sub_type[bp] = 0;
+                mitm.sub_type[bp] = WPN_CLUB;
                 break;
             }
         }
         break;
 
-    case 14:                    // orc
-
-    case 112:                   // orc priest
-
+    case MONS_ORC:                    // orc
+    case MONS_ORC_PRIEST:                   // orc priest
         force_spec = 3;
-    case 280:                   // Terence
 
+    case MONS_TERENCE:                   // Terence
         if (random3(5) < 4)
         {
             mitm.base_type[bp] = 0;
             mitm.colour[bp] = 11;
-            switch (random3(8))
+            switch (random3(7))
             {
             case 0:
-                mitm.sub_type[bp] = 2;
+                if (random3(10) == 0)
+                    mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
+                else
+                    mitm.sub_type[bp] = WPN_FLAIL;
                 break;
+
             case 1:
-                mitm.sub_type[bp] = 4;
+                if (random3(3) == 0)
+                    mitm.sub_type[bp] = WPN_MORNINGSTAR;
+                else
+                    mitm.sub_type[bp] = WPN_MACE;
                 break;
+
             case 2:
-                mitm.sub_type[bp] = 8;
+                if (random3(3) == 0)
+                    mitm.sub_type[bp] = WPN_SCIMITAR;
+                else
+                    mitm.sub_type[bp] = WPN_SHORT_SWORD;
                 break;
+
             case 3:
-                mitm.sub_type[bp] = 9;
+                if (random3(3) == 0)
+                    mitm.sub_type[bp] = WPN_AXE;
+                else
+                    mitm.sub_type[bp] = WPN_HAND_AXE;
                 break;
+
             case 4:
-                mitm.sub_type[bp] = 12;
+                if (random3(3) == 0)
+                    mitm.sub_type[bp] = WPN_TRIDENT;
+                else
+                    mitm.sub_type[bp] = WPN_HALBERD;
                 break;
+
             case 5:
-                mitm.sub_type[bp] = 5;
+                mitm.sub_type[bp] = WPN_DAGGER;
                 break;
+
             case 6:
-                mitm.sub_type[bp] = 3;
+                mitm.sub_type[bp] = WPN_CLUB;
                 break;
-            case 7:
-                mitm.sub_type[bp] = 0;
-                break;
-                //                      case 8: mitm.sub_type [bp] = 5; break;
-                //                      case 9: mitm.sub_type [bp] = 14; break;
             }
         }
         else
@@ -6326,196 +6418,174 @@ void give_item(void)
         break;
 
 
-    case 263:                   // deep elf soldier
-
-    case 264:                   // deep elf fighter
-
-    case 265:                   // deep elf knight
-
-    case 269:                   // deep elf priest
-
-    case 270:                   // deep elf high priest
-
+    case MONS_DEEP_ELF_SOLDIER:                  // deep elf soldier
+    case MONS_DEEP_ELF_FIGHTER:                  // deep elf fighter
+    case MONS_DEEP_ELF_KNIGHT:                   // deep elf knight
+    case MONS_DEEP_ELF_PRIEST:                   // deep elf priest
+    case MONS_DEEP_ELF_HIGH_PRIEST:              // deep elf high priest
         force_spec = 1;
         mitm.base_type[bp] = 0;
         switch (random3(8))
         {
         case 0:
-            mitm.sub_type[bp] = 14;
+            mitm.sub_type[bp] = WPN_BOW;
             break;
         case 1:
-            mitm.sub_type[bp] = 16;
+            mitm.sub_type[bp] = WPN_HAND_CROSSBOW;
             break;
         case 2:
-            mitm.sub_type[bp] = 5;
+        case 5:
+            mitm.sub_type[bp] = WPN_SHORT_SWORD;
             break;
         case 3:
-            mitm.sub_type[bp] = 6;
-            break;
         case 4:
-            mitm.sub_type[bp] = 6;
-            break;
-        case 5:
-            mitm.sub_type[bp] = 5;
+            mitm.sub_type[bp] = WPN_LONG_SWORD;
             break;
         case 6:
-            mitm.sub_type[bp] = 1;
+            mitm.sub_type[bp] = WPN_MACE;
             break;
         case 7:
-            mitm.sub_type[bp] = 8;
+            mitm.sub_type[bp] = WPN_SCIMITAR;
             break;
         }
         break;
 
 
-    case 266:                   // deep elf mage
-
-    case 267:                   // deep elf summoner
-
-    case 268:                   // deep elf conjurer
-
-    case 271:                   // deep elf demonologist
-
-    case 272:                   // deep elf annihilator
-
-    case 273:                   // deep elf sorceror
-
-    case 274:                   // deep elf death mage
-
+    case MONS_DEEP_ELF_MAGE:                   // deep elf mage
+    case MONS_DEEP_ELF_SUMMONER:               // deep elf summoner
+    case MONS_DEEP_ELF_CONJURER:               // deep elf conjurer
+    case MONS_DEEP_ELF_DEMONOLOGIST:           // deep elf demonologist
+    case MONS_DEEP_ELF_ANNIHILATOR:            // deep elf annihilator
+    case MONS_DEEP_ELF_SORCEROR:               // deep elf sorceror
+    case MONS_DEEP_ELF_DEATH_MAGE:             // deep elf death mage
         force_spec = 1;
         mitm.base_type[bp] = 0;
         switch (random3(2))
         {
         case 0:
-            mitm.sub_type[bp] = 14;
+            mitm.sub_type[bp] = WPN_BOW;
             break;
         case 6:
         case 1:
-            mitm.sub_type[bp] = 16;
+            mitm.sub_type[bp] = WPN_HAND_CROSSBOW;
             break;
         case 2:
-            mitm.sub_type[bp] = 5;
+            mitm.sub_type[bp] = WPN_SHORT_SWORD;
             break;
         case 3:
-            mitm.sub_type[bp] = 6;
+            mitm.sub_type[bp] = WPN_LONG_SWORD;
             break;
         case 4:
-            mitm.sub_type[bp] = 3;
-            break;
         case 5:
-            mitm.sub_type[bp] = 3;
+            mitm.sub_type[bp] = WPN_DAGGER;
             break;
         }
         break;
 
-    case 52:                    // orc warrior
-
-    case 113:                   // orc high priest
-
-    case 284:                   // Blork the orc
-
+    case MONS_ORC_WARRIOR:                    // orc warrior
+    case MONS_ORC_HIGH_PRIEST:                // orc high priest
+    case MONS_BLORK_THE_ORC:                  // Blork the orc
         if (force_spec == 250)
             force_spec = 3;
-    case 144:                   // dancing weapon - note that give_level is adjusted above
 
-    case 290:                   // Michael
-
-    case 291:                   // Joseph
-        //              case 292:// Anita
-
-    case 295:                   // Harold
-
-    case 300:                   // Louise
-
-    case 301:                   // Francis
-
-    case 302:                   // Frances
-
-    case 303:                   // Rupert
-
-    case 304:                   // Wayne
-
-    case 161:                   // naga
-
-    case 260:                   // naga mage
-
-    case 399:                   // skeletal warrior
-
+    case MONS_DANCING_WEAPON:   // note that give_level is adjusted above
+    case MONS_MICHAEL:          // Michael
+    case MONS_JOSEPH:           // Joseph
+    case MONS_HAROLD:           // Harold
+    case MONS_LOUISE:           // Louise
+    case MONS_FRANCIS:          // Francis
+    case MONS_FRANCES:          // Frances
+    case MONS_RUPERT:           // Rupert
+    case MONS_WAYNE:            // Wayne
+    case MONS_NAGA:             // naga
+    case MONS_NAGA_MAGE:        // naga mage
+    case MONS_SKELETAL_WARRIOR: // skeletal warrior
         mitm.base_type[bp] = 0;
         mitm.colour[bp] = 11;
-        switch (random3(9))
+        switch (random3(12))
         {
         case 0:
-            mitm.sub_type[bp] = 2;
+            if (random3(10) == 0)
+                mitm.sub_type[bp] = WPN_SPIKED_FLAIL;
+            else
+                mitm.sub_type[bp] = WPN_FLAIL;
             break;
         case 1:
-            mitm.sub_type[bp] = 4;
+            mitm.sub_type[bp] = WPN_MORNINGSTAR;
             break;
         case 2:
-            mitm.sub_type[bp] = 8;
+            mitm.sub_type[bp] = WPN_SCIMITAR;
             break;
         case 3:
-            mitm.sub_type[bp] = 9;
+            mitm.sub_type[bp] = WPN_HAND_AXE;
             break;
         case 4:
-            mitm.sub_type[bp] = 12;
+            mitm.sub_type[bp] = WPN_HALBERD;
             break;
         case 5:
-            mitm.sub_type[bp] = 5;
+            mitm.sub_type[bp] = WPN_SHORT_SWORD;
             break;
         case 6:
-            mitm.sub_type[bp] = 6;
+            mitm.sub_type[bp] = WPN_LONG_SWORD;
             break;
         case 7:
-            mitm.sub_type[bp] = 10;
+            mitm.sub_type[bp] = WPN_BATTLEAXE;
             break;
         case 8:
-            mitm.sub_type[bp] = 17;
+            mitm.sub_type[bp] = WPN_GLAIVE;
+            break;
+        case 9:
+            if (random3(10) == 0)
+                mitm.sub_type[bp] = WPN_BROAD_AXE;
+            else
+                mitm.sub_type[bp] = WPN_AXE;
+            break;
+        case 10:
+            mitm.sub_type[bp] = WPN_GREAT_MACE;
+            break;
+        case 11:
+            mitm.sub_type[bp] = WPN_TRIDENT;
             break;
         }
         break;
 
-    case 55:                    // orc knight
-
-    case 262:                   // orc warlord
-
+    case MONS_ORC_KNIGHT:       // orc knight
+    case MONS_ORC_WARLORD:      // orc warlord
         force_spec = 3;
-    case 296:                   // Norbert
 
-    case 297:                   // Jozef
-
-    case 289:                   // Yrug
-
-    case 360:                   // vault guard
-
-    case 362:                   // vampire knight
-
+    case MONS_NORBERT:          // Norbert
+    case MONS_JOZEF:            // Jozef
+    case MONS_URUG:             // Urug
+    case MONS_VAULT_GUARD:      // vault guard
+    case MONS_VAMPIRE_KNIGHT:   // vampire knight
         mitm.base_type[bp] = 0;
         mitm.colour[bp] = LIGHTCYAN;
-        switch (random3(3))
+        switch (random3(4))
         {
         case 0:
-            mitm.sub_type[bp] = 6;
+            mitm.sub_type[bp] = WPN_LONG_SWORD;
             break;              // long sword
 
         case 1:
-            mitm.sub_type[bp] = 7;
+            mitm.sub_type[bp] = WPN_GREAT_SWORD;
             break;              // great sword
 
         case 2:
-            mitm.sub_type[bp] = 10;
+            mitm.sub_type[bp] = WPN_BATTLEAXE;
             break;              // battleaxe
 
+        case 3:
+            mitm.sub_type[bp] = WPN_GREAT_MACE;
+            break;
         }
+
         if (random3(3) == 0)
             mitm.pluses[bp] += random3(4);
 
         break;
 
-    case 28:                    // Cyclops
-
-    case 136:                   // stone giant
-
+    case MONS_CYCLOPS:                    // Cyclops
+    case MONS_STONE_GIANT:                // stone giant
         force_spec = 100;
         mitm.base_type[bp] = 1;
         mitm.sub_type[bp] = 5;
@@ -6524,8 +6594,7 @@ void give_item(void)
         break;
 
 
-    case 30:                    // two-headed Ogre
-
+    case MONS_TWO_HEADED_OGRE:            // two-headed Ogre
         force_spec = 100;
         hand_used = 0;
 
@@ -6533,78 +6602,97 @@ void give_item(void)
             hand_used = 1;
 
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 20; // giant club
+        mitm.colour[bp] = BROWN;
+        mitm.sub_type[bp] = WPN_GIANT_CLUB; // giant club
 
         if (random3(3) == 0)
-            mitm.sub_type[bp] = 21;
-        mitm.colour[bp] = BROWN;
+            mitm.sub_type[bp] = WPN_GIANT_SPIKED_CLUB;
+
+        if (random3(10) == 0)
+        {
+            mitm.colour[bp] = LIGHTCYAN;
+
+            if (random3(10) == 0)
+                mitm.sub_type[bp] = WPN_GREAT_FLAIL;
+            else
+                mitm.sub_type[bp] = WPN_GREAT_MACE;
+        }
+
         iquan = 1;
         break;
 
-    case 83:                    // reaper devil
-
-    case 283:                   // Sigmund
-
+    case MONS_REAPER:                    // reaper devil
+    case MONS_SIGMUND:                   // Sigmund
         force_spec = 100;
-        mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 19; // scythe
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.sub_type[bp] = WPN_SCYTHE; // scythe
 
         mitm.colour[bp] = LIGHTCYAN;
         iquan = 1;
         break;
 
-    case 233:                   // Balrug
-
+    case MONS_BALRUG:                   // Balrug
         force_spec = 100;
-        mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 33; // demon whip
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.sub_type[bp] = WPN_DEMON_WHIP; // demon whip
+        iquan = 1;
+        break;
+
+    case MONS_RED_DEVIL:
+        force_spec = 100;
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
+        mitm.colour[bp] = RED;
+        iquan = 1;
+        break;
+
+    case MONS_OGRE:                    // Ogre
+    case MONS_HILL_GIANT:                   // hill giant
+    case MONS_EROLCHA:                   // Erolcha
+        force_spec = 100;
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.colour[bp] = BROWN;
+        mitm.sub_type[bp] = WPN_GIANT_CLUB; // giant club
+
+        if (random3(3) == 0)
+            mitm.sub_type[bp] = WPN_GIANT_SPIKED_CLUB;
+
+        if (random3(10) == 0)
+        {
+            mitm.colour[bp] = LIGHTCYAN;
+
+            if (random3(10) == 0)
+                mitm.sub_type[bp] = WPN_GREAT_FLAIL;
+            else
+                mitm.sub_type[bp] = WPN_GREAT_MACE;
+        }
 
         iquan = 1;
         break;
 
-
-    case 40:                    // Ogre
-
-    case 174:                   // hill giant
-
-    case 287:                   // Erolcha
-
+    case MONS_CENTAUR_WARRIOR:
+    case MONS_CENTAUR:                   // centaur
         force_spec = 100;
-        mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 20; // giant club
-
-        if (random3(3) == 0)
-            mitm.sub_type[bp] = 21;
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.sub_type[bp] = WPN_BOW;
         mitm.colour[bp] = BROWN;
         iquan = 1;
         break;
 
-
-    case 376:
-    case 377:
-    case 2:                     // centaur
-
-    case 133:                   // yaktaur
-
+    case MONS_YAKTAUR_CAPTAIN:
+    case MONS_YAKTAUR:                   // yaktaur
         force_spec = 100;
-        {
-            mitm.base_type[bp] = 0;
-            mitm.sub_type[bp] = 14;
-            if (menv[bk].type == 133 || menv[bk].type == 377)
-                mitm.sub_type[bp] = 15;
-            mitm.colour[bp] = BROWN;
-            iquan = 1;
-        }
-
+        mitm.base_type[bp] = OBJ_WEAPONS;
+        mitm.sub_type[bp] = WPN_CROSSBOW;
+        mitm.colour[bp] = BROWN;
+        iquan = 1;
         break;
 
-    case 68:                    // Efreet
-
-    case 293:                   // Erica
-
+    case MONS_EFREET:                    // Efreet
+    case MONS_ERICA:                     // Erica
         force_spec = 100;
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 8;
+        mitm.sub_type[bp] = WPN_SCIMITAR;
         mitm.special[bp] = 1;
         mitm.pluses[bp] = 50 + random3(5);
         mitm.pluses2[bp] = 50 + random3(5);
@@ -6613,31 +6701,35 @@ void give_item(void)
         force_item = 1;
         break;
 
-
-    case 26:                    // Angel
-
+    case MONS_ANGEL:                    // Angel
         mitm.base_type[bp] = 0;
+
         if (random3(3) == 0)
         {
-            mitm.sub_type[bp] = 1;      /* mace */
+            if (random3(3) == 0)
+                mitm.sub_type[bp] = WPN_GREAT_MACE;
+            else
+                mitm.sub_type[bp] = WPN_MACE;
+
             mitm.special[bp] = 74;      /* glowing, disruption */
         }
         else
         {
-            mitm.sub_type[bp] = 6;      /* longsword */
+            mitm.sub_type[bp] = WPN_LONG_SWORD;      /* longsword */
             mitm.special[bp] = 60;      /* glowing */
         }
+
         mitm.pluses[bp] = 51 + random3(3);
         mitm.pluses2[bp] = 51 + random3(3);
+
         mitm.colour[bp] = WHITE;
         iquan = 1;
         force_item = 1;
         break;
 
-    case 366:                   // Daeva
-
+    case MONS_DAEVA:                   // Daeva
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 6;  /* longsword */
+        mitm.sub_type[bp] = WPN_LONG_SWORD;  /* longsword */
         mitm.special[bp] = 63;  /* glowing, holy wrath */
         mitm.pluses[bp] = 51 + random3(3);
         mitm.pluses2[bp] = 51 + random3(3);
@@ -6646,49 +6738,56 @@ void give_item(void)
         force_item = 1;
         break;
 
-    case 109:                   // hell knight
-
-    case 299:                   // Maud
-
-    case 308:                   // Adolf
-
-    case 309:                   // Margery
-
+    case MONS_HELL_KNIGHT:               // hell knight
+    case MONS_MAUD:                      // Maud
+    case MONS_ADOLF:                     // Adolf
+    case MONS_MARGERY:                   // Margery
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 6 + random3(3);
+
+        // longsword, great sword, of scimitar
+        mitm.sub_type[bp] = WPN_LONG_SWORD + random3(3);
+
         if (random3(7) == 0)
-            mitm.sub_type[bp] = 12;
+            mitm.sub_type[bp] = WPN_HALBERD;
         if (random3(7) == 0)
-            mitm.sub_type[bp] = 17;
+            mitm.sub_type[bp] = WPN_GLAIVE;
         if (random3(7) == 0)
-            mitm.sub_type[bp] = 10;
+            mitm.sub_type[bp] = WPN_GREAT_MACE;
         if (random3(7) == 0)
-            mitm.sub_type[bp] = 32;
+            mitm.sub_type[bp] = WPN_BATTLEAXE;
         if (random3(7) == 0)
-            mitm.sub_type[bp] = 33;
+            mitm.sub_type[bp] = WPN_EVENINGSTAR;
+        if (random3(7) == 0)
+            mitm.sub_type[bp] = WPN_DEMON_TRIDENT;
+        if (random3(7) == 0)
+            mitm.sub_type[bp] = WPN_DEMON_BLADE;
+        if (random3(7) == 0)
+            mitm.sub_type[bp] = WPN_DEMON_WHIP;
+
         mitm.special[bp] = 30 * random3(3);
-//if (mitm.sub_type [bp] == 32 || mitm.sub_type [bp] == 33) mitm.special [bp] = 31;
         if (random3(5) == 0)
             mitm.special[bp] += 1;
         if (random3(5) == 0)
             mitm.special[bp] += 8;
         if (random3(5) == 0)
             mitm.special[bp] += 10;
+
         mitm.pluses[bp] += random3(6);
         mitm.pluses2[bp] = 50 + random3(6);
+
         mitm.colour[bp] = RED;
         if (random3(3) == 0)
             mitm.colour[bp] = DARKGREY;
         if (random3(5) == 0)
             mitm.colour[bp] = CYAN;
+
         iquan = 1;
         force_item = 1;
         break;
 
-    case 162:                   // Fire giant
-
+    case MONS_FIRE_GIANT:                   // Fire giant
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 7;
+        mitm.sub_type[bp] = WPN_GREAT_SWORD;
         mitm.special[bp] = 1;
         mitm.pluses[bp] = 50;
         mitm.pluses2[bp] = 50;
@@ -6701,10 +6800,9 @@ void give_item(void)
         force_item = 1;
         break;
 
-    case 163:                   // Frost giant
-
+    case MONS_FROST_GIANT:                  // Frost giant
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 10;
+        mitm.sub_type[bp] = WPN_BATTLEAXE;
         mitm.special[bp] = 2;
         mitm.pluses[bp] = 50;
         mitm.pluses2[bp] = 50;
@@ -6715,37 +6813,26 @@ void give_item(void)
         force_item = 1;
         break;
 
-
-
-    case 53:                    // kobold demonologist
-
-    case 54:                    // orc wiz
-
-    case 103:                   // orc sorc
-
+    case MONS_KOBOLD_DEMONOLOGIST:         // kobold demonologist
+    case MONS_ORC_WIZARD:                  // orc wiz
+    case MONS_ORC_SORCEROR:                // orc sorc
         force_spec = 3;
-    case 110:                   // necromancer
 
-    case 111:                   // wizard
-
-    case 286:                   // Psyche
-
-    case 288:                   // Donald
-
-    case 294:                   // Josephine
-
-    case 298:                   // Agnes
-
+    case MONS_NECROMANCER:                 // necromancer
+    case MONS_WIZARD:                      // wizard
+    case MONS_PSYCHE:                      // Psyche
+    case MONS_DONALD:                      // Donald
+    case MONS_JOSEPHINE:                   // Josephine
+    case MONS_AGNES:                       // Agnes
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 3;
+        mitm.sub_type[bp] = WPN_DAGGER;
         iquan = 1;
         break;
 
 
-    case 253:                   // Okawaru
-
+    case MONS_CEREBOV:                   // Okawaru
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 7;
+        mitm.sub_type[bp] = WPN_GREAT_SWORD;
         mitm.special[bp] = 188;
         mitm.pluses[bp] = 156;
         mitm.pluses2[bp] = 56;
@@ -6754,10 +6841,9 @@ void give_item(void)
         force_item = 1;
         break;
 
-    case 341:                   // Dispater
-
+    case MONS_DISPATER:                   // Dispater
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 18;
+        mitm.sub_type[bp] = WPN_QUARTERSTAFF;
         mitm.special[bp] = 189;
         mitm.pluses[bp] = 54;
         mitm.pluses2[bp] = 54;
@@ -6766,10 +6852,9 @@ void give_item(void)
         force_item = 1;
         break;
 
-    case 342:                   // Asmodeus
-
+    case MONS_ASMODEUS:                   // Asmodeus
         mitm.base_type[bp] = 0;
-        mitm.sub_type[bp] = 1;
+        mitm.sub_type[bp] = WPN_MACE;
         mitm.special[bp] = 190;
         mitm.pluses[bp] = 57;
         mitm.pluses2[bp] = 57;
@@ -6779,14 +6864,11 @@ void give_item(void)
         break;
 
 
-    case 340:                   // Geryon
-
+    case MONS_GERYON:                     // Geryon
         mitm.base_type[bp] = 13;
         mitm.sub_type[bp] = 6;
         iquan = 1;
         break;
-
-
     }                           // end of switch(menv [bk].type)
 
     if (mitm.base_type[bp] == 101)
@@ -8495,24 +8577,22 @@ void labyrinth_level()
     lx = start_point_x;
     ly = start_point_y;
 
-    grd[lx][ly] = 86;
-
     if (going_y != 0)
         goto do_y;
 
 do_x:                   // if (going_x != 0)
-    //{
     traps_put2 = 0;
     clear_space = 0;            //random3(2) + 2;
 
     do
     {
         lx += going_x;
-        if (grd[lx][ly] == 1)
-            grd[lx][ly] = 67;
+        if (grd[lx][ly] == DNGN_ROCK_WALL)
+            grd[lx][ly] = DNGN_FLOOR;
 
     }
-    while (grd[lx + going_x * (2 + clear_space)][ly] == 1 && lx < 72 && lx > 8);
+    while (grd[lx + going_x * (2 + clear_space)][ly] == DNGN_ROCK_WALL
+                                                        && lx < 72 && lx > 8);
 
     going_x = 0;
 
@@ -8552,7 +8632,8 @@ do_y:                   // if (going_y != 0)
         if (grd[lx][ly] == 1)
             grd[lx][ly] = 67;
     }
-    while (grd[lx][ly + going_y * (2 + clear_space)] == 1 && ly < 62 && ly > 8);
+    while (grd[lx][ly + going_y * (2 + clear_space)] == DNGN_ROCK_WALL
+                                                    && ly < 62 && ly > 8);
 
     keep_lx = lx;
     keep_ly = ly;
@@ -8580,10 +8661,11 @@ do_y:                   // if (going_y != 0)
         do
         {
             lx += going_x;
-            if (grd[lx][ly] == 1)
-                grd[lx][ly] = 67;
+            if (grd[lx][ly] == DNGN_ROCK_WALL)
+                grd[lx][ly] = DNGN_FLOOR;
         }
-        while (grd[lx + going_x * (2 + clear_space)][ly] == 1 && lx < 72 && lx > 8);
+        while (grd[lx + going_x * (2 + clear_space)][ly] == DNGN_ROCK_WALL
+                                                        && lx < 72 && lx > 8);
     }
 
     if (do_2 == 1)
@@ -8621,32 +8703,32 @@ finishing:
         {
         case 9:
         case 0:
-            glopop = 0;
+            glopop = OBJ_WEAPONS;
             break;
         case 1:
-            glopop = 1;
+            glopop = OBJ_MISSILES;
             break;
         case 10:
         case 2:
-            glopop = 2;
+            glopop = OBJ_ARMOUR;
             break;
         case 3:
-            glopop = 3;
+            glopop = OBJ_WANDS;
             break;
         case 4:
-            glopop = 5;
+            glopop = OBJ_MISCELLANY;
             break;
         case 5:
-            glopop = 6;
+            glopop = OBJ_SCROLLS;
             break;
         case 6:
-            glopop = 7;
+            glopop = OBJ_JEWELLERY;
             break;
         case 7:
-            glopop = 10;
+            glopop = OBJ_BOOKS;
             break;
         case 8:
-            glopop = 11;
+            glopop = OBJ_STAVES;
             break;
         }
 
@@ -8659,29 +8741,27 @@ finishing:
 
     passed[1] = 1;
     place_monster(
-                     250,       //0, //plus_seventy,
-                      74,       // typed,
-                      1,        //type_place,
-                      lx,       //px,
-                      ly,       //py,
-                      0,        //behaviour,
-                      MHITNOT,  //hitting,
-                      0,        //1,//allow_bands
+                     250,               //0, //plus_seventy,
+                      MONS_MINOTAUR,    // typed,
+                      1,                //type_place,
+                      lx,               //px,
+                      ly,               //py,
+                      BEH_SLEEP,        //behaviour,
+                      MHITNOT,          //hitting,
+                      0,                //1,//allow_bands
                       many_many,
                      passed);
 
 
-    grd[lx][ly] = 82;           // I think...
-    // note: must be [lx] [ly] so that you can't be placed on it.
+    grd[lx][ly] = DNGN_ROCK_STAIRS_UP;
 
     link_items();
 
-
-
-    unsigned char floory = 2;
+    // Turn rock walls into undiggable stone or metal
+    unsigned char floory = DNGN_STONE_WALL;
 
     if (random3(5) == 0)
-        floory = 4;
+        floory = DNGN_METAL_WALL;
     if (random3(15) == 0)
         floory = 10;
 
@@ -8691,14 +8771,18 @@ finishing:
         {
             if (floory == 10)
             {
-                if (grd[bcount_x][bcount_y] == 1)
-                    grd[bcount_x][bcount_y] = 2 + random3(2) * 2;
+                if (grd[bcount_x][bcount_y] == DNGN_ROCK_WALL)
+                {
+                    if (random3(2))
+                        grd[bcount_x][bcount_y] = DNGN_STONE_WALL;
+                    else
+                        grd[bcount_x][bcount_y] = DNGN_METAL_WALL;
+                }
             }
-            else if (grd[bcount_x][bcount_y] == 1)
+            else if (grd[bcount_x][bcount_y] == DNGN_ROCK_WALL)
                 grd[bcount_x][bcount_y] = floory;
         }
     }
-
 }                               // end void labyrinth level
 
 

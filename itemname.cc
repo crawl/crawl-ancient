@@ -421,6 +421,7 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                     break;
                 }
                 break;
+
             case SPWPN_FLAME:
                 strcat(glog, " of flame");
                 break;          // bows/xbows
@@ -437,6 +438,10 @@ char item_name_2(unsigned char item_plus2, char item_clas, char item_typ, unsign
                 break;
             case SPWPN_DISTORTION:
                 strcat(glog, " of distortion");
+                break;
+
+            case SPWPN_REACHING:
+                strcat(glog, " of reaching");
                 break;
 
                 /* 25 - 29 are randarts */
@@ -2940,312 +2945,260 @@ void init_properties()
 
     // club
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_DAMAGE] = 5;       // damage
-
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_HIT] = 4;  // helps to get past evasion
-
     prop[OBJ_WEAPONS][WPN_CLUB][PWPN_SPEED] = 12;       // speed
-
     mss[OBJ_WEAPONS][WPN_CLUB] = 50;
 
     // mace:
-    prop[OBJ_WEAPONS][WPN_MACE][PWPN_DAMAGE] = 7;       // damage
-
+    prop[OBJ_WEAPONS][WPN_MACE][PWPN_DAMAGE] = 8;       // damage
     prop[OBJ_WEAPONS][WPN_MACE][PWPN_HIT] = 3;  // helps to get past evasion
-
-    prop[OBJ_WEAPONS][WPN_MACE][PWPN_SPEED] = 13;       // speed
-
+    prop[OBJ_WEAPONS][WPN_MACE][PWPN_SPEED] = 14;       // speed
     mss[OBJ_WEAPONS][WPN_MACE] = 140;
 
+    // great mace
+    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_DAMAGE] = 16;      // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_HIT] = -3;
+    prop[OBJ_WEAPONS][WPN_GREAT_MACE][PWPN_SPEED] = 18;      // speed
+    mss[OBJ_WEAPONS][WPN_GREAT_MACE] = 260;
+
     // flail
-    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_DAMAGE] = 8;      // damage
-
-    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_HIT] = 1;         // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_DAMAGE] = 9;      // damage
+    prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_HIT] = 2;  // helps to get past evasion
     prop[OBJ_WEAPONS][WPN_FLAIL][PWPN_SPEED] = 15;      // speed
-
     mss[OBJ_WEAPONS][WPN_FLAIL] = 150;
+
+    // spiked flail
+    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_DAMAGE] = 12;      // damage
+    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_HIT] = 1;
+    prop[OBJ_WEAPONS][WPN_SPIKED_FLAIL][PWPN_SPEED] = 16;      // speed
+    mss[OBJ_WEAPONS][WPN_SPIKED_FLAIL] = 170;
+
+    // great flail
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_DAMAGE] = 18;      // damage
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_HIT] = -4;
+    prop[OBJ_WEAPONS][WPN_GREAT_FLAIL][PWPN_SPEED] = 19;      // speed
+    mss[OBJ_WEAPONS][WPN_GREAT_FLAIL] = 300;
 
     // dagger
     prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_DAMAGE] = 3;     // damage
-
-    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_HIT] = 6;        // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_HIT] = 6;  // helps to get past evasion
     prop[OBJ_WEAPONS][WPN_DAGGER][PWPN_SPEED] = 11;     // speed
-
     mss[OBJ_WEAPONS][WPN_DAGGER] = 20;
 
+    // knife
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_DAMAGE] = 2;     // damage
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_HIT] = 0;  // helps to get past evasion
+    prop[OBJ_WEAPONS][WPN_KNIFE][PWPN_SPEED] = 11;     // speed
+    mss[OBJ_WEAPONS][WPN_KNIFE] = 10;
+
     // morningstar
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 8;        // damage
-
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_HIT] = 3;   // helps to get past evasion
-
-    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_SPEED] = 14;        // speed
-
-    mss[OBJ_WEAPONS][WPN_MORNINGSTAR] = 120;
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_DAMAGE] = 11;        // damage
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_HIT] = 2;
+    prop[OBJ_WEAPONS][WPN_MORNINGSTAR][PWPN_SPEED] = 15;        // speed
+    mss[OBJ_WEAPONS][WPN_MORNINGSTAR] = 150;
 
     // short sword
     prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_DAMAGE] = 6;        // damage
-
-    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_HIT] = 5;   // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_HIT] = 5;
     prop[OBJ_WEAPONS][WPN_SHORT_SWORD][PWPN_SPEED] = 12;        // speed
-
     mss[OBJ_WEAPONS][WPN_SHORT_SWORD] = 100;
 
     // long sword
     prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_DAMAGE] = 10;        // damage
-
-    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_HIT] = 3;    // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_HIT] = 3;
     prop[OBJ_WEAPONS][WPN_LONG_SWORD][PWPN_SPEED] = 14;         // speed
-
     mss[OBJ_WEAPONS][WPN_LONG_SWORD] = 160;
 
     // great sword
     prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_DAMAGE] = 16;       // damage
-
-    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_HIT] = -1;  // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_GREAT_SWORD][PWPN_SPEED] = 17;        // speed
-
     mss[OBJ_WEAPONS][WPN_GREAT_SWORD] = 250;
 
     // scimitar
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_DAMAGE] = 11;  // damage
-
-    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_HIT] = 1;      // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_HIT] = 1;
     prop[OBJ_WEAPONS][WPN_SCIMITAR][PWPN_SPEED] = 14;   // speed
-
     mss[OBJ_WEAPONS][WPN_SCIMITAR] = 170;
 
     // hand axe
     prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_DAMAGE] = 7;   // damage
-
-    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_HIT] = 2;      // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_HAND_AXE][PWPN_SPEED] = 13;   // speed
-
     mss[OBJ_WEAPONS][WPN_HAND_AXE] = 110;
+
+    // axe
+    prop[OBJ_WEAPONS][WPN_AXE][PWPN_DAMAGE] = 12;
+    prop[OBJ_WEAPONS][WPN_AXE][PWPN_HIT] = 1;
+    prop[OBJ_WEAPONS][WPN_AXE][PWPN_SPEED] = 15;
+    mss[OBJ_WEAPONS][WPN_AXE] = 150;
+
+    // axe
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_DAMAGE] = 15;
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_HIT] = 3;
+    prop[OBJ_WEAPONS][WPN_BROAD_AXE][PWPN_SPEED] = 17;
+    mss[OBJ_WEAPONS][WPN_BROAD_AXE] = 180;
 
     // battleaxe
     prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_DAMAGE] = 17;         // damage
-
-    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_HIT] = -2;    // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_HIT] = -2;
     prop[OBJ_WEAPONS][WPN_BATTLEAXE][PWPN_SPEED] = 18;  // speed
-
     mss[OBJ_WEAPONS][WPN_BATTLEAXE] = 200;
 
     // spear
     prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_DAMAGE] = 5;      // damage
-
-    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_HIT] = 3;         // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_HIT] = 3;
     prop[OBJ_WEAPONS][WPN_SPEAR][PWPN_SPEED] = 13;      // speed
-
     mss[OBJ_WEAPONS][WPN_SPEAR] = 50;
+
+    // trident
+    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_DAMAGE] = 9;      // damage
+    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_HIT] = -2;
+    prop[OBJ_WEAPONS][WPN_TRIDENT][PWPN_SPEED] = 17;      // speed
+    mss[OBJ_WEAPONS][WPN_TRIDENT] = 110;
+
+    // demon trident
+    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_DAMAGE] = 15;      // damage
+    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_HIT] = -2;
+    prop[OBJ_WEAPONS][WPN_DEMON_TRIDENT][PWPN_SPEED] = 17;      // speed
+    mss[OBJ_WEAPONS][WPN_DEMON_TRIDENT] = 110;
 
     // halberd
     prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_DAMAGE] = 13;   // damage
-
-    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_HIT] = -3;      // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_HIT] = -3;
     prop[OBJ_WEAPONS][WPN_HALBERD][PWPN_SPEED] = 19;    // speed
-
     mss[OBJ_WEAPONS][WPN_HALBERD] = 200;
 
-    // sling - the three properties are _not_ irrelevant here - when something hits something else (either may be you) in melee, these are used.
+    // sling
+    // - the three properties are _not_ irrelevant here
+    // - when something hits something else (either may be you)
+    //   in melee, these are used.
     prop[OBJ_WEAPONS][WPN_SLING][PWPN_DAMAGE] = 1;      // damage
-
-    prop[OBJ_WEAPONS][WPN_SLING][PWPN_HIT] = -1;        // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SLING][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_SLING][PWPN_SPEED] = 11;      // speed
-
     mss[OBJ_WEAPONS][WPN_SLING] = 10;
 
     // bow
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_DAMAGE] = 2;        // damage
-
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_HIT] = -3;  // helps to get past evasion
-
     prop[OBJ_WEAPONS][WPN_BOW][PWPN_SPEED] = 11;        // speed
-
     mss[OBJ_WEAPONS][WPN_BOW] = 100;
 
     // crossbow
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_DAMAGE] = 2;   // damage
-
-    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_HIT] = -1;     // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_CROSSBOW][PWPN_SPEED] = 15;   // speed
-
     mss[OBJ_WEAPONS][WPN_CROSSBOW] = 250;
 
     // hand crossbow
     prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_DAMAGE] = 1;      // damage
-
-    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_HIT] = -1;        // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_HAND_CROSSBOW][PWPN_SPEED] = 15;      // speed
-
     mss[OBJ_WEAPONS][WPN_HAND_CROSSBOW] = 70;
 
     // glaive
     prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_DAMAGE] = 15;    // damage
-
-    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_HIT] = -3;       // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_HIT] = -3;
     prop[OBJ_WEAPONS][WPN_GLAIVE][PWPN_SPEED] = 18;     // speed
-
     mss[OBJ_WEAPONS][WPN_GLAIVE] = 200;
 
     // staff - hmmm
     prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_DAMAGE] = 7;       // damage
-
-    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_HIT] = 6;  // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_HIT] = 6;
     prop[OBJ_WEAPONS][WPN_QUARTERSTAFF][PWPN_SPEED] = 12;       // speed
-
     mss[OBJ_WEAPONS][WPN_QUARTERSTAFF] = 130;
 
     // scythe
     prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_DAMAGE] = 14;    // damage
-
-    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_HIT] = -4;       // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_HIT] = -4;
     prop[OBJ_WEAPONS][WPN_SCYTHE][PWPN_SPEED] = 22;     // speed
-
     mss[OBJ_WEAPONS][WPN_SCYTHE] = 230;
 
 
     // giant club
     prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_DAMAGE] = 15;        // damage
-
-    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_HIT] = -5;   // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_HIT] = -5;
     prop[OBJ_WEAPONS][WPN_GIANT_CLUB][PWPN_SPEED] = 16;         // speed
-
     mss[OBJ_WEAPONS][WPN_GIANT_CLUB] = 750;
 
     // giant spiked club
-    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_DAMAGE] = 18;         // damage
-
-    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_HIT] = -6;    // helps to get past evasion
-
-    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_SPEED] = 17;  // speed
-
+    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_DAMAGE] = 18;
+    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_HIT] = -6;
+    prop[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB][PWPN_SPEED] = 17;
     mss[OBJ_WEAPONS][WPN_GIANT_SPIKED_CLUB] = 850;
 
     // these two ^^^ should have the same speed because of 2-h ogres.
 
-
     // eveningstar
     prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_DAMAGE] = 12;       // damage
-
-    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_HIT] = 2;   // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_EVENINGSTAR][PWPN_SPEED] = 15;        // speed
-
     mss[OBJ_WEAPONS][WPN_EVENINGSTAR] = 150;
 
     // quick blade
     prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_DAMAGE] = 5;        // damage
-
-    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_HIT] = 6;   // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_HIT] = 6;
     prop[OBJ_WEAPONS][WPN_QUICK_BLADE][PWPN_SPEED] = 7;         // speed
-
     mss[OBJ_WEAPONS][WPN_QUICK_BLADE] = 100;
 
     // katana
     prop[OBJ_WEAPONS][WPN_KATANA][PWPN_DAMAGE] = 13;    // damage
-
-    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_HIT] = 4;        // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_KATANA][PWPN_HIT] = 4;
     prop[OBJ_WEAPONS][WPN_KATANA][PWPN_SPEED] = 13;     // speed
-
     mss[OBJ_WEAPONS][WPN_KATANA] = 160;
 
     // exec axe
     prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_DAMAGE] = 20;  // damage
-
-    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_HIT] = -4;     // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_HIT] = -4;
     prop[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE][PWPN_SPEED] = 20;   // speed
-
     mss[OBJ_WEAPONS][WPN_EXECUTIONERS_AXE] = 320;
 
     // double sword
     prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_DAMAGE] = 15;      // damage
-
-    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_HIT] = 3;  // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_HIT] = 3;
     prop[OBJ_WEAPONS][WPN_DOUBLE_SWORD][PWPN_SPEED] = 16;       // speed
-
     mss[OBJ_WEAPONS][WPN_DOUBLE_SWORD] = 220;
 
     // triple sword
     prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_DAMAGE] = 19;      // damage
-
-    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_HIT] = -1;         // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_HIT] = -1;
     prop[OBJ_WEAPONS][WPN_TRIPLE_SWORD][PWPN_SPEED] = 19;       // speed
-
     mss[OBJ_WEAPONS][WPN_TRIPLE_SWORD] = 300;
 
     // hammer
     prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_DAMAGE] = 7;     // damage
-
-    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_HIT] = 2;        // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_HAMMER][PWPN_SPEED] = 13;     // speed
-
     mss[OBJ_WEAPONS][WPN_HAMMER] = 130;
 
     // ancus
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 8;      // damage
-
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_HIT] = 2;         // helps to get past evasion
-
-    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_SPEED] = 15;      // speed
-
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_DAMAGE] = 11;      // damage
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_HIT] = 1;
+    prop[OBJ_WEAPONS][WPN_ANCUS][PWPN_SPEED] = 14;      // speed
     mss[OBJ_WEAPONS][WPN_ANCUS] = 160;
 
     // whip
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_DAMAGE] = 3;       // damage
-
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_HIT] = 1;  // helps to get past evasion
-
     prop[OBJ_WEAPONS][WPN_WHIP][PWPN_SPEED] = 14;       // speed
-
     mss[OBJ_WEAPONS][WPN_WHIP] = 30;
 
     // sabre
     prop[OBJ_WEAPONS][WPN_SABRE][PWPN_DAMAGE] = 7;      // damage
-
-    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_HIT] = 4;         // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_SABRE][PWPN_HIT] = 4;
     prop[OBJ_WEAPONS][WPN_SABRE][PWPN_SPEED] = 12;      // speed
-
     mss[OBJ_WEAPONS][WPN_SABRE] = 110;
 
     // demon blade
     prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_DAMAGE] = 13;       // damage
-
-    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_HIT] = 2;   // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_HIT] = 2;
     prop[OBJ_WEAPONS][WPN_DEMON_BLADE][PWPN_SPEED] = 15;        // speed
-
     mss[OBJ_WEAPONS][WPN_DEMON_BLADE] = 200;
 
     // demon whip
     prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_DAMAGE] = 10;        // damage
-
-    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_HIT] = 1;    // helps to get past evasion
-
+    prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_HIT] = 1;
     prop[OBJ_WEAPONS][WPN_DEMON_WHIP][PWPN_SPEED] = 14;         // speed
-
     mss[OBJ_WEAPONS][WPN_DEMON_WHIP] = 30;
 
 
@@ -3263,14 +3216,12 @@ void init_properties()
 
     // crossbow bolt
     prop[OBJ_MISSILES][MI_BOLT][PWPN_DAMAGE] = 2;
-    prop[OBJ_MISSILES][MI_BOLT][PWPN_HIT] = 9;  // but increases less with skill
-
+    prop[OBJ_MISSILES][MI_BOLT][PWPN_HIT] = 9;
     mss[OBJ_MISSILES][MI_BOLT] = 12;
 
     // dart
     prop[OBJ_MISSILES][MI_DART][PWPN_DAMAGE] = 3;
     prop[OBJ_MISSILES][MI_DART][PWPN_HIT] = 5;  //whatever - for hand crossbow
-
     mss[OBJ_MISSILES][MI_DART] = 5;
 
     // large rock
@@ -3416,10 +3367,7 @@ unsigned char check_item_knowledge(void)
 
             }
         }                       // end of j loop
-
     }
-
-
 
     if (anything > 0)
     {
@@ -3447,7 +3395,6 @@ putty:
 #endif
 
     return ki;
-
 }                               // end of check_item_knowledge
 
 
@@ -3465,113 +3412,68 @@ char weapon_skill(char wclass, char wtype)
 
     switch (wtype)
     {
-
     case WPN_CLUB:
-        return SK_MACES_FLAILS; //strcat(glog , "club"); break;
-
     case WPN_MACE:
-        return SK_MACES_FLAILS; //strcat(glog , "mace"); break;
-
+    case WPN_HAMMER:
+    case WPN_ANCUS:
+    case WPN_WHIP:
     case WPN_FLAIL:
-        return SK_MACES_FLAILS; //strcat(glog , "flail"); break;
-
-    case WPN_DAGGER:
-        return SK_SHORT_BLADES; //strcat(glog , "dagger"); break;
-
     case WPN_MORNINGSTAR:
-        return SK_MACES_FLAILS; //??? //strcat(glog , "spiked mace"); break;
+    case WPN_GIANT_CLUB:
+    case WPN_GIANT_SPIKED_CLUB:
+    case WPN_EVENINGSTAR:
+    case WPN_DEMON_WHIP:
+    case WPN_SPIKED_FLAIL:
+    case WPN_GREAT_FLAIL:
+    case WPN_GREAT_MACE:
+        return SK_MACES_FLAILS;
 
+    case WPN_KNIFE:
+    case WPN_DAGGER:
     case WPN_SHORT_SWORD:
-        return SK_SHORT_BLADES; //strcat(glog , "short sword"); break;
+    case WPN_QUICK_BLADE:
+    case WPN_SABRE:
+        return SK_SHORT_BLADES;
 
     case WPN_LONG_SWORD:
-        return SK_LONG_SWORDS;  //strcat(glog , "long sword"); break;
+    case WPN_SCIMITAR:
+    case WPN_KATANA:
+    case WPN_DOUBLE_SWORD:
+    case WPN_DEMON_BLADE:
+        return SK_LONG_SWORDS;
 
     case WPN_GREAT_SWORD:
-        return SK_GREAT_SWORDS; //strcat(glog , "great sword"); break;
-
-    case WPN_SCIMITAR:
-        return SK_LONG_SWORDS;  //strcat(glog , "scimitar"); break;
+    case WPN_TRIPLE_SWORD:
+        return SK_GREAT_SWORDS;
 
     case WPN_HAND_AXE:
-        return SK_AXES;         //strcat(glog , "hand axe"); break;
-
+    case WPN_AXE:
+    case WPN_BROAD_AXE:
     case WPN_BATTLEAXE:
-        return SK_AXES;         //strcat(glog , "battleaxe"); break;
+    case WPN_EXECUTIONERS_AXE:
+        return SK_AXES;
 
     case WPN_SPEAR:
-        return SK_POLEARMS;     //strcat(glog , "spear"); break;
-
     case WPN_HALBERD:
-        return SK_POLEARMS;     //strcat(glog , "halberd"); break;
+    case WPN_GLAIVE:
+    case WPN_SCYTHE:
+    case WPN_TRIDENT:
+    case WPN_DEMON_TRIDENT:
+        return SK_POLEARMS;
 
     case WPN_SLING:
-        return 0;               //strcat(glog , "sling"); break;
+        return 0;
 
     case WPN_BOW:
-        return SK_MACES_FLAILS; //strcat(glog , "bow"); break;
-
     case WPN_CROSSBOW:
-        return SK_MACES_FLAILS; //strcat(glog , "crossbow"); break;
-
     case WPN_HAND_CROSSBOW:
-        return SK_CROSSBOWS;    //strcat(glog , "hand crossbow"); break;
-
-    case WPN_GLAIVE:
-        return SK_POLEARMS;     //strcat(glog , "glaive"); break;
+        return SK_MACES_FLAILS;
 
     case WPN_QUARTERSTAFF:
-        return SK_STAVES;       //strcat(glog , "quarterstaff"); break;
-
-    case WPN_SCYTHE:
-        return SK_POLEARMS;     //strcat(glog , "scythe"); break;
-
-    case WPN_GIANT_CLUB:
-        return SK_MACES_FLAILS; //strcat(glog , "giant club"); break;
-
-    case WPN_GIANT_SPIKED_CLUB:
-        return SK_MACES_FLAILS; //strcat(glog , "giant spiked club"); break;
-
-    case WPN_EVENINGSTAR:
-        return SK_MACES_FLAILS; // eveningstar
-
-    case WPN_QUICK_BLADE:
-        return SK_SHORT_BLADES; // quick blade
-
-    case WPN_KATANA:
-        return SK_LONG_SWORDS;  // katana
-
-    case WPN_EXECUTIONERS_AXE:
-        return SK_AXES;         // exec axe
-
-    case WPN_DOUBLE_SWORD:
-        return SK_LONG_SWORDS;  // 2x sword
-
-    case WPN_TRIPLE_SWORD:
-        return SK_GREAT_SWORDS; // 3x sword
-
-    case WPN_HAMMER:
-        return SK_MACES_FLAILS; // hammer
-
-    case WPN_ANCUS:
-        return SK_MACES_FLAILS; // ancus
-
-    case WPN_WHIP:
-        return SK_MACES_FLAILS; // whip
-
-    case WPN_SABRE:
-        return SK_SHORT_BLADES; // sabre
-
-    case WPN_DEMON_BLADE:
-        return SK_LONG_SWORDS;  // demon blade
-
-    case WPN_DEMON_WHIP:
-        return SK_MACES_FLAILS; // demon whip
-
+        return SK_STAVES;
     }
 
     return 0;
-
 }
 
 
@@ -3586,114 +3488,95 @@ char damage_type(char wclass, char wtype)
 
     switch (wtype)
     {
-
     case WPN_CLUB:
-        return DVORP_CRUSHING;  //strcat(glog , "club"); break;
-
+    case WPN_ANCUS:
+    case WPN_GIANT_CLUB:
     case WPN_MACE:
-        return DVORP_CRUSHING;  //strcat(glog , "mace"); break;
-
     case WPN_FLAIL:
-        return DVORP_CRUSHING;  //strcat(glog , "flail"); break;
+    case WPN_GREAT_MACE:
+    case WPN_GREAT_FLAIL:
+    case WPN_SLING:
+    case WPN_BOW:
+    case WPN_CROSSBOW:
+    case WPN_HAND_CROSSBOW:
+    case WPN_QUARTERSTAFF:
+    case WPN_HAMMER:
+    case WPN_WHIP:
+    case WPN_DEMON_WHIP:
+        return DVORP_CRUSHING;
 
+
+    case WPN_KNIFE:
     case WPN_DAGGER:
-        return DVORP_SLICING;   //strcat(glog , "dagger"); break;
-
-    case WPN_MORNINGSTAR:
-        return DVORP_PIERCING;  //??? //strcat(glog , "spiked mace"); break;
-
     case WPN_SHORT_SWORD:
-        return DVORP_SLICING;   //strcat(glog , "short sword"); break;
-
     case WPN_LONG_SWORD:
-        return DVORP_SLICING;   //strcat(glog , "long sword"); break;
-
     case WPN_GREAT_SWORD:
-        return DVORP_SLICING;   //strcat(glog , "great sword"); break;
-
     case WPN_SCIMITAR:
-        return DVORP_SLICING;   //strcat(glog , "scimitar"); break;
+    case WPN_SCYTHE:
+    case WPN_QUICK_BLADE:
+    case WPN_KATANA:
+    case WPN_DOUBLE_SWORD:
+    case WPN_TRIPLE_SWORD:
+    case WPN_SABRE:
+    case WPN_DEMON_BLADE:
+        return DVORP_SLICING;
 
-    case WPN_HAND_AXE:
-        return DVORP_CHOPPING;  //strcat(glog , "hand axe"); break;
-
-    case WPN_BATTLEAXE:
-        return DVORP_CHOPPING;  //strcat(glog , "battleaxe"); break;
 
     case WPN_SPEAR:
-        return DVORP_PIERCING;  //strcat(glog , "spear"); break;
-
-    case WPN_HALBERD:
-        return DVORP_CHOPPING;  //strcat(glog , "halberd"); break;
-
-    case WPN_SLING:
-        return DVORP_CRUSHING;  //strcat(glog , "sling"); break;
-
-    case WPN_BOW:
-        return DVORP_CRUSHING;  //strcat(glog , "bow"); break;
-
-    case WPN_CROSSBOW:
-        return DVORP_CRUSHING;  //strcat(glog , "crossbow"); break;
-
-    case WPN_HAND_CROSSBOW:
-        return DVORP_CRUSHING;  //strcat(glog , "hand crossbow"); break;
-
-    case WPN_GLAIVE:
-        return DVORP_CHOPPING;  //strcat(glog , "glaive"); break;
-
-    case WPN_QUARTERSTAFF:
-        return DVORP_CRUSHING;  //strcat(glog , "quarterstaff"); break;
-
-    case WPN_SCYTHE:
-        return DVORP_SLICING;   //strcat(glog , "scythe"); break;
-
-    case WPN_GIANT_CLUB:
-        return DVORP_CRUSHING;  //strcat(glog , "giant club"); break;
-
+    case WPN_SPIKED_FLAIL:
     case WPN_GIANT_SPIKED_CLUB:
-        return DVORP_PIERCING;  //strcat(glog , "giant spiked club"); break;
-
+    case WPN_MORNINGSTAR:
     case WPN_EVENINGSTAR:
-        return DVORP_PIERCING;  // eveningstar
+    case WPN_TRIDENT:
+    case WPN_DEMON_TRIDENT:
+        return DVORP_PIERCING;
 
-    case WPN_QUICK_BLADE:
-        return DVORP_SLICING;   // quick blade
 
-    case WPN_KATANA:
-        return DVORP_SLICING;   // katana
-
+    case WPN_HAND_AXE:
+    case WPN_AXE:
+    case WPN_BROAD_AXE:
+    case WPN_BATTLEAXE:
     case WPN_EXECUTIONERS_AXE:
-        return DVORP_CHOPPING;  // exec axe
-
-    case WPN_DOUBLE_SWORD:
-        return DVORP_SLICING;   // 2x sword
-
-    case WPN_TRIPLE_SWORD:
-        return DVORP_SLICING;   // 3x sword
-
-    case WPN_HAMMER:
-        return DVORP_CRUSHING;  // hammer
-
-    case WPN_ANCUS:
-        return DVORP_CRUSHING;  // ancus
-
-    case WPN_WHIP:
-        return DVORP_CRUSHING;  // whip
-
-    case WPN_SABRE:
-        return DVORP_SLICING;   // sabre
-
-    case WPN_DEMON_BLADE:
-        return DVORP_SLICING;   // demon blade
-
-    case WPN_DEMON_WHIP:
-        return DVORP_CRUSHING;  // demon whip
-
+    case WPN_HALBERD:
+    case WPN_GLAIVE:
+        return DVORP_CHOPPING;
     }
 
     return 0;
 }                               // end damage_type
 
+int hands_required_for_weapon( char wclass, char wtype )
+{
+    switch (wclass)
+    {
+    case OBJ_WEAPONS:
+        switch (wtype)
+        {
+        case WPN_EXECUTIONERS_AXE:
+        case WPN_HALBERD:
+        case WPN_SCYTHE:
+        case WPN_GLAIVE:
+        case WPN_QUARTERSTAFF:
+        case WPN_BATTLEAXE:
+        case WPN_GREAT_SWORD:
+        case WPN_TRIPLE_SWORD:
+        case WPN_GREAT_MACE:
+        case WPN_GREAT_FLAIL:
+        case WPN_GIANT_CLUB:
+        case WPN_GIANT_SPIKED_CLUB:
+            return 2;
+
+        default:
+            return 1;
+        }
+
+    case OBJ_STAVES:
+        return 2;
+
+    default:
+        return 1;
+    }
+}
 
 void make_name(unsigned char var1, unsigned char var2, unsigned char var3, char ncase, char str_pass[50])
 {

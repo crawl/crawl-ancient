@@ -1182,6 +1182,29 @@ static bool handle_potion(int i, bolt & beem)
 }
 
 
+static bool handle_reaching(int i)
+{
+    bool ret = false;
+
+    monsters & monster = env.mons[i];
+
+    if (monster.inv[0] != 501 && mitm.base_type[monster.inv[0]] == OBJ_WEAPONS
+                && mitm.special[monster.inv[0]] < 180
+                && mitm.special[monster.inv[0]] % 30 == SPWPN_REACHING)
+    {
+        int dx = abs( monster.x - you.x_pos );
+        int dy = abs( monster.y - you.y_pos );
+
+        if ((dx == 2 && dy <= 2) || (dy == 2 && dx <= 2))
+        {
+            ret = true;
+            monster_attack(i);
+        }
+    }
+
+    return ret;
+}
+
 //---------------------------------------------------------------
 //
 // handle_scroll
@@ -2042,39 +2065,35 @@ void monster()
                     if (beem[0].trac_targ == MHITYOU && !mons_near(i) && monster.type != MONS_CACODEMON)
                         goto end_switch;
 
-                    // bwross
+                    if (handle_special_ability(i, beem[0]))
+                        continue;
+
+                    if (handle_potion(i, beem[0]))
+                        continue;
+
+
+                    if (handle_scroll(i))
+                        continue;
+
+
+                    if (handle_wand(i, beem[0]))
                     {
-                        bool used_ability = handle_special_ability(i, beem[0]);
-
-                        if (used_ability)
-                            continue;
-
-                        bool imbibed = handle_potion(i, beem[0]);
-
-                        if (imbibed)
-                            continue;
-
-                        bool read = handle_scroll(i);
-
-                        if (read)
-                            continue;
-
-                        bool zap = handle_wand(i, beem[0]);
-
-                        if (zap)
-                            continue;
-                        else if (monster.behavior == BEH_ENSLAVED && beem[0].tracer_mons == 4)
-                            goto end_throw;     // $$$ is this right?
-
-                        bool cast = handle_spell(i, beem[0]);
-
-                        if (cast)
-                            continue;
+                        continue;
+                    }
+                    else if (monster.behavior == BEH_ENSLAVED
+                                            && beem[0].tracer_mons == 4)
+                    {
+                        goto end_throw;     // $$$ is this right?
                     }
 
-                  end_switch:
-                    bool thrown = handle_throw(i, beem[0]);
-                    if (thrown)
+                    if (handle_spell(i, beem[0]))
+                        continue;
+
+                    if (handle_reaching(i))
+                        continue;
+
+end_switch:
+                    if (handle_throw(i, beem[0]))
                         continue;
                 }
 

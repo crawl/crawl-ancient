@@ -37,6 +37,10 @@
   #include "macro.h"
 #endif
 
+#ifdef WIZARD
+  #include "debug.h"
+#endif
+
 //---------------------------------------------------------------
 //
 // direction

@@ -13,7 +13,7 @@
  *                                              weirdness
  *      <4>      6/13/99        BWR             sys_env support
  *      <3>      6/11/99        DML             Removed tmpfile purging.
- *      <2>      5/20/99        BWR             CRAWL_NAME, NEW_BERSERK, upped
+ *      <2>      5/20/99        BWR             CRAWL_NAME, new berserk, upped
  *                                              troll food consumption, added
  *                                              demonspawn transmuters.
  *      <1>      -/--/--        LRH             Created
@@ -362,7 +362,9 @@ name_q:
 #endif
 
     cprintf("You must be new here!" EOL);
-  spec_query2:cprintf("You can be:" EOL);
+
+spec_query2:
+    cprintf("You can be:" EOL);
     cprintf("a - Human                     s - Centaur" EOL);
     cprintf("b - Elf                       t - Demigod" EOL);
     cprintf("c - High Elf                  u - Spriggan" EOL);
@@ -385,6 +387,7 @@ name_q:
     cprintf("X - Quit" EOL);
 
     cprintf(EOL "Which one? ");
+
 spec_query:
     keyn = getch();
     if (keyn == 0)
@@ -392,204 +395,210 @@ spec_query:
         getch();
         goto spec_query;
     }
+
 switch_start:
     switch (keyn)
     {
     case 'a':
         you.species = SP_HUMAN; // human
-
         you.strength = 6;
         you.intel = 6;
         you.dex = 6;
         break;
+
     case 'b':
         you.species = SP_ELF;   // elf
-
         you.strength = 5;
         you.intel = 8;
         you.dex = 8;
         break;
+
     case 'c':
         you.species = SP_HIGH_ELF;      // high-elf
-
         you.strength = 5;
         you.intel = 9;
         you.dex = 8;
         break;
+
     case 'd':
         you.species = SP_GREY_ELF;      // grey-elf
-
         you.strength = 4;
         you.intel = 9;
         you.dex = 8;
         break;
+
     case 'e':
         you.species = SP_DEEP_ELF;      // deep elf
-
         you.strength = 4;
         you.intel = 10;
         you.dex = 7;
         break;
+
     case 'f':
         you.species = SP_SLUDGE_ELF;    // sludge elf
-
         you.strength = 5;
         you.intel = 7;
         you.dex = 8;
         break;
+
     case 'g':
         you.species = SP_HILL_DWARF;    // hill dwarf
-
         you.strength = 9;
         you.intel = 3;
         you.dex = 4;
         break;
+
     case 'h':
         you.species = SP_MOUNTAIN_DWARF;        // mountain dwarf
-
         you.strength = 9;
         you.intel = 4;
         you.dex = 5;
         break;
+
     case 'i':
         you.species = SP_HALFLING;      // halfling
-
         you.strength = 4;
         you.intel = 6;
         you.dex = 9;
         break;
+
     case 'j':
     case 'J':
         you.species = SP_HILL_ORC;      // hill orc
-
         you.strength = 9;
         you.intel = 3;
         you.dex = 4;
         break;
+
     case 'K':
     case 'k':
         you.species = SP_KOBOLD;        // kobold
-
         you.strength = 4;
         you.intel = 4;
         you.dex = 6;
         break;
+
     case 'l':
         you.species = SP_MUMMY; // Mummy
-
         you.strength = 7;
         you.intel = 3;
         you.dex = 3;
         break;
+
     case 'm':
     case 'M':
         you.species = SP_NAGA;  // Naga
-
         you.strength = 8;
         you.intel = 6;
         you.dex = 4;
         break;
+
     case 'n':
         you.species = SP_GNOME; // gnome
-
         you.strength = 5;
         you.intel = 6;
         you.dex = 7;
         break;
+
     case 'o':
     case 'O':
         you.species = SP_OGRE;  // ogre
-
         you.strength = 12;
         you.intel = 3;
         you.dex = 1;
         break;
+
     case 'p':
     case 'P':
         you.species = SP_TROLL; // troll
-
         you.strength = 13;
         you.intel = 3;
         you.dex = 0;
         break;
+
     case 'Q':
     case 'q':
         you.species = SP_OGRE_MAGE;     // ogre mage
-
         you.strength = 8;
         you.intel = 6;
         you.dex = 2;
         break;
+
     case 'r':
     case 'R':
         you.species = SP_RED_DRACONIAN + random2(9);    // Draconian
-
         you.strength = 7;
         you.intel = 6;
         you.dex = 2;
         break;
+
     case 's':
         you.species = SP_CENTAUR;       // centaur
-
         you.strength = 8;
         you.intel = 4;
         you.dex = 5;
         break;
-    case 't':
-        you.species = SP_DEMIGOD;       // demigod - more is added to stats later
 
+    case 't':
+        you.species = SP_DEMIGOD;
+        // demigod - more is added to stats later
         you.strength = 7;
         you.intel = 7;
         you.dex = 7;
         break;
+
     case 'u':
         you.species = SP_SPRIGGAN;      // spriggan
-
         you.strength = 3;
         you.intel = 6;
         you.dex = 8;
         break;
+
     case 'v':
         you.species = SP_MINOTAUR;      // minotaur
-
         you.strength = 10;
         you.intel = 3;
         you.dex = 5;
         break;
-    case 'w':
-        you.species = SP_DEMONSPAWN;    // demonspawn - more is added, like demigods
 
+    case 'w':
+        you.species = SP_DEMONSPAWN;
+        // demonspawn - more is added, like demigods
         you.strength = 4;
         you.intel = 4;
         you.dex = 4;
         break;
+
     case 'x':
         you.species = SP_GHOUL; // Ghoul
-
         you.strength = 7;
         you.intel = 1;
         you.dex = 2;
         break;
+
     case 'y':
         you.species = SP_KENKU; // Kenku
-
         you.strength = 5;
         you.intel = 6;
         you.dex = 7;
         break;
+
     case '?':
         keyn = 97 + random2(25);
         goto switch_start;
+
     case 'X':
         cprintf(EOL "Goodbye!");
         end(0);
         break;
+
     default:
-// cprintf("\n\rDon't be silly. ");
+        // cprintf("\n\rDon't be silly. ");
         goto spec_query;
     }
 
-    clrscr();                   // Otherwise it looks ugly under Win NT, or so I'm told
+    // Otherwise it looks ugly under Win NT, or so I'm told
+    clrscr();
 
     cprintf(EOL EOL);
     cprintf("Welcome, ");
@@ -599,47 +608,14 @@ switch_start:
     cprintf("." EOL EOL);
 
     cprintf("You can be any of the following :" EOL);
-/*
-   for (i = 0; i < 19; i ++)
-   {
-   if (class_allowed(you.species, i) == 0) continue;
 
-   if (i > 0) cprintf(", ");
-   if (wherex() > 57) cprintf("\n\r");
-
-   switch(i)
-   {
-   case 0: cprintf("fighter"); break;
-   case 1: cprintf("Wizard"); break;
-   case 2: cprintf("priest"); break;
-   case 3: cprintf("Thief"); break;
-   case 4: cprintf("Gladiator"); break;
-   case 5: cprintf("Necromancer"); break;
-   case 6: cprintf("Paladin"); break;
-   case 7: cprintf("assassin"); break;
-   case 8: cprintf("Berserker"); break;
-   case 9: cprintf("ranger"); break;
-   case 10: cprintf("conjurer"); break;
-   case 11: cprintf("enchanter"); break;
-   case 12: cprintf("Fire Elementalist"); break;
-   case 13: cprintf("Ice Elementalist"); break;
-   case 14: cprintf("Summoner"); break;
-   case 15: cprintf("Air Elementalist"); break;
-   case 16: cprintf("Earth Elementalist"); break;
-   case 17: cprintf("Crusader"); break;
-   case 18: cprintf("Death knight"); break;
-   }
-
-   }
-   cprintf(", or Quit.");
- */
     j = 0;
 
     for (i = 0; i < 30; i++)
     {
         if (i == 23)
             i = 24;
-// if (i == 25) i = 26;
+
         if (class_allowed(you.species, i) == 0)
             continue;
 
@@ -734,6 +710,7 @@ switch_start:
             break;
             /* when adding more, also add to the range of the loop */
         }
+
         if (j % 2 == 1)
             cprintf(EOL);
         else
@@ -743,8 +720,9 @@ switch_start:
     }
     if (wherex() >= 40)
         cprintf(EOL);
+
     cprintf("? - Random; x - Back to species selection; X - Quit" EOL);
-//cprintf("x - Back to species selection\n\r");
+    //cprintf("x - Back to species selection\n\r");
     //cprintf("X - Quit\n\r");
 
 
@@ -914,7 +892,8 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
 
             }
 
-            if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
+            if (you.species >= SP_RED_DRACONIAN
+                                        && you.species <= SP_UNK2_DRACONIAN)
             {
                 you.inv_quantity[2] = 1;
                 you.inv_class[2] = OBJ_ARMOUR;
@@ -1019,10 +998,15 @@ cant_be_that:           //cprintf("\n\rI'm sorry, you can't be that. ");
         }
         else if (you.species != SP_OGRE && you.species != SP_TROLL)
         {
-            if (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN)
+            if (you.species >= SP_RED_DRACONIAN
+                                        && you.species <= SP_UNK2_DRACONIAN)
+            {
                 you.skills[SK_DODGING] = 2;
+            }
             else
+            {
                 you.skills[SK_ARMOUR] = 2;
+            }
 
             you.skills[SK_SHIELDS] = 2;
             you.skills[SK_STABBING + random() % 2]++;
@@ -1213,7 +1197,7 @@ getkey:
             break;
         case 'b':
             you.religion = GOD_YREDELEMNUL;
-            you.inv_type[0] = WPN_MORNINGSTAR;
+            you.inv_type[0] = WPN_MACE;
             cprintf(EOL "Welcome...");
             break;
         default:
@@ -1610,7 +1594,9 @@ getkey:
 
         }
 
-        if (you.species == SP_OGRE || you.species == SP_TROLL || (you.species >= SP_RED_DRACONIAN && you.species <= SP_UNK2_DRACONIAN))
+        if (you.species == SP_OGRE || you.species == SP_TROLL
+                            || (you.species >= SP_RED_DRACONIAN
+                                        && you.species <= SP_UNK2_DRACONIAN))
         {
             you.inv_quantity[1] = 1;
             you.inv_class[1] = OBJ_ARMOUR;
@@ -2659,7 +2645,7 @@ getkey:
        you.AC += 2;
        you.res_poison ++;
        you.see_invis ++; */
-        you.attribute[ATTR_WALK_SLOWLY]++;
+        you.attribute[ATTR_WALK_SLOWLY] = 1;
         break;
 
     case SP_GNOME:              // Gnome
@@ -3862,21 +3848,18 @@ void choose_weapon(void)
 
     if (you.char_class == JOB_CHAOS_KNIGHT)
     {
-        switch (random2(5))
+        switch (random2(4))
         {
         case 0:
             you.inv_type[0] = WPN_SHORT_SWORD;
             return;
         case 1:
-            you.inv_type[0] = WPN_FLAIL;
+            you.inv_type[0] = WPN_MACE;
             return;
         case 2:
-            you.inv_type[0] = WPN_MORNINGSTAR;
-            return;
-        case 3:
             you.inv_type[0] = WPN_HAND_AXE;
             return;
-        case 4:
+        case 3:
             you.inv_type[0] = WPN_SPEAR;
             return;
         }
@@ -3885,12 +3868,15 @@ void choose_weapon(void)
 
     clrscr();
     cprintf(EOL " You have a choice of weapons:" EOL);
-    if (you.char_class == JOB_GLADIATOR)
-        goto glad_thing;
     cprintf("a - short sword" EOL);
     cprintf("b - mace" EOL);
     cprintf("c - hand axe" EOL);
     cprintf("d - spear" EOL);
+
+    if (you.char_class == JOB_GLADIATOR)
+    {
+        cprintf("e - trident" EOL);
+    }
 
 getkey:
     keyin = get_ch();
@@ -3908,39 +3894,17 @@ getkey:
     case 'd':
         you.inv_type[0] = WPN_SPEAR;
         return;
+    case 'e':
+        if (you.char_class == JOB_GLADIATOR)
+        {
+            you.inv_type[0] = WPN_TRIDENT;
+            return;
+        }
+        // fall through
+
     default:
         goto getkey;
     }
-
-glad_thing:
-    cprintf("a - short sword" EOL);
-    cprintf("b - flail" EOL);
-    cprintf("c - morningstar" EOL);
-    cprintf("d - hand axe" EOL);
-    cprintf("e - spear" EOL);
-
-  getkey2:keyin = get_ch();
-    switch (keyin)
-    {
-    case 'a':
-        you.inv_type[0] = WPN_SHORT_SWORD;
-        return;
-    case 'b':
-        you.inv_type[0] = WPN_FLAIL;
-        return;
-    case 'c':
-        you.inv_type[0] = WPN_MORNINGSTAR;
-        return;
-    case 'd':
-        you.inv_type[0] = WPN_HAND_AXE;
-        return;
-    case 'e':
-        you.inv_type[0] = WPN_SPEAR;
-        return;
-    default:
-        goto getkey2;
-    }
-
 }
 
 
@@ -3954,10 +3918,8 @@ void init_player(void)
     you.synch_time = 0;
     you.disease = 0;
 
-#ifdef USE_NEW_BERSERK
     you.berserk_penalty = 0;
     you.exhausted = 0;
-#endif
 
     you.level_type = 0;
 // 0 = normal dungeon level

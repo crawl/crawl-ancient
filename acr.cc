@@ -12,7 +12,7 @@
  *      <8>     6/7/99          DML             Autopickup
  *      <7>     5/30/99         JDJ             Added game_has_started.
  *      <6>     5/25/99         BWR             Changed move() to move_player()
- *      <5>     5/20/99         BWR             NEW_BERSERK code, checking
+ *      <5>     5/20/99         BWR             New berserk code, checking
  *                                              scan_randarts for NO_TELEPORT
  *                                              and NO_SPELLCASTING.
  *      <4>     5/12/99         BWR             Solaris support.
@@ -139,10 +139,7 @@ void input(void);
 void open_door(char move_x, char move_y);
 void close_door(char move_x, char move_y);
 void move_player(char move_x, char move_y);
-
-#ifdef USE_NEW_BERSERK
 void do_berserk_no_combat_penalty(void);
-#endif
 
 //void missile(struct player you [1], struct environ env [1], struct bolt beam [1], int throw_2);
 //void beam(struct player you [1], struct environ env [1], struct bolt beam [1]);
@@ -1385,14 +1382,11 @@ get_keyin_again:
     {
         move_player(move_x, move_y);
     }
-
-#ifdef USE_NEW_BERSERK
     else if (you.turn_is_over)
     {
         // we did something other than move/attack
         do_berserk_no_combat_penalty();
     }
-#endif
 
     if (you.turn_is_over == 0)
     {
@@ -1771,7 +1765,6 @@ get_keyin_again:
         you.paralysis = 0;
     }
 
-#ifdef USE_NEW_BERSERK
     if (you.exhausted > 1)
         you.exhausted--;
     if (you.exhausted == 1)
@@ -1780,7 +1773,6 @@ get_keyin_again:
         mpr(info);
         you.exhausted = 0;
     }
-#endif
 
     if (you.slow > 1)
         you.slow--;
@@ -1828,21 +1820,20 @@ get_keyin_again:
         mpr(info);
         you.berserker = 0;
 
-#ifdef USE_NEW_BERSERK
         //
         // Sometimes berserk leaves us physically drained
         //
         if (you.berserk_penalty != NO_BERSERK_PENALTY)
         {
-            if (!random2(5) || random2( you.berserk_penalty ) > 4)
-            {
-                mpr( "You pass out from exhaustion." );
-                you.paralysis += 2 + random2(3);
-            }
-            else if (!random2(15 - you.berserk_penalty))
+            if (random2(5) == 0 || random2( you.berserk_penalty ) > 4)
             {
                 mpr( "You feel very exhausted." );
                 lose_stat( STAT_STRENGTH, random2(you.strength / 5) );
+            }
+            else if (random2(15 - you.berserk_penalty) == 0)
+            {
+                mpr( "You pass out from exhaustion." );
+                you.paralysis += 2 + random2(3);
             }
             else
             {
@@ -1855,13 +1846,6 @@ get_keyin_again:
         you.berserk_penalty = 0;
         you.exhausted += 12 + random2(12) + random2(12);
         you.slow += you.exhausted;
-#else
-
-        strcpy(info, "You feel exhausted.");
-        mpr(info);
-
-        you.slow += 4 + random2(4) + random2(4);
-#endif
 
         you.hunger -= 700;
         if (you.hunger <= 50)
@@ -2224,7 +2208,7 @@ void open_door(char move_x, char move_y)
    strcpy(info, "You might want to wait for the creature standing in your way to move.");
    mpr(info);
    return; */
-        you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
+        you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
         you.turn_is_over = 1;
         return;
     }
@@ -2630,7 +2614,6 @@ void initialise()
 }
 
 
-#ifdef USE_NEW_BERSERK
 // An attempt to tone down berserk a little bit. -- bwross
 //
 // This function does the accounting for not attacking while berserk
@@ -2689,7 +2672,6 @@ void do_berserk_no_combat_penalty()
         }
     }
 }
-#endif
 
 
 /*
@@ -2725,9 +2707,7 @@ void move_player(char move_x, char move_y)
         {
             fall_into_a_pool(0, grd[you.x_pos + move_x][you.y_pos + move_y]);
             you.turn_is_over = 1;
-#ifdef USE_NEW_BERSERK
             do_berserk_no_combat_penalty();
-#endif
             return;
         }
     }                           // end of if you.conf
@@ -2743,28 +2723,35 @@ void move_player(char move_x, char move_y)
 
     if (mgrd[you.x_pos + move_x][you.y_pos + move_y] != MNG)
     {
-        if (menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].type >= MLAVA0 && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].number == 1)
+        if (menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].type >= MLAVA0
+            && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].number == 1)
+        {
             goto break_out;
+        }
+
         if (menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].behavior == 7 && menv[mgrd[you.x_pos + move_x][you.y_pos + move_y]].enchantment[2] != 6 && you.conf == 0)
         {
             swap_places(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
             goto break_out;
         }
-        you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y]);
+
+        you_attack(mgrd[you.x_pos + move_x][you.y_pos + move_y], true);
         you.turn_is_over = 1;
-#ifdef USE_NEW_BERSERK
+
         if (you.berserk_penalty != NO_BERSERK_PENALTY)
         {
             // we don't want to create a penalty if there isn't
             // supposed to be one
             you.berserk_penalty = 0;
         }
-#endif
+
         attacking = 1;
     }
 
 break_out:
-    if ((grd[you.x_pos + move_x][you.y_pos + move_y] == 61 || grd[you.x_pos + move_x][you.y_pos + move_y] == 62) && attacking == 0 && you.levitation == 0)
+    if ((grd[you.x_pos + move_x][you.y_pos + move_y] == 61
+                        || grd[you.x_pos + move_x][you.y_pos + move_y] == 62)
+                                && attacking == 0 && you.levitation == 0)
     {
         mpr("Do you really want to step there?");
         stepping = get_ch();
@@ -2772,9 +2759,7 @@ break_out:
         {
             fall_into_a_pool(0, grd[you.x_pos + move_x][you.y_pos + move_y]);
             you.turn_is_over = 1;
-#ifdef USE_NEW_BERSERK
             do_berserk_no_combat_penalty();
-#endif
             return;
         }
         mpr("Okay, then.");
@@ -2924,12 +2909,10 @@ out_of_traps:
 #endif
     }
 
-#ifdef USE_NEW_BERSERK
     if (!attacking)
     {
         do_berserk_no_combat_penalty();
     }
-#endif
 }                               // end of void move_player()
 
 

@@ -1,5 +1,11 @@
 Enhancements:
 
+* hand and a half weapons
+
+* should species armour bonus work on EV instead of AC?
+
+* make rings of fire/ice (and others?) auto identify with use
+
 * miscast effects too weak?  Not enough of a threat, especial when used by
   gods, Zot traps, or mummies as a form of punishment.
 

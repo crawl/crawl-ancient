@@ -609,13 +609,28 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             valued += 35;
             break;              //strcat(glog , "flail"); break;
 
+        case WPN_GREAT_MACE:
+            valued += 65;
+            break;
+
+        case WPN_GREAT_FLAIL:
+            valued += 75;
+            break;
+
+        case WPN_KNIFE:
+            valued += 10;
+            break;              //strcat(glog , "dagger"); break;
+
         case WPN_DAGGER:
             valued += 20;
             break;              //strcat(glog , "dagger"); break;
 
         case WPN_MORNINGSTAR:
-            valued += 35;
+            valued += 40;
             break;              //strcat(glog , "spiked mace"); break;
+
+        case WPN_SPIKED_FLAIL:
+            valued += 50;
 
         case WPN_SHORT_SWORD:
             valued += 32;
@@ -637,6 +652,14 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             valued += 28;
             break;              //strcat(glog , "hand axe"); break;
 
+        case WPN_AXE:
+            valued += 40;
+            break;
+
+        case WPN_BROAD_AXE:
+            valued += 60;
+            break;
+
         case WPN_BATTLEAXE:
             valued += 65;
             break;              //strcat(glog , "battleaxe"); break;
@@ -644,6 +667,10 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
         case WPN_SPEAR:
             valued += 32;
             break;              //strcat(glog , "spear"); break;
+
+        case WPN_TRIDENT:
+            valued += 42;
+            break;
 
         case WPN_HALBERD:
             valued += 52;
@@ -733,6 +760,9 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             valued += 230;
             break;              // demon whip
 
+        case WPN_DEMON_TRIDENT:
+            valued += 333;
+            break;              // demon blade
         }
 
 
@@ -805,6 +835,10 @@ unsigned int item_value(unsigned char item_clas, unsigned char item_typ, unsigne
             case SPWPN_DISTORTION:
                 valued *= 30;
                 break;          // distortion
+
+            case SPWPN_REACHING:
+                valued *= 50;
+                break;
 
             default:
                 valued *= 70;

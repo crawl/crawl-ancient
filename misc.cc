@@ -5,7 +5,7 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/20/99        BWR             Multi-user support, NEW_BERSERK
+ *      <2>      5/20/99        BWR             Multi-user support, new berserk
  *                                              code.
  *      <1>      -/--/--        LRH             Created
  */
@@ -512,6 +512,12 @@ void up_stairs()
 
     unsigned char old_level = you.your_level;
 
+    // Make sure we return to our main dungeon level... labyrinth entrances
+    // in the abyss or pandemonium a bit trouble (well the labyrinth does
+    // provide a way out of those places, its really not that bad I suppose)
+    if (you.level_type == LEVEL_LABYRINTH)
+        you.level_type = LEVEL_DUNGEON;
+
     you.your_level--;
 
     int i = 0;
@@ -529,6 +535,7 @@ void up_stairs()
         ouch(-9999, 0, 11);
 
     }
+
 
     mpr("Entering...");
     you.prev_targ = MHITNOT;
@@ -644,12 +651,15 @@ void down_stairs(char remove_stairs, int old_level)
     char leaving_abyss = 0;
     char old_where = you.where_are_you;
 
+
+#ifdef SHUT_LABYRINTH
     if (stair_find == DNGN_ENTER_LABYRINTH)
     {
         mpr( "Sorry, this section of the dungeon is closed for fumigation." );
         mpr( "Try again next release." );
         return;
     }
+#endif
 
     if ((stair_find < 81 || stair_find > 85) && stair_find != 69 && ((stair_find < 92 || stair_find > 101) && stair_find != 98) && !(stair_find >= 110 && stair_find < 130))
     {
@@ -710,15 +720,16 @@ void down_stairs(char remove_stairs, int old_level)
         }
     }
 
-    if (you.level_type == 3 && grd[you.x_pos][you.y_pos] == 101)
+    if (you.level_type == LEVEL_PANDEMONIUM && grd[you.x_pos][you.y_pos] == 101)
     {
         was_a_labyrinth = 1;
     }
     else
     {
-        if (you.level_type != 0)
+        if (you.level_type != LEVEL_DUNGEON)
             was_a_labyrinth = 1;
-        you.level_type = 0;
+
+        you.level_type = LEVEL_DUNGEON;
     }
 
     mpr("Entering...");
@@ -832,7 +843,8 @@ void down_stairs(char remove_stairs, int old_level)
         you.level_type = 3;
     }
 
-    if (you.level_type == 1 || you.level_type == 2 || you.level_type == 3)
+    if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS
+                                    || you.level_type == LEVEL_PANDEMONIUM)
     {
 
         char glorpstr[kFileNameSize];
@@ -879,7 +891,7 @@ void down_stairs(char remove_stairs, int old_level)
     }
 
 
-    if (you.level_type == 0)
+    if (you.level_type == LEVEL_DUNGEON)
         you.your_level++;
 
     int stair_taken = stair_find;
@@ -888,10 +900,10 @@ void down_stairs(char remove_stairs, int old_level)
     unsigned char moving_level = 1;
     unsigned char want_followers = 1;
 
-    if (you.level_type == 1 || you.level_type == 2)
+    if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
         stair_taken = 67;       //81;
 
-    if (you.level_type == 3)
+    if (you.level_type == LEVEL_PANDEMONIUM)
         stair_taken = 101;
 
     if (remove_stairs == 1)
@@ -932,11 +944,12 @@ void down_stairs(char remove_stairs, int old_level)
     unsigned char pc = 0;
     unsigned char pt = random2(10) + random2(10) + random2(10);
 
-    if (you.level_type == 1)
+    if (you.level_type == LEVEL_LABYRINTH)
     {
         strcpy(info, "You enter a dark and forbidding labyrinth.");
+        you.your_level++;
     }
-    else if (you.level_type == 2)
+    else if (you.level_type == LEVEL_ABYSS)
     {
         strcpy(info, "You enter the Abyss!");
         mpr(info);
@@ -945,9 +958,9 @@ void down_stairs(char remove_stairs, int old_level)
         you.your_level--;
         init_pandemonium();     /* colours only */
     }
-    else if (you.level_type == 3)
+    else if (you.level_type == LEVEL_PANDEMONIUM)
     {
-        if (old_level_type == 3)
+        if (old_level_type == LEVEL_PANDEMONIUM)
         {
             strcpy(info, "You pass into a different region of Pandemonium.");
             init_pandemonium();
@@ -1050,7 +1063,7 @@ void new_level(void)
     gotoxy(46, 12);
     env.floor_colour = LIGHTGREY;
     env.rock_colour = BROWN;
-    if (you.level_type == 3)
+    if (you.level_type == LEVEL_PANDEMONIUM)
     {
         cprintf("- Pandemonium            ");
         unsigned char pcol = 0;
@@ -1064,7 +1077,7 @@ void new_level(void)
             pcol = LIGHTGREY;
         env.rock_colour = pcol;
     }
-    else if (you.level_type == 2)
+    else if (you.level_type == LEVEL_ABYSS)
     {
         cprintf("- The Abyss               ");
         unsigned char pcol = 0;
@@ -1078,7 +1091,7 @@ void new_level(void)
             pcol = LIGHTGREY;
         env.rock_colour = pcol;
     }
-    else if (you.level_type == 1)
+    else if (you.level_type == LEVEL_LABYRINTH)
     {
         cprintf("- a Labyrinth           ");
     }
@@ -1959,19 +1972,11 @@ char go_berserk(void)
         return 0;
     }
 
-#ifdef USE_NEW_BERSERK
     if (you.exhausted)
     {
         mpr( "You're too exhausted to go berserk.");
         return 0;
     }
-#else
-    if (you.slow)
-    {
-        mpr("You don't seem to have enough energy to go berserk.");
-        return 0;
-    }
-#endif
 
     if (you.is_undead == 2 || you.species == SP_GHOUL)
     {
@@ -1999,14 +2004,13 @@ char go_berserk(void)
         you.strength += 5;
         you.max_strength += 5;
     }
+
     you.might += you.berserker;
     you.haste += you.berserker;
-#ifdef USE_NEW_BERSERK
+
     if (you.berserk_penalty != NO_BERSERK_PENALTY)
-    {
         you.berserk_penalty = 0;
-    }
-#endif
+
     return 1;
 }
 

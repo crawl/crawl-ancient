@@ -19,33 +19,34 @@
 #include "ouch.h"
 
 #ifdef DOS
-#include <conio.h>
+  #include <conio.h>
 #endif
 
 #ifdef DOS
-#include <file.h>
+  #include <file.h>
 #endif
+
 #ifdef LINUX
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
+  #include <sys/types.h>
+  #include <fcntl.h>
+  #include <unistd.h>
 #endif
 
 #ifdef USE_CURSES
-#include <curses.h>
+  #include <curses.h>
 #endif
 
 #ifdef USE_EMX
-#include <sys/types.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <time.h>
+  #include <sys/types.h>
+  #include <fcntl.h>
+  #include <unistd.h>
+  #include <time.h>
 #endif
 
 #ifdef MAC
-#include <stat.h>
+  #include <stat.h>
 #else
-#include <sys/stat.h>
+  #include <sys/stat.h>
 #endif
 
 //#include <fstream.h>
@@ -77,7 +78,6 @@ void highscore(char death_string[256], long points);
 void item_corrode(char itco);
 void end_game(char end_status);
 int set_status(int stat);
-
 
 char death_string[256];
 long points = 0;
@@ -249,22 +249,45 @@ void item_corrode(char itco)
     else
         rusty = you.inv_plus[itco];
 
-    if (you.inv_class[itco] == 0 || you.inv_class[itco] == 1)
+    if (you.inv_class[itco] == OBJ_ARMOUR
+            && you.inv_type[itco] == ARM_CRYSTAL_PLATE_MAIL && random2(5) != 0)
     {
-        if (you.inv_dam[itco] / 30 == 5 && random() % 5 != 0)
-            return;
+        item_name(you.inv_plus2[itco], you.inv_class[itco],
+                        you.inv_type[itco], you.inv_dam[itco],
+                        you.inv_plus[itco], you.inv_quantity[itco],
+                        you.inv_ident[itco], 4, str_pass);
+        strcpy(info, str_pass);
+        strcat(info, " resists.");
+        mpr(info);
+        return;
+    }
+
+    if (you.inv_class[itco] == OBJ_WEAPONS || you.inv_class[itco] == OBJ_ARMOUR
+                                || you.inv_class[itco] == OBJ_MISSILES)
+    {
         /* dwarven stuff is resistant to acids */
+        if (you.inv_dam[itco] / 30 == 5 && random() % 5 != 0)
+        {
+            item_name(you.inv_plus2[itco], you.inv_class[itco],
+                            you.inv_type[itco], you.inv_dam[itco],
+                            you.inv_plus[itco], you.inv_quantity[itco],
+                            you.inv_ident[itco], 4, str_pass);
+            strcpy(info, str_pass);
+            strcat(info, " resists.");
+            mpr(info);
+            return;
+        }
     }
 
     if (rusty < 45)
         return;
-    if (you.inv_class[itco] == 0 && you.inv_dam[itco] > 180)
+    if (you.inv_class[itco] == OBJ_WEAPONS && you.inv_dam[itco] > 180)
         return;                 // unique
 
-    if (you.inv_class[itco] == 0 && you.inv_dam[itco] % 30 >= 25)
+    if (you.inv_class[itco] == OBJ_WEAPONS && you.inv_dam[itco] % 30 >= 25)
         return;                 // unique
 
-    if (you.inv_class[itco] == 2 && you.inv_dam[itco] % 30 >= 25)
+    if (you.inv_class[itco] == OBJ_ARMOUR && you.inv_dam[itco] % 30 >= 25)
         return;                 // unique
 
     if (wearing_amulet(AMU_RESIST_CORROSION) == 1 && random() % 10 != 0)
@@ -1134,7 +1157,7 @@ out_of_inner:
     for (hc = 0; hc < SCORE_FILE_ENTRIES; hc++)
     {
         multip = 1;
-        for (hc2 = 7; hc2 >= 0; hc2--)
+        for (hc2 = 6; hc2 >= 0; hc2--)
         {
             if (high_scores[hc][hc2] == 32)
                 continue;
@@ -1365,6 +1388,7 @@ void drain_exp(void)
 
 #ifdef WIZARD
         strcpy(info, "You lose ");
+        char temp_quant[20];
         itoa(exp_drained, temp_quant, 10);
         strcat(info, temp_quant);
         strcat(info, " experience points.");

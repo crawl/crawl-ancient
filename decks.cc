@@ -503,12 +503,10 @@ void cards(unsigned char which_card)
         if (go_berserk() == 0) {
             mpr("Nothing appears to happen.");
         }
-#ifdef USE_NEW_BERSERK
         else {
             // No penalty if you go berserk from a card
             you.berserk_penalty = NO_BERSERK_PENALTY;
         }
-#endif
         break;
     case 35:
         mpr("You have drawn Levity.");

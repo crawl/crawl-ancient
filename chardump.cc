@@ -554,10 +554,13 @@ static void dump_skills(string & text)
     {
         if (you.skills[i] > 0)
         {
-            if (you.practise_skill[i] == 0)
-                text += " - ";
+            if (you.skills[i] == 27)
+                text += " * ";
             else
-                text += " + ";
+                if (you.practise_skill[i] == 0)
+                    text += " - ";
+                else
+                    text += " + ";
 
             char strng[80];
 
