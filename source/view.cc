@@ -1760,6 +1760,9 @@ void show_map( FixedVector<int, 2> &spec_place )
     char move_y = 0;
     char getty = 0;
 
+    char getty_last = 'X';
+    int ignore_count = 0;
+
 #ifdef DOS_TERM
     char buffer[4800];
 #endif
@@ -1903,7 +1906,8 @@ void show_map( FixedVector<int, 2> &spec_place )
         && getty != 'H' && getty != 'J' && getty != 'K' && getty != 'L'
         && getty != 'Y' && getty != 'U' && getty != 'B' && getty != 'N'
 #endif
-        && (getty < '0' || getty > '9'))
+        && (getty < '0' || getty > '9')
+        && (getty != '<') && (getty != '>'))
     {
         goto putty;
     }
@@ -1915,7 +1919,8 @@ void show_map( FixedVector<int, 2> &spec_place )
         && getty != 'H' && getty != 'J' && getty != 'K' && getty != 'L'
         && getty != 'Y' && getty != 'U' && getty != 'B' && getty != 'N'
 #endif
-        && getty != '.' && getty != 'S' && (getty < '0' || getty > '9'))
+        && getty != '.' && getty != 'S' && (getty < '0' || getty > '9')
+        && (getty != '<') && (getty != '>'))
     {
         goto gettything;
     }
@@ -2067,11 +2072,100 @@ void show_map( FixedVector<int, 2> &spec_place )
         spec_place[1] = start_y + curs_y;
         goto putty;
 
+    case '<':
+    case '>':
+      {
+        int found_count = 0;
+        int move_count = 0;
+        int move_count_max = 1;
+        int cursor_dir = 0;
+        int temp_x = you.x_pos;
+        int temp_y = you.y_pos;
+        int first_x = -1;
+        int first_y = -1;
+        bool final_answer = false;
+        if (getty_last == getty)
+        {
+          ignore_count++;
+        }
+        else
+        {
+          ignore_count = 0;
+        }
+        for (i = 0; i < (GXM + 1) * (GYM + 1) * 4; i++)
+        {
+          if ((temp_x >= 1) && (temp_x < GXM)
+              && (temp_y >= 1) && (temp_y < GYM)
+              && (env.map[temp_x - 1][temp_y - 1] == getty))
+          {
+            found_count++;
+            if (found_count > ignore_count)
+            {
+              move_x = temp_x - start_x;
+              move_y = temp_y - start_y;
+              move_x -= curs_x;
+              move_y -= curs_y;
+              final_answer = true;
+              break;
+            }
+            if (found_count == 1)
+            {
+              first_x = temp_x;
+              first_y = temp_y;
+            }
+          }
+          switch (cursor_dir)
+          {
+          case 0:
+            temp_y--;
+            break;
+          case 1:
+            temp_x--;
+            break;
+          case 2:
+            temp_y++;
+            break;
+          default:
+            temp_x++;
+            break;
+          }
+          move_count++;
+          if (move_count >= move_count_max)
+          {
+            move_count = 0;
+            cursor_dir++;
+            while (cursor_dir >= 4)
+              cursor_dir -= 4;
+            if (cursor_dir % 2 == 0)
+              move_count_max++;
+          }
+        }
+        if (!final_answer)
+        {
+          ignore_count = 0;
+          if (found_count > 0)
+          {
+            move_x = first_x - start_x;
+            move_y = first_y - start_y;
+            move_x -= curs_x;
+            move_y -= curs_y;
+          }
+          else
+          {
+            move_x = 0;
+            move_y = 0;
+          }
+        }
+      }
+      break;
+
     default:
         move_x = 0;
         move_y = 0;
         break;
     }
+
+    getty_last = getty;
 
     if (curs_x + move_x < 1 || curs_x + move_x > 80)
         move_x = 0;
@@ -2098,7 +2192,7 @@ void show_map( FixedVector<int, 2> &spec_place )
 
             goto put_screen;
         }
-
+#if 0
         if (curs_y + move_y < 1)
         {
             // screen_y += (curs_y + move_y) - 1;
@@ -2119,6 +2213,31 @@ void show_map( FixedVector<int, 2> &spec_place )
                 screen_y = max_y - half_screen;
 
             move_y = 0;
+        }
+    }
+#endif /* 0 */
+        if (curs_y + move_y < 1)
+        {
+            screen_y += move_y;
+            move_y = 0;
+
+            if (screen_y < min_y + half_screen)
+            {
+              move_y = screen_y - (min_y + half_screen);
+              screen_y = min_y + half_screen;
+            }
+        }
+
+        if (curs_y + move_y > num_lines - 1)
+        {
+            screen_y += move_y;
+            move_y = 0;
+
+            if (screen_y > max_y - half_screen)
+            {
+              move_y = screen_y - (max_y - half_screen);
+              screen_y = max_y - half_screen;
+            }
         }
     }
 
@@ -2558,8 +2677,8 @@ bool mons_near(struct monsters *monster, unsigned int foe)
 // without the IBM graphics option.
 //
 //---------------------------------------------------------------
-static void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
-                               unsigned short *color)
+void get_non_ibm_symbol(unsigned int object, unsigned short *ch,
+                        unsigned short *color)
 {
     ASSERT(color != NULL);
     ASSERT(ch != NULL);
@@ -3566,4 +3685,24 @@ near_trap(void)
       env.show[9 + i][9 + j] = grd[you.x_pos + i][you.y_pos + j];
     }
   }
+}
+
+void
+clear_map_here(int x, int y)
+{
+  unsigned short ch, color;
+  unsigned int object;
+
+  if (x < 1)
+    return;
+  if (x >= GXM)
+    return;
+  if (y < 1)
+    return;
+  if (y >= GYM)
+    return;
+
+  object = grd[x][y];
+  get_non_ibm_symbol(object, &ch, &color);
+  env.map[x - 1][y - 1] = ch;
 }

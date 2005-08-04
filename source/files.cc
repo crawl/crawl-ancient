@@ -454,6 +454,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
             generate_random_demon();
 
         if ((you.level_type == LEVEL_DUNGEON)
+            && (!player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
             && (you.your_level > 1)
             && (one_chance_in(3)))
             load_ghost();
@@ -952,8 +953,9 @@ void save_game(bool leave_game)
     // 4.0 initial genesis of saved format
     // 4.1 changes to make the item structure more sane
     // 4.2 spell and ability tables
+    // 4.3 saves you.magic_contamination
 
-    write_tagged_file( saveFile, 4, 2, TAGTYPE_PLAYER );
+    write_tagged_file( saveFile, 4, 3, TAGTYPE_PLAYER );
 
     fclose(saveFile);
 
@@ -1055,7 +1057,19 @@ void load_ghost(void)
         menv[imn].type = MONS_PLAYER_GHOST;
         menv[imn].hit_dice = ghost.values[ GVAL_EXP_LEVEL ];
         menv[imn].hit_points = ghost.values[ GVAL_MAX_HP ];
+        if (you.your_level < 10)
+        {
+          menv[imn].hit_points *= 5 + you.your_level;
+          menv[imn].hit_points += 14;
+          menv[imn].hit_points /= 15;
+          if (menv[imn].hit_points < menv[imn].hit_dice)
+            menv[imn].hit_points = menv[imn].hit_dice;
+          if (menv[imn].hit_points < 1)
+            menv[imn].hit_points = 1;
+        }
         menv[imn].max_hit_points = ghost.values[ GVAL_MAX_HP ];
+        if (menv[imn].max_hit_points > menv[imn].hit_points)
+          menv[imn].max_hit_points = menv[imn].hit_points;
         menv[imn].armour_class = ghost.values[ GVAL_AC];
         menv[imn].evasion = ghost.values[ GVAL_EV ];
         menv[imn].speed = 10;

@@ -93,7 +93,10 @@ void torment(int tx, int ty)
 
 void banished(unsigned char gate_type)
 {
-    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+    if ((scan_randarts(RAP_PREVENT_TELEPORTATION))
+        || (player_in_branch(BRANCH_VESTIBULE_OF_HELL))
+        || (player_in_hell())
+        || (you.level_type == LEVEL_PANDEMONIUM))
     {
         mpr("You feel a strange sense of stasis.");
         return;
@@ -109,20 +112,16 @@ void banished(unsigned char gate_type)
     // this is to ensure that you're standing on a suitable space (67)
     grd[you.x_pos][you.y_pos] = gate_type;
 
-    if (player_is_levitating())
+    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
     {
       mpr("You feel you are falling!");
-      if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-      {
-        untransform();
-        you.duration[DUR_BREATH_WEAPON] = 0;
-      }
       you.levitation = 0;
       you.duration[DUR_CONTROLLED_FLIGHT] = 0;
       burden_change();
     }
 
-    ASSERT(!player_is_levitating());
+    ASSERT(!(player_is_levitating()
+             && !wearing_amulet(AMU_CONTROLLED_FLIGHT)));
 
     down_stairs(true, you.your_level);  // heh heh
     untag_followers(); // safety
@@ -1232,6 +1231,14 @@ bool acquirement(unsigned char force_class)
 
             default:
                 break;
+            }
+
+            {
+              int brand = get_weapon_brand(mitm[thing_created]);
+              if (brand == SPWPN_DISTORTION)
+              {
+                set_ident_flags(mitm[thing_created], ISFLAG_KNOW_TYPE );
+              }
             }
         }
         else if (mitm[thing_created].base_type == OBJ_ARMOUR

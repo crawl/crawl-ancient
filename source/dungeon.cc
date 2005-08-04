@@ -160,7 +160,7 @@ void builder(int level_number, char level_type)
     int i;          // generic loop variable
     int x,y;        // generic map loop variables
 
-    srandom(time(NULL));
+    // srandom(time(NULL));
 
     // blank level with DNGN_ROCK_WALL
     make_box(0,0,GXM-1,GYM-1,DNGN_ROCK_WALL,DNGN_ROCK_WALL);
@@ -3080,6 +3080,7 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
       break;
 
     case MONS_FAIRY_ASSASSIN:
+      force_item = 1;
       item_race = MAKE_ITEM_ELVEN;
       mitm[bp].base_type = OBJ_WEAPONS;
       mitm[bp].sub_type = WPN_DAGGER;
@@ -3101,6 +3102,9 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         set_equip_desc(mitm[bp], ISFLAG_NO_DESC);
         set_item_ego_type(mitm[bp], OBJ_WEAPONS, SPWPN_NORMAL);
       }
+      mitm[bp].plus = 0;
+      mitm[bp].plus2 = 0;
+      mitm[bp].colour = CYAN;
       break;
 
     case MONS_FAIRY_BEAST_TAMER:
@@ -4003,8 +4007,10 @@ static int builder_by_branch(int level_number)
       }
       else
       {
-        int i;
-        for (i = 2 + random2(3); i > 0; i--)
+        build_lake(DNGN_DEEP_WATER);
+        if (one_chance_in(3))
+          build_lake(DNGN_DEEP_WATER);
+        if (one_chance_in(7))
           build_lake(DNGN_DEEP_WATER);
         spotty_level(false, 300 + random2avg(300, 3), false);
       }
@@ -4322,6 +4328,9 @@ static void place_traps(int level_number)
             env.trap[i].type = TRAP_TELEPORT;
         if (one_chance_in(40))
             env.trap[i].type = TRAP_AMNESIA;
+
+        if (player_in_branch(BRANCH_BIG_ROOM))
+            env.trap[i].type = TRAP_TELEPORT;
 
         grd[env.trap[i].x][env.trap[i].y] = DNGN_UNDISCOVERED_TRAP;
     }                           // end "for i"
@@ -7832,6 +7841,7 @@ static void labyrinth_level(int level_number)
 
     link_items();
 
+#if 0
     // turn rock walls into undiggable stone or metal:
     temp_rand = random2(50);
 
@@ -7839,7 +7849,21 @@ static void labyrinth_level(int level_number)
                                                  : DNGN_METAL_WALL); // 22.0%
 
     replace_area(0,0,GXM-1,GYM-1,DNGN_ROCK_WALL,wall_xform);
+#endif /* 0 */
 
+    replace_area(0,0,GXM-1,GYM-1,DNGN_ROCK_WALL,DNGN_STONE_WALL);
+
+    temp_rand = random2(5);
+
+    for (lx = 0; lx < GXM; lx++)
+    {
+      for (ly = 0; ly < GYM; ly++)
+      {
+        if ((((lx + temp_rand) * 2 + ly) % 5 == 0)
+            || (((lx + temp_rand) + ly * 3) % 5 == 0))
+          replace_area(lx, ly, lx, ly, DNGN_STONE_WALL, DNGN_METAL_WALL);
+      }
+    }
 }                               // end labyrinth_level()
 
 static bool is_wall(int x, int y)

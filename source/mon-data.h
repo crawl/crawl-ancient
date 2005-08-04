@@ -570,7 +570,7 @@
     M_WARM_BLOOD,
     1300, 10, MONS_OGRE, MH_NATURAL, -3,
     { 17, 0, 0, 0 },
-    { 5, 3, 5, 0 },
+    { 5, 3, 1 /* 5 */, 0 },
     1, 6, 10, 7, MST_NO_SPELLS, CE_CONTAMINATED, Z_BIG, S_SHOUT, I_NORMAL,
     MONUSE_STARTING_EQUIPMENT
 }
@@ -704,7 +704,7 @@
     M_WARM_BLOOD,
     0, 10, MONS_ORC, MH_NATURAL, -3,
     { 20, 0, 0, 0 },
-    { 4, 4, 6, 0 },
+    { 4, 4, 1 /* 6 */, 0 },
     0, 13, 10, 7, MST_NO_SPELLS, CE_CONTAMINATED, Z_SMALL, S_SHOUT, I_NORMAL,
     MONUSE_WEAPONS_ARMOUR
 }

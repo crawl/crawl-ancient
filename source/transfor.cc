@@ -22,7 +22,9 @@
 #include "itemname.h"
 #include "items.h"
 #include "misc.h"
+#include "ouch.h"
 #include "player.h"
+#include "randart.h"
 #include "skills2.h"
 #include "stuff.h"
 
@@ -298,6 +300,19 @@ bool transform(int pow, char which_trans)
         you.is_undead = US_UNDEAD;
         you.hunger_state = HS_SATIATED;  // no hunger effects while transformed
         set_redraw_status( REDRAW_HUNGER );
+
+        {
+          int weap_brand = get_weapon_brand(you.inv[you.equip[EQ_WEAPON]]);
+          if ((!is_fixed_artefact(you.inv[you.equip[EQ_WEAPON]]))
+              && (weap_brand == SPWPN_HOLY_WRATH
+                  || weap_brand == SPWPN_DISRUPTION))
+          {
+            mpr("Your weapon burns your undead body!");
+            ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC,
+                 "a bad weapon for Necromutation");
+          }
+        }
+
         return (true);
 
     case TRAN_AIR:
@@ -447,6 +462,19 @@ void untransform(void)
     }
 
     calc_hp();
+
+    {
+      int weap_brand = get_weapon_brand(you.inv[you.equip[EQ_WEAPON]]);
+      if ((you.is_undead || you.species == SP_DEMONSPAWN)
+          && (!is_fixed_artefact( you.inv[you.equip[EQ_WEAPON]] )
+              && (weap_brand == SPWPN_HOLY_WRATH
+                  || weap_brand == SPWPN_DISRUPTION)))
+      {
+        mpr("Your weapon burns your body!");
+        ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC,
+             "a bad weapon for your original body");
+      }
+    }
 }                               // end untransform()
 
 // XXX: This whole system is a mess as it still relies on special

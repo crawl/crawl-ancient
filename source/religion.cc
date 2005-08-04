@@ -68,7 +68,6 @@ const char *sacrifice[] = {
 };
 
 void altar_prayer(void);
-void dec_penance(int god, int val);
 void divine_retribution(int god);
 void inc_penance(int god, int val);
 void inc_penance(int val);
@@ -2180,7 +2179,7 @@ void divine_retribution( int god )
 
         case 5:
         case 6:
-            miscast_effect(SK_DIVINATIONS, 9, 90, 100, "the will of Sif Muna");
+            miscast_effect(SPTYP_DIVINATION, 9, 90, 100, "the will of Sif Muna");
             break;
 
         case 7:

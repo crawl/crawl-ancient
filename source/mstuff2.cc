@@ -1580,7 +1580,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_ELECTRICITY;
-        beam.hit = 10 + random2(power) / 40;
+        // beam.hit = 10 + random2(power) / 40;
+        beam.hit = 20 + random2(power) / 5;
         beam.isBeam = true;
         break;
 

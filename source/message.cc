@@ -538,6 +538,8 @@ dump_messages(FILE *handle, int n)
     return;
   if (n <= 0)
     return;
+  if (n > NUM_STORED_MESSAGES)
+    n = NUM_STORED_MESSAGES;
 
   if (Store_Message[NUM_STORED_MESSAGES - 1].text.length() == 0)
     full_buffer = false;

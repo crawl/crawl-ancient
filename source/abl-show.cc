@@ -166,7 +166,10 @@ static const struct ability_def Ability_List[] =
     { ABIL_TSO_SMITING, "Smiting", 3, 0, 50, 2, ABFLAG_NONE },
     */
     { ABIL_TSO_SMITING, "Smiting", 0, 0, 200, 0, ABFLAG_NONE },
+    /*
     { ABIL_TSO_ANNIHILATE_UNDEAD, "Annihilate Undead", 3, 0, 50, 2, ABFLAG_NONE },
+    */
+    { ABIL_TSO_ANNIHILATE_UNDEAD, "Annihilate Undead", 2, 0, 50, 1, ABFLAG_NONE },
     { ABIL_TSO_THUNDERBOLT, "Thunderbolt", 5, 0, 100, 2, ABFLAG_NONE },
     { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 4, ABFLAG_NONE },
 
@@ -715,7 +718,10 @@ bool activate_ability(void)
         break;
 
     case ABIL_HELLFIRE:
+      /*
         your_spells(SPELL_HELLFIRE, 20 + you.experience_level, false);
+      */
+        your_spells(SPELL_HELLFIRE, you.experience_level * 4, false);
         break;
 
     case ABIL_TORMENT:
@@ -778,7 +784,10 @@ bool activate_ability(void)
             return (false);
         }
 
+        /*
         zapping(ZAP_NEGATIVE_ENERGY, you.experience_level * 6, beam);
+        */
+        zapping(ZAP_NEGATIVE_ENERGY, you.experience_level * 3, beam);
         break;
 
     case ABIL_EVOKE_TURN_INVISIBLE:     // ring, randarts, darkness items

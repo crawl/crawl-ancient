@@ -140,7 +140,8 @@ char in_a_shop( char shoppy, char id[4][50] )
 
     textcolor(LIGHTGREY);
 
-    shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
+    // shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
+    shop_print("Type lower letter to examine item, upper letter to buy item, x/Esc to leave, ?/* for inventory.", 22);
 
   purchase:
     snprintf( info, INFO_SIZE, "You have %d gold piece%s.", you.gold,
@@ -158,6 +159,35 @@ char in_a_shop( char shoppy, char id[4][50] )
     if (ft == 'x' || ft == ESCAPE)
         goto goodbye;
 
+    if (ft == '?' || ft == '*')
+    {
+        shop_uninit_id(shoppy, shop_id);
+        invent(-1, false);
+        shop_init_id(shoppy, shop_id);
+#ifdef DOS_TERM
+        window(1, 1, 80, 25);
+#endif
+        goto print_stock;
+    }
+
+    /* examine an item */
+    if ((ft >= 'a') && (ft < 'v'))
+    {
+      ft -= 'a';
+
+      if (shop_items[ft] == NON_ITEM)
+      {
+        shop_print("I'm sorry, you seem to be confused.", 20);
+        more3();
+        goto purchase;
+      }
+
+      describe_item( mitm[shop_items[ft]] );
+
+      goto print_stock;
+    }
+
+#if 0
     if (ft == 'v')
     {
         textcolor(CYAN);
@@ -206,6 +236,17 @@ char in_a_shop( char shoppy, char id[4][50] )
     }
 
     ft -= 'a';                  // see earlier comments re: uppercase {dlb}
+#endif /* 0 */
+
+    if ((ft < 'A') || (ft > 'Z'))
+    {
+      huh:
+        shop_print("Huh?", 20);
+        more3();
+        goto purchase;
+    }
+
+    ft -= 'A';
 
     if (ft > 18)
         goto huh;

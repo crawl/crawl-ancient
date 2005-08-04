@@ -3196,3 +3196,23 @@ char retbit(char sed)
 {
     return (sed % 2);
 }                               // end retbit()
+
+void
+know_amulet_type(char which_am)
+{
+  int item_slot = you.equip[EQ_AMULET];
+  char str_pass[ITEMNAME_SIZE];
+
+  if ((item_slot != -1)
+      && (you.inv[item_slot].sub_type == which_am)
+      && (!item_ident(you.inv[item_slot], ISFLAG_KNOW_TYPE))
+      && (!is_random_artefact(you.inv[item_slot])))
+  {
+    set_ident_type( you.inv[item_slot].base_type,
+                    you.inv[item_slot].sub_type, ID_KNOWN_TYPE );
+    set_ident_flags( you.inv[item_slot], ISFLAG_EQ_JEWELLERY_MASK );
+
+    in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+    mpr( str_pass );
+  }
+}

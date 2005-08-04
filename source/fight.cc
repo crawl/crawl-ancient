@@ -3528,7 +3528,10 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
               if (!one_chance_in(3))
               {
                 if (mons_has_ench(defender, ENCH_ABJ_I, ENCH_ABJ_VI))
+                {
                   monster_die(defender, KILL_RESET, 0);
+                  return true;
+                }
               }
               break;
             }
@@ -3790,6 +3793,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                     if (coinflip())
                     {
                         monster_die(defender, KILL_RESET, monster_attacking);
+                        return true;
                         break;
                     }
                     break;

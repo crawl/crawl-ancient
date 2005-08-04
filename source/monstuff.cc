@@ -325,7 +325,8 @@ void monster_die(struct monsters *monster, char killer, int i)
 
             you.berserker += bonus;
             you.might += bonus;
-            haste_player( bonus );
+            // haste_player( bonus );
+            you.haste += bonus;
 
             if ((you.piety >= 75) && (you.duration[DUR_SWIFTNESS] > 0))
               you.duration[DUR_SWIFTNESS] += bonus;

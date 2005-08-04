@@ -209,6 +209,8 @@ int main( int argc, char *argv[] )
     mapch2 = &mapchar2;
 #endif
 
+    srandom(time(NULL));
+
     // Load in the system environment variables
     get_system_environment();
 
@@ -245,7 +247,9 @@ int main( int argc, char *argv[] )
     {
         printf( " Best Crawlers -" EOL );
         hiscores_print_list( Options.sc_entries, Options.sc_format );
+        /*
                 get_ch();
+        */
         exit(0);
     }
 
@@ -2148,6 +2152,8 @@ static void input(void)
 
     if (you.levitation > 1)
     {
+      know_amulet_type(AMU_CONTROLLED_FLIGHT);
+
         if (you.species != SP_KENKU || you.experience_level < 15)
             you.levitation--;
 
@@ -2462,6 +2468,9 @@ static void input(void)
         if (player_in_branch(BRANCH_VESTIBULE_OF_HELL)
             || player_in_hell())
         {
+          if (player_in_hell())
+            chance_monster = 40;
+
           if (!one_chance_in(10))
             prox = PROX_NEAR_STAIRS;
           else
@@ -2497,14 +2506,20 @@ static void input(void)
     }
 
     // place Abyss monsters.
+    /*
     if (you.level_type == LEVEL_ABYSS && one_chance_in(5))
+    */
+    if (you.level_type == LEVEL_ABYSS && one_chance_in(80))
     {
         mons_place( WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
                     50, 50, LEVEL_ABYSS, PROX_ANYWHERE );
     }
 
     // place Pandemonium monsters
+    /*
     if (you.level_type == LEVEL_PANDEMONIUM && one_chance_in(50))
+    */
+    if (you.level_type == LEVEL_PANDEMONIUM && one_chance_in(5))
         pandemonium_mons();
 
     // No monsters in the Labyrinth,  or Ecumenical Temple

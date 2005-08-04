@@ -152,5 +152,6 @@ void set_ident_type( char cla, char ty, char setting, bool force = false );
  * *********************************************************************** */
 bool hide2armour( unsigned char *which_subtype );
 
+void know_amulet_type(char which_am);
 
 #endif

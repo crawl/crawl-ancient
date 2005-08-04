@@ -42,6 +42,7 @@
 #include "skills2.h"
 #include "stuff.h"
 #include "wpn-misc.h"
+#include "spl-book.h"
 #include "spl-util.h"
 
 
@@ -3284,6 +3285,14 @@ void describe_item( const item_def &item )
     std::string description = get_item_description( item, 1 );
 
     print_description(description);
+
+    if ((item_ident( item, ISFLAG_KNOW_TYPE ))
+        &&(((item.base_type == OBJ_BOOKS)
+            && (item.sub_type != BOOK_DESTRUCTION)
+            && (item.sub_type != BOOK_MANUAL))
+           || ((item.base_type == OBJ_STAVES)
+               && (item_is_rod(item)))))
+      spellbook_toc(item);
 
     if (getch() == 0)
         getch();

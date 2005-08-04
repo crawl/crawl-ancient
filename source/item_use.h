@@ -100,6 +100,9 @@ bool do_wear_armour( int item, bool quiet );
  * *********************************************************************** */
 void wield_weapon(bool auto_wield);
 
+void wield_weapon2(int item_slot);
+bool can_unwield_weapon(bool suppress_msg);
+bool can_wield_weapon(int item_slot, bool suppress_msg);
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************

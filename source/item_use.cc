@@ -72,6 +72,176 @@ void use_randart(unsigned char item_wield_2);
 static bool enchant_weapon( int which_stat, bool quiet = false );
 static bool enchant_armour( void );
 
+bool
+can_unwield_weapon(bool suppress_msg)
+{
+  if (inv_count() < 1)
+  {
+    if (!suppress_msg)
+    {
+      canned_msg(MSG_NOTHING_CARRIED);
+    }
+    return false;
+  }
+
+  if (you.berserker)
+  {
+    if (!suppress_msg)
+    {
+      canned_msg(MSG_TOO_BERSERK);
+    }
+    return false;
+  }
+
+  if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
+  {
+    if (!can_equip( EQ_WEAPON ))
+    {
+      if (!suppress_msg)
+      {
+        mpr("You can't wield anything in your present form.");
+      }
+      return false;
+    }
+  }
+
+  if (you.equip[EQ_WEAPON] != -1
+      && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS
+      && item_cursed( you.inv[you.equip[EQ_WEAPON]] ))
+  {
+    if (!suppress_msg)
+    {
+      mpr("You can't unwield your weapon to draw a new one!");
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool
+can_wield_weapon(int item_slot, bool suppress_msg)
+{
+  if ((item_slot < 0) || (item_slot >= ENDOFPACK))
+  {
+    if (!suppress_msg)
+    {
+      mpr("Invalid item slot.");
+    }
+    return false;
+  }
+
+  if (inv_count() < 1)
+  {
+    if (!suppress_msg)
+    {
+      canned_msg(MSG_NOTHING_CARRIED);
+    }
+    return false;
+  }
+
+  if (you.berserker)
+  {
+    if (!suppress_msg)
+    {
+      canned_msg(MSG_TOO_BERSERK);
+    }
+    return false;
+  }
+
+  if (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE)
+  {
+    if (!can_equip( EQ_WEAPON ))
+    {
+      if (!suppress_msg)
+      {
+        mpr("You can't wield anything in your present form.");
+      }
+      return false;
+    }
+  }
+
+  if (item_slot == you.equip[EQ_WEAPON])
+  {
+    if (!suppress_msg)
+    {
+      mpr("You are already wielding that!");
+    }
+    return false;
+  }
+
+  for (int i = EQ_CLOAK; i <= EQ_AMULET; i++)
+  {
+    if (item_slot == you.equip[i])
+    {
+      if (!suppress_msg)
+      {
+        mpr("You are wearing that object!");
+        return false;
+      }
+    }
+  }
+
+  if (you.inv[item_slot].base_type == OBJ_STAVES)
+  {
+    if (you.equip[EQ_SHIELD] != -1)
+    {
+      if (!suppress_msg)
+      {
+        mpr("You can't wield that with a shield.");
+      }
+      return false;
+    }
+  }
+  else if (you.inv[item_slot].base_type == OBJ_WEAPONS)
+  {
+    if ((you.species < SP_OGRE || you.species > SP_OGRE_MAGE)
+        && mass_item( you.inv[item_slot] ) >= 500)
+    {
+      if (!suppress_msg)
+      {
+        mpr("That's too large and heavy for you to wield.");
+      }
+      return false;
+    }
+
+    if ((you.species == SP_HALFLING || you.species == SP_GNOME
+         || you.species == SP_KOBOLD || you.species == SP_SPRIGGAN)
+        && (you.inv[item_slot].sub_type == WPN_GREAT_SWORD
+            || you.inv[item_slot].sub_type == WPN_TRIPLE_SWORD
+            || you.inv[item_slot].sub_type == WPN_GREAT_MACE
+            || you.inv[item_slot].sub_type == WPN_GREAT_FLAIL
+            || you.inv[item_slot].sub_type == WPN_BATTLEAXE
+            || you.inv[item_slot].sub_type == WPN_EXECUTIONERS_AXE
+            || you.inv[item_slot].sub_type == WPN_HALBERD
+            || you.inv[item_slot].sub_type == WPN_GLAIVE
+            || you.inv[item_slot].sub_type == WPN_GIANT_CLUB
+            || you.inv[item_slot].sub_type == WPN_GIANT_SPIKED_CLUB
+            || you.inv[item_slot].sub_type == WPN_SCYTHE))
+    {
+      if (!suppress_msg)
+      {
+        mpr("That's too large for you to wield.");
+      }
+      return false;
+    }
+
+    if (hands_reqd_for_weapon(you.inv[item_slot].base_type,
+                              you.inv[item_slot].sub_type) == HANDS_TWO_HANDED
+        && you.equip[EQ_SHIELD] != -1)
+    {
+      if (!suppress_msg)
+      {
+        mpr("You can't wield that with a shield.");
+      }
+      return false;
+    }
+  }
+
+  return true;
+}
+
+#if 0
 void wield_weapon(bool auto_wield)
 {
     int item_slot = 0;
@@ -251,6 +421,107 @@ void wield_weapon(bool auto_wield)
 
     you.wield_change = true;
     you.turn_is_over = 1;
+}
+#endif /* 0 */
+
+void
+wield_weapon(bool auto_wield)
+{
+  int item_slot = 0;
+
+  if (!can_unwield_weapon(false))
+    return;
+
+  if (auto_wield)
+  {
+    if (you.equip[EQ_WEAPON] == 0)  // ie. weapon is currently 'a'
+      item_slot = 1;
+    else
+      item_slot = 0;
+  }
+
+  // Prompt if not using the auto swap command,
+  // or if the swap slot is empty.
+  if (!auto_wield || !is_valid_item( you.inv[item_slot] ))
+  {
+    item_slot = prompt_invent_item( "Wield which item (- for none)?",
+                                    OBJ_WEAPONS, true, true, true, '-' );
+
+    if (item_slot == PROMPT_ABORT)
+    {
+      canned_msg( MSG_OK );
+      return;
+    }
+    else if (item_slot == PROMPT_GOT_SPECIAL)  // '-' or bare hands
+    {
+      if (you.equip[EQ_WEAPON] == -1)
+      {
+        mpr( "You are already empty-handed." );
+        return;
+      }
+      item_slot = -1;
+    }
+  }
+
+  if (item_slot == -1)
+  {
+    if (you.equip[EQ_WEAPON] != -1)
+    {
+      unwield_item(you.equip[EQ_WEAPON]);
+      you.turn_is_over = 1;
+
+      you.equip[EQ_WEAPON] = -1;
+      canned_msg( MSG_EMPTY_HANDED );
+      you.time_taken *= 3;
+      you.time_taken /= 10;
+    }
+    else
+    {
+      mpr( "You are already empty-handed." );
+    }
+    return;
+  }
+
+  if (!can_wield_weapon(item_slot, false))
+    return;
+
+  wield_weapon2(item_slot);
+}
+
+void
+wield_weapon2(int item_slot)
+{
+  char str_pass[ ITEMNAME_SIZE ];
+
+  if (!can_unwield_weapon(false))
+    return;
+  if (!can_wield_weapon(item_slot, false))
+    return;
+
+  if (you.sure_blade)
+  {
+    mpr("The bond with your blade fades away.");
+    you.sure_blade = 0;
+  }
+  if (you.equip[EQ_WEAPON] != -1)
+    unwield_item(you.equip[EQ_WEAPON]);
+
+  you.equip[EQ_WEAPON] = item_slot;
+  // any oddness on wielding taken care of here
+  wield_effects(item_slot, true);
+
+  in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+  mpr( str_pass );
+
+  // warn player about low str/dex or throwing skill
+  wield_warning();
+
+  // time calculations
+  you.time_taken *= 5;
+  you.time_taken /= 10;
+
+  you.wield_change = true;
+  you.turn_is_over = 1;
 }
 
 // provide a function for handling initial wielding of 'special'
@@ -483,6 +754,24 @@ void wield_effects(int item_wield_2, bool showMsgs)
                 miscast_effect( SPTYP_DIVINATION, 9, 90, 100, "the Staff of Wucad Mu" );
                 you.special_wield = SPWLD_WUCAD_MU;
                 break;
+
+            case SPWPN_HOLY_WRATH:
+              if (you.is_undead || you.species == SP_DEMONSPAWN)
+              {
+                mpr("The divine radiance burns your body!");
+                ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC,
+                     "a holy wrath effect");
+              }
+              break;
+
+            case SPWPN_DISRUPTION:
+              if (you.is_undead || you.species == SP_DEMONSPAWN)
+              {
+                mpr("The holy aura burns your body!");
+                ouch(15 + random2avg(29, 2), 0, KILLED_BY_WILD_MAGIC,
+                     "a disruption effect");
+              }
+              break;
             }
         }
 
@@ -1815,10 +2104,17 @@ void puton_ring(void)
     case RING_SUSTENANCE:
     case RING_SLAYING:
     case RING_SEE_INVISIBLE:
+      /*
     case RING_TELEPORTATION:
+      */
     case RING_WIZARDRY:
     case RING_REGENERATION:
         break;
+
+    case RING_TELEPORTATION:
+      mpr("You feel jumpy.");
+      ident = ID_KNOWN_TYPE;
+      break;
 
     case RING_PROTECTION:
         you.redraw_armour_class = 1;
@@ -2737,6 +3033,7 @@ void read_scroll(void)
     int nthing;
     struct bolt beam;
     char str_pass[ ITEMNAME_SIZE ];
+    const char *paper_message = "This scroll appears to be blank.";
 
     // added: scroll effects are never tracers.
     beam.isTracer = false;
@@ -2787,9 +3084,25 @@ void read_scroll(void)
     if (you.mutation[MUT_BLURRY_VISION]
         && random2(5) < you.mutation[MUT_BLURRY_VISION])
     {
+#if 0
         mpr((you.mutation[MUT_BLURRY_VISION] == 3 && one_chance_in(3))
                         ? "This scroll appears to be blank."
                         : "The writing blurs in front of your eyes.");
+#endif /* 0 */
+        if ((you.inv[item_slot].sub_type == SCR_PAPER)
+            || ((you.mutation[MUT_BLURRY_VISION] == 3)
+                && (get_ident_type(OBJ_SCROLLS, you.inv[item_slot].sub_type)
+                    != ID_KNOWN_TYPE)
+                && (one_chance_in(3))))
+        {
+          /* this should not be a warning */
+          mpr(paper_message);
+        }
+        else
+        {
+          mpr("The writing blurs in front of your eyes.", MSGCH_WARN);
+        }
+
         return;
     }
 
@@ -2822,7 +3135,7 @@ void read_scroll(void)
     {
     case SCR_PAPER:
         // remember paper scrolls handled as special case above, too:
-        mpr("This scroll appears to be blank.");
+        mpr(paper_message);
         break;
 
     case SCR_RANDOM_USELESSNESS:
@@ -3081,8 +3394,11 @@ void read_scroll(void)
         dec_inv_item_quantity( item_slot, 1 );
     }
 
-    set_ident_type( OBJ_SCROLLS, scroll_type,
-                    (id_the_scroll) ? ID_KNOWN_TYPE : ID_TRIED_TYPE );
+    /* you can't tell a scroll is really blank if your vision is too blurry */
+    if ((you.mutation[MUT_BLURRY_VISION] != 3)
+        || (scroll_type != SCR_PAPER))
+        set_ident_type( OBJ_SCROLLS, scroll_type,
+                        (id_the_scroll) ? ID_KNOWN_TYPE : ID_TRIED_TYPE );
 }                               // end read_scroll()
 
 void original_name(void)

@@ -928,7 +928,10 @@ unsigned char player_spec_conj(void)
     int sc = 0;
 
     /* Staves */
+    /* handled in calc_spell_power() in spl-cast.cc */
+    /*
     sc += player_equip( EQ_STAFF, STAFF_CONJURATION );
+    */
 
     // armour of the Archmagi
     if (player_equip_ego_type( EQ_BODY_ARMOUR, SPARM_ARCHMAGI ))
@@ -2926,7 +2929,10 @@ bool wearing_amulet(char amulet)
     if (amulet == AMU_CLARITY && you.mutation[MUT_CLARITY])
         return true;
 
+    /*
     if (amulet == AMU_RESIST_CORROSION || amulet == AMU_CONSERVATION)
+    */
+    if (amulet == AMU_CONSERVATION)
     {
         // this is hackish {dlb}
         if (player_equip_ego_type( EQ_CLOAK, SPARM_PRESERVATION ))
@@ -3833,7 +3839,10 @@ void haste_player( int amount )
         return;
 
     if (amu_eff)
-        mpr( "Your amulet glows brightly." );
+    {
+      mpr( "Your amulet glows brightly." );
+      know_amulet_type(AMU_RESIST_SLOW);
+    }
 
     if (you.haste == 0)
         mpr( "You feel yourself speed up." );

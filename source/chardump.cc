@@ -58,6 +58,7 @@
 #include "spl-util.h"
 #include "stuff.h"
 #include "version.h"
+#include "view.h"
 
 extern unsigned char your_sign; /* defined in view.cc */
 
@@ -476,6 +477,9 @@ static void dump_inventory( std::string & text, bool show_prices )
 
     std::string text2;
 
+    char header_buff[80];
+    const int cap = carrying_capacity();
+
     for (i = 0; i < 4; i++)
     {
         for (j = 0; j < 50; j++)
@@ -511,7 +515,17 @@ static void dump_inventory( std::string & text, bool show_prices )
     }
     else
     {
+      /*
         text += "  Inventory:";
+      */
+      snprintf(header_buff, 80,
+               "  Inventory: %d.%d aum (%d%% of %d.%d aum maximum)"
+               " (%d/%d slots)",
+               you.burden / 10, you.burden % 10,
+               (you.burden * 100) / cap, cap / 10, cap % 10,
+               inv_count, ENDOFPACK);
+      header_buff[80 - 1] = '\0';
+      text += header_buff;
         text += EOL;
 
         for (i = 0; i < OBJ_GOLD; i++)
@@ -1019,12 +1033,23 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
             for (i = you.x_pos - 8; i < you.x_pos + 9; i++)
             {
               if ((i == you.x_pos) && (j == you.y_pos))
+              {
                 c = your_sign;
+              }
               else if (you.level_type != LEVEL_LABYRINTH
                   && you.level_type != LEVEL_ABYSS)
+              {
                 c = env.map[i - 1][j - 1];
+              }
               else
-                c = env.show[i + you.x_pos - 9][j + you.y_pos - 9];
+              {
+                unsigned short ch, color;
+                unsigned int object;
+
+                object = env.show[i - you.x_pos + 9][j - you.y_pos + 9];
+                get_non_ibm_symbol(object, &ch, &color);
+                c = ch;
+              }
               if (isprint(c))
                 fputc(c, handle);
               else
@@ -1036,6 +1061,9 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 
         fputs("\n", handle);
         dump_near_item(handle);
+
+        fputs("\n", handle);
+        display_max_depth(handle);
 
         fputs("\n", handle);
         display_overmap(handle);

@@ -236,15 +236,9 @@ bool cast_smiting(int power)
         if (attacked_holy)
           strcat(info, "dare to ");
         strcat(info, "smite ");
+        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
         if (attacked_friend)
-        {
-          strcat(info, "your ");
-          strcat(info, ptr_monam( monster, DESC_PLAIN ));
-        }
-        else
-        {
-          strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-        }
+          strcat(info, " (your friend)");
         if (stabbed)
           strcat(info, " from a blind spot");
         strcat(info, "!");
@@ -532,6 +526,7 @@ void dancing_weapon(int pow, bool force_hostile)
 
     you.inv[ wpn ].quantity = 0;
     you.equip[EQ_WEAPON] = -1;
+    burden_change();
 
     menv[summs].inv[MSLOT_WEAPON] = i;
     menv[summs].number = mitm[i].colour;

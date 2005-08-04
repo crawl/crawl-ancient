@@ -489,8 +489,12 @@ bool evoke_wielded( void )
         }
         else if (you.inv[wield].sub_type == STAFF_CHANNELING)
         {
+          /*
             if (you.magic_points < you.max_magic_points
                 && you.skills[SK_EVOCATIONS] >= random2(30))
+          */
+          if ((you.magic_points < you.max_magic_points)
+              && (random2(you.skills[SK_EVOCATIONS] * 3 + 19) >= 10))
             {
                 mpr("You channel some magical energy.");
                 inc_mp( 1 + random2(3), false );

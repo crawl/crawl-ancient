@@ -33,6 +33,8 @@ char *god_name(int which_god,bool long_name=false); //mv
  * called from: religion - spell
  * *********************************************************************** */
 void dec_penance(int val);
+// called from spl-cast
+void dec_penance(int god, int val);
 
 
 // last updated 24may2000 {dlb}

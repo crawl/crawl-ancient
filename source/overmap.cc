@@ -37,7 +37,8 @@ enum
      FEATURE_LABYRINTH   = 0x02,
      FEATURE_HELL        = 0x04,
      FEATURE_ABYSS       = 0x08,
-     FEATURE_PANDEMONIUM = 0x10
+     FEATURE_PANDEMONIUM = 0x10,
+     FEATURE_VISITED     = 0x20
 };
 
 // These variables need to become part of the player struct
@@ -53,6 +54,23 @@ FixedArray<unsigned char, MAX_LEVELS, MAX_BRANCHES> feature;
 
 int map_lines = 0; //mv: number of lines already printed on "over-map" screen
 
+// This is a more sensible order than the order of the enums -- bwr
+static const int list_order[] =
+  {
+    BRANCH_MAIN_DUNGEON,
+    BRANCH_ECUMENICAL_TEMPLE,
+    BRANCH_ORCISH_MINES, BRANCH_ELVEN_HALLS,
+    BRANCH_BIG_ROOM,
+    BRANCH_LAIR, BRANCH_SWAMP, BRANCH_SLIME_PITS, BRANCH_SNAKE_PIT,
+    BRANCH_HIVE,
+    BRANCH_JADE_CAVE,
+    BRANCH_VAULTS, BRANCH_HALL_OF_BLADES, BRANCH_CRYPT, BRANCH_TOMB,
+    BRANCH_FAIRYLAND,
+    BRANCH_VESTIBULE_OF_HELL,
+    BRANCH_DIS, BRANCH_GEHENNA, BRANCH_COCYTUS, BRANCH_TARTARUS,
+    BRANCH_HALL_OF_ZOT
+  };
+
 //mv: prints one line in specified colour
 // void print_one_map_line( const char *line, int colour );
 // void print_branch_entrance_line( const char *area );
@@ -66,6 +84,7 @@ static void print_one_simple_line( const char *line, int colour, FILE *handle);
 static void print_one_highlighted_line( const char *pre, const char *text,
                                  const char *post, int colour, FILE *handle);
 
+static const char *branch_name(int branch);
 static void print_level_name( int branch, int depth,
                               bool &printed_branch, bool &printed_level,
                               FILE *handle);
@@ -108,23 +127,6 @@ void display_overmap(FILE *handle)
     bool output = false;
 
     print_one_simple_line("                            Overview of the Dungeon", WHITE, handle);
-
-    // This is a more sensible order than the order of the enums -- bwr
-    const int list_order[] =
-    {
-        BRANCH_MAIN_DUNGEON,
-        BRANCH_ECUMENICAL_TEMPLE,
-        BRANCH_ORCISH_MINES, BRANCH_ELVEN_HALLS,
-        BRANCH_BIG_ROOM,
-        BRANCH_LAIR, BRANCH_SWAMP, BRANCH_SLIME_PITS, BRANCH_SNAKE_PIT,
-        BRANCH_HIVE,
-        BRANCH_JADE_CAVE,
-        BRANCH_VAULTS, BRANCH_HALL_OF_BLADES, BRANCH_CRYPT, BRANCH_TOMB,
-        BRANCH_FAIRYLAND,
-        BRANCH_VESTIBULE_OF_HELL,
-        BRANCH_DIS, BRANCH_GEHENNA, BRANCH_COCYTUS, BRANCH_TARTARUS,
-        BRANCH_HALL_OF_ZOT
-    };
 
     for (unsigned int index = 0; index < sizeof(list_order) / sizeof(int); index++)
     {
@@ -350,20 +352,45 @@ void display_overmap(FILE *handle)
 #endif
 }          // end display_overmap()
 
-
-static void print_level_name( int branch, int depth,
-                              bool &printed_branch, bool &printed_level,
-                              FILE *handle)
+void
+display_max_depth(FILE *handle)
 {
-    if (!printed_branch)
-    {
-        printed_branch = true;
+  int i;
+  int level;
+  int branch;
+  unsigned int index;
 
-        /*
-        print_one_simple_line( "", YELLOW );
-        */
-        print_one_simple_line(
-                (branch == BRANCH_MAIN_DUNGEON)      ? "Main Dungeon" :
+  print_one_simple_line("[deepest level you have entered]",
+                        LIGHTGREY, handle);
+
+  for (index = 0; index < sizeof(list_order) / sizeof(int); index++)
+  {
+    branch = list_order[index];
+    if (branch == BRANCH_MAIN_DUNGEON)
+      level = 0;
+    else if (branch >= BRANCH_ORCISH_MINES && branch <= BRANCH_FAIRYLAND)
+      level = you.branch_stairs[ branch - BRANCH_ORCISH_MINES ] + 1;
+    else // branch is in hell
+      level = 27;
+
+    for (i = MAX_LEVELS - 1 - level; i >= 0; i--)
+    {
+      if (feature[level + i][branch] & FEATURE_VISITED)
+      {
+        snprintf( info, INFO_SIZE, "%s: %d",
+                  branch_name(branch), i + 1);
+        print_one_simple_line(info,
+                            LIGHTGREY, handle);
+        break;
+      }
+    } // end for (i)
+  } // end for (index)
+}
+
+static const char *
+branch_name(int branch)
+{
+  return        (branch == BRANCH_MAIN_DUNGEON)      ? "Main Dungeon" :
                 (branch == BRANCH_ORCISH_MINES)      ? "The Orcish Mines" :
                 (branch == BRANCH_HIVE)              ? "The Hive" :
                 (branch == BRANCH_LAIR)              ? "The Lair" :
@@ -386,9 +413,22 @@ static void print_level_name( int branch, int depth,
                 (branch == BRANCH_VESTIBULE_OF_HELL) ? "The Vestibule of Hell" :
                 (branch == BRANCH_COCYTUS)           ? "Cocytus" :
                 (branch == BRANCH_TARTARUS)          ? "Tartarus"
-                                                     : "Unknown Area",
+                                                     : "Unknown Area";
+}
 
-                YELLOW, handle);
+static void print_level_name( int branch, int depth,
+                              bool &printed_branch, bool &printed_level,
+                              FILE *handle)
+{
+    if (!printed_branch)
+    {
+        printed_branch = true;
+
+        /*
+        print_one_simple_line( "", YELLOW );
+        */
+        print_one_simple_line( branch_name(branch),
+                               YELLOW, handle);
     }
 
     if (!printed_level)
@@ -409,7 +449,7 @@ static void print_level_name( int branch, int depth,
 
         if (branch == BRANCH_MAIN_DUNGEON)
             depth += 1;
-        else if (branch >= BRANCH_ORCISH_MINES && branch <= BRANCH_SWAMP)
+        else if (branch >= BRANCH_ORCISH_MINES && branch <= BRANCH_FAIRYLAND)
             depth -= you.branch_stairs[ branch - BRANCH_ORCISH_MINES ];
         else // branch is in hell (all of which start at depth 28)
             depth -= 26;
@@ -535,6 +575,14 @@ void seen_other_thing( unsigned char which_thing )
     }
 }          // end seen_other_thing()
 
+void
+visited_this_level(void)
+{
+  if ( you.level_type != LEVEL_DUNGEON )     // can't record in abyss or pan.
+    return;
+
+  feature[you.your_level][you.where_are_you] |= FEATURE_VISITED;
+}
 
 /* mv: this function prints one line at "Over-map screen" in specified colour.
  * If map_lines = maximum number of lines (it means the screen is full) it

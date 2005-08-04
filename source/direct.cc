@@ -200,6 +200,23 @@ void direction( struct dist &moves, int restrict, int mode )
             mpr(aim_prompt);
             moves.prev_target = dir;
             look_around( moves, false, -1, mode );
+
+            while ((dir == 1)
+                   && (mode == TARG_ENEMY)
+                   && (moves.isMe)
+                   && (!yesno("Really target yourself?", false)))
+            {
+              moves.isValid       = false;
+              moves.isTarget      = false;
+              moves.isMe          = false;
+              moves.isCancel      = false;
+              moves.dx = moves.dy = 0;
+              moves.tx = moves.ty = 0;
+
+              mpr(aim_prompt);
+              look_around( moves, false, -1, mode );
+            }
+
             if (moves.prev_target != -1)      // -1 means they pressed 'p'
                 return;
         }

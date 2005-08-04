@@ -718,7 +718,7 @@
 {
     SPELL_TUKIMAS_DANCE, "Tukima's Dance",
      SPTYP_ENCHANTMENT,
-     3
+     5  /* 3 */
 },
 
 {
@@ -1069,7 +1069,7 @@
 {
     SPELL_TAME_BEASTS, "Tame Beasts",
      SPTYP_ENCHANTMENT,
-     5
+     3 /* 5 */
 },
 
 {

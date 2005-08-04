@@ -195,7 +195,7 @@ char list_spells(void)
     {
         ki = getch();
 
-        if (ki >= 'A' && ki <= 'z')
+        if ((isalpha(ki)) || (ki == ESCAPE))
         {
 #ifdef DOS_TERM
             puttext(1, 1, 80, 25, buffer);
@@ -210,7 +210,10 @@ char list_spells(void)
         puttext(1, 1, 80, 25, buffer);
 #endif
 
+        /*
         return (anything);
+        */
+        return ESCAPE;
     }
 
 #ifdef DOS_TERM
@@ -466,6 +469,13 @@ int calc_spell_power( int spell, bool apply_intel )
             power /= 2;
     }
 
+    if ((disciplines & SPTYP_CONJURATION)
+        && (player_equip(EQ_STAFF, STAFF_CONJURATION)))
+    {
+      power *= 12;
+      power /= 10;
+    }
+
     power = stepdown_value( power, 50, 50, 150, 200 );
 
     return (power);
@@ -558,7 +568,7 @@ bool cast_a_spell(void)
             if (unthing == 2)
                 return (false);
 
-            if (unthing >= 'a' && unthing <= 'y')
+            if ((isalpha(unthing)) || (unthing == ESCAPE))
             {
                 keyin = unthing;
                 break;
@@ -747,7 +757,10 @@ bool your_spells( int spc2, int powc, bool allow_fail )
             // Reduced penenance reduction here because casting spells
             // is a player controllable act.  -- bwr
             if (one_chance_in(7))
-                dec_penance(1);
+            {
+              // dec_penance(1);
+              dec_penance(GOD_SIF_MUNA, 1);
+            }
         }
 
         if (spfl < spell_fail(spc2))

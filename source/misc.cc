@@ -41,6 +41,7 @@
 #include "mon-util.h"
 #include "monstuff.h"
 #include "ouch.h"
+#include "overmap.h"
 #include "player.h"
 #include "shopping.h"
 #include "skills.h"
@@ -487,6 +488,8 @@ void up_stairs(void)
     if (!was_a_labyrinth)
       you.your_level--;
 
+    clear_map_here(you.x_pos, you.y_pos);
+
     int i = 0;
 
     if (you.your_level < 0)
@@ -891,6 +894,9 @@ void down_stairs( bool remove_stairs, int old_level )
     if (remove_stairs)
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
+    if (!remove_stairs)
+      clear_map_here(you.x_pos, you.y_pos);
+
     switch (you.level_type)
     {
     case LEVEL_LABYRINTH:
@@ -1003,6 +1009,8 @@ void down_stairs( bool remove_stairs, int old_level )
 void new_level(void)
 {
     int curr_subdungeon_level = you.your_level + 1;
+
+    visited_this_level();
 
     textcolor(LIGHTGREY);
 

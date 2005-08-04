@@ -17,6 +17,7 @@
 #include "effects.h"
 #include "food.h"
 #include "it_use2.h"
+#include "itemname.h"
 #include "items.h"
 #include "misc.h"
 #include "monplace.h"
@@ -286,6 +287,22 @@ void deck_of_cards(unsigned char which_deck)
                 brownie_points += 2;
             else if (which_deck == DECK_OF_POWER)
                 brownie_points++;
+        }
+        else
+        {
+          int item_slot = you.equip[EQ_WEAPON];
+          char str_pass[ITEMNAME_SIZE];
+
+          if ((you.religion == GOD_NEMELEX_XOBEH)
+              && (!player_under_penance())
+              && (!item_ident(you.inv[item_slot], ISFLAG_KNOW_TYPE)))
+          {
+            set_ident_flags( you.inv[item_slot], ISFLAG_KNOW_TYPE );
+
+            in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
+            mpr( str_pass );
+            you.wield_change = true;
+          }
         }
 
         // this bonus happens with every use {dlb}:

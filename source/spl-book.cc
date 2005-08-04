@@ -466,8 +466,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 36 - Book of Control
     {0,
-     SPELL_ENSLAVEMENT,
-     SPELL_TAME_BEASTS,
+     SPELL_TAME_BEASTS /* SPELL_ENSLAVEMENT */,
+     SPELL_ENSLAVEMENT /* SPELL_TAME_BEASTS */,
      SPELL_MASS_CONFUSION,
      SPELL_CONTROL_UNDEAD,
      SPELL_CONTROL_TELEPORT,
@@ -759,16 +759,35 @@ int which_spell_in_book(int sbook_type, int spl)
 {
     FixedVector < int, SPELLBOOK_SIZE > wsib_pass;      // was 10 {dlb}
 
+    if ((spl < 0) || (spl + 1 >= SPELLBOOK_SIZE))
+      return SPELL_NO_SPELL;
+
     spellbook_template(sbook_type, wsib_pass);
 
     return (wsib_pass[ spl + 1 ]);
-}                               // end which_spell_in_book()
-
-static unsigned char spellbook_contents( item_def &book, int action )
+}
+                               // end which_spell_in_book()
+void
+spellbook_toc(const item_def &book)
 {
     FixedVector<int, SPELLBOOK_SIZE> spell_types;    // was 10 {dlb}
     int spelcount = 0;
     int i, j;
+
+  if ((book.base_type != OBJ_BOOKS)
+      && (book.base_type != OBJ_STAVES))
+    return;
+  if (book.base_type == OBJ_BOOKS)
+  {
+    if ((book.sub_type == BOOK_DESTRUCTION)
+        || (book.sub_type == BOOK_MANUAL))
+      return;
+  }
+  if (book.base_type == OBJ_STAVES)
+  {
+    if (!item_is_rod(book))
+      return;
+  }
 
     const int spell_levels = player_spell_levels();
 
@@ -787,6 +806,130 @@ static unsigned char spellbook_contents( item_def &book, int action )
         }
     }
 
+    spellbook_template( type, spell_types );
+
+    textcolor(LIGHTGREY);
+
+    cprintf( EOL EOL " Spells                             Type                      Level" EOL );
+
+    for (j = 1; j < SPELLBOOK_SIZE; j++)
+    {
+        if (spell_types[j] == SPELL_NO_SPELL)
+            continue;
+
+        cprintf(" ");
+
+        bool knowsSpell = false;
+        for (i = 0; i < 25 && !knowsSpell; i++)
+        {
+            knowsSpell = (you.spells[i] == spell_types[j]);
+        }
+
+        const int level_diff = spell_difficulty( spell_types[j] );
+        const int levels_req = spell_levels_required( spell_types[j] );
+
+        int colour = DARKGREY;
+        // if (action == RBOOK_USE_STAFF)
+        if (book.base_type == OBJ_STAVES)
+        {
+            if (you.experience_level >= level_diff
+                && you.magic_points >= level_diff)
+            {
+                colour = LIGHTGREY;
+            }
+        }
+        else
+        {
+            if (knowsSpell)
+                colour = LIGHTGREY;
+            else if (you.experience_level >= level_diff
+                        && spell_levels >= levels_req
+                        && spell_skills)
+            {
+                colour = LIGHTBLUE;
+            }
+        }
+
+        textcolor( colour );
+
+        // Old:
+        // textcolor(knowsSpell ? DARKGREY : LIGHTGREY);
+        //              was: ? LIGHTGREY : LIGHTBLUE
+
+        char strng[2];
+
+        strng[0] = index_to_letter(spelcount);
+        strng[1] = '\0';
+
+        cprintf(strng);
+        cprintf(" - ");
+
+        cprintf( spell_title(spell_types[j]) );
+        gotoxy( 35, wherey() );
+
+
+        // if (action == RBOOK_USE_STAFF)
+        if (book.base_type == OBJ_STAVES)
+            cprintf( "Evocations" );
+        else
+        {
+            bool already = false;
+
+            for (i = 0; i <= SPTYP_LAST_EXPONENT; i++)
+            {
+                if (spell_typematch( spell_types[j], 1 << i ))
+                {
+                    if (already)
+                        cprintf( "/" );
+
+                    cprintf( spelltype_name( 1 << i ) );
+                    already = true;
+                }
+            }
+        }
+
+        gotoxy( 65, wherey() );
+
+        char sval[3];
+
+        itoa( level_diff, sval, 10 );
+        cprintf( sval );
+        cprintf( EOL );
+        spelcount++;
+    }
+
+    textcolor(LIGHTGREY);
+    cprintf(EOL);
+
+}
+
+static unsigned char spellbook_contents( item_def &book, int action )
+{
+#if 0
+    FixedVector<int, SPELLBOOK_SIZE> spell_types;    // was 10 {dlb}
+    int spelcount = 0;
+    int i, j;
+#endif /* 0 */
+
+    const int spell_levels = player_spell_levels();
+
+#if 0
+    // special case for staves
+    const int type = (book.base_type == OBJ_STAVES) ? book.sub_type + 40
+                                                    : book.sub_type;
+
+    bool spell_skills = false;
+
+    for (i = SK_SPELLCASTING; i <= SK_POISON_MAGIC; i++)
+    {
+        if (you.skills[i])
+        {
+            spell_skills = true;
+            break;
+        }
+    }
+#endif /* 0 */
+
     set_ident_flags( book, ISFLAG_KNOW_TYPE );
 
 #ifdef DOS_TERM
@@ -795,15 +938,21 @@ static unsigned char spellbook_contents( item_def &book, int action )
     window(1, 1, 80, 25);
 #endif
 
+#if 0
     spellbook_template( type, spell_types );
+#endif /* 0 */
 
     clrscr();
+
     textcolor(LIGHTGREY);
 
     char str_pass[ ITEMNAME_SIZE ];
     item_name( book, DESC_CAP_THE, str_pass );
     cprintf( str_pass );
 
+    spellbook_toc(book);
+
+#if 0
     cprintf( EOL EOL " Spells                             Type                      Level" EOL );
 
     for (j = 1; j < SPELLBOOK_SIZE; j++)
@@ -892,6 +1041,7 @@ static unsigned char spellbook_contents( item_def &book, int action )
 
     textcolor(LIGHTGREY);
     cprintf(EOL);
+#endif /* 0 */
 
     switch (action)
     {
@@ -1020,6 +1170,9 @@ char book_rarity(unsigned char which_book)
 bool is_valid_spell_in_book( unsigned int splbook, int spell )
 {
     FixedVector< int, SPELLBOOK_SIZE >  spells;
+
+    if ((spell < 0) || (spell + 1 >= SPELLBOOK_SIZE))
+      return false;
 
     spellbook_template( you.inv[ splbook ].sub_type, spells );
 

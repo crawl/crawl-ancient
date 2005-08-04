@@ -26,6 +26,7 @@
 
 #include "debug.h"
 #include "delay.h"
+#include "fight.h"
 #include "invent.h"
 #include "items.h"
 #include "itemname.h"
@@ -36,6 +37,7 @@
 #include "mon-util.h"
 #include "mutation.h"
 #include "player.h"
+#include "randart.h"
 #include "religion.h"
 #include "skills2.h"
 #include "spells2.h"
@@ -217,8 +219,12 @@ bool butchery(void)
         // non-weapons in hand here, but wield_weapon will be used for
         // this swap and it will do all that (although the player might
         // be annoyed with the excess prompt).
+        /*
         if (Options.easy_butcher && !can_butcher)
+        */
+        if (Options.easy_butcher && !can_butcher && can_unwield_weapon(true))
         {
+#if 0
             const int a_slot = letter_to_index('a');
             const int b_slot = letter_to_index('b');
             int swap_slot = a_slot;
@@ -258,6 +264,110 @@ bool butchery(void)
             // call wield_weapon() in the "prompt the user" way...
             if (!wpn_switch)
             {
+                // prompt for new weapon
+                mpr( "What would you like to use?", MSGCH_PROMPT );
+                wield_weapon( false );
+
+                // let's see if the user did something...
+                if (you.equip[EQ_WEAPON] != old_weapon)
+                    wpn_switch = true;
+            }
+#endif /* 0 */
+            int i;
+            int j;
+            int knife_found;
+            int swap_slot = -1;
+
+            if (you.berserker)
+            {
+                mpr ("You are too berserk to search for a butchering knife!");
+                return (false);
+            }
+
+            for (j = 0; j < 2; j++)
+            {
+              knife_found = 0;
+              for (i = ENDOFPACK - 1; i >= 0; i--)
+              {
+                if (!is_valid_item(you.inv[i]))
+                  continue;
+                if (!can_cut_meat(you.inv[i].base_type,
+                                  you.inv[i].sub_type))
+                  continue;
+                if (!can_wield_weapon(i, true))
+                  continue;
+
+                knife_found++;
+
+                if (i == old_weapon)
+                  continue;
+                if (!item_known_uncursed(you.inv[i]))
+                  continue;
+                if (you.inv[i].base_type == OBJ_WEAPONS)
+                {
+                  int weap_brand = get_weapon_brand(you.inv[i]);
+                  if ((!is_fixed_artefact(you.inv[i]))
+                      && (item_ident(you.inv[i], ISFLAG_KNOW_TYPE))
+                      && (weap_brand == SPWPN_DISTORTION))
+                    continue;
+                  if ((you.is_undead || you.species == SP_DEMONSPAWN)
+                      && (!is_fixed_artefact(you.inv[i]))
+                      && (item_ident(you.inv[i], ISFLAG_KNOW_TYPE))
+                      && (weap_brand == SPWPN_HOLY_WRATH
+                          || weap_brand == SPWPN_DISRUPTION))
+                    continue;
+                  if ((is_fixed_artefact(you.inv[i]))
+                      && (item_ident(you.inv[i], ISFLAG_KNOW_PROPERTIES))
+                      && (you.inv[i].special == SPWPN_SCYTHE_OF_CURSES))
+                    continue;
+                  if ((is_random_artefact(you.inv[i]))
+                      && (item_ident(you.inv[i], ISFLAG_KNOW_PROPERTIES)))
+                  {
+                    FixedVector< char, RA_PROPERTIES >  proprt;
+                    randart_wpn_properties( you.inv[i], proprt );
+                    if (you.strength + proprt[RAP_STRENGTH] < 1)
+                      continue;
+                    if (you.dex + proprt[RAP_DEXTERITY] < 1)
+                      continue;
+                    if (you.intel + proprt[RAP_INTELLIGENCE] < 1)
+                      continue;
+
+                    if ((j == 0) && (proprt[RAP_MUTAGENIC] > 0))
+                      continue;
+                  }
+
+                  if ((j == 0)
+                      && (!is_fixed_artefact(you.inv[i]))
+                      && (item_ident(you.inv[i], ISFLAG_KNOW_TYPE))
+                      && (weap_brand != SPWPN_NORMAL))
+                    continue;
+                  if ((j == 0)
+                      && (!launches_things(you.inv[i].sub_type))
+                      && (effective_stat_bonus(you.inv[i].sub_type) <= -4))
+                    continue;
+                }
+
+                swap_slot = i;
+              }
+              if ((swap_slot >= 0) && (swap_slot < ENDOFPACK))
+                break;
+            }
+
+            if ((swap_slot >= 0) && (swap_slot < ENDOFPACK))
+            {
+              mpr( "Switching your weapon for butchering." );
+              wpn_switch = true;
+              wield_weapon2(swap_slot);
+            }
+            else if (knife_found <= 0)
+            {
+              mpr ("You don't have anything suitable for butchering.");
+              return false;
+            }
+            else
+            {
+              mpr("No known-to-be-safe implement found.  Use at your risk.");
+
                 // prompt for new weapon
                 mpr( "What would you like to use?", MSGCH_PROMPT );
                 wield_weapon( false );
@@ -798,6 +908,8 @@ static void eat_chunk( int chunk_effect )
             break;
         }
     }
+
+    know_amulet_type(AMU_THE_GOURMAND);
 
     return;
 }                               // end eat_chunk()

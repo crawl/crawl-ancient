@@ -132,9 +132,11 @@ unsigned char invent( int item_class_inv, bool show_price )
     {
         const int cap = carrying_capacity();
 
-        cprintf( "  Inventory: %d.%d aum (%d%% of %d.%d aum maximum)",
+        cprintf( "  Inventory: %d.%d aum (%d%% of %d.%d aum maximum)"
+                 " (%d/%d slots)",
                  you.burden / 10, you.burden % 10,
-                 (you.burden * 100) / cap, cap / 10, cap % 10 );
+                 (you.burden * 100) / cap, cap / 10, cap % 10,
+                 inv_count, ENDOFPACK );
         lines++;
 
         for (i = 0; i < 15; i++)

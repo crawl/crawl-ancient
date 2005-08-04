@@ -714,6 +714,9 @@ static void tag_construct_you(struct tagHeader &th)
 
     marshallLong( th, you.real_time );
     marshallLong( th, you.num_turns );
+
+    // 4.3
+    marshallByte(th, you.magic_contamination);
 }
 
 static void tag_construct_you_items(struct tagHeader &th)
@@ -1012,6 +1015,15 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     {
         you.real_time = -1;
         you.num_turns = -1;
+    }
+
+    if (minorVersion >= 3)
+    {
+      you.magic_contamination = unmarshallByte(th);
+    }
+    else
+    {
+      you.magic_contamination = 0;
     }
 }
 

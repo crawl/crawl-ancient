@@ -740,7 +740,8 @@ static void zappy( char z_type, int power, struct bolt &pbolt )
         pbolt.colour = LIGHTCYAN;
         pbolt.range = 8 + random2(10);                  // extended in beam
         pbolt.damage = calc_dice( 1, 10 + (power * 3) / 5 );
-        pbolt.hit = 7 + random2(power) / 20;            // 50: 7-9  100: 7-12
+        // pbolt.hit = 7 + random2(power) / 20;            // 50: 7-9  100: 7-12
+        pbolt.hit = 20 + power / 10;            // 50: 25  100: 30
         pbolt.type = SYM_ZAP;
         pbolt.flavour = BEAM_ELECTRICITY;               // beams & reflects
 

@@ -689,7 +689,10 @@ void item_check(char keyin)
                 mpr("There is a bloodstained altar of Trog here.");
                 break;
             case DNGN_ALTAR_NEMELEX_XOBEH:
+              if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
                 mpr("There is a sparkling altar of Nemelex Xobeh here.");
+              else
+                mpr("There is a portable altar of Nemelex Xobeh here (g to pick up).");
                 break;
             case DNGN_ALTAR_ELYVILON:
                 mpr("There is a silver altar of Elyvilon here.");
@@ -1295,6 +1298,10 @@ static void drop_gold(unsigned int amount)
 
         you.gold -= amount;
         you.redraw_gold = 1;
+
+        you.turn_is_over = 1;
+        you.time_taken *= 3;
+        you.time_taken /= 10;
     }
     else
     {
@@ -1410,6 +1417,8 @@ void drop(void)
 
     dec_inv_item_quantity( item_dropped, quant_drop );
     you.turn_is_over = 1;
+    you.time_taken *= 3;
+    you.time_taken /= 10;
 }                               // end drop()
 
 //---------------------------------------------------------------

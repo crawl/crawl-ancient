@@ -141,6 +141,7 @@ void handle_delay( void )
 {
     int   ego;
     char  str_pass[ ITEMNAME_SIZE ];
+    bool done_something = true;
 
     if (you_are_delayed())
     {
@@ -517,6 +518,7 @@ void handle_delay( void )
                                         you.x_pos, you.y_pos, delay.parm2 ))
                 {
                     mpr("Too many items on this level, not dropping the item.");
+                    done_something = false;
                 }
                 else
                 {
@@ -527,6 +529,9 @@ void handle_delay( void )
                     mpr(info);
 
                     dec_inv_item_quantity( delay.parm1, delay.parm2 );
+
+                    you.time_taken *= 3;
+                    you.time_taken /= 10;
                 }
                 break;
 
@@ -552,7 +557,8 @@ void handle_delay( void )
 
             you.wield_change = true;
             print_stats();  // force redraw of the stats
-            you.turn_is_over = 1;
+            if (done_something)
+              you.turn_is_over = 1;
             you.delay_queue.pop();
         }
     }

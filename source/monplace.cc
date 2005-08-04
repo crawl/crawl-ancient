@@ -40,6 +40,7 @@ static int band_member(int band, int power);
 static int choose_band( int mon_type, int power, int &band_size );
 static int place_monster_aux(int mon_type, char behaviour, int target,
     int px, int py, int power, int extra, bool first_band_member, int dur);
+static bool can_place_monster_here(int mon_type, int x, int y);
 
 bool place_monster(int &id, int mon_type, int power, char behaviour,
     int target, bool summoned, int px, int py, bool allow_bands,
@@ -212,7 +213,8 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
         // a) not occupied
         // b) compatible
         // c) in the 'correct' proximity to the player
-        unsigned char grid_wanted = monster_habitat(mon_type);
+
+        // unsigned char grid_wanted = monster_habitat(mon_type);
         while(true)
         {
             tries ++;
@@ -232,33 +234,8 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
             px = 5 + random2(GXM - 10);
             py = 5 + random2(GYM - 10);
 
-            // occupied?
-            if (mgrd[px][py] != NON_MONSTER
-                || (px == you.x_pos && py == you.y_pos))
-            {
-                continue;
-            }
-
-            // compatible - floor?
-            if (grid_wanted == DNGN_FLOOR && grd[px][py] < DNGN_FLOOR)
-                continue;
-
-            // compatible - others (must match, except for deep water monsters
-            // generated in shallow water)
-            if ((grid_wanted != DNGN_FLOOR && grd[px][py] != grid_wanted)
-                && (grid_wanted != DNGN_DEEP_WATER || grd[px][py] != DNGN_SHALLOW_WATER))
-            {
-                continue;
-            }
-
-            // don't generate monsters on top of teleport traps
-            // (how did they get there?)
-            int trap = trap_at_xy(px, py);
-            if (trap >= 0)
-            {
-                if (env.trap[trap].type == TRAP_TELEPORT)
-                    continue;
-            }
+            if (!can_place_monster_here(mon_type, px, py))
+              continue;
 
             // check proximity to player
             proxOK = true;
@@ -396,6 +373,45 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
     return (true);
 }
 
+static bool
+can_place_monster_here(int mon_type, int x, int y)
+{
+  unsigned char grid_wanted;
+  int trap;
+
+  if (mon_type < 0)
+    return false;
+  if ((x < 0) || (x >= GXM))
+    return false;
+  if ((y < 0) || (y >= GYM))
+    return false;
+
+  // occupied?
+  if ((mgrd[x][y] != NON_MONSTER)
+      || (x == you.x_pos && y == you.y_pos))
+    return false;
+
+  // compatible - floor?
+  grid_wanted = monster_habitat(mon_type);
+  if (grid_wanted == DNGN_FLOOR && grd[x][y] < DNGN_FLOOR)
+    return false;
+
+  // compatible - others (must match, except for deep water monsters
+  // generated in shallow water)
+  if ((grid_wanted != DNGN_FLOOR && grd[x][y] != grid_wanted)
+      && (grid_wanted != DNGN_DEEP_WATER || grd[x][y] != DNGN_SHALLOW_WATER))
+    return false;
+
+  // don't generate monsters on top of teleport traps
+  // (how do they get there?)
+  trap = trap_at_xy(x, y);
+  if (trap >= 0)
+    if (env.trap[trap].type == TRAP_TELEPORT)
+      return false;
+
+  return true;
+}
+
 static int place_monster_aux( int mon_type, char behaviour, int target,
                               int px, int py, int power, int extra,
                               bool first_band_member, int dur)
@@ -438,26 +454,8 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
             fx = px + random2(7) - 3;
             fy = py + random2(7) - 3;
 
-            // occupied?
-            if (mgrd[fx][fy] != NON_MONSTER)
-                continue;
-
-            // compatible - floor?
-            if (grid_wanted == DNGN_FLOOR && grd[fx][fy] < DNGN_FLOOR)
-                continue;
-
-            // compatible - others (must match, except for deep water monsters
-            // generated in shallow water)
-            if ((grid_wanted != DNGN_FLOOR && grd[fx][fy] != grid_wanted)
-                && (grid_wanted != DNGN_DEEP_WATER || grd[fx][fy] != DNGN_SHALLOW_WATER))
-                continue;
-
-            // don't generate monsters on top of teleport traps
-            // (how do they get there?)
-            int trap = trap_at_xy(fx, fy);
-            if (trap >= 0)
-                if (env.trap[trap].type == TRAP_TELEPORT)
-                    continue;
+            if (!can_place_monster_here(mon_type, fx, fy))
+              continue;
 
             // cool.. passes all tests
             break;
@@ -467,6 +465,9 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
         if (i == 1000)
             return (-1);
     }
+
+    if (!can_place_monster_here(mon_type, fx, fy))
+      return -1;
 
     // now, actually create the monster (wheeee!)
     menv[id].type = mon_type;

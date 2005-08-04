@@ -37,6 +37,8 @@ void display_overmap(void);
 */
 void display_overmap(FILE *handle);
 
+void display_max_depth(FILE *handle);
+
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: view
@@ -50,5 +52,6 @@ void seen_staircase(unsigned char which_staircase);
  * *********************************************************************** */
 void seen_other_thing(unsigned char which_thing);
 
+void visited_this_level(void);
 
 #endif

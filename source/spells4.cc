@@ -1741,10 +1741,13 @@ static int intoxicate_monsters(int x, int y, int pow, int garbage)
 
 void cast_intoxicate(int pow)
 {
+  if (!player_res_poison())
+  {
     potion_effect( POT_CONFUSION, 10 + (100 - pow) / 10);
 
     if (one_chance_in(20) && lose_stat( STAT_INTELLIGENCE, 1 + random2(3) ))
-        mpr("Your head spins!");
+      mpr("Your head spins!");
+  }
 
     apply_area_visible(intoxicate_monsters, pow);
 }                               // end cast_intoxicate()
@@ -3389,7 +3392,11 @@ cast_purify_flesh(int pow)
         mitm[thing_created].quantity = quant_created;
         move_item_to_grid(&thing_created, you.x_pos, you.y_pos);
         it_name(thing_created, DESC_NOCAP_A, name_created);
+        /*
         snprintf(info, INFO_SIZE, "%s glows softly and changes into %s.",
+                 name_flesh, name_created);
+        */
+        snprintf(info, INFO_SIZE, "%s changes into %s.",
                  name_flesh, name_created);
         mpr(info);
       }
