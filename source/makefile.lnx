@@ -15,9 +15,13 @@ DELETE = rm -f
 COPY = cp
 OS_TYPE = LINUX
 
-CFLAGS = -Wall -Wwrite-strings -Wstrict-prototypes \
-            -Wmissing-prototypes -Wno-char-subscripts\
+#CFLAGS = -Wall -Wwrite-strings -Wstrict-prototypes \
+#            -Wmissing-prototypes -Wno-char-subscripts\
+#            -fsigned-char -g -D$(OS_TYPE) $(EXTRA_FLAGS)
+CFLAGS = -Wall -Wwrite-strings \
+            -Wno-char-subscripts \
             -fsigned-char -g -D$(OS_TYPE) $(EXTRA_FLAGS)
+
 
 # LDFLAGS = -static
 MCHMOD = 711

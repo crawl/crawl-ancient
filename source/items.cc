@@ -729,7 +729,10 @@ void item_check(char keyin)
     {
         counter++;
 
+        /*
         if (counter > 45)
+        */
+        if (counter > MAX_ITEMS)
         {
             strcpy(item_show[counter], "Too many items.");
             break;
@@ -784,7 +787,17 @@ void item_check(char keyin)
     }
 
     if (counter_max > 5 && keyin != ';')
-        mpr("There are several objects here.");
+    {
+      /*
+      mpr("There are several objects here.");
+      */
+      if (counter_max > MAX_ITEMS)
+        snprintf(info, INFO_SIZE, "There are %d or more objects here.",
+                 counter_max);
+      else
+        snprintf(info, INFO_SIZE, "There are %d objects here.", counter_max);
+      mpr(info);
+    }
 }
 
 
@@ -870,7 +883,21 @@ void pickup(void)
     }                           // end of if items_here
     else
     {
+      /*
         mpr("There are several objects here.");
+      */
+      {
+        int counter = 0;
+        int o_temp = o;
+
+        while (o_temp != NON_ITEM)
+        {
+          counter++;
+          o_temp = mitm[o_temp].link;
+        }
+        snprintf(info, INFO_SIZE, "There are %d objects here.", counter);
+        mpr(info);
+      }
 
         while (o != NON_ITEM)
         {
@@ -1361,6 +1388,11 @@ void drop(void)
         mpr("You will have to take that off first.");
         return;
     }
+
+    /* prevent the player from unwielding a weapon by dropping it */
+    if ((item_dropped == you.equip[EQ_WEAPON])
+        && (!can_unwield_weapon(false)))
+      return;
 
     if (item_dropped == you.equip[EQ_WEAPON]
         && you.inv[item_dropped].base_type == OBJ_WEAPONS
@@ -2345,10 +2377,13 @@ void handle_time( long time_delta )
                 continue;
             }
 
-            you.inv[i].sub_type = 1;
-            you.inv[i].special = 0;
+            // you.inv[i].sub_type = 1;
+            you.inv[i].sub_type = CORPSE_SKELETON;
+            // you.inv[i].special = 0;
+            you.inv[i].special = 200;
             you.inv[i].colour = LIGHTGREY;
             you.wield_change = true;
+            burden_change();
             continue;
         }
 

@@ -14,6 +14,9 @@
 
 #include <string>
 
+/* FILE */
+#include <stdio.h>
+
 #include "externs.h"
 
 struct message_item {

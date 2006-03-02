@@ -3528,6 +3528,7 @@ static char minivault_34(char vgrid[81][81], FixedVector<int, 7>& mons_array, bo
         di = -1;
     }
 
+    /*
     for (int c=0; c <= 11; c++, i += di)
     {
         strcpy(vgrid[i], "............");
@@ -3543,6 +3544,20 @@ static char minivault_34(char vgrid[81][81], FixedVector<int, 7>& mons_array, bo
         strcpy(vgrid[i], "...xG..Gx...");
         strcpy(vgrid[i], "............");
     }
+    */
+
+        strcpy(vgrid[i + di *  0], "............");
+        strcpy(vgrid[i + di *  1], ".=xxxxxxxx=.");
+        strcpy(vgrid[i + di *  2], ".x9......9x.");
+        strcpy(vgrid[i + di *  3], ".xT......Tx.");
+        strcpy(vgrid[i + di *  4], ".x..C..C..x.");
+        strcpy(vgrid[i + di *  5], ".xT......Tx.");
+        strcpy(vgrid[i + di *  6], ".xxxxxxxxxx.");
+        strcpy(vgrid[i + di *  7], ".xxx$$$$xxx.");
+        strcpy(vgrid[i + di *  8], ".xx8....8xx.");
+        strcpy(vgrid[i + di *  9], "..xx....xx..");
+        strcpy(vgrid[i + di * 10], "...xG..Gx...");
+        strcpy(vgrid[i + di * 11], "............");
 
     return MAP_NORTH;
 }
@@ -3574,6 +3589,7 @@ static char minivault_35(char vgrid[81][81], FixedVector<int, 7>& mons_array, bo
         di = -1;
     }
 
+    /*
     for (int c=0; c <= 11; c++, i += di)
     {
         strcpy(vgrid[i], "............");
@@ -3589,6 +3605,20 @@ static char minivault_35(char vgrid[81][81], FixedVector<int, 7>& mons_array, bo
         strcpy(vgrid[i], "...GxxxxG...");
         strcpy(vgrid[i], "............");
     }
+    */
+
+        strcpy(vgrid[i + di *  0], "............");
+        strcpy(vgrid[i + di *  1], "..vvvvvvvv..");
+        strcpy(vgrid[i + di *  2], ".vv......vv.");
+        strcpy(vgrid[i + di *  3], ".v..x..x..v.");
+        strcpy(vgrid[i + di *  4], ".v.Cx..xC.v.");
+        strcpy(vgrid[i + di *  5], ".v..x..x..v.");
+        strcpy(vgrid[i + di *  6], ".vT8x..x8Tv.");
+        strcpy(vgrid[i + di *  7], ".vvvx==xvvv.");
+        strcpy(vgrid[i + di *  8], "...Gx99xG...");
+        strcpy(vgrid[i + di *  9], "...+*99*+...");
+        strcpy(vgrid[i + di * 10], "...GxxxxG...");
+        strcpy(vgrid[i + di * 11], "............");
 
     return MAP_NORTH;
 }

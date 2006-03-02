@@ -1404,7 +1404,12 @@ void yell(void)
             return;
         }
 
+        /*
         if (!targ.isValid || mgrd[targ.tx][targ.ty] == NON_MONSTER)
+        */
+        if ((!targ.isValid)
+            || (mgrd[targ.tx][targ.ty] == NON_MONSTER)
+            || (!player_monster_visible(&menv[mgrd[targ.tx][targ.ty]])))
         {
             mpr("Yeah, whatever.");
             return;

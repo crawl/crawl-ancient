@@ -54,4 +54,6 @@ void seen_other_thing(unsigned char which_thing);
 
 void visited_this_level(void);
 
+const char *branch_name(int branch);
+
 #endif

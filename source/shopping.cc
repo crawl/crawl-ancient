@@ -56,6 +56,8 @@ char in_a_shop( char shoppy, char id[4][50] )
     char i;
     unsigned char ft;
 
+    int number_item;
+
 #ifdef DOS_TERM
     char buffer[4800];
     gettext(1, 1, 80, 25, buffer);
@@ -96,6 +98,7 @@ char in_a_shop( char shoppy, char id[4][50] )
         goto goodbye;
     }
 
+    number_item = 0;
     for (i = 1; i < 20; i++)
     {
         shop_items[i - 1] = itty;
@@ -105,6 +108,8 @@ char in_a_shop( char shoppy, char id[4][50] )
             shop_items[i - 1] = NON_ITEM;
             continue;
         }
+
+        number_item++;
 
         itty = mitm[itty].link;
     }
@@ -141,8 +146,12 @@ char in_a_shop( char shoppy, char id[4][50] )
     textcolor(LIGHTGREY);
 
     // shop_print("Type letter to buy item, x/Esc to leave, ?/* for inventory, v to examine.", 23);
-    shop_print("Type lower letter to examine item, upper letter to buy item, x/Esc to leave, ?/* for inventory.", 22);
-
+    snprintf(info, INFO_SIZE,
+             "Type lower letter (a-%c) to examine item, "
+             "upper letter (A-%c) to buy item,",
+             'a' + number_item - 1, 'A' + number_item - 1);
+    shop_print(info, 22);
+    shop_print("x/Esc to leave, ?/* for inventory.", 23);
   purchase:
     snprintf( info, INFO_SIZE, "You have %d gold piece%s.", you.gold,
              (you.gold == 1) ? "" : "s" );

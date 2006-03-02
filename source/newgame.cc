@@ -1920,7 +1920,7 @@ void openingScreen(void)
     cprintf("Hello, welcome to Dungeon Crawl Alternative " VERSION "!");
     textcolor( BROWN );
     cprintf(EOL "(c) Copyright 1997-2002 Linley Henzell");
-    cprintf(EOL "(c) Copyright 2005 Oohara Yuuma");
+    cprintf(EOL "(c) Copyright 2005-2006 Oohara Yuuma");
     cprintf(EOL "Please consult crawl.txt for instructions and legal details."
             EOL);
     textcolor( LIGHTGREY );

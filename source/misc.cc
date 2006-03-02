@@ -66,11 +66,27 @@ void turn_corpse_into_chunks( item_def &item )
 
     ASSERT( item.base_type == OBJ_CORPSES );
 
+    if (item.sub_type == CORPSE_SKELETON)
+    {
+      /* You butcher a rotting corpse and it has completely rotten
+       * while butchering.  In this case you get rotting chunks
+       * however fresh the skeleton you butcher is.
+       */
+      item.special = 2;
+    }
+
     item.base_type = OBJ_FOOD;
     item.sub_type = FOOD_CHUNK;
     item.quantity = 1 + random2( max_chunks );
 
     item.quantity = stepdown_value( item.quantity, 4, 4, 12, 12 );
+
+    /* note that the first time you see the chunk is your next turn */
+    if (item.special >= 100)
+    {
+      /* not rotting */
+      item.special += 1;
+    }
 
     // seems to me that this should come about only
     // after the corpse has been butchered ... {dlb}
@@ -565,7 +581,8 @@ void up_stairs(void)
 
     if (player_is_levitating())
     {
-        if (you.duration[DUR_CONTROLLED_FLIGHT])
+      if ((you.duration[DUR_CONTROLLED_FLIGHT])
+          || (wearing_amulet(AMU_CONTROLLED_FLIGHT)))
             mpr("You fly upwards.");
         else
             mpr("You float upwards... And bob straight up to the ceiling!");
@@ -875,6 +892,12 @@ void down_stairs( bool remove_stairs, int old_level )
               KILLED_BY_FALLING_DOWN_STAIRS );
     }
 
+    /* this must be before incrementing you.your_level, or the dungeon
+     * overview will break
+     */
+    if (!remove_stairs)
+      clear_map_here(you.x_pos, you.y_pos);
+
     /*
     if (you.level_type == LEVEL_DUNGEON)
     */
@@ -893,9 +916,6 @@ void down_stairs( bool remove_stairs, int old_level )
 
     if (remove_stairs)
         grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
-
-    if (!remove_stairs)
-      clear_map_here(you.x_pos, you.y_pos);
 
     switch (you.level_type)
     {
@@ -1393,6 +1413,7 @@ void handle_traps(char trt, int i, bool trap_known)
 
     case TRAP_AMNESIA:
         mpr("You feel momentarily disoriented.");
+        know_amulet_type(AMU_CLARITY);
         if (!wearing_amulet(AMU_CLARITY))
             forget_map(random2avg(100, 2));
         break;

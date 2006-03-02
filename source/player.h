@@ -444,5 +444,6 @@ void rot_player( int amount );
  * *********************************************************************** */
 bool player_has_spell( int spell );
 
+bool player_can_teleport_here(int x, int y);
 
 #endif

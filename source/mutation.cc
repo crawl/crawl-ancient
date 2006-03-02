@@ -1110,15 +1110,20 @@ bool mutate(int which_mutation, bool failMsg)
     bool force_mutation = false;        // is mutation forced?
     int  i;
 
+#if 0
     if (which_mutation >= 1000) // must give mutation without failure
     {
         force_mutation = true;
         mutat -= 1000;
         which_mutation -= 1000;
     }
+#endif /* 0 */
 
     // Undead bodies don't mutate, they fall apart. -- bwr
-    if (you.is_undead)
+    /*
+      if (you.is_undead)
+    */
+    if ((you.is_undead) && (which_mutation < 1000))
     {
         if (force_mutation
             || ((!wearing_amulet(AMU_RESIST_MUTATION)) && coinflip()))
@@ -1143,7 +1148,8 @@ bool mutate(int which_mutation, bool failMsg)
     }
 
     if (wearing_amulet(AMU_RESIST_MUTATION)
-        && !force_mutation && !one_chance_in(10))
+        && !force_mutation && !one_chance_in(10)
+        && (which_mutation < 1000))
     {
         if (failMsg)
             mpr("You feel odd for a moment.");
@@ -1153,12 +1159,20 @@ bool mutate(int which_mutation, bool failMsg)
 
     if (you.mutation[MUT_MUTATION_RESISTANCE]
         && !force_mutation
-        && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || !one_chance_in(3)))
+        && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || !one_chance_in(3))
+        && (which_mutation < 1000))
     {
         if (failMsg)
             mpr("You feel odd for a moment.");
 
         return (false);
+    }
+
+    if (which_mutation >= 1000) // must give mutation without failure
+    {
+        force_mutation = true;
+        mutat -= 1000;
+        which_mutation -= 1000;
     }
 
     if (which_mutation == 100 && random2(15) < how_mutated())

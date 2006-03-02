@@ -40,6 +40,13 @@
 #include <conio.h>
 #endif
 
+#ifdef LINUX
+/* errno */
+#include <errno.h>
+/* mkdir */
+#include <sys/stat.h>
+#endif /* LINUX */
+
 #include "externs.h"
 
 #include "debug.h"
@@ -983,7 +990,16 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
     char file_name[kPathLen] = "\0";
 
     if (SysEnv.crawl_dir)
-        strncpy(file_name, SysEnv.crawl_dir, kPathLen);
+    {
+#if LINUX
+      errno = 0;
+      if ((mkdir(SysEnv.crawl_dir, S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+          && (errno != EEXIST))
+        return false;
+#endif /* LINUX */
+
+      strncpy(file_name, SysEnv.crawl_dir, kPathLen);
+    }
 
     strncat(file_name, fname, kPathLen);
 
@@ -991,7 +1007,9 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
         strncat(file_name, ".txt", kPathLen);
 
     FILE *handle = fopen(file_name, "wb");
-    fchown(fileno(handle), (uid_t)-1, getgid());
+
+    if (handle != NULL)
+      fchown(fileno(handle), (uid_t)-1, getgid());
 
 #if DEBUG_DIAGNOSTICS
     strcpy( info, "File name: " );

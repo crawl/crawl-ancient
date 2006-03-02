@@ -84,7 +84,6 @@ static void print_one_simple_line( const char *line, int colour, FILE *handle);
 static void print_one_highlighted_line( const char *pre, const char *text,
                                  const char *post, int colour, FILE *handle);
 
-static const char *branch_name(int branch);
 static void print_level_name( int branch, int depth,
                               bool &printed_branch, bool &printed_level,
                               FILE *handle);
@@ -387,7 +386,7 @@ display_max_depth(FILE *handle)
   } // end for (index)
 }
 
-static const char *
+const char *
 branch_name(int branch)
 {
   return        (branch == BRANCH_MAIN_DUNGEON)      ? "Main Dungeon" :

@@ -43,6 +43,10 @@
 #include "view.h"
 #include "wpn-misc.h"
 
+/* from acr.cc */
+void move_player2(int move_x, int move_y,
+                  bool force, bool moving_on_foot);
+
 static bool monster_on_level(int monster);
 
 void cast_selective_amnesia(bool force)
@@ -278,6 +282,9 @@ bool airstrike(int power)
     struct monsters *monster = 0;       // NULL {dlb}
     int hurted = 0;
 
+    if (power > 100)
+      power = 100;
+
     mpr("Strike whom?", MSGCH_PROMPT);
 
     direction( beam, DIR_TARGET, TARG_ENEMY );
@@ -294,12 +301,27 @@ bool airstrike(int power)
 
         strcpy(info, "The air twists around and strikes ");
         strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-        strcat(info, "!");
+        if (mons_flies(monster))
+          strcat(info, "!");
+        else
+          strcat(info, ".");
         mpr(info);
 
+        /*
         hurted = random2( random2(12) + (random2(power) / 6)
                                       + (random2(power) / 7) );
-        hurted -= random2(1 + monster->armour_class);
+        */
+        hurted = random2(10 + random2(power) / 2);
+        if (mons_flies(monster))
+        {
+          /* extra damage and armor-piercing */
+          hurted *= 2;
+          hurted += 1;
+        }
+        else
+        {
+          hurted -= random2(1 + monster->armour_class);
+        }
 
         if (hurted < 0)
             hurted = 0;
@@ -720,37 +742,57 @@ void you_teleport2( bool allow_control, bool new_abyss_area )
 
         if (is_controlled)
         {
+          /*
             you.x_pos = plox[0];
             you.y_pos = plox[1];
+          */
 
-            if ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR
-                    && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
-                || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
-                || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
-            {
-                is_controlled = false;
-            }
-            else
-            {
-                // controlling teleport contaminates the player -- bwr
-                contaminate_player(1);
-            }
+          if (!player_can_teleport_here(plox[0], plox[1]))
+          {
+            is_controlled = false;
+          }
+          else
+          {
+            move_player2(plox[0] - you.x_pos, plox[1] - you.y_pos,
+                         true, false);
+            you.running = 0;
+            // controlling teleport contaminates the player -- bwr
+            contaminate_player(1);
+          }
         }
     }                           // end "if is_controlled"
 
     if (!is_controlled)
     {
+      int tries = 0;
+
+      /*
         mpr("Your surroundings suddenly seem different.");
+      */
 
         do
         {
-            you.x_pos = 5 + random2( GXM - 10 );
-            you.y_pos = 5 + random2( GYM - 10 );
+          tries++;
+          if (tries >= 5000)
+            break;
+
+            plox[0] = 5 + random2( GXM - 10 );
+            plox[1] = 5 + random2( GYM - 10 );
         }
-        while ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR
-                   && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
-               || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
-               || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD);
+        while (!player_can_teleport_here(plox[0], plox[1]));
+
+        if ((tries < 5000)
+            && ((plox[0] != you.x_pos) || (plox[1] != you.y_pos)))
+        {
+          mpr("Your surroundings suddenly seem different.");
+          move_player2(plox[0] - you.x_pos, plox[1] - you.y_pos,
+                       true, false);
+          you.running = 0;
+        }
+        else
+        {
+          mpr("You feel jittery for a moment.");
+        }
     }
 }                               // end you_teleport()
 
@@ -774,6 +816,8 @@ bool entomb(void)
     safe_to_overwrite[5] = DNGN_TRAP_III;
     safe_to_overwrite[6] = DNGN_UNDISCOVERED_TRAP;
 
+    if (you.hp_max < 21)
+      mpr("You lack the resilience to cast this spell.");
 
     for (srx = you.x_pos - 1; srx < you.x_pos + 2; srx++)
     {
@@ -855,9 +899,14 @@ bool entomb(void)
     }
 
     if (number_built > 0)
-        mpr("Walls emerge from the floor!");
+    {
+      mpr("Walls emerge from the floor!");
+      dec_max_hp(1);
+    }
     else
-        canned_msg(MSG_NOTHING_HAPPENS);
+    {
+      canned_msg(MSG_NOTHING_HAPPENS);
+    }
 
     return (number_built > 0);
 }                               // end entomb()

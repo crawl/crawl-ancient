@@ -3895,11 +3895,19 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_TOMB_OF_DOROKLOHE:
+      /*
         description += "entombs the caster within four walls of rock. These "
             "walls will destroy most objects in their way, but "
             "their growth is obstructed by the presence of any "
             "creature. Beware - only the unwise cast this spell "
             "without reliable means of escape. ";
+      */
+      description += "entombs the caster within walls of rock at the cost of"
+        "your health. These "
+        "walls will destroy most objects in their way, but "
+        "their growth is obstructed by the presence of any "
+        "creature. Beware - only the unwise cast this spell "
+        "without reliable means of escape. ";
         break;
 
     case SPELL_STONEMAIL:
@@ -5808,67 +5816,8 @@ void describe_monsters(int class_described, unsigned char which_mons)
         break;
 
     case MONS_PLAYER_GHOST:
-        {
-            char tmp_buff[ INFO_SIZE ];
-
-            // We're fudgins stats so that unarmed combat gets based off
-            // of the ghost's species, not the player's stats... exact
-            // stats are required anyways, all that matters is whether
-            // dex >= str. -- bwr
-            const int dex = 10;
-            int str;
-            switch (ghost.values[GVAL_SPECIES])
-            {
-            case SP_HILL_DWARF:
-            case SP_MOUNTAIN_DWARF:
-            case SP_TROLL:
-            case SP_OGRE:
-            case SP_OGRE_MAGE:
-            case SP_MINOTAUR:
-            case SP_HILL_ORC:
-            case SP_CENTAUR:
-            case SP_NAGA:
-            case SP_MUMMY:
-            case SP_GHOUL:
-                str = 15;
-                break;
-
-            case SP_HUMAN:
-            case SP_DEMIGOD:
-            case SP_DEMONSPAWN:
-                str = 10;
-                break;
-
-            default:
-                str = 5;
-                break;
-            }
-
-            snprintf( tmp_buff, sizeof(tmp_buff),
-                  "The apparition of %s the %s, a%s %s %s.$",
-                  ghost.name,
-
-                  skill_title( ghost.values[GVAL_BEST_SKILL],
-                               ghost.values[GVAL_SKILL_LEVEL],
-                               ghost.values[GVAL_SPECIES],
-                               str, dex, GOD_NO_GOD ),
-
-                  (ghost.values[GVAL_EXP_LEVEL] <  4) ? " weakling" :
-                  (ghost.values[GVAL_EXP_LEVEL] <  7) ? "n average" :
-                  (ghost.values[GVAL_EXP_LEVEL] < 11) ? "n experienced" :
-                  (ghost.values[GVAL_EXP_LEVEL] < 16) ? " powerful" :
-                  (ghost.values[GVAL_EXP_LEVEL] < 22) ? " mighty" :
-                  (ghost.values[GVAL_EXP_LEVEL] < 26) ? " great" :
-                  (ghost.values[GVAL_EXP_LEVEL] < 27) ? "n awesomely powerful"
-                                                      : " legendary",
-
-                  species_name( ghost.values[GVAL_SPECIES],
-                                ghost.values[GVAL_EXP_LEVEL] ),
-
-                  get_class_name( ghost.values[GVAL_CLASS] ) );
-
-            description += tmp_buff;
-        }
+      description += get_player_ghost_description();
+      description += "$";
         break;
 
     case MONS_PANDEMONIUM_DEMON:
@@ -6236,6 +6185,72 @@ void describe_monsters(int class_described, unsigned char which_mons)
 #endif
 }                               // end describe_monsters
 
+std::string
+get_player_ghost_description(void)
+{
+  char tmp_buff[ INFO_SIZE ];
+
+  // We're fudgins stats so that unarmed combat gets based off
+  // of the ghost's species, not the player's stats... exact
+  // stats are required anyways, all that matters is whether
+  // dex >= str. -- bwr
+  const int dex = 10;
+  int str;
+  switch (ghost.values[GVAL_SPECIES])
+  {
+  case SP_HILL_DWARF:
+  case SP_MOUNTAIN_DWARF:
+  case SP_TROLL:
+  case SP_OGRE:
+  case SP_OGRE_MAGE:
+  case SP_MINOTAUR:
+  case SP_HILL_ORC:
+  case SP_CENTAUR:
+  case SP_NAGA:
+  case SP_MUMMY:
+  case SP_GHOUL:
+    str = 15;
+    break;
+
+  case SP_HUMAN:
+  case SP_DEMIGOD:
+  case SP_DEMONSPAWN:
+    str = 10;
+    break;
+
+  default:
+    str = 5;
+    break;
+  }
+
+  snprintf( tmp_buff, sizeof(tmp_buff),
+            /*
+            "The apparition of %s the %s, a%s %s %s.$",
+            */
+            "%s the %s was a%s %s %s.",
+            ghost.name,
+
+            skill_title( ghost.values[GVAL_BEST_SKILL],
+                         ghost.values[GVAL_SKILL_LEVEL],
+                         ghost.values[GVAL_SPECIES],
+                         str, dex, GOD_NO_GOD ),
+
+            (ghost.values[GVAL_EXP_LEVEL] <  4) ? " weakling" :
+            (ghost.values[GVAL_EXP_LEVEL] <  7) ? "n average" :
+            (ghost.values[GVAL_EXP_LEVEL] < 11) ? "n experienced" :
+            (ghost.values[GVAL_EXP_LEVEL] < 16) ? " powerful" :
+            (ghost.values[GVAL_EXP_LEVEL] < 22) ? " mighty" :
+            (ghost.values[GVAL_EXP_LEVEL] < 26) ? " great" :
+            (ghost.values[GVAL_EXP_LEVEL] < 27) ? "n awesomely powerful"
+            : " legendary",
+
+            species_name( ghost.values[GVAL_SPECIES],
+                          ghost.values[GVAL_EXP_LEVEL] ),
+
+            get_class_name( ghost.values[GVAL_CLASS] ) );
+
+  return std::string(tmp_buff);
+}
 
 static void print_god_abil_desc( int abil )
 {

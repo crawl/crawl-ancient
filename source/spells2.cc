@@ -98,7 +98,14 @@ unsigned char detect_items( int pow )
 
             if (igrd[i][j] != NON_ITEM)
             {
+              unsigned short ch, color;
+              get_non_ibm_symbol(item_show_code(igrd[i][j]), &ch, &color);
+              if (env.map[i - 1][j - 1] != ch)
                 env.map[i - 1][j - 1] = '~';
+            }
+            else if (env.map[i - 1][j - 1] != 0)
+            {
+              clear_map_here(i, j);
             }
         }
     }
@@ -137,6 +144,10 @@ unsigned char detect_creatures( int pow )
                     behaviour_event( mon, ME_DISTURB, MHITYOU,
                                      you.x_pos, you.y_pos );
                 }
+            }
+            else if (env.map[i - 1][j - 1] != 0)
+            {
+              clear_map_here(i, j);
             }
         }
     }

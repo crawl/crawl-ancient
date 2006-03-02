@@ -1028,18 +1028,18 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
 
     switch (monster->type)
     {
-    case MONS_FIREDRAKE:
-    case MONS_HELL_HOUND:
-    case MONS_DRAGON:
-    case MONS_LINDWURM:
-    case MONS_XTAHUA:
+    case MONS_FIREDRAKE: /* HD 6 */
+    case MONS_HELL_HOUND: /* HD 5 */
+    case MONS_DRAGON: /* HD 12 */
+    case MONS_LINDWURM: /* HD 9 */
+    case MONS_XTAHUA: /* HD 19 */
         strcat(pbolt.beam_name, "'s blast of flame");
         pbolt.flavour = BEAM_FIRE;
         pbolt.colour = RED;
         pbolt.aux_source = "blast of flame";
         break;
 
-    case MONS_ICE_DRAGON:
+    case MONS_ICE_DRAGON: /* HD 12 */
         strcat(pbolt.beam_name, "'s blast of cold");
         pbolt.flavour = BEAM_COLD;
         pbolt.colour = WHITE;
@@ -1055,10 +1055,13 @@ void setup_dragon(struct monsters *monster, struct bolt &pbolt)
     /*
     pbolt.damage = dice_def( 3, (monster->hit_dice * 2) );
     */
-    pbolt.damage = dice_def( 3, stepdown_value(monster->hit_dice * 2,
-                                               4, 4, 20, 30) );
+    pbolt.damage = dice_def( 3, 8 + stepdown_value(monster->hit_dice * 2,
+                                                   5, 5, 15, 20) );
     pbolt.type = SYM_ZAP;
+    /*
     pbolt.hit = 30;
+    */
+    pbolt.hit = monster->hit_dice;
     pbolt.beam_source = monster_index(monster);
     pbolt.thrower = KILL_MON;
     pbolt.isBeam = true;

@@ -188,8 +188,17 @@ static void close_door(char move_x, char move_y);
 static void do_berserk_no_combat_penalty(void);
 static bool initialise(void);
 static void input(void);
-static void move_player(char move_x, char move_y);
+static void move_player(int move_x, int move_y);
+/* this function is global */
+void move_player2(int move_x, int move_y,
+                  bool force, bool moving_on_foot);
 static void open_door(char move_x, char move_y);
+
+static char base_grid_type( char grid );
+static void set_run_check( int index, int dir );
+static void start_running( int dir, char mode );
+
+static void dangerous_grid_warning(void);
 
 /*
    It all starts here. Some initialisations are run first, then straight to
@@ -688,8 +697,13 @@ static void handle_wizard_command( void )
             if (you.branch_stairs[i] == 0)
                 continue;
 
-            snprintf( info, INFO_SIZE, "Branch %2d is on level %2d",
-                     i, you.branch_stairs[i] + 1 );
+            if (branch_name(BRANCH_ORCISH_MINES + i) != NULL)
+              snprintf( info, INFO_SIZE, "Branch %2d (%s) is on level %2d",
+                        i, branch_name(BRANCH_ORCISH_MINES + i),
+                        you.branch_stairs[i] + 1 );
+            else
+              snprintf( info, INFO_SIZE, "Branch %2d is on level %2d",
+                        i, you.branch_stairs[i] + 1 );
 
             mpr(info);
         }
@@ -703,7 +717,16 @@ static void handle_wizard_command( void )
         {
             int old_piety = you.piety;
 
+            /* gain_piety() sometimes refuses to change you.piety
+             * if it is very large
+             */
+            /*
             gain_piety(50);
+            */
+            if (you.piety > 149)
+              you.piety = 199;
+            else
+              you.piety += 50;
             snprintf( info, INFO_SIZE, "Congratulations, your piety went from %d to %d!",
                     old_piety, you.piety);
             mpr(info);
@@ -2152,7 +2175,11 @@ static void input(void)
 
     if (you.levitation > 1)
     {
-      know_amulet_type(AMU_CONTROLLED_FLIGHT);
+      /* dragon-form works just like an amulet of controlled flight,
+       * so you can't tell the difference
+       */
+      if (you.attribute[ATTR_TRANSFORMATION] != TRAN_DRAGON)
+        know_amulet_type(AMU_CONTROLLED_FLIGHT);
 
         if (you.species != SP_KENKU || you.experience_level < 15)
             you.levitation--;
@@ -2429,6 +2456,8 @@ static void input(void)
         you.attribute[ATTR_WAS_SILENCED] = its_quiet;
     }
 
+    dangerous_grid_warning();
+
     viewwindow(1, false);
 
     if (you.paralysis > 0 && any_messages())
@@ -2481,6 +2510,25 @@ static void input(void)
         {
           chance_monster -= (you.your_level
                              - you.branch_stairs[STAIRS_HALL_OF_ZOT]) * 40;
+          switch (you.your_level - you.branch_stairs[STAIRS_HALL_OF_ZOT])
+          {
+          case 1:
+            chance_monster = 168;
+            break;
+          case 2:
+            chance_monster = 117;
+            break;
+          case 3:
+            chance_monster = 82;
+            break;
+          case 4:
+            chance_monster = 57;
+            break;
+          default:
+            chance_monster = 40;
+            break;
+          }
+
           if (you.your_level == you.branch_stairs[STAIRS_HALL_OF_ZOT]
               + branch_depth(STAIRS_HALL_OF_ZOT))
           {
@@ -2679,7 +2727,6 @@ static void close_door(char door_x, char door_y)
     }
 }                               // end open_door()
 
-
 // initialise whole lot of stuff...
 // returns true if a new character
 static bool initialise(void)
@@ -2860,9 +2907,11 @@ static void do_berserk_no_combat_penalty(void)
 }                               // end do_berserk_no_combat_penalty()
 
 
+#if 0
 // Called when the player moves by walking/running. Also calls
 // attack function and trap function etc when necessary.
-static void move_player(char move_x, char move_y)
+/* the arguments are int , not char; char can be signed or unsigned */
+static void move_player(int move_x, int move_y)
 {
     bool attacking = false;
     bool moving = true;         // used to prevent eventual movement (swap)
@@ -3050,8 +3099,8 @@ static void move_player(char move_x, char move_y)
             else if (old_grid != DNGN_SHALLOW_WATER
                     && old_grid != DNGN_DEEP_WATER)
             {
-                mpr("You return to your normal form as you enter the water.");
-                merfolk_start_swimming();
+              mpr("You return to your normal form as you enter the water.");
+              merfolk_start_swimming();
             }
         }
 
@@ -3149,3 +3198,332 @@ static void move_player(char move_x, char move_y)
         do_berserk_no_combat_penalty();
     }
 }                               // end move_player()
+#endif /* 0 */
+
+/* the arguments are int , not char; char can be signed or unsigned */
+static void move_player(int move_x, int move_y)
+{
+    if (you.conf)
+    {
+        if (!one_chance_in(3))
+        {
+            move_x = random2(3) - 1;
+            move_y = random2(3) - 1;
+        }
+
+        move_player2(move_x, move_y, true, true);
+
+        return;
+    }                           // end of if you.conf
+
+    if (you.running > 0 && you.running != 2 && check_stop_running())
+    {
+        you.running = 0;
+        move_x = 0;
+        move_y = 0;
+        you.turn_is_over = 0;
+        return;
+    }
+
+    move_player2(move_x, move_y, false, true);
+}
+
+void move_player2(int move_x, int move_y,
+                  bool force, bool moving_on_foot)
+{
+    bool attacking = false;
+    /*
+    bool moving = true;         // used to prevent eventual movement (swap)
+    */
+    bool swap_failed = false;
+
+    int i;
+    bool trap_known;
+    bool targ_is_adjacent;
+
+    const int targ_x = you.x_pos + move_x;
+    const int targ_y = you.y_pos + move_y;
+    const unsigned char old_grid   =  grd[ you.x_pos ][ you.y_pos ];
+    const unsigned char targ_grid  =  grd[ targ_x ][ targ_y ];
+    const unsigned char targ_monst = mgrd[ targ_x ][ targ_y ];
+
+    targ_is_adjacent = false;
+    if ((move_x >= -1) && (move_x <= 1) && (move_y >= -1) && (move_y <= 1))
+      targ_is_adjacent = true;
+
+    if (targ_monst != NON_MONSTER)
+    {
+        struct monsters *mon = &menv[targ_monst];
+
+        if (mons_has_ench( mon, ENCH_SUBMERGED ))
+            goto break_out;
+
+        // you can swap places with a friendly monster if you
+        // can see it and you're not confused
+        if (mons_friendly( mon ) && player_monster_visible( mon ) && !you.conf)
+        {
+            if (!swap_places( mon ))
+              swap_failed = true;
+
+            goto break_out;
+        }
+
+        if (targ_is_adjacent)
+        {
+          you_attack( targ_monst, true );
+          you.turn_is_over = 1;
+
+          // we don't want to create a penalty if there isn't
+          // supposed to be one
+          if (you.berserk_penalty != NO_BERSERK_PENALTY)
+            you.berserk_penalty = 0;
+        }
+
+        attacking = true;
+    }
+
+  break_out:
+    if (targ_grid == DNGN_LAVA && you.duration[DUR_CONDENSATION_SHIELD] > 0
+        && !attacking)
+    {
+        mpr("Your icy shield dissipates!", MSGCH_DURATION);
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        you.redraw_armour_class = 1;
+    }
+
+    // Handle dangerous tiles
+    if ((targ_grid == DNGN_LAVA
+         || targ_grid == DNGN_DEEP_WATER)
+        && !attacking && !player_is_levitating() && !swap_failed)
+    {
+        // Merfold automatically enter deep water... every other case
+        // we ask for confirmation.
+      if (you.species == SP_MERFOLK && targ_grid != DNGN_LAVA)
+      {
+          // Only mention diving if we just entering the water.
+          if (!player_in_water())
+          {
+            if (you.conf)
+              mpr("You stumble into the water and return to your normal form.");
+            else
+              mpr("You dive into the water and return to your normal form.");
+            merfolk_start_swimming();
+          }
+      }
+      else
+      {
+          /*
+            bool enter = yesno("Do you really want to step there?", false);
+          */
+          bool enter = true;
+
+          if (!force)
+            enter = yesno("Do you really want to step there?", false);
+
+            if (enter)
+            {
+                fall_into_a_pool( false, targ_grid );
+                you.turn_is_over = 1;
+                do_berserk_no_combat_penalty();
+                return;
+            }
+            else
+            {
+                canned_msg(MSG_OK);
+                return;
+            }
+      }
+    }
+
+    if (!attacking && targ_grid >= MINMOVE && !swap_failed)
+    {
+      if ((targ_grid == DNGN_UNDISCOVERED_TRAP)
+          && (!force)
+          && (random2(you.skills[SK_TRAPS_DOORS] + 1) > 3))
+        {
+            strcpy(info, "Wait a moment, ");
+            strcat(info, you.your_name);
+            strcat(info, "! Do you really want to step there?");
+            mpr(info, MSGCH_WARN);
+            more();
+            you.turn_is_over = 0;
+
+            i = trap_at_xy( targ_x, targ_y );
+            if (i != -1)
+                grd[ targ_x ][ targ_y ] = trap_category(env.trap[i].type);
+            return;
+        }
+
+      /*
+        you.x_pos += move_x;
+        you.y_pos += move_y;
+      */
+
+        if (targ_grid == DNGN_SHALLOW_WATER && !player_is_levitating())
+        {
+            if (you.species != SP_MERFOLK)
+            {
+                if (one_chance_in(3) && !silenced(you.x_pos, you.y_pos))
+                {
+                    mpr("Splash!");
+                    noisy( 10, you.x_pos, you.y_pos );
+                }
+
+                you.time_taken *= 13 + random2(8);
+                you.time_taken /= 10;
+
+                if (old_grid != DNGN_SHALLOW_WATER)
+                {
+                    mpr( "You enter the shallow water. "
+                         "Moving in this stuff is going to be slow." );
+
+                    if (you.invis)
+                        mpr( "And don't expect to remain undetected." );
+                }
+            }
+            else if (!player_in_water())
+            {
+              if (you.conf)
+                mpr("You stumble into the water and return to your normal form.");
+              else
+                mpr("You return to your normal form as you enter the water.");
+              merfolk_start_swimming();
+            }
+        }
+
+        you.x_pos += move_x;
+        you.y_pos += move_y;
+
+        move_x = 0;
+        move_y = 0;
+
+        if (moving_on_foot)
+        {
+          you.time_taken *= player_movement_speed();
+          you.time_taken /= 10;
+        }
+        you.turn_is_over = 1;
+        item_check(0);
+
+        if (targ_grid >= DNGN_TRAP_MECHANICAL
+                                && targ_grid <= DNGN_UNDISCOVERED_TRAP)
+        {
+            if (targ_grid == DNGN_UNDISCOVERED_TRAP)
+            {
+                i = trap_at_xy(you.x_pos, you.y_pos);
+                if (i != -1)
+                    grd[ you.x_pos ][ you.y_pos ] = trap_category(env.trap[i].type);
+                trap_known = false;
+            }
+            else
+            {
+                trap_known = true;
+            }
+
+            i = trap_at_xy( you.x_pos, you.y_pos );
+            if (i != -1)
+            {
+                if (player_is_levitating()
+                    && trap_category(env.trap[i].type) == DNGN_TRAP_MECHANICAL)
+                {
+                    goto out_of_traps;      // can fly over mechanical traps
+                }
+
+                handle_traps(env.trap[i].type, i, trap_known);
+            }
+        }                       // end of if another grd == trap
+    }
+
+  out_of_traps:
+    // BCR - Easy doors single move
+    if (targ_grid == DNGN_CLOSED_DOOR && Options.easy_open)
+        open_door(move_x, move_y);
+    else if (targ_grid <= MINMOVE)
+    {
+      if (you.conf)
+      {
+        you.turn_is_over = 1;
+        mpr("Ouch!");
+        return;
+      }
+
+        you.running = 0;
+        move_x = 0;
+        move_y = 0;
+        you.turn_is_over = 0;
+    }
+
+    if (you.running == 2)
+        you.running = 1;
+
+    if (you.level_type == LEVEL_ABYSS
+            && (you.x_pos <= 15 || you.x_pos >= (GXM - 16)
+                    || you.y_pos <= 15 || you.y_pos >= (GYM - 16)))
+    {
+        area_shift();
+        you.pet_target = MHITNOT;
+
+#if DEBUG_DIAGNOSTICS
+        mpr( "Shifting.", MSGCH_DIAGNOSTICS );
+        int igly = 0;
+        int ig2 = 0;
+
+        for (igly = 0; igly < MAX_ITEMS; igly++)
+        {
+            if (is_valid_item( mitm[igly] ))
+                ig2++;
+        }
+
+        snprintf( info, INFO_SIZE, "Number of items present: %d", ig2 );
+        mpr( info, MSGCH_DIAGNOSTICS );
+
+        ig2 = 0;
+        for (igly = 0; igly < MAX_MONSTERS; igly++)
+        {
+            if (menv[igly].type != -1)
+                ig2++;
+        }
+
+        snprintf( info, INFO_SIZE, "Number of monsters present: %d", ig2 );
+        mpr( info, MSGCH_DIAGNOSTICS );
+
+        snprintf( info, INFO_SIZE, "Number of clouds present: %d", env.cloud_no );
+        mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+    }
+
+    if (!attacking)
+    {
+        do_berserk_no_combat_penalty();
+    }
+}                               // end move_player2()
+
+static void
+dangerous_grid_warning(void)
+{
+  if ((grd[ you.x_pos ][ you.y_pos ] != DNGN_LAVA)
+      && (grd[ you.x_pos ][ you.y_pos ] != DNGN_DEEP_WATER))
+    return;
+  if ((grd[ you.x_pos ][ you.y_pos ] != DNGN_LAVA)
+      && (you.species == SP_MERFOLK))
+    return;
+  if (!player_is_levitating())
+    return;
+  if (((you.species == SP_KENKU) && (you.experience_level >= 15))
+      || (player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION )))
+  {
+    /* permanent levitation --- no warning message required */
+    return;
+  }
+
+  if ((you.levitation > 10)
+      || ((you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+          && (you.duration[DUR_TRANSFORMATION] > 10)))
+  {
+    mpr("Watch your step.");
+  }
+  else
+  {
+    mpr("Watch your step, you are about to dive into it!", MSGCH_WARN);
+  }
+}

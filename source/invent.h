@@ -14,22 +14,36 @@
 
 #include <stddef.h>
 
+#include "items.h"
+
 #define PROMPT_ABORT        -1
 #define PROMPT_GOT_SPECIAL  -2
 
+/*
 int prompt_invent_item( const char *prompt, int type_expect,
                         bool must_exist = true,
                         bool allow_auto_list = true,
                         bool allow_easy_quit = true,
                         const char other_valid_char = '\0',
                         int *const count = NULL );
+*/
+int prompt_invent_item( const char *prompt, int type_expect,
+                        bool must_exist = true,
+                        bool allow_auto_list = true,
+                        bool allow_easy_quit = true,
+                        const char other_valid_char = '\0',
+                        int *const count = NULL,
+                        int (*item_color_func)(const item_def &) = NULL );
 
 // last updated 12may2000 {dlb}
 /* ***********************************************************************
  * called from: invent - ouch - shopping
  * *********************************************************************** */
+/*
 unsigned char invent(int item_class_inv, bool show_price);
-
+*/
+unsigned char invent(int item_class_inv, bool show_price,
+                     int (*item_color_func)(const item_def &) = NULL);
 
 // last updated 24may2000 {dlb}
 /* ***********************************************************************

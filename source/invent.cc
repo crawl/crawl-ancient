@@ -46,7 +46,12 @@ unsigned char get_invent( int invent_type )
     return (nothing);
 }                               // end get_invent()
 
+/*
 unsigned char invent( int item_class_inv, bool show_price )
+*/
+unsigned char
+invent(int item_class_inv, bool show_price,
+       int (*item_color_func)(const item_def &))
 {
     char st_pass[ ITEMNAME_SIZE ] = "";
 
@@ -244,6 +249,11 @@ unsigned char invent( int item_class_inv, bool show_price )
 
                         lines++;
 
+                        if (item_color_func != NULL)
+                          textcolor(item_color_func(you.inv[j]));
+                        else
+                          textcolor(LIGHTGREY);
+
                         yps = wherey();
 
                         in_name( j, DESC_INVENTORY_EQUIP, st_pass );
@@ -349,11 +359,19 @@ static unsigned char get_invent_quant( unsigned char keyin, int &quant )
 // It returns PROMPT_GOT_SPECIAL if the player hits the "other_valid_char".
 //
 // Note: This function never checks if the item is appropriate.
+/*
 int prompt_invent_item( const char *prompt, int type_expect,
                         bool must_exist, bool allow_auto_list,
                         bool allow_easy_quit,
                         const char other_valid_char,
                         int *const count )
+*/
+int prompt_invent_item( const char *prompt, int type_expect,
+                        bool must_exist, bool allow_auto_list,
+                        bool allow_easy_quit,
+                        const char other_valid_char,
+                        int *const count,
+                        int (*item_color_func)(const item_def &))
 {
     unsigned char  keyin = 0;
     int            ret = -1;
@@ -365,8 +383,10 @@ int prompt_invent_item( const char *prompt, int type_expect,
     if (Options.auto_list && allow_auto_list)
     {
         // pretend the player has hit '?' and setup state.
+      /*
         keyin = invent( type_expect, false );
-
+      */
+        keyin = invent( type_expect, false, item_color_func );
         need_getch = false;
 
         // Don't redraw if we're just going to display another listing
@@ -405,9 +425,19 @@ int prompt_invent_item( const char *prompt, int type_expect,
         {
             // The "view inventory listing" mode.
             if (keyin == '*')
-                keyin = invent( -1, false );
+            {
+              /*
+              keyin = invent( -1, false );
+              */
+              keyin = invent( -1, false, item_color_func);
+            }
             else
-                keyin = invent( type_expect, false );
+            {
+              /*
+              keyin = invent( type_expect, false );
+              */
+              keyin = invent( type_expect, false, item_color_func);
+            }
 
             need_getch  = false;
 

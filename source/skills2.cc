@@ -1413,46 +1413,46 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      },
 
     {                           // SP_DEMIGOD (31)
-     110,                       // SK_FIGHTING
-     110,                       // SK_SHORT_BLADES
-     110,                       // SK_LONG_SWORDS
-     110,                       // SK_UNUSED_1
-     110,                       // SK_AXES
-     110,                       // SK_MACES_FLAILS
-     110,                       // SK_POLEARMS
-     110,                       // SK_STAVES
-     110,                       // SK_SLINGS
-     110,                       // SK_BOWS
-     110,                       // SK_CROSSBOWS
-     110,                       // SK_DARTS
-     110,                       // SK_THROWING
-     110,                       // SK_ARMOUR
-     110,                       // SK_DODGING
-     110,                       // SK_STEALTH
-     110,                       // SK_STABBING
-     110,                       // SK_SHIELDS
-     110,                       // SK_TRAPS_DOORS
-     110,                       // SK_UNARMED_COMBAT
-     110,                       // undefined
-     110,                       // undefined
-     110,                       // undefined
-     110,                       // undefined
-     110,                       // undefined
-     110,                       // SK_SPELLCASTING
-     110,                       // SK_CONJURATIONS
-     110,                       // SK_ENCHANTMENTS
-     110,                       // SK_SUMMONINGS
-     110,                       // SK_NECROMANCY
-     110,                       // SK_TRANSLOCATIONS
-     110,                       // SK_TRANSMIGRATION
-     110,                       // SK_DIVINATIONS
-     110,                       // SK_FIRE_MAGIC
-     110,                       // SK_ICE_MAGIC
-     110,                       // SK_AIR_MAGIC
-     110,                       // SK_EARTH_MAGIC
-     110,                       // SK_POISON_MAGIC
-     110,                       // SK_INVOCATIONS
-     110,                       // SK_EVOCATIONS
+      80 /*110*/,                       // SK_FIGHTING
+      80 /*110*/,                       // SK_SHORT_BLADES
+      80 /*110*/,                       // SK_LONG_SWORDS
+      80 /*110*/,                       // SK_UNUSED_1
+      80 /*110*/,                       // SK_AXES
+      80 /*110*/,                       // SK_MACES_FLAILS
+      80 /*110*/,                       // SK_POLEARMS
+      80 /*110*/,                       // SK_STAVES
+      80 /*110*/,                       // SK_SLINGS
+      80 /*110*/,                       // SK_BOWS
+      80 /*110*/,                       // SK_CROSSBOWS
+      80 /*110*/,                       // SK_DARTS
+      80 /*110*/,                       // SK_THROWING
+      80 /*110*/,                       // SK_ARMOUR
+      80 /*110*/,                       // SK_DODGING
+      80 /*110*/,                       // SK_STEALTH
+      80 /*110*/,                       // SK_STABBING
+      80 /*110*/,                       // SK_SHIELDS
+      80 /*110*/,                       // SK_TRAPS_DOORS
+      80 /*110*/,                       // SK_UNARMED_COMBAT
+      80 /*110*/,                       // undefined
+      80 /*110*/,                       // undefined
+      80 /*110*/,                       // undefined
+      80 /*110*/,                       // undefined
+      80 /*110*/,                       // undefined
+      80 /*110*/,                       // SK_SPELLCASTING
+      80 /*110*/,                       // SK_CONJURATIONS
+      80 /*110*/,                       // SK_ENCHANTMENTS
+      80 /*110*/,                       // SK_SUMMONINGS
+      80 /*110*/,                       // SK_NECROMANCY
+      80 /*110*/,                       // SK_TRANSLOCATIONS
+      80 /*110*/,                       // SK_TRANSMIGRATION
+      80 /*110*/,                       // SK_DIVINATIONS
+      80 /*110*/,                       // SK_FIRE_MAGIC
+      80 /*110*/,                       // SK_ICE_MAGIC
+      80 /*110*/,                       // SK_AIR_MAGIC
+      80 /*110*/,                       // SK_EARTH_MAGIC
+      80 /*110*/,                       // SK_POISON_MAGIC
+      200 /*110*/,                       // SK_INVOCATIONS
+      80 /*110*/,                       // SK_EVOCATIONS
      },
 
     {                           // SP_SPRIGGAN (32)
@@ -2361,6 +2361,7 @@ void wield_warning(bool newWeapon)
     {
         strcpy( info, "Your low throwing skill limits the effectiveness of ");
         strcat( info, wepstr );
+        strcat( info, "." );
         mpr( info, MSGCH_WARN );
     }
 }

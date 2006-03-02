@@ -109,7 +109,7 @@ static const struct ability_def Ability_List[] =
     { ABIL_FLY, "Fly", 3, 0, 100, 0, ABFLAG_NONE },
     { ABIL_SUMMON_MINOR_DEMON, "Summon Minor Demon", 3, 3, 75, 0, ABFLAG_NONE },
     { ABIL_SUMMON_DEMON, "Summon Demon", 5, 5, 150, 0, ABFLAG_NONE },
-    { ABIL_HELLFIRE, "Hellfire", 8, 8, 200, 0, ABFLAG_NONE },
+    { ABIL_HELLFIRE, "Hellfire", 8, 24 /* 8 */, 200, 0, ABFLAG_NONE },
     { ABIL_TORMENT, "Torment", 9, 0, 250, 0, ABFLAG_PAIN },
     { ABIL_RAISE_DEAD, "Raise Dead", 5, 5, 150, 0, ABFLAG_NONE },
     { ABIL_CONTROL_DEMON, "Control Demon", 4, 4, 100, 0, ABFLAG_NONE },
@@ -721,7 +721,7 @@ bool activate_ability(void)
       /*
         your_spells(SPELL_HELLFIRE, 20 + you.experience_level, false);
       */
-        your_spells(SPELL_HELLFIRE, you.experience_level * 4, false);
+        your_spells(SPELL_HELLFIRE, you.experience_level * 6, false);
         break;
 
     case ABIL_TORMENT:

@@ -377,7 +377,7 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/var/games/crawl/"
+    #define SAVE_DIR_PATH       "/var/games/crawl-alternative/"
 
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
     // to a command to compress and bundle the save game files into a

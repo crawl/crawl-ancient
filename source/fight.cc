@@ -1956,7 +1956,9 @@ void monster_attack(int monster_attacking)
         return;
 
     if (you.duration[DUR_REPEL_UNDEAD]
-        && mons_holiness( attacker->type ) == MH_UNDEAD
+        // && mons_holiness( attacker->type ) == MH_UNDEAD
+        && ((mons_holiness( attacker->type ) == MH_UNDEAD)
+            || (mons_holiness( attacker->type ) == MH_DEMONIC))
         && !check_mons_resist_magic( attacker, you.piety ))
     {
         simple_monster_message(attacker,

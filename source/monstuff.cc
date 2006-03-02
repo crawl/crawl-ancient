@@ -823,6 +823,7 @@ static bool valid_morph( struct monsters *monster, int new_mclass )
         || new_mclass == MONS_PROGRAM_BUG
         || new_mclass == MONS_SHAPESHIFTER
         || new_mclass == MONS_GLOWING_SHAPESHIFTER
+        || new_mclass == MONS_HYDRA
 
         // These shouldn't happen anyways (demons unaffected + holiness check),
         // but if we ever do have polydemon, these will be needed:
@@ -895,6 +896,8 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
       if (wanted_level > 30)
         wanted_level = 30;
 
+      tries = 100000;
+
         do
         {
             targetc = random2( NUM_MONSTERS );
@@ -909,6 +912,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
 
             if (relax > 50)
                 return (simple_monster_message( monster, " shudders." ));
+
         }
         while ((tries--)
                && ((!valid_morph( monster, targetc ))
@@ -946,7 +950,8 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
         strcat( str_polymon, "something you cannot see!" );
     else
     {
-        strcat( str_polymon, monam( 250, targetc, !invis, DESC_NOCAP_A ) );
+      strcat( str_polymon, monam( 250, targetc, true /* !invis */,
+                                  DESC_NOCAP_A ) );
 
         if (targetc == MONS_PULSATING_LUMP)
             strcat( str_polymon, " of flesh" );

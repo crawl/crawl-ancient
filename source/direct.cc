@@ -727,6 +727,9 @@ static void describe_cell(int mx, int my)
         strcat(info, ".");
         mpr(info);
 
+        if (menv[i].type == MONS_PLAYER_GHOST)
+          mpr((get_player_ghost_description()).c_str());
+
         if (menv[i].type != MONS_DANCING_WEAPON && mon_wep != NON_ITEM)
         {
             snprintf( info, INFO_SIZE, "%s is wielding ", mons_pronoun( menv[i].type,

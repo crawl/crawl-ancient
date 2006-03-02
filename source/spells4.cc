@@ -58,6 +58,10 @@ enum DEBRIS                 // jmf: add for shatter, dig, and Giants to throw
     NUM_DEBRIS
 };          // jmf: ...and I'll actually implement the items Real Soon Now...
 
+/* from acr.cc */
+void move_player2(int move_x, int move_y,
+                  bool force, bool moving_on_foot);
+
 static bool mons_can_host_shuggoth(int type);
 // static int make_a_random_cloud(int x, int y, int pow, int ctype);
 static int make_a_rot_cloud(int x, int y, int pow, int ctype);
@@ -596,7 +600,10 @@ void cast_detect_secret_doors(int pow)
             if (!see_grid(x, y))
                 continue;
 
+            /*
             if (grd[x][y] == DNGN_SECRET_DOOR && random2(pow) > random2(15))
+            */
+            if (grd[x][y] == DNGN_SECRET_DOOR)
             {
                 grd[x][y] = DNGN_CLOSED_DOOR;
                 found++;
@@ -1279,18 +1286,45 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
 
     if (x == you.x_pos && y == you.y_pos)
     {
+      if (player_is_levitating())
+      {
+        mpr( "Lightning grounds itself before it reaches you." );
+        return 0;
+      }
+
         mpr( "You are struck by lightning." );
+        /*
         damage = 3 + random2( 5 + pow / 10 );
+        */
+        damage = 3 + random2(15 + (pow * 3) / 4);
         damage = check_your_resists( damage, BEAM_ELECTRICITY );
         ouch( damage, 0, KILLED_BY_WILD_MAGIC );
     }
     else if (mon == NON_MONSTER)
-        return (0);
-    else if (mons_res_elec(&menv[mon]) > 0 || mons_flies(&menv[mon]))
-        return (0);
+    {
+      return (0);
+    }
+    else if (mons_flies(&menv[mon]))
+    {
+      strcpy( info, "Lightning grounds itself before it reaches " );
+      strcat( info, ptr_monam( &(menv[mon]), DESC_NOCAP_THE ) );
+      strcat( info, "." );
+      mpr( info );
+      return 0;
+    }
+    else if (mons_res_elec(&menv[mon]) > 0)
+    {
+      strcpy( info, ptr_monam( &(menv[mon]), DESC_CAP_THE ) );
+      strcat( info, " appears unharmed." );
+      mpr( info );
+      return 0;
+    }
     else
     {
+      /*
         damage = 3 + random2( 5 + pow / 10 );
+      */
+      damage = 3 + random2(15 + (pow * 3) / 4);
         damage = mons_adjust_flavoured( &menv[mon], beam, damage );
 
         if (damage)
@@ -1324,9 +1358,13 @@ static int discharge_monsters( int x, int y, int pow, int garbage )
 
 void cast_discharge( int pow )
 {
-    int num_targs = 1 + random2( 1 + pow / 25 );
+    int num_targs;
     int dam;
 
+    if (pow > 100)
+      pow = 100;
+
+    num_targs = 1 + random2( 1 + pow / 25 );
     dam = apply_random_around_square( discharge_monsters, you.x_pos, you.y_pos,
                                       true, pow, num_targs );
 
@@ -3186,8 +3224,22 @@ static int quadrant_blink(int x, int y, int pow, int garbage)
         }
     }
 
+    /*
     you.x_pos = bx;
     you.y_pos = by;
+    */
+    if ((!player_can_teleport_here(bx, by))
+        || ((bx == you.x_pos) && (by == you.y_pos)))
+    {
+        mpr("You feel jittery for a moment.");
+        return 0;
+    }
+    else
+    {
+      move_player2(bx - you.x_pos, by - you.y_pos,
+                   true, false);
+      you.running = 0;
+    }
 
     return (1);
 }

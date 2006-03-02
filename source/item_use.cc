@@ -72,6 +72,8 @@ void use_randart(unsigned char item_wield_2);
 static bool enchant_weapon( int which_stat, bool quiet = false );
 static bool enchant_armour( void );
 
+static int item_color_func_ring_amulet(const item_def &item);
+
 bool
 can_unwield_weapon(bool suppress_msg)
 {
@@ -558,6 +560,7 @@ void wield_effects(int item_wield_2, bool showMsgs)
             // right now that's always "uncursed". -- bwr
             set_ident_flags( you.inv[item_wield_2], ISFLAG_KNOW_CURSE );
         }
+        you.wield_change = true;
     }
 
     if (you.inv[item_wield_2].base_type == OBJ_WEAPONS)
@@ -1975,6 +1978,29 @@ static void throw_it(struct bolt &pbolt, int throw_2)
     you.turn_is_over = 1;
 }                               // end throw_it()
 
+static int
+item_color_func_ring_amulet(const item_def &item)
+{
+  if (!is_valid_item(item))
+  {
+    return RED;
+  }
+  else if (item.base_type == OBJ_JEWELLERY)
+  {
+    if (item.sub_type >= AMU_RAGE)
+    {
+      /* amulet */
+      return WHITE;
+    }
+
+    /* ring */
+    return LIGHTGREY;
+  }
+
+  return DARKGREY;
+}
+
+
 void puton_ring(void)
 {
     bool is_amulet = false;
@@ -1993,8 +2019,13 @@ void puton_ring(void)
         return;
     }
 
+    /*
     item_slot = prompt_invent_item( "Put on which piece of jewellery?",
                                     OBJ_JEWELLERY );
+    */
+    item_slot = prompt_invent_item("Put on which piece of jewellery?",
+                                   OBJ_JEWELLERY, true, true, true,
+                                   '\0', NULL, item_color_func_ring_amulet);
 
     if (item_slot == PROMPT_ABORT)
     {
@@ -2252,8 +2283,13 @@ void remove_ring(void)
 
     if (hand_used == 10)
     {
+      /*
         int equipn = prompt_invent_item( "Remove which piece of jewellery?",
                                          OBJ_JEWELLERY );
+      */
+      int equipn = prompt_invent_item("Remove which piece of jewellery?",
+                                      OBJ_JEWELLERY, true, true, true,
+                                      '\0', NULL, item_color_func_ring_amulet);
 
         if (equipn == PROMPT_ABORT)
         {
@@ -3089,14 +3125,19 @@ void read_scroll(void)
                         ? "This scroll appears to be blank."
                         : "The writing blurs in front of your eyes.");
 #endif /* 0 */
-        if ((you.inv[item_slot].sub_type == SCR_PAPER)
-            || ((you.mutation[MUT_BLURRY_VISION] == 3)
-                && (get_ident_type(OBJ_SCROLLS, you.inv[item_slot].sub_type)
-                    != ID_KNOWN_TYPE)
-                && (one_chance_in(3))))
+        if ((you.mutation[MUT_BLURRY_VISION] == 3)
+            && (get_ident_type(OBJ_SCROLLS, you.inv[item_slot].sub_type)
+                != ID_KNOWN_TYPE)
+            && (!item_ident(you.inv[item_slot], ISFLAG_KNOW_TYPE)))
         {
           /* this should not be a warning */
           mpr(paper_message);
+        }
+        else if (you.inv[item_slot].sub_type == SCR_PAPER)
+        {
+          mpr(paper_message);
+          set_ident_type( OBJ_SCROLLS, you.inv[item_slot].sub_type,
+                          ID_KNOWN_TYPE );
         }
         else
         {
@@ -3120,6 +3161,7 @@ void read_scroll(void)
         if (you.conf)
         {
             random_uselessness(random2(9), item_slot);
+            dec_inv_item_quantity( item_slot, 1 );
             return;
         }
 
@@ -3128,6 +3170,13 @@ void read_scroll(void)
     }
 
     bool id_the_scroll = true;  // to prevent unnecessary repetition
+
+    /* scroll of random uselessness sometimes reassembles itself */
+    if ((scroll_type != SCR_PAPER)
+        && (scroll_type != SCR_RANDOM_USELESSNESS))
+    {
+        dec_inv_item_quantity( item_slot, 1 );
+    }
 
     // it is the exception, not the rule, that
     // the scroll will not be identified {dlb}:
@@ -3185,6 +3234,7 @@ void read_scroll(void)
 
     case SCR_FORGETFULNESS:
         mpr("You feel momentarily disoriented.");
+        know_amulet_type(AMU_CLARITY);
         if (!wearing_amulet(AMU_CLARITY))
             forget_map(50 + random2(50));
         break;
@@ -3389,7 +3439,13 @@ void read_scroll(void)
     }                           // end switch
 
     // finally, destroy and identify the scroll
+    /*
     if (scroll_type != SCR_PAPER)
+    {
+        dec_inv_item_quantity( item_slot, 1 );
+    }
+    */
+    if (scroll_type == SCR_RANDOM_USELESSNESS)
     {
         dec_inv_item_quantity( item_slot, 1 );
     }

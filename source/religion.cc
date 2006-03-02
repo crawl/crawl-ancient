@@ -214,7 +214,13 @@ void pray(void)
     }
 
 #if DEBUG_DIAGNOSTICS
+    /*
     snprintf( info, INFO_SIZE, "piety: %d", you.piety );
+    */
+    snprintf( info, INFO_SIZE, "piety=%d, gift_timeout=%d, penance[%d]=%d, "
+              "DUR_PRAYER=%d", you.piety, you.gift_timeout,
+              you.religion, you.penance[you.religion],
+              you.duration[DUR_PRAYER] );
     mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
@@ -439,6 +445,8 @@ void pray(void)
                 // Vehumet gives books less readily
                 if (you.religion == GOD_VEHUMET && success)
                     inc_gift_timeout(10 + random2(10));
+                if ((you.religion == GOD_SIF_MUNA) && success)
+                  you.gift_timeout = 110;
             }                   // end of giving book
         }                       // end of book gods
     }                           // end of gift giving
@@ -1123,7 +1131,7 @@ void gain_piety(char pgn)
         dec_penance(pgn);
         return;
     }
-    else if (you.gift_timeout > 0)
+    else if ((you.gift_timeout > 0) && (you.religion != GOD_SIF_MUNA))
     {
         if (you.gift_timeout > pgn)
             you.gift_timeout -= pgn;
@@ -2357,7 +2365,14 @@ void altar_prayer(void)
             mpr(info);
 
             if (value >= 150)
-                gain_piety(1 + random2(3));
+            {
+              int gained = 1 + random2(3);
+              gain_piety(gained);
+              if (you.gift_timeout > gained)
+                you.gift_timeout -= gained;
+              else
+                you.gift_timeout = 0;
+            }
 
             destroy_item(i);
             break;
@@ -2451,6 +2466,8 @@ void god_pitch(unsigned char which_god)
     you.religion = which_god;   //jmf: moved up so god_speaks gives right colour
     you.piety = 15;             // to prevent near instant excommunication
     you.gift_timeout = 0;
+    if (which_god == GOD_SIF_MUNA)
+      you.gift_timeout = 110;
     set_god_ability_slots();    // remove old god's slots, reserve new god's
 
     snprintf( info, INFO_SIZE, " welcomes you%s!",

@@ -1147,6 +1147,7 @@ void item()
                                     = mitm[igrd[count_x][count_y]].colour;
                         }
 
+#if 0
                         switch (mitm[igrd[count_x][count_y]].base_type)
                         {
                         case OBJ_ORBS:
@@ -1231,6 +1232,15 @@ void item()
                                     [count_y - you.y_pos + 9] = '8';
                             break;
                         }
+#endif /* 0 */
+                        env.show[count_x - you.x_pos + 9]
+                          [count_y - you.y_pos + 9]
+                          = item_show_code(igrd[count_x][count_y]);
+                        if (mitm[igrd[count_x][count_y]].base_type == OBJ_GOLD)
+                        {
+                          env.show_col[count_x - you.x_pos + 9]
+                            [count_y - you.y_pos + 9] = YELLOW;
+                        }
                     }
                 }
             }
@@ -1238,6 +1248,74 @@ void item()
     }
 }                               // end item()
 
+unsigned int
+item_show_code(int obj)
+{
+  unsigned int result = 0;
+
+  switch (mitm[obj].base_type)
+  {
+  case OBJ_ORBS:
+    result = 256;
+    break;
+    // need + 6 because show is 0 - 12, not -6 - +6
+  case OBJ_WEAPONS:
+  case OBJ_MISSILES:
+    result = 258;
+    break;
+  case OBJ_ARMOUR:
+    result = 259;
+    break;
+  case OBJ_WANDS:
+    result = 260;
+    break;
+  case OBJ_FOOD:
+    result = 261;
+    break;
+  case OBJ_UNKNOWN_I:
+    result = 262;
+    break;
+  case OBJ_SCROLLS:
+    result = 263;
+    break;
+  case OBJ_JEWELLERY:
+    if (mitm[obj].sub_type >= AMU_RAGE)
+    {
+      result = 273;
+    }
+    else
+    {
+      result = 264;
+    }
+    break;
+  case OBJ_POTIONS:
+    result = 265;
+    break;
+  case OBJ_UNKNOWN_II:
+    result = 266;
+    break;
+  case OBJ_BOOKS:
+    result = 267;
+    break;
+  case OBJ_STAVES:
+    result = 269;
+    break;
+  case OBJ_MISCELLANY:
+    result = 270;
+    break;
+  case OBJ_CORPSES:
+    result = 271;
+    break;
+  case OBJ_GOLD:
+    result = 272;
+    break;
+  default:
+    result = '8';
+    break;
+  }
+
+  return result;
+}
 
 void cloud_grid(void)
 {

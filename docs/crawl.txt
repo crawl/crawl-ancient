@@ -2,7 +2,7 @@
                            by Oohara Yuuma
                based on Dungeon Crawl by Linley Henzell
              (Copyright 1997, 1998, 1999 Linley Henzell)
-                    (Copyright 2005 Oohara Yuuma)
+                 (Copyright 2005, 2006 Oohara Yuuma)
 
 This is a variant (that is, a modified version) of Dungeon Crawl, a dungeon
 exploring game by Linley Henzell.  Report bugs to <oohara@libra.interq.or.jp>.

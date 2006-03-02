@@ -302,6 +302,19 @@ void area_shift(void)
             // nuke terrain otherwise
             grd[i][j] = DNGN_UNSEEN;
 
+            // nuke trap
+            {
+              int k;
+              for (k = 0; k < MAX_TRAPS; k++)
+              {
+                if ((env.trap[k].type != TRAP_UNASSIGNED)
+                    && (env.trap[k].x == i) && (env.trap[k].y == j))
+                {
+                  env.trap[k].type = TRAP_UNASSIGNED;
+                }
+              }
+            }
+
             // nuke items
             destroy_item_stack( i, j );
         }
@@ -323,6 +336,20 @@ void area_shift(void)
 
             // move terrain
             grd[ipos][jpos] = grd[i][j];
+
+            // move trap
+            {
+              int k;
+              for (k = 0; k < MAX_TRAPS; k++)
+              {
+                if ((env.trap[k].type != TRAP_UNASSIGNED)
+                    && (env.trap[k].x == i) && (env.trap[k].y == j))
+                {
+                  env.trap[k].x = ipos;
+                  env.trap[k].y = jpos;
+                }
+              }
+            }
 
             // move item
             move_item_stack_to_grid( i, j, ipos, jpos );
@@ -453,4 +480,5 @@ void abyss_teleport( bool new_area )
     generate_area( 10, 10, (GXM - 10), (GYM - 10) );
 
     grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+    you.running = 0;
 }

@@ -199,7 +199,7 @@ const char *rand_wpn_names[] = {
     " of the Saviour",
     " of Infection",
     " of Defence",
-    " of Protection",
+    " of Self Defence" /* " of Protection" */,
     " of Defence by Offence",
     " of Expedience",
     " of Reason",
@@ -1052,7 +1052,11 @@ void randart_wpn_properties( const item_def &item,
 
     /* see_invis */
     if (random5(4 + power_level) == 0
-        && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY))
+        /*
+        && (aclass != OBJ_JEWELLERY || atype != RING_INVISIBILITY)
+        */
+        && (aclass != OBJ_JEWELLERY || atype != RING_SEE_INVISIBLE)
+        )
     {
         proprt[RAP_EYESIGHT] = 1;
         power_level++;
@@ -1122,7 +1126,10 @@ void randart_wpn_properties( const item_def &item,
         proprt[RAP_NOISES] = 1 + random5(4);
         break;
     case 1:                     /* no magic */
-        proprt[RAP_PREVENT_SPELLCASTING] = 1;
+      /* ring of magical power can help invocation */
+      if ((aclass == OBJ_JEWELLERY) && (atype == RING_WIZARDRY))
+        break;
+      proprt[RAP_PREVENT_SPELLCASTING] = 1;
         break;
     case 2:                     /* random teleport */
         if (aclass != OBJ_WEAPONS)

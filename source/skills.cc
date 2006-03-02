@@ -363,6 +363,20 @@ static void exercise2( char exsk )
 
     you.redraw_experience = 1;
 
+    if ((exsk >= SK_SPELLCASTING) && (exsk <= SK_POISON_MAGIC)
+        && (you.religion == GOD_SIF_MUNA))
+    {
+      int skill_inc_temp = skill_inc;
+      while (skill_inc_temp > random2(40))
+      {
+        if (you.gift_timeout > 1)
+          you.gift_timeout -= 1;
+        else
+          you.gift_timeout = 0;
+        skill_inc_temp -= 40;
+      }
+    }
+
 /*
     New (LH): debugging bit: when you exercise a skill, displays the skill
     exercised and how much you spent on it. Too irritating to be a regular

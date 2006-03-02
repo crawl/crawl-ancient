@@ -3930,3 +3930,18 @@ void rot_player( int amount )
         you.rotting += amount;
     }
 }
+
+bool
+player_can_teleport_here(int x, int y)
+{
+  if ((x <= 5) || (y <= 5) || (x >= (GXM - 5)) || (y >= (GYM - 5)))
+    return false;
+  if ((grd[x][y] != DNGN_FLOOR) && (grd[x][y] != DNGN_SHALLOW_WATER))
+    return false;
+  if (mgrd[x][y] != NON_MONSTER)
+    return false;
+  if (env.cgrid[x][y] != EMPTY_CLOUD)
+    return false;
+
+  return true;
+}

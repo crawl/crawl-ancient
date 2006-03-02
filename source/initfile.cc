@@ -19,6 +19,13 @@
 #include <string.h>
 #include <ctype.h>
 
+#ifdef LINUX
+/* errno */
+#include <errno.h>
+/* mkdir */
+#include <sys/stat.h>
+#endif /* LINUX */
+
 #include "externs.h"
 #include "defines.h"
 #include "player.h"
@@ -348,6 +355,14 @@ void read_init_file(void)
     }
     else if (SysEnv.crawl_dir)
     {
+
+#if LINUX
+      errno = 0;
+      if ((mkdir(SysEnv.crawl_dir, S_IRUSR | S_IWUSR | S_IXUSR) != 0)
+          && (errno != EEXIST))
+        return;
+#endif /* LINUX */
+
         strncpy(name_buff, SysEnv.crawl_dir, kPathLen);
         name_buff[ kPathLen - 1 ] = '\0';
         strncat(name_buff, "init.txt", kPathLen);
@@ -772,8 +787,8 @@ void get_system_environment(void)
       SysEnv.crawl_dir = strdup(getenv("HOME"));
       SysEnv.crawl_dir = (char *) realloc(SysEnv.crawl_dir,
                                           sizeof(char) * (strlen(SysEnv.crawl_dir)
-                                                 + strlen("/.crawl/") + 1));
-      strcpy(SysEnv.crawl_dir + strlen(SysEnv.crawl_dir), "/.crawl/");
+                                                 + strlen("/.crawl-alternative/") + 1));
+      strcpy(SysEnv.crawl_dir + strlen(SysEnv.crawl_dir), "/.crawl-alternative/");
     }
 
     // The full path to the init file -- this over-rides CRAWL_DIR

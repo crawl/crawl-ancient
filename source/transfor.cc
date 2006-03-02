@@ -453,9 +453,17 @@ void untransform(void)
     // If nagas wear boots while transformed, they fall off again afterwards:
     // I don't believe this is currently possible, and if it is we
     // probably need something better to cover all possibilities.  -bwr
+    /*
     if ((you.species == SP_NAGA || you.species == SP_CENTAUR)
             && you.equip[ EQ_BOOTS ] != -1
             && you.inv[ you.equip[EQ_BOOTS] ].plus2 != TBOOT_NAGA_BARDING)
+    */
+    if ((you.equip[ EQ_BOOTS ] != -1)
+        && (((you.species == SP_NAGA )
+             && (you.inv[ you.equip[EQ_BOOTS] ].plus2 != TBOOT_NAGA_BARDING))
+            || ((you.species == SP_CENTAUR)
+                && (you.inv[ you.equip[EQ_BOOTS] ].plus2
+                    != TBOOT_CENTAUR_BARDING))))
     {
         rem_stuff[EQ_BOOTS] = 1;
         remove_equipment(rem_stuff);

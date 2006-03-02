@@ -55,4 +55,6 @@ void describe_monsters(int class_described, unsigned char which_mons);
  * *********************************************************************** */
 void describe_spell(int spelled);
 
+std::string get_player_ghost_description(void);
+
 #endif

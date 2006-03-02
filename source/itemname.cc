@@ -667,7 +667,7 @@ static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE],
                        (item.special == SPWPN_KNIFE_OF_ACCURACY) ? "thin dagger" :
                        (item.special == SPWPN_STAFF_OF_OLGREB) ? "green glowing staff" :
                        (item.special == SPWPN_VAMPIRES_TOOTH) ? "ivory dagger" :
-                       (item.special == SPWPN_STAFF_OF_WUCAD_MU) ? "quarterstaff"
+                        (item.special == SPWPN_STAFF_OF_WUCAD_MU) ? "ephemeral quarterstaff" /* "quarterstaff" */
                                                            : "buggy bola",
                                                            ITEMNAME_SIZE );
             }

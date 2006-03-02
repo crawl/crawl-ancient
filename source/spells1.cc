@@ -41,6 +41,13 @@
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
+#include "randart.h"
+
+/* from acr.cc */
+void move_player2(int move_x, int move_y,
+                  bool force, bool moving_on_foot);
+
+static int item_color_func_identify(const item_def &item);
 
 void blink(void)
 {
@@ -86,10 +93,7 @@ void blink(void)
         if (grd[beam.tx][beam.ty] <= DNGN_LAST_SOLID_TILE
             || mgrd[beam.tx][beam.ty] != NON_MONSTER)
         */
-        if ((grd[beam.tx][beam.ty] != DNGN_FLOOR
-             && grd[beam.tx][beam.ty] != DNGN_SHALLOW_WATER)
-            || mgrd[beam.tx][beam.ty] != NON_MONSTER
-            || env.cgrid[beam.tx][beam.ty] != EMPTY_CLOUD)
+        if (!player_can_teleport_here(beam.tx, beam.ty))
         {
             mpr("Oops! Maybe something was there already.");
             random_blink(false);
@@ -101,8 +105,12 @@ void blink(void)
         }
         else
         {
+          /*
             you.x_pos = beam.tx;
             you.y_pos = beam.ty;
+          */
+          move_player2(beam.tx - you.x_pos, beam.ty - you.y_pos, true, false);
+          you.running = 0;
 
             // controlling teleport contaminates the player -- bwr
             contaminate_player( 1 );
@@ -133,6 +141,10 @@ void random_blink(bool allow_partial_control)
     {
         mpr("You feel jittery for a moment.");
     }
+    else if (!player_can_teleport_here(tx, ty))
+    {
+        mpr("You feel jittery for a moment.");
+    }
 
 #ifdef USE_SEMI_CONTROLLED_BLINK
     //jmf: add back control, but effect is cast_semi_controlled_blink(pow)
@@ -150,13 +162,20 @@ void random_blink(bool allow_partial_control)
         mpr("You blink.");
 
         succ = true;
+        /*
         you.x_pos = tx;
         you.y_pos = ty;
+        */
 
         if (you.level_type == LEVEL_ABYSS)
         {
             abyss_teleport( false );
             you.pet_target = MHITNOT;
+        }
+        else
+        {
+          move_player2(tx - you.x_pos, ty - you.y_pos, true, false);
+          you.running = 0;
         }
     }
 
@@ -247,8 +266,13 @@ void identify(int power)
 
     do
     {
+      /*
         item_slot = prompt_invent_item( "Identify which item?", -1, true,
                                         false, false );
+      */
+        item_slot = prompt_invent_item( "Identify which item?", -1, true,
+                                        false, false, '\0', NULL,
+                                        item_color_func_identify);
         if (item_slot == PROMPT_ABORT)
         {
             canned_msg( MSG_OK );
@@ -271,6 +295,69 @@ void identify(int power)
     }
     while (id_used > 0);
 }                               // end identify()
+
+static int
+item_color_func_identify(const item_def &item)
+{
+  if (!is_valid_item(item))
+  {
+    return RED;
+  }
+  else if ((item.flags & ISFLAG_IDENT_MASK) == ISFLAG_IDENT_MASK)
+  {
+    return DARKGREY;
+  }
+  else if ((item.base_type == OBJ_FOOD)
+           || (item.base_type == OBJ_ORBS)
+           || (item.base_type == OBJ_GOLD)
+           || (item.base_type == OBJ_CORPSES))
+  {
+    return DARKGREY;
+  }
+  else if (((item.base_type == OBJ_BOOKS)
+            || (item.base_type == OBJ_STAVES)
+            || (item.base_type == OBJ_MISCELLANY))
+           && (item_ident(item, ISFLAG_KNOW_TYPE)))
+  {
+    return DARKGREY;
+  }
+  else if ((item.base_type == OBJ_WEAPONS)
+           && (item_ident(item, ISFLAG_KNOW_CURSE))
+           && (item_ident(item, ISFLAG_KNOW_TYPE)))
+  {
+    return LIGHTGREY;
+  }
+  else if (((item.base_type == OBJ_SCROLLS)
+            || (item.base_type == OBJ_POTIONS))
+           && ((get_ident_type(item.base_type, item.sub_type) == ID_KNOWN_TYPE)
+               || (item_ident(item, ISFLAG_KNOW_TYPE))))
+  {
+    return DARKGREY;
+  }
+  else if ((item.base_type == OBJ_JEWELLERY)
+           && ((get_ident_type(item.base_type, item.sub_type) == ID_KNOWN_TYPE)
+               || (item_ident(item, ISFLAG_KNOW_TYPE))))
+  {
+    if (is_random_artefact( item ))
+      return WHITE;
+
+    /* you may want to know whether it is cursed or not even if it doesn't
+       have any plus value
+    */
+    return LIGHTGREY;
+  }
+  else if ((item.base_type == OBJ_WANDS)
+           && ((get_ident_type(item.base_type, item.sub_type) == ID_KNOWN_TYPE)
+               || (item_ident(item, ISFLAG_KNOW_TYPE))))
+  {
+    if (item_ident(item, ISFLAG_KNOW_PLUSES))
+      return DARKGREY;
+
+    return LIGHTGREY;
+  }
+
+  return WHITE;
+}
 
 void conjure_flame(int pow)
 {
