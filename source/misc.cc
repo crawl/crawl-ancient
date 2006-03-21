@@ -1312,8 +1312,15 @@ static void dart_trap( bool trap_known, int trapped, struct bolt &pbolt,
     pbolt.target_x = you.x_pos;
     pbolt.target_y = you.y_pos;
 
+    /* don't create ammunition here --- it can be abused because a trap
+     * never breaks when it is triggered; it is wrong if you can get
+     * an infinite number of ammunition by triggering a trap repeatedly
+     * while disarming a trap gives you only a finite number of ammunition
+     */
+    /*
     if (coinflip())
         itrap( pbolt, trapped );
+    */
 }                               // end dart_trap()
 
 //
@@ -1479,7 +1486,19 @@ void disarm_trap( struct dist &disa )
         return;
     }
 
+    /*
     if (random2(you.skills[SK_TRAPS_DOORS] + 2) <= random2(you.your_level + 5))
+    */
+    const int pro_disarm = random2(you.skills[SK_TRAPS_DOORS] + 2);
+    const int con_disarm = random2(you.your_level + 5);
+#if DEBUG_DIAGNOSTICS
+    snprintf( info, INFO_SIZE, "pro_disarm: %d/%d; "
+              "con_disarm: %d/%d",
+              pro_disarm, you.skills[SK_TRAPS_DOORS] + 2,
+              con_disarm, you.your_level + 5 );
+    mpr( info, MSGCH_DIAGNOSTICS );
+#endif /* DEBUG_DIAGNOSTICS */
+    if (pro_disarm <= con_disarm)
     {
         mpr("You failed to disarm the trap.");
 

@@ -73,7 +73,7 @@ enum ABILITIES
     ABIL_END_TRANSFORMATION,           //   55
     // ABIL_ZIN_REPEL_UNDEAD = 110,
     ABIL_ZIN_REVEAL_WAY = 110,         //  110
-    ABIL_ZIN_PURIFY_RAW_FLESH,         //  111
+    ABIL_ZIN_IDENTIFY,         //  111
     // ABIL_ZIN_HEALING,
     ABIL_ZIN_PESTILENCE,               //  112
     ABIL_ZIN_HOLY_WORD,
@@ -1401,6 +1401,7 @@ enum MISCELLANY                        // mitm[].sub_type
     MISC_DECK_OF_TRICKS,               //   15
     MISC_DECK_OF_POWER,
     MISC_PORTABLE_ALTAR_OF_NEMELEX,
+    MISC_UMBRELLA_OF_RAINMAKING,       //   18
     NUM_MISCELLANY // mv: used for random generation
 };
 
@@ -2368,7 +2369,9 @@ enum SCROLLS
     SCR_ENCHANT_WEAPON_II,
     SCR_VORPALISE_WEAPON,              //   20
     SCR_RECHARGING,
-    SCR_ENCHANT_WEAPON_III,
+    SCR_ENCHANT_WEAPON_III,            //   22
+    SCR_MUNDANITY,                     //   23
+    SCR_QUIVER,                        //   24
     NUM_SCROLLS
 };
 
@@ -2598,6 +2601,7 @@ enum SPECIES
     SP_UNKNOWN  = 100
 };
 
+/* declared as unsigned char in files.cc */
 enum SPELLS
 {
     SPELL_IDENTIFY,                    //    0
@@ -2694,6 +2698,9 @@ enum SPELLS
     SPELL_ABJURATION_II,
     SPELL_FULSOME_DISTILLATION,        //   93
     SPELL_POISON_ARROW,                //   94
+    /* begin new spell */
+    SPELL_ANCHORED_TELEPORT,           //   95
+    /* end new spell */
     SPELL_TWISTED_RESURRECTION = 110,  //  110
     SPELL_REGENERATION,
     SPELL_BONE_SHARDS,
@@ -2789,8 +2796,13 @@ enum SPELLS
     SPELL_STONESKIN,
     SPELL_SIMULACRUM,
     SPELL_CONJURE_BALL_LIGHTNING,     // 203 (be wary of 210, see below)
+    SPELL_BRAINSTORM,                 // 204
+    SPELL_VIRTUAL_DEATH,              // 205
+    SPELL_MYSTIC_GRASP,               // 206
+    SPELL_BAZAAR_OF_NANIWA,           // 207
+    SPELL_LOCAL_GLOBAL,               // 208
     NUM_SPELLS,
-    SPELL_NO_SPELL = 210              //  210 - added 22jan2000 {dlb}
+    SPELL_NO_SPELL = 251 /* 210 */              //  210 - added 22jan2000 {dlb}
 };
 
 enum SPELL_TYPES //jmf: 24jul2000: changed from integer-list to bitfield

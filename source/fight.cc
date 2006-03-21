@@ -446,6 +446,12 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 break;
             case TRAN_BLADE_HANDS:
                 damage = 12 + (you.strength / 4) + (you.dex / 4);
+                if ((you.strength > 0) && (you.strength % 4 > 0)
+                    && (random2(4) < you.strength % 4))
+                  damage++;
+                if ((you.dex > 0) && (you.dex % 4 > 0)
+                    && (random2(4) < you.dex % 4))
+                  damage++;
                 your_to_hit += random2(12);
                 break;
             case TRAN_STATUE:
@@ -479,7 +485,11 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
             damage += (you.mutation[ MUT_CLAWS ] * 2);
         }
 
+        /*
         damage += you.skills[SK_UNARMED_COMBAT];
+        */
+        damage += stepdown_value(you.skills[SK_UNARMED_COMBAT],
+                                 10, 10, 20, 30);
     }
     else
     {
@@ -718,6 +728,22 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         const int roll_damage = damage_done;
 #endif
 
+        int roll_damage_min = 0;
+        if (your_to_hit_final <= 2 * defender->evasion * defender->evasion)
+        {
+          roll_damage_min = 0;
+        }
+        else
+        {
+          roll_damage_min = damage
+            * (your_to_hit_final - 2 * defender->evasion * defender->evasion)
+            / your_to_hit_final;
+        }
+        if (roll_damage_min < 0)
+          roll_damage_min = 0;
+        if (damage_done < roll_damage_min)
+          damage_done = roll_damage_min;
+
         if (ur_armed && (you.inv[ weapon ].base_type == OBJ_WEAPONS
                             || item_is_staff( you.inv[ weapon ] )))
         {
@@ -896,9 +922,16 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
         }
 
 #if DEBUG_DIAGNOSTICS
+        /*
         snprintf( info, INFO_SIZE,
                   "melee roll: %d; skill: %d; fight: %d; pre wpn plus: %d",
                   roll_damage, skill_damage, fight_damage, preplus_damage );
+        */
+        snprintf( info, INFO_SIZE,
+                  "melee roll: %d (min %d); "
+                  "skill: %d; fight: %d; pre wpn plus: %d",
+                  roll_damage, roll_damage_min,
+                  skill_damage, fight_damage, preplus_damage );
 
         mpr( info, MSGCH_DIAGNOSTICS );
 
@@ -1783,7 +1816,29 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 /*
                 damage_done = (int) random2(damage);
                 */
-                damage_done = (int) random2avg(damage, 3);
+                damage_done = 0;
+                {
+                  const int damage_done_rolled = (int) random2avg(damage, 3);
+                  int damage_done_rolled_min = 0;
+                  if (your_to_hit <= 2 * defender->evasion * defender->evasion)
+                  {
+                    damage_done_rolled_min = 0;
+                  }
+                  else
+                  {
+                    damage_done_rolled_min = damage
+                      * (your_to_hit -
+                         2 * defender->evasion * defender->evasion)
+                      / your_to_hit;
+                  }
+                  if (damage_done_rolled_min < 0)
+                    damage_done_rolled_min = 0;
+
+                  if (damage_done_rolled < damage_done_rolled_min)
+                    damage_done = damage_done_rolled_min;
+                  else
+                    damage_done = damage_done_rolled;
+                }
 
                 damage_done *= 40 + (random2(you.skills[SK_FIGHTING] + 1));
                 damage_done /= 40;
@@ -2066,27 +2121,42 @@ void monster_attack(int monster_attacking)
             wpn_speed = property( mitm[attacker->inv[hand_used]], PWPN_SPEED );
         }
 
+        if (mons_to_hit < 0)
+          mons_to_hit = 0;
+
         // Factors against blocking
+        /*
         const int con_block = 15 + attacker->hit_dice
                                + (10 * you.shield_blocks * you.shield_blocks);
+        */
+        const int con_block = mons_to_hit + 10 * you.shield_blocks;
 
         // Factors for blocking
+        /*
         const int pro_block = player_shield_class() + (random2(you.dex) / 5);
+        */
+        const int pro_block = player_shield_class() * 5 / 2
+          + (random2(you.dex) / 5);
 
+        /*
         const int con_block_rolled = random2(con_block);
         const int pro_block_rolled = random2(pro_block);
+        */
+        const int con_block_rolled = random2(con_block * con_block);
+        const int pro_block_rolled = random2(pro_block * pro_block);
 
 #if DEBUG_DIAGNOSTICS
         if (!you.paralysis && !you_are_delayed() && !you.conf
             && player_monster_visible( attacker )
             && player_shield_class() > 0)
         {
-          snprintf( info, INFO_SIZE, "con_block: %d/%d; pro_block: %d/%d",
-                    con_block_rolled, con_block,
-                    pro_block_rolled, pro_block);
+          snprintf( info, INFO_SIZE, "con_block: %d/%d (%d); "
+                    "pro_block: %d/%d (%d)",
+                    con_block_rolled, con_block * con_block, con_block,
+                    pro_block_rolled, pro_block * pro_block, pro_block);
           mpr( info, MSGCH_DIAGNOSTICS );
         }
-#endif
+#endif /* DEBUG_DIAGNOSTICS */
 
         if (!you.paralysis && !you_are_delayed() && !you.conf
             && player_monster_visible( attacker )
@@ -2102,6 +2172,19 @@ void monster_attack(int monster_attacking)
 
             blocked = true;
             hit = false;
+
+            /* delay the next action of the attacker */
+            if ((bearing_shield) && (you.skills[SK_SHIELDS] > 0)
+                && (attacker->speed_increment >= 30))
+            {
+              const int attacker_delay = 1 + random2(you.skills[SK_SHIELDS]);
+              attacker->speed_increment -= attacker_delay;
+#if DEBUG_DIAGNOSTICS
+              snprintf(info, INFO_SIZE, "attacker's next action delayed by %d",
+                       attacker_delay);
+              mpr( info, MSGCH_DIAGNOSTICS );
+#endif
+            }
 
             if (bearing_shield && one_chance_in(4))
                 exercise(SK_SHIELDS, 1);
@@ -2134,9 +2217,10 @@ void monster_attack(int monster_attacking)
 #if DEBUG_DIAGNOSTICS
         if (!blocked)
         {
-          snprintf(info, INFO_SIZE, "mons_to_hit: %d/%d; "
+          snprintf(info, INFO_SIZE, "mons_to_hit: %d/%d (%d); "
                    "your dodge: %d/%d (%d)",
                    mons_to_hit_rolled, mons_to_hit * mons_to_hit,
+                   mons_to_hit,
                    player_dodge_rolled,
                    player_dodge * player_dodge, player_dodge);
           mpr( info, MSGCH_DIAGNOSTICS );
@@ -2191,7 +2275,35 @@ void monster_attack(int monster_attacking)
             /*
             damage_taken += 1 + random2(mdam);
             */
-            damage_taken += 1 + random2avg(mdam, 3);
+            {
+              int mdam_rolled_min;
+              const int mdam_rolled = random2avg(mdam, 3);
+              if ((mons_to_hit_rolled <= 0)
+                  || (mons_to_hit_rolled <= 2 * player_dodge_rolled))
+                {
+                  mdam_rolled_min = 0;
+                }
+                else
+                {
+                  mdam_rolled_min = mdam
+                    * (mons_to_hit_rolled - 2 * player_dodge_rolled)
+                    / mons_to_hit_rolled;
+                }
+                if (mdam_rolled_min < 0)
+                  mdam_rolled_min = 0;
+
+#if DEBUG_DIAGNOSTICS
+                snprintf(info, INFO_SIZE,
+                         "weapon: %d; mdam %d/%d (min %d)",
+                         damage_taken, mdam_rolled, mdam, mdam_rolled_min);
+                mpr( info, MSGCH_DIAGNOSTICS );
+#endif /* DEBUG_DIAGNOSTICS */
+
+                if (mdam_rolled < mdam_rolled_min)
+                  damage_taken += mdam_rolled_min;
+                else
+                  damage_taken += mdam_rolled;
+            }
 
             if (water_attack)
                 damage_taken *= 2;
@@ -2511,6 +2623,10 @@ void monster_attack(int monster_attacking)
                 strcat(info, " stings you.");
                 mpr(info);
 
+                if ((mclas == MONS_YELLOW_WASP)
+                    && (you.paralysis > 0))
+                  break;
+
                 if (!player_res_poison()
                     && (one_chance_in(20)
                         || (damage_taken > 2 && !one_chance_in(3))))
@@ -2720,7 +2836,10 @@ void monster_attack(int monster_attacking)
             case MONS_MOTH_OF_WRATH:
               if ((!player_res_poison()) && (!wearing_amulet(AMU_CLARITY))
                   && (one_chance_in(3)))
+              {
+                confuse_player( 3 + random2(8) );
                 go_berserk(false);
+              }
               break;
             }                   // end of switch for special attacks.
             /* use brek for level drain, maybe with beam variables,
@@ -3063,10 +3182,14 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     int wpn_speed;               // 0 == didn't use actual weapon
     int habitat = monster_habitat( attacker->type );
     char str_pass[ ITEMNAME_SIZE ];
+    unsigned int heads = 0;
 
 #if DEBUG_DIAGNOSTICS
     char st_prn[ 20 ];
 #endif
+
+    if (attacker->type == MONS_HYDRA)
+        heads = attacker->number;
 
     if (attacker->type == MONS_GIANT_SPORE
         || attacker->type == MONS_BALL_LIGHTNING)
@@ -3109,6 +3232,14 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
     for (runthru = 0; runthru < 4; runthru++)
     {
+      if (attacker->type == MONS_HYDRA)
+      {
+        if (heads < 1)
+          break;
+        runthru = 0;
+        heads--;
+      }
+
         char mdam = mons_damage(attacker->type, runthru);
         wpn_speed = 0;
 
@@ -3163,9 +3294,16 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             wpn_speed = property( mitm[ weapon ], PWPN_SPEED );
         }
 
+        /*
         mons_to_hit = random2(mons_to_hit);
-
+        */
+        const int mons_to_hit_rolled = random2(mons_to_hit * mons_to_hit);
+        /*
         if (mons_to_hit >= defender->evasion
+            || ((defender->speed_increment <= 60
+                 || defender->behaviour == BEH_SLEEP) && !one_chance_in(20)))
+        */
+        if (mons_to_hit_rolled >= defender->evasion * defender->evasion
             || ((defender->speed_increment <= 60
                  || defender->behaviour == BEH_SLEEP) && !one_chance_in(20)))
         {
@@ -3202,7 +3340,34 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 damage_taken -= 1 + random2(3); //1;
             }
 
+            /*
             damage_taken += 1 + random2(mdam);
+            */
+            {
+              int mdam_rolled_min;
+              const int mdam_rolled = 1 + random2avg(mdam, 3);
+              if ((mons_to_hit_rolled <= 0)
+                  || (mons_to_hit_rolled
+                      <= 2 * defender->evasion * defender->evasion))
+                {
+                  mdam_rolled_min = 0;
+                }
+                else
+                {
+                  mdam_rolled_min = mdam
+                    * (mons_to_hit_rolled
+                       - 2 * defender->evasion * defender->evasion)
+                    / mons_to_hit_rolled;
+                }
+                if (mdam_rolled_min < 0)
+                  mdam_rolled_min = 0;
+                mdam_rolled_min++;
+
+                if (mdam_rolled < mdam_rolled_min)
+                  damage_taken += mdam_rolled_min;
+                else
+                  damage_taken += mdam_rolled;
+            }
 
             if (water_attack)
                 damage_taken *= 2;

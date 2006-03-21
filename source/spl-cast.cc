@@ -52,6 +52,8 @@
 
 #define WILD_MAGIC_NASTINESS 150
 
+static bool your_spells_normal(int spc2);
+
 static void surge_power(int spell)
 {
     int enhanced = 0;
@@ -525,8 +527,24 @@ int spell_enhancement( unsigned int typeflags )
     return (enhanced);
 }                               // end spell_enhancement()
 
+static bool
+your_spells_normal(int spc2)
+{
+  return your_spells(spc2, 0, true);
+}
+
+bool
+cast_a_spell(void)
+{
+  return cast_a_spell2(your_spells_normal);
+}
+
 // returns false if spell failed, and true otherwise
+/*
 bool cast_a_spell(void)
+*/
+bool
+cast_a_spell2(bool (*spell_exec_func)(int))
 {
     char spc = 0;
     char spc2 = 0;
@@ -640,7 +658,10 @@ bool cast_a_spell(void)
         random_uselessness( 2 + random2(7), 0 );
     else
     {
+      /*
         exercise_spell( spell, true, your_spells( spell ) );
+      */
+        exercise_spell( spell, true, spell_exec_func( spell ) );
         naughty( NAUGHTY_SPELLCASTING, 1 + random2(5) );
     }
 
@@ -1888,6 +1909,30 @@ bool your_spells( int spc2, int powc, bool allow_fail )
     case SPELL_APPORTATION:
         cast_apportation(powc);
         break;
+
+    case SPELL_BRAINSTORM:
+      cast_brainstorm();
+      break;
+
+    case SPELL_VIRTUAL_DEATH:
+      cast_virtual_death(powc);
+      break;
+
+    case SPELL_MYSTIC_GRASP:
+      cast_mystic_grasp();
+      break;
+
+    case SPELL_BAZAAR_OF_NANIWA:
+      cast_bazaar_of_naniwa(powc);
+      break;
+
+    case SPELL_LOCAL_GLOBAL:
+      cast_local_global();
+      break;
+
+    case SPELL_ANCHORED_TELEPORT:
+      cast_anchored_teleport();
+      break;
 
     default:
         mpr("Invalid spell!");

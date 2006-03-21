@@ -321,6 +321,12 @@ item_color_func_identify(const item_def &item)
   {
     return DARKGREY;
   }
+  else if ((item.base_type == OBJ_MISSILES)
+           && (item_ident(item, ISFLAG_KNOW_PLUSES))
+           && (item_ident(item, ISFLAG_KNOW_TYPE)))
+  {
+    return DARKGREY;
+  }
   else if ((item.base_type == OBJ_WEAPONS)
            && (item_ident(item, ISFLAG_KNOW_CURSE))
            && (item_ident(item, ISFLAG_KNOW_TYPE)))

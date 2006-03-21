@@ -303,7 +303,12 @@ void mons_trap(struct monsters *monster)
         {
             beem.target_x = monster->x;
             beem.target_y = monster->y;
+            /* don't create ammunition here --- see dart_trap() in misc.cc
+             * for rationale
+             */
+            /*
             itrap(beem, which_trap);
+            */
         }
     }
 

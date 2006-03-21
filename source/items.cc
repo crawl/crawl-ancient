@@ -738,20 +738,22 @@ void item_check(char keyin)
             break;
         }
 
-        if (mitm[objl].base_type == OBJ_GOLD)
+        if (counter < 50)
         {
+          if (mitm[objl].base_type == OBJ_GOLD)
+          {
             itoa(mitm[objl].quantity, temp_quant, 10);
             strcpy(item_show[counter], temp_quant);
             strcat(item_show[counter], " gold piece");
             if (mitm[objl].quantity > 1)
                 strcat(item_show[counter], "s");
-
-        }
-        else
-        {
+          }
+          else
+          {
             char str_pass[ ITEMNAME_SIZE ];
             it_name(objl, DESC_NOCAP_A, str_pass);
             strcpy(item_show[counter], str_pass);
+          }
         }
 
         objl = mitm[objl].link;
@@ -778,7 +780,10 @@ void item_check(char keyin)
     {
         mpr("Things that are here:");
 
+        /*
         while (counter < counter_max)
+        */
+        while ((counter < 50) && (counter < counter_max))
         {
             // this is before the strcpy because item_show start at 1, not 0.
             counter++;

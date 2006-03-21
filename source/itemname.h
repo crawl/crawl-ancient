@@ -153,5 +153,8 @@ void set_ident_type( char cla, char ty, char setting, bool force = false );
 bool hide2armour( unsigned char *which_subtype );
 
 void know_amulet_type(char which_am);
+char item_true_name(const item_def &item, char descrip,
+                    char buff[ITEMNAME_SIZE],
+                    bool terse = false);
 
 #endif

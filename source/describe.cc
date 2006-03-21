@@ -44,6 +44,7 @@
 #include "wpn-misc.h"
 #include "spl-book.h"
 #include "spl-util.h"
+#include "shopping.h"
 
 
 // ========================================================================
@@ -2405,6 +2406,23 @@ static std::string describe_scroll( const item_def &item )
                 "already heavily enchanted. ";
             break;
 
+        case SCR_MUNDANITY:
+          description += "This scroll changes the object in your hand "
+            "into the most common object of the same kind, drops it and "
+            "identifies it.  This scroll fails to work if an object can't "
+            "be placed safely before you.";
+          break;
+
+        case SCR_QUIVER:
+          description += "This scroll works in two ways.  First, if you "
+            "read it when you have a missile weapon in your hand, it "
+            "creates ammunition that can be launched by that "
+            "weapon.  If you want darts, read it while you are "
+            "empty-handed.  Second, if you read it when you have enough "
+            "number of ammunition in your hand, it changes them into a copy "
+            "of this scroll.";
+          break;
+
         default:
             DEBUGSTR("Unknown scroll");
         }
@@ -3030,6 +3048,10 @@ static std::string describe_misc_item( const item_def &item )
                 "disassembly.  Evoke it to place it on a clear patch of floor, "
                 "then pick it up again when you've finished. ";
             break;
+        case MISC_UMBRELLA_OF_RAINMAKING:
+          description += "A magical umbrella which makes your surroundings "
+            "sodden when evoked.";
+          break;
         default:
             DEBUGSTR("Unknown misc item (2)");
         }
@@ -3083,6 +3105,9 @@ static std::string describe_misc_item( const item_def &item )
                 "disassembly.  Evoke it to place on a clear patch of floor, "
                 "then pick it up again when you've finished. ";
             break;
+        case MISC_UMBRELLA_OF_RAINMAKING:
+          description += "An umbrella.";
+          break;
         default:
             DEBUGSTR("Unknown misc item");
         }
@@ -3151,14 +3176,20 @@ std::string get_item_description( const item_def &item, char verbose, bool dump 
 #if DEBUG_DIAGNOSTICS
     if (!dump)
     {
+      char temp_id[4][50];
+      save_id(temp_id);
+
         snprintf( info, INFO_SIZE,
                   "base: %d; sub: %d; plus: %d; plus2: %d; special: %ld$"
                   "quant: %d; colour: %d; flags: 0x%08lx$"
-                  "x: %d; y: %d; link: %d$ident_type: %d$$",
+                  "x: %d; y: %d; link: %d$ident_type: %d; "
+                  "price: %d (%d)$$",
                   item.base_type, item.sub_type, item.plus, item.plus2,
                   item.special, item.quantity, item.colour, item.flags,
                   item.x, item.y, item.link,
-                  get_ident_type( item.base_type, item.sub_type ) );
+                  get_ident_type( item.base_type, item.sub_type ),
+                  item_value(item, temp_id, false),
+                  item_value(item, temp_id, true));
 
         description += info;
     }
@@ -4402,6 +4433,41 @@ void describe_spell(int spelled)
                        "power will cause some of the items to be lost in the "
                        "infinite void.";
         break;
+
+    case SPELL_BRAINSTORM:
+      description += "lists all items (excluding the inventory of the "
+        "caster) and monsters in the current level.";
+      break;
+
+    case SPELL_VIRTUAL_DEATH:
+      description += "improves the fighting skill of the caster through "
+        "a vision of a battle.  The vision will be unpleasant because it "
+        "always ends with the death of the caster.";
+      break;
+
+    case SPELL_MYSTIC_GRASP:
+      description += "allows the caster to cast another spell the caster "
+        "has already memorized without failure.";
+      break;
+
+    case SPELL_BAZAAR_OF_NANIWA:
+      description += "duplicates the item in the hand of the caster at the "
+        "cost of some money.  The spell fails if the caster doesn't know "
+        "what is in the hand or if the item is sold out.";
+      break;
+
+    case SPELL_LOCAL_GLOBAL:
+      description += "exchanges the surroundings of the caster for that "
+        "of the specified point.  This spell fails if the point is occupied "
+        "or if the two areas overlap.";
+      break;
+
+    case SPELL_ANCHORED_TELEPORT:
+      description += "uses two items of the same kind as anchors.  When "
+        "the caster has one of the item in the hand and casts this "
+        "spell, it teleports the caster to the same place of the other "
+        "item.  Both items must be fully identified.";
+      break;
 
     default:
         DEBUGSTR("Bad spell");
@@ -6605,7 +6671,7 @@ void describe_god( int which_god, bool give_title )
                     cprintf( "None." EOL );
 
                 if (you.piety >= 50)
-                    print_god_abil_desc(ABIL_ZIN_PURIFY_RAW_FLESH);
+                    print_god_abil_desc(ABIL_ZIN_IDENTIFY);
                   /*
                     print_god_abil_desc( ABIL_ZIN_HEALING );
                   */

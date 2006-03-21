@@ -1188,6 +1188,18 @@ static void input(void)
             break;
         }
 
+        if (you.char_direction == DIR_ASCENDING
+            && you.level_type != LEVEL_PANDEMONIUM)
+        {
+          if (grd[you.x_pos][you.y_pos] == DNGN_ENTER_HELL
+              || grd[you.x_pos][you.y_pos] == DNGN_ENTER_ABYSS
+              || grd[you.x_pos][you.y_pos] == DNGN_ENTER_PANDEMONIUM)
+          {
+            mpr( "The gateway is closed by the Orb." );
+            break;
+          }
+        }
+
         tag_followers();  // only those beside us right now can follow
         start_delay( DELAY_DESCENDING_STAIRS,
                      1 + (you.burden_state > BS_UNENCUMBERED),

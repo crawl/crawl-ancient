@@ -29,7 +29,7 @@ void exercise_spell( int spell_ex, bool spc, bool divide );
  * called from: acr
  * *********************************************************************** */
 bool cast_a_spell( void );
-
+bool cast_a_spell2(bool (*spell_exec_func)(int));
 
 // last updaetd 12may2000 {dlb}
 /* ***********************************************************************

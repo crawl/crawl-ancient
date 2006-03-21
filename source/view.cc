@@ -1947,6 +1947,10 @@ void show_map( FixedVector<int, 2> &spec_place )
             if (start_x + i + 1 == you.x_pos && start_y + j + 1 == you.y_pos)
                 buffer2[bufcount2 + 1] = WHITE;
 
+            if ((buffer2[bufcount2 + 1] == DARKGREY)
+                && (i + 1 == curs_x) && (j + 1 == curs_y))
+                buffer2[bufcount2 + 1] = LIGHTGREY;
+
             buffer2[bufcount2] = env.map[start_x + i][start_y + j];
             bufcount2 += 2;
 

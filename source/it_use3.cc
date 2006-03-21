@@ -44,6 +44,7 @@
 #include "stuff.h"
 #include "view.h"
 #include "wpn-misc.h"
+#include "cloud.h"
 
 static bool ball_of_energy(void);
 static bool ball_of_fixation(void);
@@ -51,6 +52,7 @@ static bool ball_of_seeing(void);
 static bool box_of_beasts(void);
 static bool disc_of_storms(void);
 static bool efreet_flask(void);
+static bool umbrella_rainmaking(void);
 
 void special_wielded(void)
 {
@@ -671,6 +673,21 @@ bool evoke_wielded( void )
             }
             break;
 
+        case MISC_UMBRELLA_OF_RAINMAKING:
+          if (you.skills[SK_EVOCATIONS] <= random2(30))
+          {
+            canned_msg(MSG_NOTHING_HAPPENS);
+          }
+          else if (!umbrella_rainmaking())
+          {
+            canned_msg(MSG_NOTHING_HAPPENS);
+          }
+          else
+          {
+            pract = (one_chance_in(5) ? 1 : 0);
+          }
+          break;
+
         default:
             did_work = false;
             break;
@@ -1068,3 +1085,80 @@ static bool ball_of_fixation(void)
 
     return (true);
 }                               // end ball_of_fixation()
+
+static bool
+umbrella_rainmaking(void)
+{
+  int x;
+  int y;
+  int i;
+  int changed;
+  int habitat;
+  bool ok_to_overwrite;
+  bool was_in_water = player_in_water();
+  FixedVector <int, 6> safe_to_overwrite;
+
+  safe_to_overwrite[0] = DNGN_FLOOR;
+  safe_to_overwrite[1] = DNGN_OPEN_DOOR;
+  safe_to_overwrite[2] = DNGN_TRAP_MECHANICAL;
+  safe_to_overwrite[3] = DNGN_TRAP_MAGICAL;
+  safe_to_overwrite[4] = DNGN_TRAP_III;
+  safe_to_overwrite[5] = DNGN_UNDISCOVERED_TRAP;
+
+  changed = 0;
+  for (x = you.x_pos - 1; x <= you.x_pos + 1; x++)
+  {
+    for (y = you.y_pos - 1; y <= you.y_pos + 1; y++)
+    {
+      if ((x < 0) || (x >= GXM) || (y < 0) || (y >= GYM))
+        continue;
+      if (mgrd[x][y] != NON_MONSTER)
+      {
+        habitat = monster_habitat(menv[mgrd[x][y]].type);
+        if ((habitat != DNGN_FLOOR) && (habitat != DNGN_SHALLOW_WATER))
+          continue;
+      }
+
+      ok_to_overwrite = false;
+      for (i = 0; i < 6; i++)
+      {
+        if (grd[x][y] == safe_to_overwrite[i])
+        {
+          ok_to_overwrite = true;
+          break;
+        }
+      }
+
+      if (!ok_to_overwrite)
+        continue;
+
+      if (env.cgrid[x][y] != EMPTY_CLOUD)
+        delete_cloud( env.cgrid[x][y] );
+
+      for (i = 0; i < MAX_TRAPS; i++)
+      {
+        if ((env.trap[i].x != x) || (env.trap[i].y != y))
+          continue;
+
+        env.trap[i].type = TRAP_UNASSIGNED;
+      }
+
+      grd[x][y] = DNGN_SHALLOW_WATER;
+      changed++;
+    }
+  }
+
+  if (changed > 0)
+  {
+    mpr("It rains as you open the umbrella!");
+    if ((you.species == SP_MERFOLK)
+        && (!was_in_water) && (player_in_water()))
+    {
+      mpr("You return to your normal form.");
+      merfolk_start_swimming();
+    }
+    return true;
+  }
+
+  return false;
+}

@@ -135,13 +135,13 @@
 {
     SPELL_IDENTIFY, "Identify",
      SPTYP_DIVINATION,
-     6
+     3 /* 6 */
 },
 
 {
     SPELL_TELEPORT_SELF, "Teleport Self",
      SPTYP_TRANSLOCATION,
-     5
+      3 /* 5 */
 },
 
 {
@@ -159,7 +159,7 @@
 {
     SPELL_REMOVE_CURSE, "Remove Curse",
      SPTYP_ENCHANTMENT,
-     5
+      3 /* 5 */
 },
 
 {
@@ -401,7 +401,7 @@
 {
     SPELL_DETECT_CURSE, "Detect Curse",
      SPTYP_DIVINATION,
-     3
+      1 /* 3 */
 },
 
 {
@@ -1274,6 +1274,42 @@
   SPELL_STRIKING, "Striking",
     0,
     1
+},
+
+{
+  SPELL_BRAINSTORM, "Brainstorm",
+    SPTYP_DIVINATION,
+    7
+},
+
+{
+  SPELL_VIRTUAL_DEATH, "Virtual Death",
+    SPTYP_DIVINATION | SPTYP_NECROMANCY,
+    6
+},
+
+{
+  SPELL_MYSTIC_GRASP, "Mystic Grasp",
+    SPTYP_DIVINATION,
+    8
+},
+
+{
+  SPELL_BAZAAR_OF_NANIWA, "Bazaar of Naniwa",
+    SPTYP_DIVINATION | SPTYP_TRANSLOCATION,
+    6
+},
+
+{
+  SPELL_LOCAL_GLOBAL, "Local Global",
+    SPTYP_TRANSLOCATION,
+    8
+},
+
+{
+  SPELL_ANCHORED_TELEPORT, "Anchored Teleport",
+    SPTYP_TRANSLOCATION,
+    5
 },
 
 {

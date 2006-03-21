@@ -1218,7 +1218,7 @@ void gain_piety(char pgn)
 
             strcat(info,
                    (you.religion == GOD_ZIN)
-                           ? "purify raw flesh to eat it"
+                           ? "identify an object"
                            /* "call upon Zin for minor healing" */ :
                    (you.religion == GOD_SHINING_ONE)
                            ? "dispel the undead" /* "smite your foes" */ :
@@ -1702,7 +1702,7 @@ void lose_piety(char pgn)
 
                 strcat(info,
                        (you.religion == GOD_ZIN)
-                            ? "purify raw flesh to eat it" :
+                            ? "identify an object" :
                        (you.religion == GOD_SHINING_ONE)
                             ? "dispel undead" /* "smite your foes" */ :
                        (you.religion == GOD_YREDELEMNUL)

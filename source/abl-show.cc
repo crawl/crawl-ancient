@@ -152,7 +152,7 @@ static const struct ability_def Ability_List[] =
     /*
     { ABIL_ZIN_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
     */
-    { ABIL_ZIN_PURIFY_RAW_FLESH, "Purify Raw Flesh", 2, 0, 200, 1, ABFLAG_NONE },
+    { ABIL_ZIN_IDENTIFY, "Identify", 2, 0, 100, 1, ABFLAG_NONE },
     /*
     { ABIL_ZIN_HEALING, "Minor Healing", 2, 0, 50, 1, ABFLAG_NONE },
     */
@@ -866,8 +866,8 @@ bool activate_ability(void)
         break;
         */
 
-    case ABIL_ZIN_PURIFY_RAW_FLESH:
-      cast_purify_flesh(you.skills[SK_INVOCATIONS] * 8);
+    case ABIL_ZIN_IDENTIFY:
+      identify(you.skills[SK_INVOCATIONS] * 8);
       exercise(SK_INVOCATIONS, 1 + random2(3));
       break;
 
@@ -1568,7 +1568,7 @@ bool generate_abilities( void )
                 insert_ability( ABIL_ZIN_REPEL_UNDEAD );
           */
             if (you.piety >= 50)
-                insert_ability( ABIL_ZIN_PURIFY_RAW_FLESH );
+                insert_ability( ABIL_ZIN_IDENTIFY );
             /*
             if (you.piety >= 50)
                 insert_ability( ABIL_ZIN_HEALING );
@@ -2177,7 +2177,7 @@ static bool insert_ability( int which_ability )
         /*
     case ABIL_ZIN_HEALING:
         */
-    case ABIL_ZIN_PURIFY_RAW_FLESH:
+    case ABIL_ZIN_IDENTIFY:
     case ABIL_TSO_SMITING:
     case ABIL_OKAWARU_MIGHT:
       /*

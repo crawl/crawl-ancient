@@ -89,4 +89,7 @@ void yell(void);
 void torment( int tx, int ty );
 
 
+bool mundanity(void);
+bool scroll_of_quiver_effect(void);
+
 #endif

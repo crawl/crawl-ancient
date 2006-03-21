@@ -150,7 +150,9 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
                 return (false);
         }
 
-        if ((proximity == PROX_NEAR_ORB) && (!one_chance_in(3)))
+        if ((proximity == PROX_NEAR_ORB)
+            && (you.char_direction != DIR_ASCENDING)
+            && (!one_chance_in(3)))
           mon_type = MONS_ORB_GUARDIAN;
     }
 

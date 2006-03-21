@@ -1302,6 +1302,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                 valued += 200;
                 break;
             case SCR_SUMMONING:
+            case SCR_MUNDANITY:
                 valued += 95;
                 break;
             case SCR_TORMENT:
@@ -1311,6 +1312,7 @@ unsigned int item_value( item_def item, char id[4][50], bool ident )
                 valued += 55;
                 break;
             case SCR_RECHARGING:
+            case SCR_QUIVER:
                 valued += 50;
                 break;
             case SCR_ENCHANT_ARMOUR:

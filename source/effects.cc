@@ -41,6 +41,9 @@
 #include "transfor.h"
 #include "view.h"
 #include "wpn-misc.h"
+#include "it_use2.h"
+
+static bool mundanity2(item_def &item);
 
 // torment_monsters is called with power 0 because torment is
 // UNRESISTABLE except for being undead or having torment
@@ -1435,3 +1438,297 @@ void yell(void)
     noisy( 10, you.x_pos, you.y_pos );
     mpr("Attack!");
 }                               // end yell()
+
+bool
+mundanity(void)
+{
+  /* this can be unsigned but I can't help it */
+  char target_slot;
+  char target_name[ITEMNAME_SIZE];
+  bool target_is_orb = false;
+  int quantity = 0;
+
+  /* make sure we can drop an item here */
+  if (grd[you.x_pos][you.y_pos] == DNGN_LAVA
+      || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+    return false;
+  if (get_item_slot(10) == NON_ITEM)
+    return false;
+
+  target_slot = you.equip[EQ_WEAPON];
+  if (target_slot == -1)
+    return false;
+
+  if ((you.inv[target_slot].base_type == OBJ_ORBS)
+      && (you.inv[target_slot].sub_type == ORB_ZOT))
+    target_is_orb = true;
+
+  quantity = you.inv[target_slot].quantity;
+  item_name(you.inv[target_slot], DESC_CAP_THE, target_name);
+
+  /* mundantiy2() removes curse so that you can unwield it */
+  if (!mundanity2(you.inv[target_slot]))
+    return false;
+
+  /* this unwield_item() is intentionally after mundanity2() so that you can
+   * safely unwield a weapon of distortion
+   */
+  unwield_item(target_slot);
+  you.equip[EQ_WEAPON] = -1;
+  canned_msg(MSG_EMPTY_HANDED);
+
+  if (!copy_item_to_grid(you.inv[target_slot],
+                         you.x_pos, you.y_pos))
+  {
+    /* should not happen */
+    mpr( "Too many items on this level, not dropping the item." );
+    /* the item is already changed */
+    return true;
+  }
+  else
+  {
+    dec_inv_item_quantity(target_slot, quantity);
+
+    snprintf(info, INFO_SIZE, "%s fall%s from your hand.",
+             target_name, ((quantity >= 2) ? "" : "s"));
+    mpr(info);
+    if (target_is_orb)
+    {
+      mpr("You feel you have to pick it up again to complete your quest.");
+      you.char_direction = DIR_DESCENDING;
+    }
+    else
+    {
+      snprintf(info, INFO_SIZE, "%s no longer look%s very interesting.",
+               ((quantity >= 2) ? "They" : "It"),
+               ((quantity >= 2) ? "" : "s"));
+      mpr(info);
+    }
+  }
+
+  return true;
+}
+
+/* return whether the item is changed */
+static bool
+mundanity2(item_def &item)
+{
+  if (!is_valid_item(item))
+    return false;
+
+  switch (item.base_type)
+  {
+  case OBJ_WEAPONS:
+  case OBJ_MISSILES:
+  case OBJ_ARMOUR:
+    item.plus = 0;
+    item.plus2 = 0;
+    item.special = 0;
+    item.flags = 0;
+    break;
+  case OBJ_WANDS:
+    /* can destroy monsters and walls (including statues) */
+    item.sub_type = WAND_DISINTEGRATION;
+    /* maximize charges */
+    item.plus = 15;
+    break;
+  case OBJ_FOOD:
+    switch (item.sub_type)
+    {
+    case FOOD_BREAD_RATION:
+    case FOOD_PEAR:
+    case FOOD_APPLE:
+    case FOOD_CHOKO:
+    case FOOD_SNOZZCUMBER:
+    case FOOD_PIZZA:
+    case FOOD_APRICOT:
+    case FOOD_ORANGE:
+    case FOOD_BANANA:
+    case FOOD_STRAWBERRY:
+    case FOOD_RAMBUTAN:
+    case FOOD_LEMON:
+    case FOOD_GRAPE:
+    case FOOD_SULTANA:
+    case FOOD_LYCHEE:
+      item.sub_type = FOOD_BREAD_RATION;
+      break;
+    default:
+      item.sub_type = FOOD_MEAT_RATION;
+      break;
+    }
+    break;
+  case OBJ_SCROLLS:
+    item.sub_type = SCR_IDENTIFY;
+    break;
+  case OBJ_JEWELLERY:
+    item.plus = 0;
+    item.plus2 = 0;
+    item.special = 0;
+    item.flags = 0;
+    break;
+  case OBJ_POTIONS:
+    /* this is the only non-water potion which has a fixed unidentified name */
+    item.sub_type = POT_PORRIDGE;
+    break;
+  case OBJ_BOOKS:
+    /* 5 schools in one book, good for beginner spellcaster */
+    item.sub_type = BOOK_CANTRIPS;
+    /* it can be non-zero if the book is a manual */
+    item.plus = 0;
+    break;
+  case OBJ_STAVES:
+    if (item_is_rod(item))
+    {
+      item.sub_type = STAFF_STRIKING;
+    }
+    else
+    {
+      item.sub_type = STAFF_CHANNELING;
+    }
+    break;
+  case OBJ_CORPSES:
+    /* reset the rot timer */
+    switch (item.sub_type)
+    {
+    case CORPSE_BODY:
+      item.special = 210;
+      break;
+    case CORPSE_SKELETON:
+      item.special = 200;
+      break;
+    default:
+      return false;
+      break;
+    }
+    break;
+  case OBJ_ORBS:
+    /* just drop it */
+    break;
+  case OBJ_MISCELLANY:
+    switch (item.sub_type)
+    {
+    case MISC_DECK_OF_POWER:
+    case MISC_DECK_OF_SUMMONINGS:
+    case MISC_DECK_OF_TRICKS:
+    case MISC_DECK_OF_WONDERS:
+      item.sub_type = MISC_DECK_OF_TRICKS;
+      /* maximize charges */
+      item.plus = 20;
+      break;
+    case MISC_CRYSTAL_BALL_OF_SEEING:
+    case MISC_CRYSTAL_BALL_OF_ENERGY:
+    case MISC_CRYSTAL_BALL_OF_FIXATION:
+      item.sub_type = MISC_CRYSTAL_BALL_OF_SEEING;
+      break;
+    case MISC_EMPTY_EBONY_CASKET:
+    case MISC_BOX_OF_BEASTS:
+      /* fill the box */
+      item.sub_type = MISC_BOX_OF_BEASTS;
+      break;
+    default:
+      return false;
+      break;
+    }
+    break;
+  case OBJ_GOLD:
+  default:
+    return false;
+    break;
+  }
+
+  item_colour(item);
+  do_uncurse_item(item);
+  set_ident_type(item.base_type, item.sub_type, ID_KNOWN_TYPE);
+  set_ident_flags(item, ISFLAG_IDENT_MASK);
+  return true;
+}
+
+bool
+scroll_of_quiver_effect(void)
+{
+  /* this can be unsigned but I can't help it */
+  char target_slot;
+  int result_class = -1;
+  int result_type = -1;
+  int result_quantity = 0;
+  int thing_created = NON_ITEM;
+  const int ammo_quantity = 15;
+
+  ASSERT(ammo_quantity > 0);
+
+  target_slot = you.equip[EQ_WEAPON];
+  if (target_slot == -1)
+  {
+    result_class = OBJ_MISSILES;
+    result_type = MI_DART;
+    result_quantity = ammo_quantity;
+  }
+  else
+  {
+    switch (you.inv[target_slot].base_type)
+    {
+    case OBJ_WEAPONS:
+      if (!launches_things(you.inv[target_slot].sub_type))
+        return false;
+      result_class = OBJ_MISSILES;
+      result_type = launched_by(you.inv[target_slot].sub_type);
+      if (result_type == MI_EGGPLANT)
+        return false;
+      result_quantity = ammo_quantity;
+      break;
+    case OBJ_MISSILES:
+      if (you.inv[target_slot].quantity < ammo_quantity)
+        return false;
+      result_class = OBJ_SCROLLS;
+      result_type = SCR_QUIVER;
+      result_quantity = 2;
+      break;
+    default:
+      return false;
+      break;
+    }
+  }
+
+  if ((result_class < 0) || (result_type < 0) || (result_quantity <= 0))
+    return false;
+
+  if (grd[you.x_pos][you.y_pos] == DNGN_LAVA
+      || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+  {
+    mpr("You hear a splash.");
+  }
+  else
+  {
+    thing_created = items(0, result_class, result_type,
+                          true, you.your_level, MAKE_ITEM_NO_RACE);
+    /* this can cull the items */
+    thing_created = get_item_slot(10);
+    if (thing_created == NON_ITEM)
+      return false;
+
+    mitm[thing_created].base_type = result_class;
+    mitm[thing_created].sub_type = result_type;
+    mitm[thing_created].quantity = result_quantity;
+    mitm[thing_created].plus = 0;
+    mitm[thing_created].plus2 = 0;
+    mitm[thing_created].special = 0;
+    mitm[thing_created].flags = 0;
+    mitm[thing_created].x = 0;
+    mitm[thing_created].y = 0;
+    mitm[thing_created].link = NON_ITEM;
+    if ((result_class == OBJ_MISSILES) && (result_type == MI_NEEDLE))
+      set_item_ego_type(mitm[thing_created], OBJ_MISSILES, SPMSL_POISONED_II);
+    item_colour(mitm[thing_created]);
+    move_item_to_grid(&thing_created, you.x_pos, you.y_pos);
+    canned_msg(MSG_SOMETHING_APPEARS);
+  }
+
+  if (result_class == OBJ_SCROLLS)
+  {
+    ASSERT(is_valid_item(you.inv[target_slot]));
+    ASSERT(you.inv[target_slot].quantity >= ammo_quantity);
+    dec_inv_item_quantity(target_slot, ammo_quantity);
+  }
+
+  return true;
+}

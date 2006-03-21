@@ -58,5 +58,11 @@ void make_shuggoth(int x, int y, int hp);
 void cast_semi_controlled_blink(int pow);
 
 void cast_purify_flesh(int pow);
+void cast_brainstorm(void);
+void cast_virtual_death(int pow);
+void cast_mystic_grasp(void);
+void cast_bazaar_of_naniwa(int pow);
+void cast_local_global(void);
+void cast_anchored_teleport(void);
 
 #endif

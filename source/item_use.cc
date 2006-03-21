@@ -1638,7 +1638,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
                 exDamBonus = lnchDamBonus + 1;
 
             // add skill for slings.. helps to find those vulnerable spots
+            /*
             exDamBonus += effSkill / 2;
+            */
+            exDamBonus += effSkill * 2;
 
             // now kill the launcher damage bonus
             if (lnchDamBonus > 0)
@@ -1677,7 +1680,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
                 exDamBonus = (lnchDamBonus + 1) * 3;
 
             // add in skill for bows.. help you to find those vulnerable spots.
+            /*
             exDamBonus += effSkill;
+            */
+            exDamBonus += effSkill * 4;
 
             // now kill the launcher damage bonus
             if (lnchDamBonus > 0)
@@ -1690,14 +1696,20 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             exercise(SK_CROSSBOWS, (coinflip()? 2 : 1));
             baseHit += 2;
             exHitBonus = (3 * effSkill) / 2 + 6;
+            /*
             exDamBonus = effSkill / 2 + 4;
+            */
+            exDamBonus = effSkill * 2 + 4;
             break;
 
         case WPN_HAND_CROSSBOW:
             exercise(SK_CROSSBOWS, (coinflip()? 2 : 1));
             baseHit += 1;
             exHitBonus = (3 * effSkill) / 2 + 4;
+            /*
             exDamBonus = effSkill / 2 + 2;
+            */
+            exDamBonus = effSkill * 2 + 2;
             break;
         }
 
@@ -1841,8 +1853,12 @@ static void throw_it(struct bolt &pbolt, int throw_2)
             exHitBonus = you.skills[SK_THROWING] * 2;
 
             baseDam = property( item, PWPN_DAMAGE );
+            /*
             exDamBonus =
                 (10 * (you.skills[SK_THROWING] / 2 + you.strength - 10)) / 12;
+            */
+            exDamBonus =
+                (10 * (you.skills[SK_THROWING] * 2 + you.strength - 10)) / 12;
 
             // now, exDamBonus is a multiplier.  The full multiplier
             // is applied to base damage,  but only a third is applied
@@ -1858,7 +1874,10 @@ static void throw_it(struct bolt &pbolt, int throw_2)
 
             exHitBonus = you.skills[SK_DARTS] * 2;
             exHitBonus += (you.skills[SK_THROWING] * 2) / 3;
+            /*
             exDamBonus = you.skills[SK_DARTS] / 4;
+            */
+            exDamBonus = you.skills[SK_DARTS];
 
             // exercise skills
             exercise(SK_DARTS, 1 + random2avg(3, 2));
@@ -3436,6 +3455,22 @@ void read_scroll(void)
         strcat(info, " glows black for a moment.");
         mpr(info);
         break;
+
+    case SCR_MUNDANITY:
+      if (!mundanity())
+      {
+        canned_msg(MSG_NOTHING_HAPPENS);
+        id_the_scroll = false;
+      }
+      break;
+
+    case SCR_QUIVER:
+      if (!scroll_of_quiver_effect())
+      {
+        canned_msg(MSG_NOTHING_HAPPENS);
+        id_the_scroll = false;
+      }
+      break;
     }                           // end switch
 
     // finally, destroy and identify the scroll

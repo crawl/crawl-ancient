@@ -1464,11 +1464,11 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      160,                       // SK_MACES_FLAILS
      180,                       // SK_POLEARMS
      150,                       // SK_STAVES
-     70,                        // SK_SLINGS
-     70,                        // SK_BOWS
-     100,                       // SK_CROSSBOWS
-     70,                        // SK_DARTS
-     90,                        // SK_THROWING
+     150 /*70*/,                        // SK_SLINGS
+     150/*70*/,                        // SK_BOWS
+     180/*100*/,                       // SK_CROSSBOWS
+     150/*70*/,                        // SK_DARTS
+     170/*90*/,                        // SK_THROWING
      170,                       // SK_ARMOUR
      50,                        // SK_DODGING
      50,                        // SK_STEALTH
@@ -1825,11 +1825,18 @@ void show_skills(void)
     for (x = 0; x < NUM_SKILLS; x++)
     {
         /* spells in second column */
+      /*
         if ((x == SK_SPELLCASTING && scrcol != 40) || scrln > bottom_line - 3)
         {
             scrln = 3;
             scrcol = 40;
         }
+      */
+      if (x == SK_SPELLCASTING)
+      {
+        scrln = 3;
+        scrcol = 40;
+      }
 
         gotoxy(scrcol, scrln);
 
@@ -1893,8 +1900,19 @@ void show_skills(void)
         }
 
         /* Extra CR between classes of weapons and such things */
+        /*
         if (x == SK_STAVES || x == SK_THROWING || x == SK_TRAPS_DOORS
             || x == SK_UNARMED_COMBAT || x == SK_POISON_MAGIC)
+        */
+        if ((x == SK_STAVES)
+            || (x == SK_THROWING)
+            /*
+            || (x == SK_TRAPS_DOORS)
+            */
+            /*
+            || (x == SK_UNARMED_COMBAT)
+            */
+            || (x == SK_POISON_MAGIC))
         {
             scrln++;
         }

@@ -2314,8 +2314,10 @@ static void beam_drop_object( struct bolt &beam, item_def *item, int x, int y )
         && (grd[x][y] != DNGN_LAVA && grd[x][y] != DNGN_DEEP_WATER))
     {
         int chance;
+        int divider = 1;
 
         // Using Throwing skill as the fletching/ammo preserving skill. -- bwr
+        /*
         switch (item->sub_type)
         {
         case MI_NEEDLE: chance = 6 + you.skills[SK_THROWING] / 6; break;
@@ -2328,6 +2330,38 @@ static void beam_drop_object( struct bolt &beam, item_def *item, int x, int y )
         default:
             chance = 20;
             break;
+        }
+        */
+
+        switch (item->sub_type)
+        {
+        case MI_NEEDLE: chance = 7; divider = 6; break;
+        case MI_STONE:  chance = 4; divider = 4; break;
+        case MI_DART:   chance = 3; divider = 6; break;
+        case MI_ARROW:  chance = 3; divider = 4; break;
+        case MI_BOLT:   chance = 3; divider = 5; break;
+
+        case MI_LARGE_ROCK:
+        default:
+            chance = 20;
+            divider = 99;
+            break;
+        }
+
+        if ((divider > 0) && (divider < 27))
+        {
+          if (you.skills[SK_THROWING] > 0)
+          {
+            chance += you.skills[SK_THROWING] / divider;
+            if (random2(divider) < you.skills[SK_THROWING] % divider)
+              chance++;
+          }
+          else
+          {
+            chance--;
+            if (chance < 2)
+              chance = 2;
+          }
         }
 
         if (item->base_type != OBJ_MISSILES || !one_chance_in(chance))
@@ -3067,7 +3101,7 @@ static int affect_player( struct bolt &beam )
                 /*
                 if (beamHit < dodge || you.duration[DUR_DEFLECT_MISSILES])
                 */
-                if ((beamHit * beamHit< random2(dodge * dodge))
+                if ((beamHit * beamHit < random2(dodge * dodge))
                     || you.duration[DUR_DEFLECT_MISSILES])
                 {
                     strcpy(info, "The ");

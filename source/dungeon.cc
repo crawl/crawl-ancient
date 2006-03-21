@@ -428,6 +428,15 @@ void builder(int level_number, char level_type)
         prepare_water( level_number );
 }                               // end builder()
 
+/* to add a new item, hack:
+ * enum.h (class and/or type)
+ * describe.cc (description)
+ * effect.cc (acquirement)
+ * itemname.cc (name and weight)
+ * shopping.cc (price)
+ * view.cc (symbol)
+ * and this file (creation and color)
+ */
 // Returns item slot or NON_ITEM if it fails
 int items( int allow_uniques,       // not just true-false,
                                     //     because of BCR acquirement hack
@@ -2084,10 +2093,17 @@ int items( int allow_uniques,       // not just true-false,
             // only used in certain cases {dlb}
             int depth_mod = random2(1 + item_level);
 
+            /*
             temp_rand = random2(920);
+            */
+            temp_rand = random2(965);
 
             mitm[p].sub_type =
-                    ((temp_rand > 751) ? SCR_IDENTIFY :          // 18.26%
+                    ((temp_rand > 949) ?
+                        ((item_level < 7) ? SCR_TELEPORTATION
+                                          : SCR_MUNDANITY) :
+                     (temp_rand > 919) ? SCR_QUIVER :
+                     (temp_rand > 751) ? SCR_IDENTIFY :          // 18.26%
                      (temp_rand > 629) ? SCR_REMOVE_CURSE :      // 13.26%
                      (temp_rand > 554) ? SCR_TELEPORTATION :     //  8.15%
                      (temp_rand > 494) ? SCR_DETECT_CURSE :      //  6.52%
@@ -2149,6 +2165,7 @@ int items( int allow_uniques,       // not just true-false,
         if (item_level > 2
             && you.level_type != LEVEL_ABYSS
             && you.level_type != LEVEL_PANDEMONIUM
+            && (!player_in_branch(BRANCH_BIG_ROOM))
             && random2(2000) <= 100 + (item_level * 3)
             && one_chance_in(20))
         {
@@ -2424,9 +2441,16 @@ int items( int allow_uniques,       // not just true-false,
         // Note that acquirement level gold gives much less than the
         // price of a scroll of acquirement (520 gold). -- bwr
         if (item_level == MAKE_GOOD_ITEM)
-            quant = 50 + random2avg(100, 2) + random2avg(100, 2);
+        {
+          /*
+          quant = 50 + random2avg(100, 2) + random2avg(100, 2);
+          */
+          quant = 400 + random2avg(50, 2) + random2avg(50, 2);
+        }
         else
-            quant = 1 + random2avg(19, 2) + random2(item_level);
+        {
+          quant = 1 + random2avg(19, 2) + random2(item_level);
+        }
         break;
     }
 
@@ -3216,7 +3240,16 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
         // monsters will always have poisoned needles -- otherwise
         // they are just going to behave badly --GDL
         if (xitt == MI_NEEDLE)
-            set_item_ego_type(mitm[thing_created], OBJ_MISSILES, SPMSL_POISONED);
+        {
+          /* SPMSL_POISONED means it is magically poisoned (by Poison
+           * Ammunition spell or a blowgun of venom)
+           */
+          /*
+          set_item_ego_type(mitm[thing_created], OBJ_MISSILES, SPMSL_POISONED);
+          */
+          set_item_ego_type(mitm[thing_created], OBJ_MISSILES,
+                            SPMSL_POISONED_II);
+        }
 
         mitm[thing_created].x = 0;
         mitm[thing_created].y = 0;
@@ -6604,6 +6637,10 @@ void item_colour( item_def &item )
         case MISC_EMPTY_EBONY_CASKET:
             item.colour = DARKGREY;
             break;
+
+        case MISC_UMBRELLA_OF_RAINMAKING:
+          item.colour = BLUE;
+          break;
 
         case MISC_DECK_OF_SUMMONINGS:
         case MISC_DECK_OF_WONDERS:

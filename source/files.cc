@@ -464,8 +464,8 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
         // BEGIN -- must load the old level : pre-load tasks
 
         // LOAD various tags
-        char majorVersion;
-        char minorVersion;
+        char majorVersion = 0;
+        char minorVersion = 0;
 
         if (!determine_level_version( levelFile, majorVersion, minorVersion ))
         {
@@ -498,6 +498,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
             if (just_created_level)
                 env.map[i][j] = 0;
 
+            /*
             if (you.char_direction == DIR_ASCENDING
                 && you.level_type != LEVEL_PANDEMONIUM)
             {
@@ -508,6 +509,7 @@ void load( unsigned char stair_taken, int load_mode, bool was_a_labyrinth,
                     grd[i][j] = DNGN_STONE_ARCH;
                 }
             }
+            */
 
             if (load_mode != LOAD_RESTART_GAME)
                 env.cgrid[i][j] = EMPTY_CLOUD;
@@ -1140,8 +1142,8 @@ void restore_game(void)
         end(-1);
     }
 
-    char majorVersion;
-    char minorVersion;
+    char majorVersion = 0;
+    char minorVersion = 0;
 
     if (!determine_version(restoreFile, majorVersion, minorVersion))
     {

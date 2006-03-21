@@ -47,6 +47,9 @@
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
+#include "message.h"
+#include "shopping.h"
+#include "spells3.h"
 
 enum DEBRIS                 // jmf: add for shatter, dig, and Giants to throw
 {
@@ -71,6 +74,9 @@ static int quadrant_blink(int x, int y, int pow, int garbage);
 //void cast_detect_magic(int pow);  //jmf: as above...
 //void cast_eringyas_surprising_bouquet(int powc);
 void do_monster_rot(int mon);
+
+static bool your_spells_mystic_grasp(int spc2);
+static bool same_anchor(const item_def &item1, const item_def &item2);
 
 //jmf: FIXME: put somewhere else (misc.cc?)
 // A feeble attempt at Nethack-like completeness for cute messages.
@@ -3461,4 +3467,612 @@ cast_purify_flesh(int pow)
 
   if (!purified)
     canned_msg(MSG_SPELL_FIZZLES);
+}
+
+void
+cast_brainstorm(void)
+{
+  int i;
+  char keyin = 0;
+  const int num_lines = get_number_of_lines();
+  char st_pass[ITEMNAME_SIZE];
+  int num_item;
+  int num_monster;
+
+  num_item = 0;
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (is_valid_item(mitm[i]))
+      num_item++;
+  }
+
+  num_monster = 0;
+  for (i = 0; i < MAX_MONSTERS; i++)
+  {
+    if (menv[i].type != -1)
+      num_monster++;
+  }
+
+  snprintf(info, INFO_SIZE, "%d item%s and %d monster%s found.",
+           num_item, (num_item >= 2) ? "s" : "",
+           num_monster, (num_monster >= 2) ? "s" : "");
+  mpr(info);
+  more();
+
+#ifdef DOS_TERM
+  char buffer[4800];
+  gettext(1, 1, 80, 25, buffer);
+#endif
+
+#ifdef DOS_TERM
+  window(1, 1, 80, 25);
+#endif
+
+  clrscr();
+  gotoxy(1, 1);
+  textcolor(BLUE);
+  cprintf(" [items in this level]");
+  cprintf(EOL);
+  textcolor(LIGHTGREY);
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (is_valid_item(mitm[i]))
+    {
+      item_true_name(mitm[i], DESC_NOCAP_A, st_pass);
+      snprintf(info, INFO_SIZE, "%s", st_pass);
+      cprintf(info);
+      cprintf(EOL);
+    }
+
+    if ((i == MAX_ITEMS - 1) || (wherey() + 2 > num_lines))
+    {
+      if (i + 1 < MAX_ITEMS)
+      {
+        textcolor(BLUE);
+        cprintf(" -more-");
+        textcolor(LIGHTGREY);
+      }
+      keyin = getch();
+      if (keyin == ESCAPE)
+        break;
+      if (keyin == 0)
+        getch();
+      clrscr();
+      gotoxy(1, 1);
+    }
+  }
+
+  clrscr();
+  gotoxy(1, 1);
+  textcolor(BLUE);
+  cprintf(" [monsters in this level]");
+  cprintf(EOL);
+  textcolor(LIGHTGREY);
+  for (i = 0; i < MAX_MONSTERS; i++)
+  {
+    if (menv[i].type != -1)
+    {
+      snprintf(info, INFO_SIZE, "%s",
+               monam(menv[i].number, menv[i].type, true, DESC_NOCAP_A));
+      cprintf(info);
+      cprintf(EOL);
+      if (menv[i].type == MONS_PLAYER_GHOST)
+      {
+        snprintf(info, INFO_SIZE, " %s",
+                 (get_player_ghost_description()).c_str());
+        textcolor(DARKGREY);
+        cprintf(info);
+        cprintf(EOL);
+        textcolor(LIGHTGREY);
+      }
+      if ((menv[i].type != MONS_DANCING_WEAPON)
+          && (menv[i].inv[MSLOT_WEAPON] != NON_ITEM))
+      {
+        snprintf(info, INFO_SIZE, " wielding ");
+
+        item_true_name(mitm[menv[i].inv[MSLOT_WEAPON]] ,
+                       DESC_NOCAP_A, st_pass);
+        strcat(info, st_pass);
+
+        // 2-headed ogres can wield 2 weapons
+        if ((menv[i].type == MONS_TWO_HEADED_OGRE
+             || menv[i].type == MONS_ETTIN)
+            && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
+        {
+          strcat( info, " and " );
+          item_true_name(mitm[menv[i].inv[MSLOT_MISSILE]],
+                         DESC_NOCAP_A, st_pass);
+          strcat(info, st_pass);
+        }
+        textcolor(DARKGREY);
+        cprintf(info);
+        cprintf(EOL);
+        textcolor(LIGHTGREY);
+      }
+      if (menv[i].inv[MSLOT_ARMOUR] != NON_ITEM)
+      {
+        item_true_name(mitm[menv[i].inv[MSLOT_ARMOUR]],
+                       DESC_NOCAP_A, st_pass);
+        snprintf( info, INFO_SIZE, " wearing %s",
+                  st_pass );
+        textcolor(DARKGREY);
+        cprintf(info);
+        cprintf(EOL);
+        textcolor(LIGHTGREY);
+      }
+      if (menv[i].type == MONS_HYDRA)
+      {
+        snprintf(info, INFO_SIZE, " has %d head%s", menv[i].number,
+                 (menv[i].number >= 2) ? "s" : "");
+        textcolor(DARKGREY);
+        cprintf(info);
+        cprintf(EOL);
+        textcolor(LIGHTGREY);
+      }
+    }
+
+    if ((i == MAX_MONSTERS - 1) || (wherey() + 4 > num_lines))
+    {
+      if (i + 1 < MAX_MONSTERS)
+      {
+        textcolor(BLUE);
+        cprintf(" -more-");
+        textcolor(LIGHTGREY);
+      }
+      keyin = getch();
+      if (keyin == ESCAPE)
+        break;
+      if (keyin == 0)
+        getch();
+      clrscr();
+      gotoxy(1, 1);
+    }
+  }
+
+#ifdef DOS_TERM
+  puttext(1, 1, 80, 25, buffer);
+  gotoxy(1, 1);
+  cprintf(" ");
+#endif
+
+  redraw_screen();
+}
+
+void
+cast_virtual_death(int pow)
+{
+  if (pow < 0)
+    pow = 0;
+
+  /* quoted from Ikaruga --- feel free to replace */
+  mpr("I don't die without living...");
+
+  if ((you.is_undead) || (you.deaths_door))
+  {
+    mpr("After all, death is boring once it happens.");
+    return;
+  }
+
+  mpr("You hear your heart stop beating.");
+  you.paralysis += 5 + random2(5);
+  confuse_player( 10 + random2(10) );
+  exercise(SK_FIGHTING, 1 + random2(pow));
+}
+
+void
+cast_mystic_grasp(void)
+{
+  mpr("You feel like an archmage!");
+
+  cast_a_spell2(your_spells_mystic_grasp);
+}
+
+static bool
+your_spells_mystic_grasp(int spc2)
+{
+  if (spc2 == SPELL_MYSTIC_GRASP)
+  {
+    canned_msg(MSG_UNTHINKING_ACT);
+    return false;
+  }
+
+  return your_spells(spc2, 0, false);
+}
+
+void
+cast_bazaar_of_naniwa(int pow)
+{
+  bool out_of_stock = false;
+  bool known_item = false;
+  char temp_id[4][50];
+  unsigned int price;
+  int thing_created;
+  item_def target_item;
+
+  if ((you.level_type != LEVEL_DUNGEON)
+      || (player_in_branch(BRANCH_VESTIBULE_OF_HELL))
+      || (player_in_hell()))
+  {
+    mpr("We don't offer international shipping.");
+    return;
+  }
+
+  if (you.equip[EQ_WEAPON] == -1)
+  {
+    mpr("You have nothing in your hand.");
+    return;
+  }
+
+  target_item = you.inv[you.equip[EQ_WEAPON]];
+
+  switch (target_item.base_type)
+  {
+  case OBJ_MISSILES:
+    if ((item_ident(target_item, ISFLAG_KNOW_PLUSES))
+        && (item_ident(target_item, ISFLAG_KNOW_TYPE)))
+      known_item = true;
+    break;
+  case OBJ_WANDS:
+    if (!item_ident(target_item, ISFLAG_KNOW_PLUSES))
+    {
+      known_item = false;
+      break;
+    }
+    /* fall off */
+  case OBJ_SCROLLS:
+  case OBJ_POTIONS:
+    if ((get_ident_type(target_item.base_type,
+                        target_item.sub_type) == ID_KNOWN_TYPE)
+        || (item_ident(target_item, ISFLAG_KNOW_TYPE)))
+      known_item = true;
+    if ((target_item.base_type == OBJ_POTIONS)
+        && ((target_item.sub_type == POT_GAIN_STRENGTH)
+            || (target_item.sub_type == POT_GAIN_DEXTERITY)
+            || (target_item.sub_type == POT_GAIN_INTELLIGENCE)
+            || (target_item.sub_type == POT_EXPERIENCE)
+            || (target_item.sub_type == POT_MAGIC)))
+      out_of_stock = true;
+    break;
+  case OBJ_FOOD:
+    known_item = true;
+    if (target_item.sub_type == FOOD_CHUNK)
+      out_of_stock = true;
+    break;
+  default:
+    known_item = true;
+    out_of_stock = true;
+    break;
+  }
+
+  if (!known_item)
+  {
+    mpr("Can you elaborate on your order?");
+    return;
+  }
+  if (out_of_stock)
+  {
+    mpr("We are out of stock.");
+    return;
+  }
+
+  save_id(temp_id);
+  price = item_value(target_item, temp_id, false);
+  price *= 240 - pow * 3 / 5;
+  price /= 100;
+  if (price < item_value(target_item, temp_id, false))
+    price = item_value(target_item, temp_id, false);
+  if (price < 1)
+    price = 1;
+  if (price > you.gold)
+  {
+    mpr("You don't have enough money.");
+    return;
+  }
+  you.gold -= price;
+  you.redraw_gold = 1;
+
+  if (grd[you.x_pos][you.y_pos] == DNGN_LAVA
+      || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+  {
+    mpr("You hear a splash.");
+    return;
+  }
+
+  /* this can cull the items */
+  thing_created = get_item_slot(10);
+  if (thing_created == NON_ITEM)
+  {
+    you.gold += price;
+    canned_msg(MSG_NOTHING_HAPPENS);
+    return;
+  }
+  mitm[thing_created] = target_item;
+  mitm[thing_created].x = 0;
+  mitm[thing_created].y = 0;
+  mitm[thing_created].link = NON_ITEM;
+  move_item_to_grid(&thing_created, you.x_pos, you.y_pos);
+  canned_msg(MSG_SOMETHING_APPEARS);
+}
+
+void
+cast_local_global(void)
+{
+  int i;
+  int j;
+  int k;
+  int x1;
+  int y1;
+  int x2;
+  int y2;
+  unsigned char temp1;
+  unsigned char temp2;
+  int temp_int1;
+  int temp_int2;
+  FixedVector < int, 2 > plox;
+  const int range = 8;
+
+  ASSERT(range > 0);
+
+  if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
+  {
+    mpr("It would help if you knew where you were, first.");
+    return;
+  }
+
+  plox[0] = 1;
+  plox[1] = 0;
+  mpr("Exchange your surroundings for where?");
+  more();
+  show_map(plox);
+  redraw_screen();
+
+  if ((plox[0] - you.x_pos) * (plox[0] - you.x_pos)
+      + (plox[1] - you.y_pos) * (plox[1] - you.y_pos)
+      < 2 * (range * range + range))
+  {
+    mpr("It is too close.");
+    return;
+  }
+
+  if (!player_can_teleport_here(plox[0], plox[1]))
+  {
+    mpr("Something is already there.");
+    return;
+  }
+
+  for (i = -range; i <= range; i++)
+  {
+    for (j = -range; j <= range; j++)
+    {
+      if ((i == 0) && (j == 0))
+        continue;
+      if (i * i + j * j > range * range + range)
+        continue;
+
+      x1 = plox[0] + i;
+      y1 = plox[1] + j;
+      x2 = you.x_pos + i;
+      y2 = you.y_pos + j;
+
+      if ((x1 <= 5) || (x1 >= GXM - 5) || (y1 <= 5) || (y1 >= GYM - 5))
+        continue;
+      if ((x2 <= 5) || (x2 >= GXM - 5) || (y2 <= 5) || (y2 >= GYM - 5))
+        continue;
+
+      /* exchange terrains */
+      temp1 = grd[x1][y1];
+      temp2 = grd[x2][y2];
+      grd[x1][y1] = temp2;
+      grd[x2][y2] = temp1;
+
+      /* exchange traps */
+      for (k = 0; k < MAX_TRAPS; k++)
+      {
+        if (env.trap[k].type == TRAP_UNASSIGNED)
+          continue;
+
+        if ((env.trap[k].x == x1) && (env.trap[k].y == y1))
+        {
+          env.trap[k].x = x2;
+          env.trap[k].y = y2;
+        }
+        else if ((env.trap[k].x == x2) && (env.trap[k].y == y2))
+        {
+          env.trap[k].x = x1;
+          env.trap[k].y = y1;
+        }
+      }
+
+      /* exchange items */
+      temp_int1 = igrd[x1][y1];
+      temp_int2 = igrd[x2][y2];
+
+      for (k = 0; k < MAX_ITEMS; k++)
+      {
+        if (!is_valid_item(mitm[k]))
+          continue;
+
+        if ((mitm[k].x == x1) && (mitm[k].y == y1))
+        {
+          mitm[k].x = x2;
+          mitm[k].y = y2;
+        }
+        else if ((mitm[k].x == x2) && (mitm[k].y == y2))
+        {
+          mitm[k].x = x1;
+          mitm[k].y = y1;
+        }
+      }
+
+      igrd[x1][y1] = temp_int2;
+      igrd[x2][y2] = temp_int1;
+
+      /* exchange monsters */
+      temp1 = mgrd[x1][y1];
+      temp2 = mgrd[x2][y2];
+
+      if (temp2 != NON_MONSTER)
+      {
+        menv[temp2].x = x1;
+        menv[temp2].y = y1;
+      }
+      mgrd[x1][y1] = temp2;
+
+      if (temp1 != NON_MONSTER)
+      {
+        menv[temp1].x = x2;
+        menv[temp1].y = y2;
+      }
+      mgrd[x2][y2] = temp1;
+
+      if ((temp1 != NON_MONSTER) && (menv[temp1].type != -1))
+        behaviour_event(&menv[temp1], ME_ALERT, MHITYOU);
+      if ((temp2 != NON_MONSTER) && (menv[temp2].type != -1))
+        behaviour_event(&menv[temp2], ME_ALERT, MHITYOU);
+
+      /* exchange clouds */
+      temp1 = env.cgrid[x1][y1];
+      temp2 = env.cgrid[x2][y2];
+
+      if (temp2 != EMPTY_CLOUD)
+      {
+        env.cloud[temp2].x = x1;
+        env.cloud[temp2].y = y1;
+      }
+      env.cgrid[x1][y1] = temp2;
+
+      if (temp1 != EMPTY_CLOUD)
+      {
+        env.cloud[temp1].x = x2;
+        env.cloud[temp1].y = y2;
+      }
+      env.cgrid[x2][y2] = temp1;
+
+      /* exchange maps */
+      temp1 = env.map[x1][y1];
+      temp2 = env.map[x2][y2];
+      env.map[x1][y1] = temp2;
+      env.map[x2][y2] = temp1;
+    }
+  }
+
+  redraw_screen();
+}
+
+static bool
+same_anchor(const item_def &item1, const item_def &item2)
+{
+  if (!is_valid_item(item1))
+    return false;
+  if (!is_valid_item(item2))
+    return false;
+
+  if (item1.base_type != item2.base_type)
+    return false;
+  if (item1.sub_type != item2.sub_type)
+    return false;
+
+  if ((item1.base_type == OBJ_FOOD)
+      && (item1.sub_type == FOOD_CHUNK))
+  {
+    /* must be the chunk of the same monster */
+    if (item1.plus != item2.plus)
+      return false;
+  }
+
+  if (item1.base_type == OBJ_CORPSES)
+  {
+    /* must be the corpse of the same monster */
+    if (item1.plus != item2.plus)
+      return false;
+  }
+
+  return true;
+}
+
+/* this spell intentionally ignores your normal teleport control */
+void
+cast_anchored_teleport(void)
+{
+  int i;
+  int anchor_x = -1;
+  int anchor_y = -1;
+  item_def target_item;
+  int anchor_found;
+
+  if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+  {
+    mpr("You feel a strange sense of stasis.");
+    return;
+  }
+
+  if (!allow_control_teleport(true))
+  {
+    mpr("A powerful magic interferes with your control of the teleport.");
+    /* no immediate teleport */
+    return;
+  }
+
+  if (you.equip[EQ_WEAPON] == -1)
+  {
+    mpr("You have nothing in your hand.");
+    return;
+  }
+
+  target_item = you.inv[you.equip[EQ_WEAPON]];
+  if (target_item.base_type == OBJ_GOLD)
+  {
+    mpr("This spell does not work with this item.");
+    return;
+  }
+  if ((target_item.flags & ISFLAG_IDENT_MASK) != ISFLAG_IDENT_MASK)
+  {
+    mpr("The anchor must be fully identified.");
+    return;
+  }
+
+  anchor_found = 0;
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (!is_valid_item(mitm[i]))
+      continue;
+    if (!same_anchor(target_item, mitm[i]))
+      continue;
+    if ((mitm[i].flags & ISFLAG_IDENT_MASK) != ISFLAG_IDENT_MASK)
+      continue;
+    /* note that if an item is held by a monster then mitm[i].x and
+     * mitm[i].y are 0
+     */
+    if ((mitm[i].x <= 5) || (mitm[i].x >= GXM - 5)
+        || (mitm[i].y <= 5) || (mitm[i].y >= GYM - 5))
+      continue;
+    if (!player_can_teleport_here(mitm[i].x, mitm[i].y))
+      continue;
+    if ((mitm[i].x == you.x_pos) && (mitm[i].y == you.y_pos))
+      continue;
+
+    anchor_found++;
+    ASSERT(anchor_found > 0);
+    if (one_chance_in(anchor_found))
+    {
+      anchor_x = mitm[i].x;
+      anchor_y = mitm[i].y;
+    }
+  }
+
+  if ((anchor_found <= 0)
+      || (anchor_x <= 5) || (anchor_x >= GXM - 5)
+      || (anchor_y <= 5) || (anchor_y >= GYM - 5)
+      || (!player_can_teleport_here(anchor_x, anchor_y))
+      || ((anchor_x == you.x_pos) && (anchor_y == you.y_pos)))
+  {
+    canned_msg(MSG_SPELL_FIZZLES);
+    return;
+  }
+
+  move_player2(anchor_x - you.x_pos, anchor_y - you.y_pos,
+               true, false);
+  you.running = 0;
+  /* controlling teleport contaminates the player */
+  contaminate_player(1);
 }

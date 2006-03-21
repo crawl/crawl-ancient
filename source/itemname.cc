@@ -1290,7 +1290,9 @@ static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE],
                    (item_typ == SCR_VORPALISE_WEAPON) ? "vorpalise weapon" :
                    (item_typ == SCR_RECHARGING) ? "recharging" :
                    //(item_typ == 23)                   ? "portal travel" :
-                   (item_typ == SCR_ENCHANT_WEAPON_III) ? "enchant weapon III"
+                    (item_typ == SCR_ENCHANT_WEAPON_III) ? "enchant weapon III" :
+                    (item_typ == SCR_MUNDANITY) ? "mundanity" :
+                    (item_typ == SCR_QUIVER) ? "quiver"
                                                        : "bugginess",
                     ITEMNAME_SIZE);
         }
@@ -1808,6 +1810,13 @@ static char item_name_2( const item_def &item, char buff[ITEMNAME_SIZE],
 
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
             strncat(buff, "portable altar of Nemelex", ITEMNAME_SIZE );
+            break;
+
+        case MISC_UMBRELLA_OF_RAINMAKING:
+            strncat(buff, "umbrella", ITEMNAME_SIZE );
+
+            if (item_ident( item, ISFLAG_KNOW_TYPE ))
+                strncat(buff, " of rainmaking", ITEMNAME_SIZE );
             break;
 
         default:
@@ -2348,7 +2357,10 @@ void init_properties(void)
 
     for (i = 0; i < 50; i++)
     {
+      /*
         mss[OBJ_WANDS][i] = 100;
+      */
+        mss[OBJ_WANDS][i] = 70;
         mss[OBJ_FOOD][i] = 100;
         mss[OBJ_UNKNOWN_I][i] = 200;    // labeled as "books" elsewhere
 
@@ -2366,9 +2378,15 @@ void init_properties(void)
     }
 
     // rods are lighter than staves
+    /* No, rods should not be light.  They are for a warrior, and he/she will
+     * have big STR.
+     */
     for (i = STAFF_SMITING; i < STAFF_AIR; i++)
     {
+      /*
         mss[OBJ_STAVES][i] = 70;
+      */
+        mss[OBJ_STAVES][i] = 130;
     }
 
     // this is food, right?
@@ -3215,4 +3233,15 @@ know_amulet_type(char which_am)
     in_name( item_slot, DESC_INVENTORY_EQUIP, str_pass );
     mpr( str_pass );
   }
+}
+
+/* get the name of an item as if the item were identified */
+char
+item_true_name(const item_def &item, char descrip,
+               char buff[ITEMNAME_SIZE], bool terse)
+{
+  item_def temp = item;
+
+  set_ident_flags(temp, ISFLAG_IDENT_MASK);
+  return item_name(temp, descrip, buff, terse);
 }
