@@ -1549,7 +1549,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_POISON;
-        beam.hit = 7 + random2(power) / 80;
+        // beam.hit = 7 + random2(power) / 80;
+        beam.hit = 9 + random2(power) / 50;
         beam.isBeam = true;
         break;
 
@@ -1562,7 +1563,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_FIRE;
-        beam.hit = 8 + random2(power) / 80;     // hit
+        // beam.hit = 8 + random2(power) / 80;     // hit
+        beam.hit = 10 + random2(power) / 40;     // hit
         beam.isBeam = true;
         break;
 
@@ -1575,7 +1577,8 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_COLD;
-        beam.hit = 8 + random2(power) / 80;     // hit
+        // beam.hit = 8 + random2(power) / 80;     // hit
+        beam.hit = 10 + random2(power) / 40;     // hit
         beam.isBeam = true;
         break;
 
@@ -1589,7 +1592,7 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_ELECTRICITY;
         // beam.hit = 10 + random2(power) / 40;
-        beam.hit = 20 + random2(power) / 5;
+        beam.hit = 20 + random2(power) / 20;
         beam.isBeam = true;
         break;
 
@@ -1686,7 +1689,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON;
         beam.flavour = BEAM_NEG;
+        /*
         beam.hit = 7 + random2(power) / 80;
+        */
+        beam.hit = 9 + random2(power) / 50;
         beam.isBeam = true;
         break;
 
@@ -1698,7 +1704,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 6;
         beam.rangeMax = 10;
         beam.damage = dice_def( 3, 7 + (power / 14) );
+        /*
         beam.hit = 10 + (power / 20);
+        */
+        beam.hit = 10 + (power / 10);
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MMISSILE;
@@ -1796,7 +1805,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 8;
         beam.rangeMax = 12;
         beam.damage = dice_def( 1, 6 + power / 25 );
+        /*
         beam.hit = 60;
+        */
+        beam.hit = 7;
         beam.type = SYM_ZAP;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_POISON;
@@ -1809,7 +1821,10 @@ struct SBeam mons_spells( int spell_cast, int power )
         beam.range = 4;
         beam.rangeMax = 8;
         beam.damage = dice_def( 3, 8 + (power / 9) );
+        /*
         beam.hit = 6 + (power / 25);
+        */
+        beam.hit = 8 + (power / 25);
         beam.type = SYM_MISSILE;
         beam.thrown = KILL_MON_MISSILE;
         beam.flavour = BEAM_MMISSILE;   // similarly unresisted thing

@@ -122,15 +122,25 @@ char in_a_shop( char shoppy, char id[4][50] )
 
         textcolor((i % 2) ? WHITE : LIGHTGREY);
 
+        gp_value = greedy * item_value( mitm[itty], id );
+        gp_value /= 10;
+        if (gp_value <= 1)
+            gp_value = 1;
+
+        if (gp_value > you.gold)
+          textcolor(LIGHTBLUE);
+
         it_name(itty, DESC_NOCAP_A, st_pass);
         putch(i + 96);
         cprintf(" - ");
         cprintf(st_pass);
 
+        /*
         gp_value = greedy * item_value( mitm[itty], id );
         gp_value /= 10;
         if (gp_value <= 1)
             gp_value = 1;
+        */
 
         gotoxy(60, i);
         // cdl - itoa(gp_value, st_pass, 10);
@@ -268,6 +278,8 @@ char in_a_shop( char shoppy, char id[4][50] )
     }
 
     gp_value = greedy * item_value( mitm[shop_items[ft]], id ) / 10;
+    if (gp_value <= 1)
+      gp_value = 1;
 
     if (gp_value > you.gold)
     {

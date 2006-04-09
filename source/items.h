@@ -122,4 +122,7 @@ int inv_count(void);
 
 void cmd_destroy_item( void );
 
+
+int how_many_item_in_this_level(void);
+
 #endif

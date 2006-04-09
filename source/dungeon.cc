@@ -296,7 +296,8 @@ void builder(int level_number, char level_type)
          || player_in_branch( BRANCH_VAULTS )
          || player_in_branch( BRANCH_SNAKE_PIT )
          || player_in_branch( BRANCH_SWAMP )
-         || player_in_branch( BRANCH_FAIRYLAND ))
+         || player_in_branch( BRANCH_FAIRYLAND )
+         || player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
     {
         place_shops(level_number);
     }
@@ -2560,11 +2561,13 @@ void give_item(int mid, int level_number) //mv: cleanup+minor changes
     // this flags things to "goto give_armour" below ... {dlb}
     mitm[bp].base_type = 101;
 
+    /*
     if (menv[mid].type == MONS_DANCING_WEAPON
         && player_in_branch( BRANCH_HALL_OF_BLADES ))
     {
         give_level = MAKE_GOOD_ITEM;
     }
+    */
 
     // moved setting of quantity here to keep it in mind {dlb}
     iquan = 1;
@@ -3936,6 +3939,7 @@ static int builder_by_branch(int level_number)
 
     case BRANCH_VESTIBULE_OF_HELL:
         build_vaults( level_number, 50 );
+        place_shops(level_number);
         link_items();
         return -1;
 
@@ -4751,13 +4755,17 @@ static void builder_monsters(int level_number, char level_type, int mon_wanted)
     int lava_spaces, water_spaces;
     int aq_creatures;
     int swimming_things[4];
+    int mon_type = RANDOM_MONSTER;
 
     if (level_type == LEVEL_PANDEMONIUM)
         return;
 
+    if (player_in_branch( BRANCH_HALL_OF_BLADES ))
+      mon_type = MONS_DANCING_WEAPON;
+
     for (i = 0; i < mon_wanted; i++)
     {
-        if (place_monster( not_used, RANDOM_MONSTER, level_number, BEH_SLEEP,
+        if (place_monster( not_used, mon_type, level_number, BEH_SLEEP,
                            MHITNOT, false, 1, 1, true ))
         {
             totalplaced++;
@@ -6885,6 +6893,131 @@ static void place_shops(int level_number)
     unsigned char no_shops = 0;
     unsigned char shop_place_x = 0;
     unsigned char shop_place_y = 0;
+    int i;
+
+    if ((player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+        || (player_in_branch(BRANCH_VESTIBULE_OF_HELL)))
+    {
+      int di;
+      unsigned char force_s_type;
+
+      temp_rand = random2(8);
+      di = 1;
+      if (temp_rand >= 4)
+        di = -1;
+
+      for (i = 0; (i < MAX_SHOPS) && (i < 4); i++)
+      {
+        shop_place_x = 0;
+        shop_place_y = 0;
+        switch (i)
+        {
+        case 0:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            shop_place_x = 22;
+            shop_place_y = 20;
+          }
+          else
+          {
+            shop_place_x = 27;
+            shop_place_y = 22;
+          }
+          break;
+        case 1:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            shop_place_x = 56;
+            shop_place_y = 20;
+          }
+          else
+          {
+            shop_place_x = 55;
+            shop_place_y = 22;
+          }
+          break;
+        case 2:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            shop_place_x = 56;
+            shop_place_y = 50;
+          }
+          else
+          {
+            shop_place_x = 55;
+            shop_place_y = 46;
+          }
+          break;
+        default:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            shop_place_x = 22;
+            shop_place_y = 50;
+          }
+          else
+          {
+            shop_place_x = 27;
+            shop_place_y = 46;
+          }
+          break;
+        }
+
+        if (grd[shop_place_x][shop_place_y] != DNGN_FLOOR)
+        {
+          /* should not happen */
+          continue;
+        }
+
+        force_s_type = SHOP_GENERAL;
+        switch ((4 + temp_rand + i * di) % 4)
+        {
+        case 0:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            force_s_type = SHOP_WAND;
+          }
+          else
+          {
+            force_s_type = SHOP_WEAPON_ANTIQUE;
+          }
+          break;
+        case 1:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            force_s_type = SHOP_FOOD;
+          }
+          else
+          {
+            force_s_type = SHOP_ARMOUR_ANTIQUE;
+          }
+          break;
+        case 2:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            force_s_type = SHOP_DISTILLERY;
+          }
+          else
+          {
+            force_s_type = SHOP_JEWELLERY;
+          }
+          break;
+        default:
+          if (player_in_branch(BRANCH_ECUMENICAL_TEMPLE))
+          {
+            force_s_type = SHOP_SCROLL;
+          }
+          else
+          {
+            force_s_type = SHOP_BOOK;
+          }
+          break;
+        }
+
+        place_spec_shop(level_number, shop_place_x, shop_place_y,
+                        force_s_type);
+      }
+      return;
+    }
 
     temp_rand = random2(125);
 
@@ -6899,7 +7032,7 @@ static void place_shops(int level_number)
         return;
 #endif
 
-    for (int i = 0; i < no_shops; i++)
+    for (i = 0; i < no_shops; i++)
     {
         timeout = 0;
 

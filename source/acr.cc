@@ -1642,7 +1642,11 @@ static void input(void)
     }
 
     if (you.num_turns != -1)
-        you.num_turns++;
+    {
+      you.num_turns++;
+      /* update the "number of turns" status line */
+      you.redraw_gold = 1;
+    }
 
     //if (random2(10) < you.skills [SK_TRAPS_DOORS] + 2) search_around();
 
@@ -2271,22 +2275,42 @@ static void input(void)
     {
         if (random2(5) <= (you.poison - 1))
         {
+            int dam;
             if (you.poison > 10 && random2(you.poison) >= 8)
             {
+              /*
                 ouch(random2(10) + 5, 0, KILLED_BY_POISON);
+              */
+                dam = random2(10) + 5;
                 mpr("You feel extremely sick.", MSGCH_DANGER);
             }
             else if (you.poison > 5 && coinflip())
             {
+              /*
                 ouch((coinflip()? 3 : 2), 0, KILLED_BY_POISON);
+              */
+                dam = (coinflip())? 3 : 2;
                 mpr("You feel very sick.", MSGCH_WARN);
             }
             else
             {
                 // the poison running through your veins.");
+              /*
                 ouch(1, 0, KILLED_BY_POISON);
+              */
+                dam = 1;
                 mpr("You feel sick.");
             }
+
+            if ((you.species == SP_HALFLING)
+                && (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE))
+            {
+              if (dam > you.hp - 1)
+                dam = you.hp - 1;
+            }
+
+            if (dam > 0)
+              ouch(dam, 0, KILLED_BY_POISON);
 
             if ((you.hp == 1 && one_chance_in(3)) || one_chance_in(8))
                 reduce_poison_player(1);
@@ -2922,7 +2946,7 @@ static void do_berserk_no_combat_penalty(void)
 #if 0
 // Called when the player moves by walking/running. Also calls
 // attack function and trap function etc when necessary.
-/* the arguments are int , not char; char can be signed or unsigned */
+/* the arguments are int, not char; char can be signed or unsigned */
 static void move_player(int move_x, int move_y)
 {
     bool attacking = false;
@@ -3212,7 +3236,7 @@ static void move_player(int move_x, int move_y)
 }                               // end move_player()
 #endif /* 0 */
 
-/* the arguments are int , not char; char can be signed or unsigned */
+/* the arguments are int, not char; char can be signed or unsigned */
 static void move_player(int move_x, int move_y)
 {
     if (you.conf)

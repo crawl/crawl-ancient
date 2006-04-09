@@ -2280,8 +2280,9 @@ static int mons_standard_level(int mcls)
     case MONS_IMP:
     case MONS_JELLY:
     case MONS_NECROPHAGE:
-    case MONS_QUASIT:
+      // case MONS_QUASIT: // not in mons_standard_rare(int mcls)
     case MONS_ZOMBIE_SMALL:
+    case MONS_ORC_PRIEST:
         return 9;
 
     case MONS_DEEP_ELF_SOLDIER:
@@ -2336,10 +2337,14 @@ static int mons_standard_level(int mcls)
     case MONS_GOLD_MIMIC:
     case MONS_HYDRA:
     case MONS_MOTTLED_DRAGON:
+      /*
     case MONS_ORC_PRIEST:
+      */
     case MONS_POTION_MIMIC:
     case MONS_SCROLL_MIMIC:
+      /*
     case MONS_SKELETAL_WARRIOR:
+      */
     case MONS_WEAPON_MIMIC:
         return 15;
 
@@ -2370,6 +2375,7 @@ static int mons_standard_level(int mcls)
     case MONS_GARGOYLE:
     case MONS_GIANT_AMOEBA:
     case MONS_KOBOLD_DEMONOLOGIST:
+    case MONS_SPECTRAL_WARRIOR:
         return 18;
 
     case MONS_GIANT_SLUG:
@@ -2401,7 +2407,9 @@ static int mons_standard_level(int mcls)
     case MONS_SHADOW_WRAITH:
     case MONS_SKELETON_SMALL:
     case MONS_SPINY_WORM:
+      /*
     case MONS_VERY_UGLY_THING:
+      */
         return 20;
 
     case MONS_BOULDER_BEETLE:
@@ -2439,8 +2447,12 @@ static int mons_standard_level(int mcls)
         return 25;
 
     case MONS_DEEP_ELF_CONJURER:
+      /*
     case MONS_SPECTRAL_WARRIOR:
+      */
     case MONS_STORM_DRAGON:
+    case MONS_SKELETAL_WARRIOR:
+    case MONS_VERY_UGLY_THING:
         return 26;
 
     case MONS_DEEP_ELF_PRIEST:

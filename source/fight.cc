@@ -729,6 +729,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
 #endif
 
         int roll_damage_min = 0;
+        /* this condition checks division-by-zero too */
         if (your_to_hit_final <= 2 * defender->evasion * defender->evasion)
         {
           roll_damage_min = 0;
@@ -1519,6 +1520,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                     break;
                 }
 
+#if 0
                 if (one_chance_in(3))
                 {
                     strcpy(info, "Space bends around ");
@@ -1555,6 +1557,75 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 {
                     monster_die(defender, KILL_RESET, 0);
                     return;
+                }
+#endif /* 0 */
+                {
+                  int additional_damage = 0;
+                  int effect_message_type = -1;
+
+                  /*
+                  if (!one_chance_in(3))
+                    break;
+                  */
+
+                  additional_damage = 1 + random2avg(7, 2);
+                  effect_message_type = 0;
+                  if (one_chance_in(3))
+                  {
+                    additional_damage = 3 + random2avg(24, 2);
+                    effect_message_type = 1;
+                  }
+
+                  if ((defender->max_hit_points <= 0)
+                      || (specdam + additional_damage >= defender->hit_points)
+                      || ((defender->hit_points * 100
+                           / defender->max_hit_points)
+                          + random2(150) < 125))
+                  {
+                    switch (effect_message_type)
+                    {
+                    case 0:
+                      strcpy(info, "Space bends around ");
+                      strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                      strcat(info, ".");
+                      mpr(info);
+                      break;
+                    case 1:
+                      strcpy(info, "Space warps horribly around ");
+                      strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                      strcat(info, "!");
+                      mpr(info);
+                      break;
+                    default:
+                      mpr("unknown additional damage by distortion");
+                      break;
+                    }
+                    specdam += additional_damage;
+                  }
+                  else
+                  {
+                    if (!one_chance_in(18))
+                    {
+                      if ((mons_has_ench(defender, ENCH_TP_I, ENCH_TP_IV))
+                          || (coinflip()))
+                      {
+                        monster_teleport(defender, true);
+                      }
+                      else
+                      {
+                        strcpy(info, ptr_monam(defender, DESC_NOCAP_THE));
+                        strcat(info, " looks slightly unstable.");
+                        mpr(info);
+                        monster_teleport(defender, false);
+                      }
+                      break;
+                    }
+                    else
+                    {
+                      monster_die(defender, KILL_RESET, 0);
+                      return;
+                    }
+                  }
                 }
                 break;
 
@@ -1820,6 +1891,7 @@ void you_attack(int monster_attacked, bool unarmed_attacks)
                 {
                   const int damage_done_rolled = (int) random2avg(damage, 3);
                   int damage_done_rolled_min = 0;
+                  /* this condition checks division-by-zero too */
                   if (your_to_hit <= 2 * defender->evasion * defender->evasion)
                   {
                     damage_done_rolled_min = 0;
@@ -1985,6 +2057,9 @@ void monster_attack(int monster_attacking)
     char st_prn[ 20 ];
 #endif
 
+    if (mons_has_ench( attacker, ENCH_SUBMERGED ))
+        return;
+
     if (attacker->type == MONS_HYDRA)
         heads = attacker->number;
 
@@ -2007,8 +2082,10 @@ void monster_attack(int monster_attacking)
     if (you.pet_target == MHITNOT)
         you.pet_target = monster_attacking;
 
+    /*
     if (mons_has_ench( attacker, ENCH_SUBMERGED ))
         return;
+    */
 
     if (you.duration[DUR_REPEL_UNDEAD]
         // && mons_holiness( attacker->type ) == MH_UNDEAD
@@ -2203,7 +2280,7 @@ void monster_attack(int monster_attacking)
         int player_dodge = player_evasion();
         if (player_dodge > 40)
           player_dodge = 40;
-        player_dodge += you.dex / 3;
+        player_dodge += random2(you.dex) / 3;
         if (player_monster_visible(attacker))
           player_dodge -= 2;
         else
@@ -2278,6 +2355,7 @@ void monster_attack(int monster_attacking)
             {
               int mdam_rolled_min;
               const int mdam_rolled = random2avg(mdam, 3);
+              /* this condition checks division-by-zero too */
               if ((mons_to_hit_rolled <= 0)
                   || (mons_to_hit_rolled <= 2 * player_dodge_rolled))
                 {
@@ -2733,6 +2811,8 @@ void monster_attack(int monster_attacking)
                 break;
 
             case MONS_VAMPIRE:
+            case MONS_VAMPIRE_KNIGHT:
+            case MONS_VAMPIRE_MAGE:
                 if (you.is_undead)
                     break;
 
@@ -2839,6 +2919,36 @@ void monster_attack(int monster_attacking)
               {
                 confuse_player( 3 + random2(8) );
                 go_berserk(false);
+              }
+              break;
+
+            case MONS_VERY_UGLY_THING:
+              if (one_chance_in(3))
+                lose_stat(STAT_DEXTERITY, 1);
+              /* intentional fall through */
+            case MONS_UGLY_THING:
+              if (!one_chance_in(3))
+              {
+                mpr("You feel momentarily disoriented.");
+                know_amulet_type(AMU_CLARITY);
+                if (!wearing_amulet(AMU_CLARITY))
+                    forget_map(10 + damage_taken * 3);
+              }
+              break;
+
+            case MONS_TENTACLED_MONSTROSITY:
+              if ((!you.paralysis)
+                  && (one_chance_in(3))
+                  && (random2(5) > runthru)
+                  && (random2(30) >= you.skills[SK_TRAPS_DOORS]))
+              {
+                strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                strcat(info, " binds you!");
+                mpr( info, MSGCH_WARN );
+                /* make sure that the player can take a turn */
+                you.paralysis = 1;
+                if (attacker->speed_increment > 25)
+                  attacker->speed_increment -= 10;
               }
               break;
             }                   // end of switch for special attacks.
@@ -3096,6 +3206,7 @@ commented out for now
 
 
             case SPWPN_DISTORTION:
+#if 0
                 //if ( !one_chance_in(3) ) break;
 
                 if (one_chance_in(3))
@@ -3134,6 +3245,67 @@ commented out for now
                 {
                     banished(DNGN_ENTER_ABYSS);
                     break;
+                }
+#endif /* 0 */
+                {
+                  int additional_damage = 0;
+                  int effect_message_type = -1;
+
+                  /*
+                  if (!one_chance_in(3))
+                    break;
+                  */
+
+                  additional_damage = 1 + random2avg(7, 2);
+                  effect_message_type = 0;
+                  if (one_chance_in(3))
+                  {
+                    additional_damage = 3 + random2avg(24, 2);
+                    effect_message_type = 1;
+                  }
+
+                  if ((you.hp_max <= 0)
+                      || (specdam + additional_damage >= you.hp)
+                      || ((you.hp * 100
+                           / you.hp_max)
+                          + random2(150) < 125))
+                  {
+                    switch (effect_message_type)
+                    {
+                    case 0:
+                      mpr("Your body is twisted painfully.");
+                      break;
+                    case 1:
+                      mpr("Your body is terribly warped!");
+                      break;
+                    default:
+                      mpr("unknown additional damage by distortion");
+                      break;
+                    }
+                    specdam += additional_damage;
+                  }
+                  else
+                  {
+                    if (!one_chance_in(18))
+                    {
+                      if ((you.duration[DUR_TELEPORT])
+                          || (coinflip()))
+                      {
+                        you_teleport2( true, one_chance_in(5) );
+                        break;
+                      }
+                      else
+                      {
+                        you_teleport();
+                        break;
+                      }
+                    }
+                    else
+                    {
+                      banished(DNGN_ENTER_ABYSS);
+                      break;
+                    }
+                  }
                 }
                 break;
             }               // end of switch
@@ -3188,6 +3360,13 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
     char st_prn[ 20 ];
 #endif
 
+    if (mons_has_ench( attacker, ENCH_SUBMERGED )
+        && habitat != DNGN_FLOOR
+        && habitat != monster_habitat( defender->type ))
+    {
+        return false;
+    }
+
     if (attacker->type == MONS_HYDRA)
         heads = attacker->number;
 
@@ -3198,12 +3377,14 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
         return false;
     }
 
+    /*
     if (mons_has_ench( attacker, ENCH_SUBMERGED )
         && habitat != DNGN_FLOOR
         && habitat != monster_habitat( defender->type ))
     {
         return false;
     }
+    */
 
     if (grd[attacker->x][attacker->y] == DNGN_SHALLOW_WATER
         && !mons_flies( attacker )
@@ -3346,6 +3527,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             {
               int mdam_rolled_min;
               const int mdam_rolled = 1 + random2avg(mdam, 3);
+              /* this condition checks division-by-zero too */
               if ((mons_to_hit_rolled <= 0)
                   || (mons_to_hit_rolled
                       <= 2 * defender->evasion * defender->evasion))
@@ -3435,7 +3617,35 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             }
 
             // special attacks:
-            switch (attacker->type)
+            int mclas = attacker->type;
+
+            if (mclas == MONS_KILLER_KLOWN)
+            {
+                switch (random2(6))
+                {
+                case 0:
+                    // comment and enum do not match {dlb}
+                    mclas = MONS_SNAKE; // scorp
+                    break;
+                case 1:
+                    mclas = MONS_NECROPHAGE;
+                    break;
+                case 2:
+                    mclas = MONS_WRAITH;
+                    break;
+                case 3:
+                    mclas = MONS_FIRE_ELEMENTAL;
+                    break;
+                case 4:
+                    mclas = MONS_ICE_BEAST;
+                    break;
+                case 5:
+                    mclas = MONS_PHANTOM;
+                    break;
+                }
+            }
+
+            switch (mclas)
             {
             // enum does not match comment 14jan2000 {dlb}
             case MONS_CENTAUR:  // cockatrice
@@ -3701,6 +3911,22 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                 }
               }
               break;
+
+            case MONS_TENTACLED_MONSTROSITY:
+              if ((defender->speed_increment + defender->speed >= 80)
+                  && (one_chance_in(3))
+                  && (random2(5) > runthru))
+              {
+                strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                strcat(info, " binds ");
+                strcat(info, ptr_monam(defender, DESC_CAP_THE));
+                strcat(info, ".");
+                mpr(info);
+                defender->speed_increment = 0;
+                if (attacker->speed_increment > 25)
+                  attacker->speed_increment -= 10;
+              }
+              break;
             }
         }
 
@@ -3916,6 +4142,20 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
 
                 case SPWPN_DISTORTION:
+                  if (defender->type == MONS_BLINK_FROG)
+                  {
+                    if (one_chance_in(5))
+                    {
+                      if (mons_near(defender)
+                          && player_monster_visible(defender))
+                        simple_monster_message(defender,
+                                               " basks in the translocular "
+                                               "energy.");
+                      heal_monster(defender, 1 + random2avg(7, 2), true);
+                    }
+                    break;
+                  }
+#if 0
                     if (one_chance_in(3))
                     {
                         if (mons_near(defender)
@@ -3962,6 +4202,81 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
                         monster_die(defender, KILL_RESET, monster_attacking);
                         return true;
                         break;
+                    }
+#endif /* 0 */
+                    {
+                      int additional_damage = 0;
+                      int effect_message_type = -1;
+
+                      /*
+                      if (!one_chance_in(3))
+                        break;
+                      */
+
+                      additional_damage = 1 + random2avg(7, 2);
+                      effect_message_type = 0;
+                      if (one_chance_in(3))
+                      {
+                        additional_damage = 3 + random2avg(24, 2);
+                        effect_message_type = 1;
+                      }
+
+                      if ((defender->max_hit_points <= 0)
+                          || (specdam + additional_damage
+                              >= defender->hit_points)
+                          || ((defender->hit_points * 100
+                               / defender->max_hit_points)
+                              + random2(150) < 125))
+                      {
+                        if (mons_near(defender)
+                            && player_monster_visible(defender))
+                        {
+                          switch (effect_message_type)
+                          {
+                          case 0:
+                            strcpy(info, "Space bends around ");
+                            strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                            strcat(info, ".");
+                            mpr(info);
+                            break;
+                          case 1:
+                            strcpy(info, "Space warps horribly around ");
+                            strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                            strcat(info, "!");
+                            mpr(info);
+                            break;
+                          default:
+                            mpr("unknown additional damage by distortion");
+                            break;
+                          }
+                        }
+                        specdam += additional_damage;
+                      }
+                      else
+                      {
+                        if (!one_chance_in(18))
+                        {
+                          if ((mons_has_ench(defender, ENCH_TP_I, ENCH_TP_IV))
+                              || (coinflip()))
+                          {
+                            monster_teleport(defender, true);
+                          }
+                          else
+                          {
+                            strcpy(info, ptr_monam(defender, DESC_NOCAP_THE));
+                            strcat(info, " looks slightly unstable.");
+                            mpr(info);
+                            monster_teleport(defender, false);
+                          }
+                          break;
+                        }
+                        else
+                        {
+                          monster_die(defender, KILL_RESET, monster_attacking);
+                          return true;
+                          break;
+                        }
+                      }
                     }
                     break;
                 }

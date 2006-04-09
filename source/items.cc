@@ -2163,8 +2163,13 @@ void handle_time( long time_delta )
     {
         if (one_chance_in(30))
         {
+          if ((you.species != SP_HALFLING)
+                || (you.attribute[ATTR_TRANSFORMATION] != TRAN_NONE))
+          {
+
             mpr("Your disease is taking its toll.", MSGCH_WARN);
             lose_stat(STAT_RANDOM, 1);
+          }
         }
     }
 
@@ -2186,7 +2191,10 @@ void handle_time( long time_delta )
         added_contamination++;
 
     if (you.haste && !you.berserker && random2(10) < 6)
+    {
+      if (!wearing_amulet(AMU_RESIST_SLOW) || one_chance_in(3))
         added_contamination++;
+    }
 
     // randarts are usually about 20x worse than running around invisible
     // or hasted.. this seems OK.
@@ -2615,3 +2623,22 @@ void cmd_destroy_item( void )
     }
 }
 #endif
+
+/* return the number of items in this level
+ * it includes the items monsters are carrying and _excludes_ the items
+ * in your inventory
+ */
+int
+how_many_item_in_this_level(void)
+{
+  int i;
+  int num_item = 0;
+
+  for (i = 0; i < MAX_ITEMS; i++)
+  {
+    if (is_valid_item(mitm[i]))
+      num_item++;
+  }
+
+  return num_item;
+}

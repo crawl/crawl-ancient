@@ -817,7 +817,10 @@ bool entomb(void)
     safe_to_overwrite[6] = DNGN_UNDISCOVERED_TRAP;
 
     if (you.hp_max < 21)
+    {
       mpr("You lack the resilience to cast this spell.");
+      return false;
+    }
 
     for (srx = you.x_pos - 1; srx < you.x_pos + 2; srx++)
     {

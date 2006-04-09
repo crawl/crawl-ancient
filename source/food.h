@@ -12,6 +12,8 @@
 #ifndef FOOD_H
 #define FOOD_H
 
+/* item_def */
+#include "externs.h"
 
 // last updated 19jun2000 {dlb}
 /* ***********************************************************************
@@ -53,5 +55,8 @@ void set_hunger(int new_hunger_level, bool suppress_msg);
  * called from: delay.cc
  * *********************************************************************** */
 void weapon_switch( int targ );
+
+
+int usual_chunk_effect(const item_def &item);
 
 #endif

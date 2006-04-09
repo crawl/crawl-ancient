@@ -228,8 +228,15 @@ void print_stats(void)
 
     if (you.redraw_gold)
     {
+      /*
         gotoxy(46, 10);
         cprintf( "%d     ", you.gold );
+      */
+      gotoxy(40, 10);
+      cprintf("%d.%d aum  $%d  turn %ld     ",
+              you.burden / 10, you.burden % 10,
+              you.gold, you.num_turns);
+
         you.redraw_gold = 0;
     }
 
@@ -313,6 +320,7 @@ void print_stats(void)
         gotoxy(40, 14);
 #endif
 
+#if 0
         switch (you.burden_state)
         {
         case BS_OVERLOADED:
@@ -328,6 +336,7 @@ void print_stats(void)
         case BS_UNENCUMBERED:
             break;
         }
+#endif /* 0 */
 
         switch (you.hunger_state)
         {
@@ -353,6 +362,30 @@ void print_stats(void)
             textcolor( RED );
             cprintf( "Starving" );
             break;
+        }
+
+        {
+          int extra_burden = you.burden - (carrying_capacity() * 5)  / 6;
+          if (extra_burden < 0)
+            extra_burden = 0;
+
+          switch (you.burden_state)
+          {
+          case BS_OVERLOADED:
+            textcolor( RED );
+            cprintf(" Overloaded(%d.%d)",
+                    extra_burden / 10, extra_burden % 10);
+            break;
+
+          case BS_ENCUMBERED:
+            textcolor( LIGHTRED );
+            cprintf(" Encumbered(%d.%d)",
+                    extra_burden / 10, extra_burden % 10);
+            break;
+
+          case BS_UNENCUMBERED:
+            break;
+          }
         }
 
         textcolor( LIGHTGREY );

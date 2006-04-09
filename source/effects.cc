@@ -598,6 +598,17 @@ bool acquirement(unsigned char force_class)
                 skill = i;
         }
 
+        if ((you.equip[EQ_WEAPON] != -1)
+            && (you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS)
+            && (weapon_skill(you.inv[you.equip[EQ_WEAPON]].base_type,
+                             you.inv[you.equip[EQ_WEAPON]].sub_type)
+                != SK_FIGHTING)
+            && (!one_chance_in(200)))
+        {
+          skill = weapon_skill(you.inv[you.equip[EQ_WEAPON]].base_type,
+                               you.inv[you.equip[EQ_WEAPON]].sub_type);
+        }
+
         if (skill == SK_STAVES)
             type_wanted = WPN_QUARTERSTAFF;    // only one in this class
         else

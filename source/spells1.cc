@@ -42,6 +42,8 @@
 #include "view.h"
 #include "wpn-misc.h"
 #include "randart.h"
+#include "spells2.h"
+#include "mutation.h"
 
 /* from acr.cc */
 void move_player2(int move_x, int move_y,
@@ -559,9 +561,15 @@ bool cast_revivification(int power)
     bool success = false;
     int loss = 0;
 
+    /*
     if (you.hp == you.hp_max)
-        canned_msg(MSG_NOTHING_HAPPENS);
-    else if (you.hp_max < 21)
+    {
+      canned_msg(MSG_NOTHING_HAPPENS);
+      return false;
+    }
+    */
+
+    if (you.hp_max < 21)
         mpr("You lack the resilience to cast this spell.");
     else
     {
@@ -574,7 +582,29 @@ bool cast_revivification(int power)
                 loss++;
         }
 
+        /* pay the cost */
         dec_max_hp( loss );
+
+        /* heal almost everything */
+        if (you.magic_contamination > 0)
+          contaminate_player(-1 * you.magic_contamination);
+        restore_stat(STAT_ALL, false);
+        you.poison = 0;
+        you.rotting = 0;
+        you.conf = 0;
+        you.slow = 0;
+        you.disease = 0;
+        you.paralysis = 0;
+        if (player_rotted() > 0)
+          unrot_hp(player_rotted());
+        set_hp( you.hp_max, false );
+        /* heal HP first --- deleting mutations may decrease max HP and
+         * kill the player by rounding HP
+         */
+        delete_all_mutation();
+        /* heal HP again -- the spell can cure "frail" (max HP penalty)
+         * mutation
+         */
         set_hp( you.hp_max, false );
         success = true;
     }
@@ -755,7 +785,9 @@ void antimagic( void )
     if (you.duration[DUR_CONDENSATION_SHIELD])
         you.duration[DUR_CONDENSATION_SHIELD] = 1;
 
+    /*
     contaminate_player( -1 * (1+random2(5)));
+    */
 }                               // end antimagic()
 
 void extension(int pow)

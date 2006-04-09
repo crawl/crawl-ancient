@@ -1677,6 +1677,9 @@ int burden_change(void)
     you.burden_state = BS_UNENCUMBERED;
     set_redraw_status( REDRAW_BURDEN );
 
+    /* update the inventory weight line */
+    you.redraw_gold = 1;
+
     // changed the burdened levels to match the change to max_carried
     if (you.burden < (max_carried * 5) / 6)
     // (you.burden < max_carried - 1000)

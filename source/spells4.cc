@@ -3473,25 +3473,16 @@ void
 cast_brainstorm(void)
 {
   int i;
+  int j;
   char keyin = 0;
   const int num_lines = get_number_of_lines();
   char st_pass[ITEMNAME_SIZE];
   int num_item;
   int num_monster;
+  item_def mimic_item;
 
-  num_item = 0;
-  for (i = 0; i < MAX_ITEMS; i++)
-  {
-    if (is_valid_item(mitm[i]))
-      num_item++;
-  }
-
-  num_monster = 0;
-  for (i = 0; i < MAX_MONSTERS; i++)
-  {
-    if (menv[i].type != -1)
-      num_monster++;
-  }
+  num_item = how_many_item_in_this_level();
+  num_monster = how_many_monster_in_this_level();
 
   snprintf(info, INFO_SIZE, "%d item%s and %d monster%s found.",
            num_item, (num_item >= 2) ? "s" : "",
@@ -3514,19 +3505,24 @@ cast_brainstorm(void)
   cprintf(" [items in this level]");
   cprintf(EOL);
   textcolor(LIGHTGREY);
+  j = 0;
   for (i = 0; i < MAX_ITEMS; i++)
   {
+    if ((j >= num_item) && (i != 0))
+      break;
+
     if (is_valid_item(mitm[i]))
     {
       item_true_name(mitm[i], DESC_NOCAP_A, st_pass);
       snprintf(info, INFO_SIZE, "%s", st_pass);
       cprintf(info);
       cprintf(EOL);
+      j++;
     }
 
-    if ((i == MAX_ITEMS - 1) || (wherey() + 2 > num_lines))
+    if ((j >= num_item) || (wherey() + 2 > num_lines))
     {
-      if (i + 1 < MAX_ITEMS)
+      if (j < num_item)
       {
         textcolor(BLUE);
         cprintf(" -more-");
@@ -3548,12 +3544,26 @@ cast_brainstorm(void)
   cprintf(" [monsters in this level]");
   cprintf(EOL);
   textcolor(LIGHTGREY);
+  j = 0;
   for (i = 0; i < MAX_MONSTERS; i++)
   {
+    if ((j >= num_monster) && (i != 0))
+      break;
+
     if (menv[i].type != -1)
     {
-      snprintf(info, INFO_SIZE, "%s",
-               monam(menv[i].number, menv[i].type, true, DESC_NOCAP_A));
+      if ((menv[i].type == MONS_DANCING_WEAPON)
+          && (menv[i].inv[MSLOT_WEAPON] != NON_ITEM))
+      {
+        item_true_name(mitm[menv[i].inv[MSLOT_WEAPON]],
+                       DESC_NOCAP_A, st_pass);
+        snprintf(info, INFO_SIZE, "%s (dancing)", st_pass);
+      }
+      else
+      {
+        snprintf(info, INFO_SIZE, "%s",
+                 monam(menv[i].number, menv[i].type, true, DESC_NOCAP_A));
+      }
       cprintf(info);
       cprintf(EOL);
       if (menv[i].type == MONS_PLAYER_GHOST)
@@ -3570,7 +3580,7 @@ cast_brainstorm(void)
       {
         snprintf(info, INFO_SIZE, " wielding ");
 
-        item_true_name(mitm[menv[i].inv[MSLOT_WEAPON]] ,
+        item_true_name(mitm[menv[i].inv[MSLOT_WEAPON]],
                        DESC_NOCAP_A, st_pass);
         strcat(info, st_pass);
 
@@ -3609,11 +3619,27 @@ cast_brainstorm(void)
         cprintf(EOL);
         textcolor(LIGHTGREY);
       }
+      if (mons_is_mimic(menv[i].type))
+      {
+        get_mimic_item(&(menv[i]), mimic_item);
+        /* don't use item_true_name here --- we want to know what the mimic
+         * _looks_ like
+         */
+        item_name(mimic_item,
+                  DESC_NOCAP_A, st_pass);
+        snprintf( info, INFO_SIZE, " mimicking %s",
+                  st_pass );
+        textcolor(DARKGREY);
+        cprintf(info);
+        cprintf(EOL);
+        textcolor(LIGHTGREY);
+      }
+      j++;
     }
 
-    if ((i == MAX_MONSTERS - 1) || (wherey() + 4 > num_lines))
+    if ((j >= num_monster) || (wherey() + 4 > num_lines))
     {
-      if (i + 1 < MAX_MONSTERS)
+      if (j < num_monster)
       {
         textcolor(BLUE);
         cprintf(" -more-");
@@ -3816,6 +3842,12 @@ cast_local_global(void)
   if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
   {
     mpr("It would help if you knew where you were, first.");
+    return;
+  }
+
+  if (player_in_branch(BRANCH_VESTIBULE_OF_HELL))
+  {
+    mpr("This spell does not work here.");
     return;
   }
 

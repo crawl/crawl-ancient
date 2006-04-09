@@ -1253,10 +1253,19 @@ static void dart_trap( bool trap_known, int trapped, struct bolt &pbolt,
     int damage_taken = 0;
     int trap_hit, your_dodge;
 
+    /*
     if (random2(10) < 2 || (trap_known && !one_chance_in(4)))
+    */
+    if (random2(10) < 2 || (trap_known && !one_chance_in(4))
+        || ((trap_known) && (you.species == SP_HALFLING)))
     {
+      /*
         snprintf( info, INFO_SIZE, "You avoid triggering a%s trap.",
                                     pbolt.beam_name );
+      */
+        snprintf( info, INFO_SIZE, "You avoid triggering a%s %s trap.",
+                  (is_vowel(pbolt.beam_name[0])) ? "n" : "",
+                  pbolt.beam_name );
         mpr(info);
         return;
     }
@@ -1264,7 +1273,12 @@ static void dart_trap( bool trap_known, int trapped, struct bolt &pbolt,
     if (you.equip[EQ_SHIELD] != -1 && one_chance_in(3))
         exercise( SK_SHIELDS, 1 );
 
+    /*
     snprintf( info, INFO_SIZE, "A%s shoots out and ", pbolt.beam_name );
+    */
+    snprintf(info, INFO_SIZE, "A%s %s shoots out and ",
+             (is_vowel(pbolt.beam_name[0])) ? "n" : "",
+             pbolt.beam_name);
 
     if (random2( 50 + 10 * you.shield_blocks * you.shield_blocks )
                                                 < player_shield_class())
@@ -1374,37 +1388,37 @@ void handle_traps(char trt, int i, bool trap_known)
     switch (trt)
     {
     case TRAP_DART:
-        strcpy(beam.beam_name, " dart");
+      strcpy(beam.beam_name, "dart" /*" dart"*/);
         beam.damage = dice_def( 1, 4 + (you.your_level / 2) );
         dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_NEEDLE:
-        strcpy(beam.beam_name, " needle");
+      strcpy(beam.beam_name, "needle" /*" needle"*/);
         beam.damage = dice_def( 1, 0 );
         dart_trap(trap_known, i, beam, true);
         break;
 
     case TRAP_ARROW:
-        strcpy(beam.beam_name, "n arrow");
+      strcpy(beam.beam_name, "arrow" /*"n arrow"*/);
         beam.damage = dice_def( 1, 7 + you.your_level );
         dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_BOLT:
-        strcpy(beam.beam_name, " bolt");
+      strcpy(beam.beam_name, "bolt" /*" bolt"*/);
         beam.damage = dice_def( 1, 13 + you.your_level );
         dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_SPEAR:
-        strcpy(beam.beam_name, " spear");
+      strcpy(beam.beam_name, "spear" /*" spear"*/);
         beam.damage = dice_def( 1, 10 + you.your_level );
         dart_trap(trap_known, i, beam, false);
         break;
 
     case TRAP_AXE:
-        strcpy(beam.beam_name, "n axe");
+      strcpy(beam.beam_name, "axe" /*"n axe"*/);
         beam.damage = dice_def( 1, 15 + you.your_level );
         dart_trap(trap_known, i, beam, false);
         break;
@@ -1426,7 +1440,11 @@ void handle_traps(char trt, int i, bool trap_known)
         break;
 
     case TRAP_BLADE:
+      /*
         if (trap_known && one_chance_in(3))
+      */
+        if ((trap_known && one_chance_in(3))
+            || ((trap_known) && (you.species == SP_HALFLING)))
             mpr("You avoid triggering a blade trap.");
         else if (random2limit(player_evasion(), 40)
                         + (random2(you.dex) / 3) + (trap_known ? 3 : 0) > 8)

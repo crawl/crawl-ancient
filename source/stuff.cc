@@ -41,6 +41,7 @@
 #include "output.h"
 #include "skills2.h"
 #include "view.h"
+#include "player.h"
 
 
 // required for stuff::coinflip() and cf_setseed()
@@ -645,6 +646,11 @@ int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx)
 
             if (x<0 || x>=GXM || y<0 || y>=GYM)
                 continue;
+
+            if ((player_in_branch(BRANCH_MAIN_DUNGEON))
+                && (you.your_level == 0)
+                && (mapch(grd[x][y]) == '<'))
+              continue;
 
             // very simple check
             if (grd[x][y] >= DNGN_STONE_STAIRS_DOWN_I

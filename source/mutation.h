@@ -68,4 +68,6 @@ bool give_bad_mutation( bool forceMutation = false, bool failMsg = true );
 void demonspawn(void);
 
 
+void delete_all_mutation(void);
+
 #endif

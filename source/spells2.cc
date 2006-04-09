@@ -1495,9 +1495,16 @@ bool summon_swarm( int pow, bool unfriendly, bool god_gift )
 
         // Note: friendly, non-god_gift means spell.
         if (god_gift)
+        {
+          if (!unfriendly)
             behaviour = BEH_GOD_GIFT;
+          else
+            behaviour = BEH_GOD_RETRIBUTION;
+        }
         else if (!unfriendly && random2(pow) > 7)
-            behaviour = BEH_FRIENDLY;
+        {
+          behaviour = BEH_FRIENDLY;
+        }
 
         if (create_monster( thing_called, ENCH_ABJ_III, behaviour,
                             you.x_pos, you.y_pos, MHITYOU, 250 ))
@@ -1566,6 +1573,7 @@ void summon_things( int pow )
     {
         numsc = stepdown_value( numsc, 2, 2, 6, -1 );
 
+        /*
         while (numsc > 2)
         {
             if (one_chance_in(4))
@@ -1573,6 +1581,15 @@ void summon_things( int pow )
 
             numsc -= 2;
             big_things++;
+        }
+        */
+        while (numsc > 2 * (1 + big_things))
+        {
+          if (random2(pow) < 30)
+            break;
+
+          numsc -= 2 * (1 + big_things);
+          big_things++;
         }
 
         if (numsc > 8)

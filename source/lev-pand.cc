@@ -16,6 +16,10 @@
 #include "monplace.h"
 #include "mon-pick.h"
 #include "stuff.h"
+#include "mon-util.h"
+
+static void pandemonium_mons2(int prox);
+bool pandemonium_mons3(void);
 
 void init_pandemonium(void)
 {
@@ -150,6 +154,21 @@ void init_pandemonium(void)
 
 void pandemonium_mons(void)
 {
+  int i = 0;
+  int prox = PROX_ANYWHERE;
+
+  if (one_chance_in(3))
+    prox = PROX_CLOSE_TO_PLAYER;
+
+  do
+  {
+    pandemonium_mons2(prox);
+    i++;
+  } while ((one_chance_in(3)) && (i < 13));
+}
+
+static void pandemonium_mons2(int prox)
+{
     // must leave allowance for monsters rare on pandemonium (eg wizards etc)
     int pan_mons = env.mons_alloc[random2(10)];
 
@@ -161,6 +180,80 @@ void pandemonium_mons(void)
         }
         while (!mons_pan(pan_mons));
     }
+
+    if ((prox == PROX_CLOSE_TO_PLAYER) && (one_chance_in(3)))
+    {
+      if (pandemonium_mons3())
+        return;
+    }
+
+    /*
     mons_place(pan_mons, BEH_HOSTILE, MHITNOT, false, 50,50,
         LEVEL_PANDEMONIUM);
-}                               // end pandemonium_mons()
+    */
+    mons_place(pan_mons, BEH_HOSTILE, MHITNOT, false, 50,50,
+        LEVEL_PANDEMONIUM, prox);
+}
+
+/* return true if a monster is placed */
+bool
+pandemonium_mons3(void)
+{
+  int dx;
+  int dy;
+  int i;
+  int j;
+  int not_used = -1;
+  int num_wall = 0;
+
+  if (how_many_monster_in_this_level() + 10 > MAX_MONSTERS)
+    return false;
+
+  for (dx = -1; dx <= 1; dx++)
+  {
+    for (dy = -1; dy <= 1; dy++)
+    {
+      if ((dx == 0) && (dy == 0))
+        continue;
+      if ((you.x_pos + dx < 1) || (you.x_pos + dx >= GXM - 1)
+          || (you.y_pos + dy < 1) || (you.y_pos + dy >= GYM - 1))
+        continue;
+
+      if (grd[you.x_pos + dx][you.y_pos + dy] < MINMOVE)
+        num_wall++;
+    }
+  }
+
+  if (random2(64) < num_wall * num_wall)
+  {
+    for (i = 0; i < (1 + num_wall) / 2; i++)
+    {
+      dx = random2(3) - 1;
+      dy = random2(3) - 1;
+      if ((dx == 0) && (dy == 0))
+        continue;
+      if ((you.x_pos + dx < 1) || (you.x_pos + dx >= GXM - 1)
+          || (you.y_pos + dy < 1) || (you.y_pos + dy >= GYM - 1))
+        continue;
+      if (grd[you.x_pos + dx][you.y_pos + dy] != DNGN_ROCK_WALL)
+        continue;
+
+      grd[you.x_pos + dx][you.y_pos + dy] = DNGN_FLOOR;
+      for (j = 0; j < MAX_TRAPS; j++)
+      {
+        if ((env.trap[j].x != you.x_pos + dx)
+            || (env.trap[j].y != you.y_pos + dy))
+          continue;
+
+        env.trap[i].type = TRAP_UNASSIGNED;
+      }
+      /* Cacodemon can cast Dig */
+      place_monster(not_used, MONS_CACODEMON, you.your_level,
+                    BEH_SEEK, MHITYOU,
+                    true, you.x_pos + dx, you.y_pos + dy, false);
+      return true;
+    }
+  }
+
+  return false;
+}

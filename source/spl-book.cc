@@ -695,13 +695,22 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 56 - Staff of Warding
     {0,
-     SPELL_ABJURATION_I,
+#ifdef USE_SILENCE_CODE
+     SPELL_SILENCE /* SPELL_ABJURATION_I */,
+#endif
      SPELL_CONDENSATION_SHIELD,
      SPELL_CAUSE_FEAR,
+#ifdef USE_SILENCE_CODE
+     SPELL_NO_SPELL,
+#else /* not USE_SILENCE_CODE */
      SPELL_DEFLECT_MISSILES,
+#endif /* not USE_SILENCE_CODE */
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
+#ifndef USE_SILENCE_CODE
+     SPELL_NO_SPELL,
+#endif
      SPELL_NO_SPELL,
      },
     // 57 - Staff of Exploration
@@ -709,7 +718,7 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_DETECT_SECRET_DOORS,
      SPELL_DETECT_TRAPS,
      SPELL_DETECT_ITEMS,
-     SPELL_MAGIC_MAPPING,
+     SPELL_NO_SPELL /* SPELL_MAGIC_MAPPING */,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,

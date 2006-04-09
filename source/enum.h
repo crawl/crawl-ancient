@@ -1809,7 +1809,8 @@ enum MONSTER_BEHAVIOUR                  // create_monster()
     BEH_CHARMED,                       //  hostile-but-charmed; create only
     BEH_FRIENDLY,                      //  used during creation only
     BEH_HOSTILE,                       //  creation only
-    BEH_GOD_GIFT                       //  creation only
+    BEH_GOD_GIFT,                      //  creation only
+    BEH_GOD_RETRIBUTION                //  creation only
 };
 
 enum MONSTER_ATTITUDES

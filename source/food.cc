@@ -806,8 +806,49 @@ static bool eat_from_floor(void)
             continue;
 
         it_name( o, DESC_NOCAP_A, str_pass );
-        snprintf( info, INFO_SIZE, "Eat %s%s?", (mitm[o].quantity > 1) ? "one of " : "",
-                 str_pass );
+
+        if ((mitm[o].sub_type != FOOD_CHUNK)
+            || (you.species != SP_HALFLING))
+        {
+          snprintf( info, INFO_SIZE, "Eat %s%s?",
+                    (mitm[o].quantity > 1) ? "one of " : "",
+                    str_pass );
+        }
+        else
+        {
+          const char *chunk_type_string = "";
+
+          switch (usual_chunk_effect(mitm[o]))
+          {
+          case CE_MUTAGEN_RANDOM:
+            chunk_type_string = "mutagen";
+            break;
+          case CE_MUTAGEN_BAD:
+            chunk_type_string = "bad mutagen";
+            break;
+          case CE_HCL:
+            chunk_type_string = "undead";
+            break;
+          case CE_POISONOUS:
+            chunk_type_string = "poisonous";
+            break;
+          case CE_ROTTEN:
+            chunk_type_string = "rotten";
+            break;
+          case CE_CONTAMINATED:
+            chunk_type_string = "contaminated";
+            break;
+          case CE_CLEAN:
+            chunk_type_string = "clean";
+            break;
+          default:
+            break;
+          }
+          snprintf( info, INFO_SIZE, "Eat %s%s (%s)?",
+                    (mitm[o].quantity > 1) ? "one of " : "",
+                    str_pass, chunk_type_string );
+        }
+
         mpr( info, MSGCH_PROMPT );
 
         unsigned char keyin = tolower( getch() );
@@ -1450,3 +1491,35 @@ static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk)
 
     return (this_chunk_effect);
 }                               // end determine_chunk_effect()
+
+int
+usual_chunk_effect(const item_def &item)
+{
+  int chunk_type = CE_NOCORPSE;
+
+  if (item.base_type != OBJ_FOOD)
+    return CE_NOCORPSE;
+  if (item.sub_type != FOOD_CHUNK)
+    return CE_NOCORPSE;
+
+  chunk_type = mons_corpse_thingy(item.plus);
+
+  if (item.special < 100)
+  {
+    /* rotting chunk */
+    switch (chunk_type)
+    {
+    case CE_CLEAN:
+    case CE_CONTAMINATED:
+      chunk_type = CE_ROTTEN;
+      break;
+    case CE_MUTAGEN_RANDOM:
+      chunk_type = CE_MUTAGEN_BAD;
+      break;
+    default:
+      break;
+    }
+  }
+
+  return chunk_type;
+}

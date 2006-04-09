@@ -2471,6 +2471,7 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.beam_source = monster_index(monster);
         beem.thrower = KILL_MON;
         beem.aux_source = "glob of lava";
+        beem.isBeam = true;
 
         // fire tracer
         fire_tracer(monster, beem);
@@ -2500,7 +2501,10 @@ static bool handle_special_ability(struct monsters *monster, bolt & beem)
         beem.colour = LIGHTCYAN;
         beem.type = SYM_ZAP;
         beem.flavour = BEAM_ELECTRICITY;
+        /*
         beem.hit = 150;
+        */
+        beem.hit = 11;
         beem.beam_source = monster_index(monster);
         beem.thrower = KILL_MON;
         beem.aux_source = "bolt of electricity";
@@ -3258,6 +3262,16 @@ static bool handle_spell( struct monsters *monster, bolt & beem )
             return (false);
         }
 
+        if ((spell_cast == MS_ANIMATE_DEAD)
+            && (mons_friendly(monster))
+            && (see_grid(monster->x, monster->y))
+            && (you.is_undead != US_UNDEAD)
+            && ((you.hunger <= 2600) || (wearing_amulet(AMU_THE_GOURMAND))))
+        {
+          /* leave the corpse so that the player can eat it */
+          return false;
+        }
+
         if (monsterNearby)      // handle monsters within range of player
         {
             if (monster->type == MONS_GERYON)
@@ -3502,6 +3516,20 @@ void handle_monsters(void)
     int         i;
 
     FixedArray < unsigned int, 19, 19 > show;
+
+    /* initialize the bolt struct */
+    beem.range = 8;
+    beem.rangeMax = 0;
+    beem.hit = 0;
+    beem.damage = dice_def( 1, 0 );
+    beem.type = 0;
+    beem.flavour = BEAM_MAGIC;
+    beem.ench_power = 0;
+    beem.obviousEffect = false;
+    beem.isBeam = false;
+    beem.isTracer = false;
+    beem.thrower = KILL_MON;
+    beem.aux_source = NULL;
 
 //    losight(show, grd, you.x_pos, you.y_pos);
 
@@ -4659,6 +4687,25 @@ forget_it:
         /* this appears to be the real one, ie where the movement occurs: */
         monster->x += mmov_x;
         monster->y += mmov_y;
+
+        /* nagas are slow at moving */
+        switch (monster->type)
+        {
+        case MONS_GUARDIAN_NAGA:
+          /* guardian naga is fast */
+          if (monster->speed_increment >= 25)
+            monster->speed_increment -= 3;
+          break;
+        case MONS_NAGA:
+        case MONS_NAGA_MAGE:
+        case MONS_NAGA_WARRIOR:
+        case MONS_GREATER_NAGA:
+          if (monster->speed_increment >= 30)
+            monster->speed_increment -= 4;
+          break;
+        default:
+          break;
+        }
     }
     else
     {
@@ -4697,9 +4744,13 @@ static bool plant_spit(struct monsters *monster, struct bolt &pbolt)
     pbolt.flavour = BEAM_ACID;
     pbolt.beam_source = monster_index(monster);
     pbolt.damage = dice_def( 3, 7 );
+    /*
     pbolt.hit = 20 + (3 * monster->hit_dice);
+    */
+    pbolt.hit = 20 + monster->hit_dice;
     pbolt.thrower = KILL_MON_MISSILE;
     pbolt.aux_source = NULL;
+    pbolt.isBeam = true;
 
     // fire tracer
     fire_tracer(monster, pbolt);

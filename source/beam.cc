@@ -1902,8 +1902,15 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
         if (simple_monster_message(monster, " suddenly stops moving!"))
             pbolt.obviousEffect = true;
 
+        /* DNGN_LAVA_X and DNGN_WATER_X are smaller than MINMOVE, that is,
+         * they are regarded as occupied
+         */
+        /*
         if (grd[monster->x][monster->y] == DNGN_LAVA_X
             || grd[monster->x][monster->y] == DNGN_WATER_X)
+        */
+        if (grd[monster->x][monster->y] == DNGN_LAVA
+            || grd[monster->x][monster->y] == DNGN_DEEP_WATER)
         {
             if (mons_flies(monster) == 1)
             {
@@ -1913,7 +1920,7 @@ int mons_ench_f2(struct monsters *monster, struct bolt &pbolt)
                 {
                     strcpy(info, ptr_monam(monster, DESC_CAP_THE));
                     strcat(info, " falls into the ");
-                    strcat(info, (grd[monster->x][monster->y] == DNGN_WATER_X)
+                    strcat(info, (grd[monster->x][monster->y] == DNGN_DEEP_WATER /* DNGN_WATER_X */)
                                 ? "water" : "lava");
                     strcat(info, "!");
                     mpr(info);
@@ -3023,7 +3030,7 @@ static int affect_player( struct bolt &beam )
           int dodge = player_evasion();
           if (dodge > 40)
             dodge = 40;
-          dodge += you.dex / 3 - 2;
+          dodge += random2(you.dex) / 3 - 2;
           if (dodge < 0)
             dodge = 0;
 
@@ -3310,7 +3317,13 @@ static int affect_player( struct bolt &beam )
         if (hurted || (strstr( beam.beam_name, "needle" ) != NULL
                         && random2(100) < 90 - (3 * player_AC())))
         {
+          /* I don't think it is more poisonous than venom bolt
+           * remember, each unit of poison deals 8 damage on average
+           */
+          /*
             poison_player( 1 + random2(3) );
+          */
+          poison_player(1);
         }
     }
 

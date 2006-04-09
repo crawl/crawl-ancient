@@ -1412,6 +1412,27 @@ int mons_del_ench( struct monsters *mon, unsigned int ench, unsigned int ench2,
     if (ench2 == ENCH_NONE)
         ench2 = ench;
 
+    /* there can be only one monster in a grid */
+    if (ench == ENCH_SUBMERGED)
+    {
+      int i;
+      if ((mon->x == you.x_pos) && (mon->y == you.y_pos))
+        return ENCH_NONE;
+      if (!mons_has_ench(mon, ENCH_SUBMERGED))
+        return ENCH_NONE;
+      for (i = 0; i < MAX_MONSTERS; i++)
+      {
+        if ((menv[i].x == mon->x) && (menv[i].y == mon->y)
+            && (!mons_has_ench(&menv[i], ENCH_SUBMERGED)))
+        {
+          /* this must be another monster because the monster mon is
+           * submerged
+           */
+          return ENCH_NONE;
+        }
+      }
+    }
+
     for (p = 0; p < NUM_MON_ENCHANTS; p++)
     {
         if (mon->enchantment[p] >= ench && mon->enchantment[p] <= ench2)
@@ -1991,4 +2012,20 @@ const char *mons_pronoun(int mon_type, int variant)
     }
 
     return ("");
+}
+
+/* return the number of monsters in this level */
+int
+how_many_monster_in_this_level(void)
+{
+  int i;
+  int num_monster = 0;
+
+  for (i = 0; i < MAX_MONSTERS; i++)
+  {
+    if (menv[i].type != -1)
+      num_monster++;
+  }
+
+  return num_monster;
 }

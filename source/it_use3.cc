@@ -605,15 +605,30 @@ bool evoke_wielded( void )
                 if (opened_gates)
                 {
                     mpr("Your way has been unbarred.");
+                    /*
                     pract = 1;
+                    */
+                    pract = 0;
                 }
+                /* naughty(NAUGHTY_UNHOLY, 1) is intentionally omitted here
+                 * so that a worshipper of Zin, The Shining One or Elyvilon
+                 * can enter the hell
+                 */
             }
             else
             {
                 mpr("You produce a hideous howling noise!");
+                /*
                 pract = (one_chance_in(3) ? 1 : 0);
+                */
+                pract = 0;
+                /*
                 create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250 );
+                */
+                create_monster( MONS_BEAST, ENCH_ABJ_I, BEH_FRIENDLY,
+                                you.x_pos, you.y_pos, MHITYOU, 250 );
+                naughty(NAUGHTY_UNHOLY, 1);
             }
             break;
 

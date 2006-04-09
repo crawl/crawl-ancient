@@ -45,6 +45,7 @@
 #include "spl-book.h"
 #include "spl-util.h"
 #include "shopping.h"
+#include "food.h"
 
 
 // ========================================================================
@@ -2013,6 +2014,44 @@ static std::string describe_food( const item_def &item )
                         "rotting away before your eyes. "
                         "Eating it would probably be unwise. ";
                 }
+            }
+
+            if (you.species == SP_HALFLING)
+            {
+              switch (usual_chunk_effect(item))
+              {
+              case CE_MUTAGEN_RANDOM:
+                description += "$$It is a mutagen; eating it mutates you "
+                  "unless you are an undead.";
+                break;
+              case CE_MUTAGEN_BAD:
+                description += "$$It is a bad mutagen; eating it mutates you "
+                  "badly unless you are an undead.";
+                break;
+              case CE_HCL:
+                description += "$$It is a meat of an undead; eating it "
+                  "rots you and diseases you unless you are also an undead.";
+                break;
+              case CE_POISONOUS:
+                description += "$$It is poisonous; eating it poisons "
+                  "you unless you are resistant to poison.";
+                break;
+              case CE_ROTTEN:
+                description += "$$It is rotten; although some species "
+                  "can sometimes digest it, eating it always diseases "
+                  "a halfling.";
+                break;
+              case CE_CONTAMINATED:
+                description += "$$It is contaminated; you can usually "
+                  "eat it safely, but it sometimes diseases you.";
+                break;
+              case CE_CLEAN:
+                description += "$$It is clean; you can eat it safely.";
+                break;
+              default:
+                DEBUGSTR("Unknown chunk type (describe_food)");
+                break;
+              }
             }
             break;
         }

@@ -1821,7 +1821,7 @@ void divine_retribution( int god )
 
                 for (loopy = 0; loopy < how_many; loopy++)
                 {
-                    if (create_monster( MONS_DAEVA, 0, BEH_HOSTILE,
+                  if (create_monster( MONS_DAEVA, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */,
                                     you.x_pos, you.y_pos, MHITYOU, 250) != -1)
                     {
                         success = true;
@@ -1869,7 +1869,7 @@ void divine_retribution( int god )
 
                 for (loopy = 0; loopy < how_many; loopy++)
                 {
-                    if (create_monster(MONS_ANGEL, 0, BEH_HOSTILE,
+                  if (create_monster(MONS_ANGEL, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */,
                                     you.x_pos, you.y_pos, MHITYOU, 250) != -1)
                     {
                         success = true;
@@ -1884,7 +1884,7 @@ void divine_retribution( int god )
             else
             {
                 // god_gift == false gives unfriendly
-                summon_swarm( you.experience_level * 20, true, false );
+              summon_swarm( you.experience_level * 20, true, true /* false */ );
                 simple_god_message(" sends a plague down upon you!", god);
             }
         }
@@ -1895,7 +1895,7 @@ void divine_retribution( int god )
         if (random2(you.experience_level) > 7 && !one_chance_in(5))
         {
             if (create_monster(MONS_EXECUTIONER + random2(5), 0,
-                               BEH_HOSTILE, you.x_pos, you.y_pos,
+                               BEH_GOD_RETRIBUTION /* BEH_HOSTILE */, you.x_pos, you.y_pos,
                                MHITYOU, 250) != -1)
             {
                 simple_god_message(" sends a greater servant after you!",
@@ -1909,7 +1909,7 @@ void divine_retribution( int god )
 
             for (loopy = 0; loopy < how_many; loopy++)
             {
-                if (create_monster(MONS_NEQOXEC + random2(5), 0, BEH_HOSTILE,
+              if (create_monster(MONS_NEQOXEC + random2(5), 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */,
                                     you.x_pos, you.y_pos, MHITYOU, 250) != -1)
                 {
                     success = true;
@@ -1930,7 +1930,7 @@ void divine_retribution( int god )
 
             for (loopy = 0; loopy < how_many; loopy++)
             {
-                if (create_monster(MONS_REAPER, 0, BEH_HOSTILE, you.x_pos,
+              if (create_monster(MONS_REAPER, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */, you.x_pos,
                                    you.y_pos, MHITYOU, 250) != -1)
                 {
                     success = true;
@@ -1971,7 +1971,7 @@ void divine_retribution( int god )
                             (temp_rand >  4) ? MONS_MUMMY               //  6%
                                              : MONS_FLAYED_GHOST);      //  5%
 
-                if (create_monster( punisher, 0, BEH_HOSTILE,
+                if (create_monster( punisher, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */,
                                     you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
                 {
                     success = true;
@@ -2054,7 +2054,7 @@ void divine_retribution( int god )
                         }
                     }
 
-                    if (create_monster(punisher, 0, BEH_HOSTILE, you.x_pos,
+                    if (create_monster(punisher, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */, you.x_pos,
                                        you.y_pos, MHITYOU, 250) != -1)
                     {
                         success = true;
@@ -2140,7 +2140,7 @@ void divine_retribution( int god )
                             (temp_rand >  4) ? MONS_HILL_GIANT
                                              : MONS_TITAN);
 
-                if (create_monster(punisher, 0, BEH_HOSTILE,
+                if (create_monster(punisher, 0, BEH_GOD_RETRIBUTION /* BEH_HOSTILE */,
                                    you.x_pos, you.y_pos, MHITYOU, 250) != -1)
                 {
                     success = true;

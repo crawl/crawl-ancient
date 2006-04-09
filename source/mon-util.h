@@ -457,4 +457,7 @@ bool mons_add_ench( struct monsters *mon, unsigned int ench );
 
 bool check_mons_resist_magic( struct monsters *monster, int pow );
 
+
+int how_many_monster_in_this_level(void);
+
 #endif

@@ -1819,7 +1819,9 @@ void draw_border(void)
     gotoxy(40,  7); cprintf("Str:");
     gotoxy(40,  8); cprintf("Int:");
     gotoxy(40,  9); cprintf("Dex:");
+    /*
     gotoxy(40, 10); cprintf("Gold:");
+    */
     gotoxy(40, 11); cprintf("Experience:");
     gotoxy(40, 12); cprintf("Level");
 }                               // end draw_border()

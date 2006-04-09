@@ -45,6 +45,7 @@
 int how_mutated(void);
 char body_covered(void);
 bool perma_mutate(int which_mut, char how_much);
+static bool delete_mutation2(char mutat);
 
 const char *mutation_descrip[][3] = {
     {"You have tough skin (AC +1).", "You have very tough skin (AC +2).",
@@ -935,6 +936,14 @@ void display_mutations(void)
         }
         break;
 
+    case SP_HIGH_ELF:
+        if (you.experience_level > 14)
+        {
+            cprintf("You are very charming." EOL);
+            j++;
+        }
+        break;
+
     case SP_KENKU:
         if (you.experience_level > 4)
         {
@@ -1615,7 +1624,9 @@ int how_mutated(void)
 bool delete_mutation(char which_mutation)
 {
     char mutat = which_mutation;
+    /*
     int i;
+    */
 
     if (you.mutation[MUT_MUTATION_RESISTANCE] > 1
         && (you.mutation[MUT_MUTATION_RESISTANCE] == 3 || coinflip()))
@@ -1639,8 +1650,19 @@ bool delete_mutation(char which_mutation)
                || you.demon_pow[mutat] >= you.mutation[mutat]);
     }
 
+    return delete_mutation2(mutat);
+}
+
+static bool
+delete_mutation2(char mutat)
+{
+  int i;
+
     if (you.mutation[mutat] == 0)
         return false;
+
+    if (mutation_rarity[mutat] == 0)
+      return false;
 
     if (you.demon_pow[mutat] >= you.mutation[mutat])
         return false;
@@ -2338,3 +2360,19 @@ bool give_cosmetic_mutation()
     else
         return false;
 }                               // end give_cosmetic_mutation()
+
+void
+delete_all_mutation(void)
+{
+  char mutat;
+
+  for (mutat = 0; mutat < NUM_MUTATIONS; mutat++)
+  {
+    if (mutation_rarity[mutat] == 0)
+      continue;
+
+    while ((you.mutation[mutat] > 0)
+           && (you.demon_pow[mutat] < you.mutation[mutat]))
+      delete_mutation2(mutat);
+  }
+}

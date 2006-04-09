@@ -61,6 +61,12 @@ bool place_monster(int &id, int mon_type, int power, char behaviour,
     if (summoned && mgrd[px][py] != NON_MONSTER)
         return (false);
 
+    if (mon_type == MONS_DANCING_WEAPON
+        && player_in_branch( BRANCH_HALL_OF_BLADES ))
+    {
+      lev_mons = MAKE_GOOD_ITEM;
+    }
+
     // (2) take care of random monsters
     if (mon_type == RANDOM_MONSTER
         && player_in_branch( BRANCH_HALL_OF_BLADES ))
@@ -617,6 +623,15 @@ static int place_monster_aux( int mon_type, char behaviour, int target,
                 mons_add_ench(creation, ENCH_CHARM);
             }
 
+            if (behaviour == BEH_GOD_RETRIBUTION)
+            {
+              creation->attitude = ATT_HOSTILE;
+              /* not really friendly --- this flag means "no gain from
+               * killing"
+               */
+              creation->flags |= MF_CREATED_FRIENDLY;
+            }
+
             // make summoned being aware of player's presence
             behaviour_event(creation, ME_ALERT, MHITYOU);
         }
@@ -679,9 +694,12 @@ static int choose_band( int mon_type, int power, int &band_size )
         band = BAND_YAKS;       // yaks
         band_size = 2 + random2(4);
         break;
+    case MONS_VERY_UGLY_THING:
+      band_size = 2 + random2(4);
+      /* intentional fall through */
     case MONS_UGLY_THING:
         band = BAND_UGLY_THINGS;       // ugly things
-        band_size = 2 + random2(4);
+        band_size += 2 + random2(4);
         break;
     case MONS_HELL_HOUND:
         band = BAND_HELL_HOUNDS;       // hell hound
@@ -706,6 +724,7 @@ static int choose_band( int mon_type, int power, int &band_size )
         band_size = 4 + random2(4);
         break;
     case MONS_ORC_HIGH_PRIEST:
+    case MONS_ORC_SORCERER:
         band = BAND_ORC_HIGH_PRIEST;      // orc high priest
         band_size = 4 + random2(4);
         break;
@@ -890,7 +909,9 @@ static int band_member(int band, int power)
         break;
 
     case BAND_ORC_KNIGHT:
+      /*
     case BAND_ORC_HIGH_PRIEST:
+      */
         temp_rand = random2(30);
         mon_type = ((temp_rand > 17) ? MONS_ORC :          // 12 in 30
                     (temp_rand >  8) ? MONS_ORC_WARRIOR :  //  9 in 30
@@ -900,6 +921,15 @@ static int band_member(int band, int power)
                     (temp_rand >  1) ? MONS_OGRE :         //  1 in 30
                     (temp_rand >  0) ? MONS_TROLL          //  1 in 30
                                      : MONS_ORC_SORCERER); //  1 in 30
+        break;
+
+    case BAND_ORC_HIGH_PRIEST:
+      /* assumes it can summon fodder when necessary  */
+        temp_rand = random2(30);
+        mon_type = ((temp_rand > 12) ? MONS_ORC_WIZARD :     // 17 in 30
+                    (temp_rand >  2) ? MONS_ORC_PRIEST :     // 10 in 30
+                    (temp_rand >  0) ? MONS_ORC_HIGH_PRIEST  //  2 in 30
+                                     : MONS_ORC_SORCERER);   //  1 in 30
         break;
 
     case BAND_KILLER_BEES:
@@ -1190,6 +1220,15 @@ int mons_place( int mon_type, char behaviour, int target, bool summoned,
             {
                 creation->attitude = ATT_HOSTILE;
                 mons_add_ench(creation, ENCH_CHARM);
+            }
+
+            if (behaviour == BEH_GOD_RETRIBUTION)
+            {
+              creation->attitude = ATT_HOSTILE;
+              /* not really friendly --- this flag means "no gain from
+               * killing"
+               */
+              creation->flags |= MF_CREATED_FRIENDLY;
             }
 
             // make summoned being aware of player's presence
