@@ -50,6 +50,9 @@
 #include "message.h"
 #include "shopping.h"
 #include "spells3.h"
+#include "food.h"
+#include "transfor.h"
+#include "skills2.h"
 
 enum DEBRIS                 // jmf: add for shatter, dig, and Giants to throw
 {
@@ -645,37 +648,56 @@ void cast_summon_large_mammal(int pow)
 {
     int mon;
     int temp_rand = random2(pow);
+    int i;
+    int num = 1;
 
     if (temp_rand < 10)
-        mon = MONS_JACKAL;
+    {
+      mon = MONS_JACKAL;
+      num = 1;
+    }
     else if (temp_rand < 15)
-        mon = MONS_HOUND;
+    {
+      mon = MONS_HOUND;
+      num = 1;
+    }
     else
     {
         switch (temp_rand % 7)
         {
         case 0:
             if (you.species == SP_HILL_ORC && one_chance_in(3))
-                mon = MONS_WARG;
+              mon = MONS_WARG; /* HD 4 */
             else
-                mon = MONS_WOLF;
+              mon = MONS_WOLF; /* HD 4 */
+            num = 1;
+            if (random2(pow) >= 30)
+              num++;
             break;
         case 1:
         case 2:
-            mon = MONS_WAR_DOG;
+          mon = MONS_WAR_DOG; /* HD 4 */
+          num = 1 + random2(pow) / 37;
             break;
         case 3:
         case 4:
-            mon = MONS_HOUND;
+          mon = MONS_HOUND; /* HD 3 */
+          num = 1 + random2(pow) / 15;
             break;
         default:
-            mon = MONS_JACKAL;
+          mon = MONS_JACKAL; /* HD 1 */
+          num = 2 + random2(pow) / 7;
             break;
         }
     }
 
-    create_monster( mon, ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos, you.y_pos,
-                    you.pet_target, 250 );
+    if (num < 1)
+      num = 1;
+    num = stepdown_value(num, 2, 2, 6, 8 );
+
+    for (i = 0; i < num; i++)
+      create_monster( mon, ENCH_ABJ_III, BEH_FRIENDLY, you.x_pos, you.y_pos,
+                      you.pet_target, 250 );
 }
 
 void cast_sticks_to_snakes(int pow)
@@ -690,6 +712,11 @@ void cast_sticks_to_snakes(int pow)
     if (dur > ENCH_ABJ_V)
         dur = ENCH_ABJ_V;
 
+    /* this summoning is permanent if the Summonings skill is your best skill
+     */
+    if (best_skill(SK_FIGHTING, NUM_SKILLS - 1, 99) == SK_SUMMONINGS)
+      dur = 0;
+
     const int weapon = you.equip[EQ_WEAPON];
 
     if (weapon == -1)
@@ -699,7 +726,8 @@ void cast_sticks_to_snakes(int pow)
         return;
     }
 
-    behaviour = item_cursed( you.inv[ weapon ] ) ? BEH_HOSTILE
+    /* BEH_GOD_RETRIBUTION means "hostile, no gain from killing" */
+    behaviour = item_cursed( you.inv[ weapon ] ) ? BEH_GOD_RETRIBUTION /* BEH_HOSTILE */
                                                  : BEH_FRIENDLY;
 
     if ((you.inv[ weapon ].base_type == OBJ_MISSILES
@@ -793,6 +821,7 @@ void cast_sticks_to_snakes(int pow)
     return;
 }                               // end cast_sticks_to_snakes()
 
+#if 0
 void cast_summon_dragon(int pow)
 {
     int happy;
@@ -818,6 +847,125 @@ void cast_summon_dragon(int pow)
 
     mpr(info);
 }                               // end cast_summon_dragon()
+#endif /* 0 */
+void cast_summon_dragon(int pow)
+{
+  int i;
+  int temp;
+  int dur = ENCH_ABJ_III;
+  int mons = MONS_PROGRAM_BUG;
+  FixedVector < char, 8 > rem_stuff;
+
+  if (you.equip[EQ_BODY_ARMOUR] != -1)
+  {
+    switch (you.inv[you.equip[EQ_BODY_ARMOUR]].sub_type)
+    {
+    case ARM_DRAGON_ARMOUR:
+      mons = MONS_DRAGON;
+      break;
+    case ARM_ICE_DRAGON_ARMOUR:
+      mons = MONS_ICE_DRAGON;
+      break;
+    case ARM_MOTTLED_DRAGON_ARMOUR:
+      mons = MONS_MOTTLED_DRAGON;
+      break;
+    case ARM_STORM_DRAGON_ARMOUR:
+      mons = MONS_STORM_DRAGON;
+      break;
+    case ARM_GOLD_DRAGON_ARMOUR:
+      mons = MONS_GOLDEN_DRAGON;
+      break;
+    case ARM_SWAMP_DRAGON_ARMOUR:
+      mons = MONS_SWAMP_DRAGON;
+      break;
+    case ARM_STEAM_DRAGON_ARMOUR:
+      mons = MONS_STEAM_DRAGON;
+      break;
+    default:
+      break;
+    }
+
+    if (item_cursed(you.inv[you.equip[EQ_BODY_ARMOUR]]))
+      mons = MONS_PROGRAM_BUG;
+    if ((you.equip[EQ_CLOAK] != -1)
+        && (item_cursed(you.inv[you.equip[EQ_CLOAK]])))
+        mons = MONS_PROGRAM_BUG;
+
+    if (mons != MONS_PROGRAM_BUG)
+    {
+      if (create_monster(mons, 0, BEH_FRIENDLY,
+                         you.x_pos, you.y_pos, MHITYOU, 250) != -1)
+      {
+        /* your dragon armour falls away whenever you get a dragon in this way
+         * the purpose of this rather silly effect is to prevent you from
+         * getting a permanent dragon every turn (you have to spend several
+         * turns to wear your armour before you cast this spell again)
+         */
+        for (i = EQ_WEAPON; i < EQ_RIGHT_RING; i++)
+          rem_stuff[i] = 0;
+        rem_stuff[EQ_BODY_ARMOUR] = 1;
+        remove_equipment(rem_stuff);
+      }
+      return;
+    }
+  }
+
+  temp = random2(pow);
+  if ((temp >= 75) && (one_chance_in(3)))
+  {
+    mons = MONS_GOLDEN_DRAGON; /* HD 18 */
+    if (one_chance_in(20))
+    {
+      switch (random2(3))
+      {
+      case 0:
+        mons = MONS_IRON_DRAGON; /* HD 18 */
+        break;
+      case 1:
+        mons = MONS_SHADOW_DRAGON; /* HD 17 */
+        break;
+      default:
+        mons = MST_QUICKSILVER_DRAGON; /* HD 16 */
+        break;
+      }
+    }
+  }
+  else if ((temp >= 70) && (coinflip()))
+  {
+    mons = MONS_STORM_DRAGON; /* HD 14 */
+  }
+  else if ((temp >= 60) && (!one_chance_in(3)))
+  {
+    if (coinflip())
+      mons = MONS_DRAGON; /* HD 12 */
+    else
+      mons = MONS_ICE_DRAGON; /* HD 12 */
+  }
+  else if ((temp >= 50) && (!one_chance_in(4)))
+  {
+    mons = MONS_SWAMP_DRAGON; /* HD 9 */
+  }
+
+  if (mons == MONS_PROGRAM_BUG)
+  {
+    if (temp > 40)
+      mons = MONS_MOTTLED_DRAGON; /* HD 5 */
+    else if (temp > 30)
+      mons = MONS_STEAM_DRAGON; /* HD 4 */
+    else if (temp > 25)
+      mons = MONS_GIANT_IGUANA; /* HD 3 */
+    else if (temp > 20)
+      mons = MONS_GIANT_GECKO; /* HD 1 */
+    else
+      mons = MONS_GIANT_NEWT; /* HD 1, very low HP */
+  }
+
+  dur = ENCH_ABJ_III + (random2(pow) / 15);
+  if (dur > ENCH_ABJ_VI)
+    dur = ENCH_ABJ_VI;
+  create_monster(mons, dur, BEH_FRIENDLY,
+                 you.x_pos, you.y_pos, MHITYOU, 250);
+}
 
 void cast_conjure_ball_lightning( int pow )
 {
@@ -4107,4 +4255,36 @@ cast_anchored_teleport(void)
   you.running = 0;
   /* controlling teleport contaminates the player */
   contaminate_player(1);
+}
+
+void
+cast_summon_ghost(int pow)
+{
+  int i;
+  int dur;
+  bool summoned = false;
+
+  if (pow < 0)
+    pow = 0;
+  if (pow > 200)
+    pow = 200;
+
+  for (i = 0; i < 3; i++)
+  {
+    dur = ENCH_ABJ_IV + random2(pow) / 15;
+    if (dur > ENCH_ABJ_VI)
+      dur = ENCH_ABJ_VI;
+
+    if (create_monster(MONS_HUNGRY_GHOST, dur, BEH_FRIENDLY,
+                       you.x_pos, you.y_pos, you.pet_target, 250) != -1)
+      summoned = true;
+  }
+
+  if (summoned)
+  {
+    /* pay the extra cost */
+    /* is there any ghoul summoner? */
+    if (!you.is_undead)
+      make_hungry((450 - pow * 2) * (100 + random2(50)) / 100, false);
+  }
 }

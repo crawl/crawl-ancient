@@ -1463,6 +1463,9 @@ bool your_spells( int spc2, int powc, bool allow_fail )
         dem_hor2 = 3 + random2(5);
         for (dem_hor = 0; dem_hor < 4 + dem_hor2; dem_hor++)
         {
+          if ((one_chance_in(3)) && (random2(powc) >= 30))
+            summon_ice_beast_etc(powc, summon_any_demon(DEMON_COMMON));
+          else
             summon_ice_beast_etc(powc, summon_any_demon(DEMON_LESSER));
         }
         break;
@@ -1470,10 +1473,13 @@ bool your_spells( int spc2, int powc, bool allow_fail )
     case SPELL_SUMMON_GREATER_DEMON:
         mpr("You open a gate to Pandemonium!");
 
+        /*
         dem_hor = ((random2(powc) <= 5) ? BEH_HOSTILE : BEH_CHARMED);
 
         if (dem_hor == BEH_CHARMED)
             mpr("You don't feel so good about this...");
+        */
+        dem_hor = BEH_CHARMED;
 
         create_monster( summon_any_demon(DEMON_GREATER), ENCH_ABJ_V, dem_hor,
                         you.x_pos, you.y_pos, MHITYOU, 250 );
@@ -1932,6 +1938,10 @@ bool your_spells( int spc2, int powc, bool allow_fail )
 
     case SPELL_ANCHORED_TELEPORT:
       cast_anchored_teleport();
+      break;
+
+    case SPELL_SUMMON_GHOST:
+      cast_summon_ghost(powc);
       break;
 
     default:

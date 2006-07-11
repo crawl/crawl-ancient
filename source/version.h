@@ -39,7 +39,7 @@
  * called from: chardump - command - newgame
  * *********************************************************************** */
 // #define VERSION "4.0.0 beta 26"
-#define VERSION "0.5"
+#define VERSION "0.6"
 
 // last updated 20feb2001 {GDL}
 /* ***********************************************************************

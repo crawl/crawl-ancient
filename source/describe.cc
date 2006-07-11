@@ -4231,9 +4231,14 @@ void describe_spell(int spelled)
         break;
 
     case SPELL_SUMMON_DRAGON:   //jmf: reworking, currently unavailable
+      /*
         description += "summons and binds a powerful dragon to perform the "
             "caster's bidding. Beware, for the summons may succeed "
             "even as the binding fails. ";
+      */
+      description += "summons a dragon to the caster's aid.  If the caster "
+        "is wearing some kind of dragon armour, this spell summons a dragon "
+        "of that kind.";
         break;
 
     case SPELL_TAME_BEASTS:
@@ -4507,6 +4512,10 @@ void describe_spell(int spelled)
         "spell, it teleports the caster to the same place of the other "
         "item.  Both items must be fully identified.";
       break;
+
+    case SPELL_SUMMON_GHOST:
+        description += "summons hungry ghosts to the caster's aid. ";
+        break;
 
     default:
         DEBUGSTR("Bad spell");

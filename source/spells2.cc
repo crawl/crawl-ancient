@@ -1359,12 +1359,20 @@ void summon_small_mammals(int pow)
 void summon_scorpions(int pow)
 {
     int numsc = 1 + random2(pow) / 10 + random2(pow) / 10;
+    int dur = ENCH_ABJ_III;
 
     numsc = stepdown_value(numsc, 2, 2, 6, 8);  //see stuff.cc - 12jan2000 {dlb}
 
+    /* this summoning is permanent if you are poisoned */
+    if (you.poison)
+      dur = 0;
+
     for (int scount = 0; scount < numsc; scount++)
     {
-        if (random2(pow) <= 3)
+      /*
+        if ((random2(pow) <= 3)
+      */
+        if (0)
         {
             if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
@@ -1374,7 +1382,12 @@ void summon_scorpions(int pow)
         }
         else
         {
+          /*
             if (create_monster( MONS_SCORPION, ENCH_ABJ_III, BEH_FRIENDLY,
+                                you.x_pos, you.y_pos,
+                                you.pet_target, 250 ) != -1)
+          */
+            if (create_monster( MONS_SCORPION, dur, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos,
                                 you.pet_target, 250 ) != -1)
             {
@@ -1400,14 +1413,17 @@ void summon_ice_beast_etc(int pow, int ibc)
 
     case MONS_IMP:
         mpr("A beastly little devil appears in a puff of flame.");
+        beha = BEH_CHARMED;
         break;
 
     case MONS_WHITE_IMP:
         mpr("A beastly little devil appears in a puff of frigid air.");
+        beha = BEH_CHARMED;
         break;
 
     case MONS_SHADOW_IMP:
         mpr("A shadowy apparition takes form in the air.");
+        beha = BEH_CHARMED;
         break;
 
     case MONS_ANGEL:
@@ -1420,11 +1436,14 @@ void summon_ice_beast_etc(int pow, int ibc)
 
     default:
         mpr("A demon appears!");
+        /*
         if (random2(pow) < 4)
         {
             beha = BEH_HOSTILE;
             mpr("It doesn't look very happy.");
         }
+        */
+        beha = BEH_CHARMED;
         break;
 
     }
@@ -1520,9 +1539,14 @@ void summon_undead(int pow)
 {
     int temp_rand = 0;
     int thing_called = MONS_PROGRAM_BUG;        // error trapping {dlb}
+    int dur = ENCH_ABJ_V;
 
     int numsc = 1 + random2(pow) / 30 + random2(pow) / 30;
     numsc = stepdown_value(numsc, 2, 2, 6, 8);  //see stuff.cc {dlb}
+
+    /* this summoning is permanent if you are undead */
+    if (you.is_undead)
+      dur = 0;
 
     mpr("You call on the undead to aid you!");
 
@@ -1534,7 +1558,10 @@ void summon_undead(int pow)
                         (temp_rand > 3) ? MONS_SPECTRAL_WARRIOR  // 20%
                                         : MONS_FREEZING_WRAITH); // 16%
 
+        /*
         if (random2(pow) < 6)
+        */
+        if (0)
         {
             if (create_monster( thing_called, ENCH_ABJ_V, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
@@ -1544,7 +1571,11 @@ void summon_undead(int pow)
         }
         else
         {
+          /*
             if (create_monster( thing_called, ENCH_ABJ_V, BEH_FRIENDLY,
+                                you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
+          */
+            if (create_monster( thing_called, dur, BEH_FRIENDLY,
                                 you.x_pos, you.y_pos, you.pet_target, 250 ) != -1)
             {
                 mpr("An insubstantial figure forms in the air.");
@@ -1566,10 +1597,13 @@ void summon_things( int pow )
 {
     int big_things = 0;
     int numsc = 2 + (random2(pow) / 10) + (random2(pow) / 10);
+    int intelligence_cost = 0;
 
+    /*
     if (one_chance_in(3) && !lose_stat( STAT_INTELLIGENCE, 1, true ))
         mpr("Your call goes unanswered.");
     else
+    */
     {
         numsc = stepdown_value( numsc, 2, 2, 6, -1 );
 
@@ -1585,7 +1619,7 @@ void summon_things( int pow )
         */
         while (numsc > 2 * (1 + big_things))
         {
-          if (random2(pow) < 30)
+          if (random2(pow) < 75)
             break;
 
           numsc -= 2 * (1 + big_things);
@@ -1597,6 +1631,13 @@ void summon_things( int pow )
 
         if (big_things > 8)
             big_things = 8;
+
+        intelligence_cost = big_things;
+        if (one_chance_in(3))
+          intelligence_cost++;
+        if ((intelligence_cost > 0)
+            && (!lose_stat(STAT_INTELLIGENCE, intelligence_cost, true)))
+          mpr("Your call goes unanswered.");
 
         while (big_things > 0)
         {

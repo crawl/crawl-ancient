@@ -64,5 +64,6 @@ void cast_mystic_grasp(void);
 void cast_bazaar_of_naniwa(int pow);
 void cast_local_global(void);
 void cast_anchored_teleport(void);
+void cast_summon_ghost(int pow);
 
 #endif

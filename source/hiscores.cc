@@ -30,6 +30,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ctype.h>
+/* strlen */
+#include <string.h>
 
 #include "AppHdr.h"
 #include "externs.h"
@@ -1311,7 +1313,8 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
 
 bool hs_read( FILE *scores, struct scorefile_entry &dest )
 {
-    char inbuf[200];
+    /* 200 is not enough for a large rock thrown by a stone giant */
+    char inbuf[300 /*200*/];
     int c = EOF;
 
     hs_init( dest );
@@ -1341,6 +1344,19 @@ bool hs_read( FILE *scores, struct scorefile_entry &dest )
         hs_parse_numeric(inbuf, dest);
     else
         hs_parse_string(inbuf, dest);
+
+    if ((c == ':')
+        && (strlen(inbuf) > 0)
+        && (inbuf[strlen(inbuf) - 1]) != '\n')
+    {
+      /* discard anything before the next newline */
+      int temp;
+      do
+      {
+        temp = fgetc(scores);
+      }
+      while ((temp != EOF) && (temp != '\n'));
+    }
 
     return true;
 }

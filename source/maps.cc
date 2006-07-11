@@ -1163,7 +1163,7 @@ static char vestibule_map(char vgrid[81][81], FixedVector<int, 7>& mons_array)
     strcpy(vgrid[31], "xxxxxxxxxx.l.l.l.l.l.................................................xxxxxxxxxxx");
     strcpy(vgrid[32], "xxxxxxxxx.l.l.l.l.l...................................................xxxxxxxxxx");
     strcpy(vgrid[33], "xxxxxxxxxl.l.l.l.l.l..................................................xxxxxxxxxx");
-    strcpy(vgrid[34], "xxxxxxxxx.l.l.l.A.l.l.................}1].............................=Axxxxxxxx");
+    strcpy(vgrid[34], "xxxxxxxxx.l.l.l.A.l.l.................}1].............................=AxXxxxxxx");
     strcpy(vgrid[35], "xxxxxxxxxl.l.l.l.l.l.l.................)..............................xxxxxxxxxx");
     strcpy(vgrid[36], "xxxxxxxxx.l.l.l.l.l.l.................................................xxxxxxxxxx");
     strcpy(vgrid[37], "xxxxxxxxxx.l.l.l.l.l.l...............................................xxxxxxxxxxx");

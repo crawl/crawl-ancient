@@ -580,22 +580,34 @@ bool evoke_wielded( void )
                     {
                         if (grd[count_x][count_y] == DNGN_STONE_ARCH)
                         {
+                          if (count_x + 2 >= GXM)
+                            continue;
+
                             opened_gates++;
 
                             // this may generate faulty [][] values {dlb}
                             switch (grd[count_x + 2][count_y])
                             {
+                              /*
                             case DNGN_FLOOR:
                                 grd[count_x][count_y] = DNGN_ENTER_DIS;
                                 break;
+                              */
                             case DNGN_LAVA:
                                 grd[count_x][count_y] = DNGN_ENTER_GEHENNA;
                                 break;
                             case DNGN_ROCK_WALL:
+                            case DNGN_PERMAROCK_WALL:
                                 grd[count_x][count_y] = DNGN_ENTER_TARTARUS;
                                 break;
                             case DNGN_DEEP_WATER:
                                 grd[count_x][count_y] = DNGN_ENTER_COCYTUS;
+                                break;
+                            default:
+                                /* this includes DNGN_FLOOR and
+                                 * DNGN_SHALLOW_WATER
+                                 */
+                                grd[count_x][count_y] = DNGN_ENTER_DIS;
                                 break;
                             }
                         }
@@ -626,7 +638,7 @@ bool evoke_wielded( void )
                 create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE,
                                 you.x_pos, you.y_pos, MHITYOU, 250 );
                 */
-                create_monster( MONS_BEAST, ENCH_ABJ_I, BEH_FRIENDLY,
+                create_monster( MONS_BEAST, ENCH_ABJ_I, BEH_CHARMED,
                                 you.x_pos, you.y_pos, MHITYOU, 250 );
                 naughty(NAUGHTY_UNHOLY, 1);
             }

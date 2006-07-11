@@ -638,8 +638,10 @@ int allowed_deaths_door_hp(void)
 {
     int hp = you.skills[SK_NECROMANCY] / 2;
 
+    /*
     if (you.religion == GOD_KIKUBAAQUDGHA && !player_under_penance())
         hp += you.piety / 15;
+    */
 
     return (hp);
 }

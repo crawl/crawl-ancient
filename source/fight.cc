@@ -2357,14 +2357,14 @@ void monster_attack(int monster_attacking)
               const int mdam_rolled = random2avg(mdam, 3);
               /* this condition checks division-by-zero too */
               if ((mons_to_hit_rolled <= 0)
-                  || (mons_to_hit_rolled <= 2 * player_dodge_rolled))
+                  || (mons_to_hit_rolled <= 2 * player_dodge * player_dodge))
                 {
                   mdam_rolled_min = 0;
                 }
                 else
                 {
                   mdam_rolled_min = mdam
-                    * (mons_to_hit_rolled - 2 * player_dodge_rolled)
+                    * (mons_to_hit_rolled - 2 * player_dodge * player_dodge)
                     / mons_to_hit_rolled;
                 }
                 if (mdam_rolled_min < 0)

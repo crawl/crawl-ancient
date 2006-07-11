@@ -2802,6 +2802,7 @@ enum SPELLS
     SPELL_MYSTIC_GRASP,               // 206
     SPELL_BAZAAR_OF_NANIWA,           // 207
     SPELL_LOCAL_GLOBAL,               // 208
+    SPELL_SUMMON_GHOST,               // 209
     NUM_SPELLS,
     SPELL_NO_SPELL = 251 /* 210 */              //  210 - added 22jan2000 {dlb}
 };

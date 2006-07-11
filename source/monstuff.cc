@@ -315,6 +315,8 @@ void monster_die(struct monsters *monster, char killer, int i)
     int monster_killed = monster_index(monster);
     bool death_message = mons_near(monster) && player_monster_visible(monster);
 
+    bool xom_noticed = false;
+
     // From time to time Trog gives you a little bonus
     if (killer == KILL_YOU && you.berserker)
     {
@@ -433,7 +435,10 @@ void monster_die(struct monsters *monster, char killer, int i)
             if (you.religion == GOD_XOM
                     && random2(70) <= 10 + monster->hit_dice)
             {
+              /*
                 Xom_acts(true, 1 + random2(monster->hit_dice), false);
+              */
+              xom_noticed = true;
             }
 
             // Trying to prevent summoning abuse here, so we're trying to
@@ -622,7 +627,7 @@ void monster_die(struct monsters *monster, char killer, int i)
                     (tmp == 1) ? " says, \"I'll get you next time!\"" :
                     (tmp == 2) ? " says, \"This isn't over yet!\"" :
                     (tmp == 3) ? " says, \"I'll be back!\"" :
-                    (tmp == 4) ? " says, \"This isn't the end, its only just beginning!\"" :
+                    (tmp == 4) ? " says, \"This isn't the end, it's only just beginning!\"" :
                     (tmp == 5) ? " says, \"Kill me?  I think not!\""
                                : " says, \"You cannot defeat me so easily!\"",
                                     MSGCH_TALK );
@@ -660,12 +665,16 @@ void monster_die(struct monsters *monster, char killer, int i)
         else
         {
             // have to add case for disintegration effect here? {dlb}
+          if (!testbits(monster->flags, MF_CREATED_FRIENDLY))
             place_monster_corpse(monster);
         }
     }
 
     monster_drop_ething(monster);
     monster_cleanup(monster);
+
+    if (xom_noticed)
+      Xom_acts(true, 1 + random2(monster->hit_dice), false);
 }                                                   // end monster_die
 
 void monster_cleanup(struct monsters *monster)
@@ -2050,9 +2059,17 @@ static bool handle_enchantment(struct monsters *monster)
             break;
 
         case ENCH_CHARM:
+          /*
             if (random2(500) <= mod_speed( monster->hit_dice + 10, speed ))
                 mons_del_ench(monster, ENCH_CHARM);
             break;
+          */
+          if ((random2(50) <= mod_speed(10, speed))
+              && (you.hp * 10 < you.hp_max * 8)
+              && (random2(you.hp * 100)
+                  < you.hp_max * (monster->hit_dice + 40)))
+            mons_del_ench(monster, ENCH_CHARM);
+          break;
 
         case ENCH_GLOWING_SHAPESHIFTER:     // this ench never runs out
             // number of actions is fine for shapeshifters

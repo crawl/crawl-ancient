@@ -3004,12 +3004,18 @@ static bool enchant_armour( void )
     {
         if (item_cursed( item ))
         {
+          /*
             in_name(you.equip[affected], DESC_CAP_YOUR, str_pass);
+          */
+            in_name(you.equip[affected_slot], DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " glows silver for a moment.");
             mpr(info);
 
+            /*
             do_uncurse_item( you.inv[you.equip[affected]] );
+            */
+            do_uncurse_item( you.inv[you.equip[affected_slot]] );
             return (true);
         }
         else
@@ -3185,7 +3191,10 @@ void read_scroll(void)
         }
 
         if (!you.skills[SK_SPELLCASTING])
+        {
+          if (scroll_type != SCR_QUIVER)
             exercise(SK_SPELLCASTING, (coinflip()? 2 : 1));
+        }
     }
 
     bool id_the_scroll = true;  // to prevent unnecessary repetition

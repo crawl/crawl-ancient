@@ -1290,6 +1290,16 @@ int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
             {
                 creation->attitude = ATT_HOSTILE;
                 mons_add_ench(creation, ENCH_CHARM);
+                creation->flags |= MF_CREATED_FRIENDLY;
+            }
+
+            if (beha == BEH_GOD_RETRIBUTION)
+            {
+              creation->attitude = ATT_HOSTILE;
+              /* not really friendly --- this flag means "no gain from
+               * killing"
+               */
+              creation->flags |= MF_CREATED_FRIENDLY;
             }
 
             // make summoned being aware of player's presence

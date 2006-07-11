@@ -609,7 +609,7 @@
 {
     SPELL_CALL_IMP, "Call Imp",
      SPTYP_SUMMONING,
-     3
+      2 /* 3 */
 },
 
 {
@@ -730,19 +730,19 @@
 {
     SPELL_SUMMON_DEMON, "Summon Demon",
      SPTYP_SUMMONING,
-     5
+      3 /* 5 */
 },
 
 {
     SPELL_DEMONIC_HORDE, "Demonic Horde",
      SPTYP_SUMMONING,
-     6
+      4 /* 6 */
 },
 
 {
     SPELL_SUMMON_GREATER_DEMON, "Summon Greater Demon",
      SPTYP_SUMMONING,
-     7
+      5 /* 7 */
 },
 
 {
@@ -1062,8 +1062,8 @@
 
 {
     SPELL_SUMMON_DRAGON, "Summon Dragon",
-     SPTYP_FIRE | SPTYP_SUMMONING,
-     9
+     SPTYP_SUMMONING /* SPTYP_FIRE | SPTYP_SUMMONING */,
+      6 /* 9 */
 },
 
 {
@@ -1310,6 +1310,12 @@
   SPELL_ANCHORED_TELEPORT, "Anchored Teleport",
     SPTYP_TRANSLOCATION,
     5
+},
+
+{
+  SPELL_SUMMON_GHOST, "Summon Ghosts",
+    SPTYP_NECROMANCY | SPTYP_SUMMONING,
+    3
 },
 
 {

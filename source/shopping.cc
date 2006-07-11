@@ -128,7 +128,7 @@ char in_a_shop( char shoppy, char id[4][50] )
             gp_value = 1;
 
         if (gp_value > you.gold)
-          textcolor(LIGHTBLUE);
+          textcolor((i % 2) ? BLUE : LIGHTBLUE);
 
         it_name(itty, DESC_NOCAP_A, st_pass);
         putch(i + 96);
