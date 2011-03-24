@@ -1112,7 +1112,9 @@ bool show_map( FixedVector<int, 2> &spec_place, bool travel_mode )
                         if (gx == you.x_pos && gy == you.y_pos)
                             buffer[bufcount + 1] = WHITE;
                         else
-                            buffer[bufcount + 1] = colour_code_map( gx, gy );
+                            buffer[bufcount + 1] =
+                                colour_code_map( gx, gy,
+                                        travel_mode && Options.travel_colour );
 
                         buffer[bufcount] = get_envmap_char( gx, gy );
                         bufcount += 2;

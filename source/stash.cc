@@ -39,7 +39,7 @@ Stash::Stash( int xp, int yp ) : enabled(true), items()
 
     x = static_cast<unsigned char>( xp );
     y = static_cast<unsigned char>( yp );
-    abspos = GXM * static_cast<int>( y + x );
+    abspos = GXM * static_cast<int>( y ) + static_cast<int>( x );
 
     update();
 }
@@ -237,7 +237,7 @@ void Stash::display(ostream &os, int refx, int refy, std::string place) const
         }
 
         os << "  " << buf
-           << (!verified && ((items.size() > 1 || i) ? " (still there?)" : ""))
+           << (!verified && (items.size() > 1 || i) ? " (still there?)" : "")
            << endl;
 
         if (is_dumpable_artefact(item, Options.verbose_dump))
@@ -311,7 +311,7 @@ void Stash::load(FILE *file)
     // Note: Enabled save value is inverted so it defaults to true.
     enabled = (flags & 2) == 0;
 
-    abspos = GXM * static_cast<int>( y + x );
+    abspos = GXM * static_cast<int>( y ) + static_cast<int>( x );
 
     // Zap out item vector, in case it's in use (however unlikely)
     items.clear();
@@ -460,14 +460,8 @@ Stash *LevelStashes::find_stash(int x, int y)
     }
 
     int abspos = (GXM * y) + x;
-    for (list<Stash>::iterator iter = stashes.begin();
-            iter != stashes.end() && iter->abs_pos() <= abspos; iter++)
-    {
-        if (iter->isAt(x, y))
-            return (&*iter);
-    }
-
-    return (NULL);
+    map<int, Stash, ltint>::iterator st = stashes.find(abspos);
+    return (st == stashes.end()? NULL : &st->second);
 }
 
 ShopInfo &LevelStashes::get_shop(int x, int y)
@@ -504,15 +498,7 @@ bool LevelStashes::update_stash(int x, int y)
 // Removes a Stash from the level.
 void LevelStashes::kill_stash(const Stash &s)
 {
-    for (list<Stash>::iterator iter = stashes.begin();
-            iter != stashes.end(); iter++)
-    {
-        if (&*iter == &s)
-        {
-            stashes.erase(iter);
-            return;
-        }
-    }
+    stashes.erase(s.abs_pos());
 }
 
 void LevelStashes::no_stash( int x, int y )
@@ -532,22 +518,7 @@ void LevelStashes::no_stash( int x, int y )
         Stash newStash(x, y);
         newStash.enabled = false;
 
-        bool inserted = false;
-        // Find an appropriate place to insert it
-        for (list<Stash>::iterator iter = stashes.begin();
-            iter != stashes.end(); iter++)
-        {
-            if (newStash.abs_pos() < iter->abs_pos())
-            {
-                stashes.insert(iter, newStash);
-                inserted = true;
-                break;
-            }
-        }
-
-        // If we get here, the new stash belongs at the end
-        if (!inserted)
-            stashes.push_back(newStash);
+        stashes[newStash.abs_pos()] = newStash;
     }
 
     mpr( (en) ? "I'll no longer ignore what I see on this square."
@@ -567,21 +538,7 @@ void LevelStashes::add_stash( int x, int y )
     {
         Stash newStash(x, y);
         if (!newStash.empty())
-        {
-            // Find an appropriate place to insert it
-            for (list<Stash>::iterator iter = stashes.begin();
-                    iter != stashes.end(); iter++)
-            {
-                if (newStash.abs_pos() < iter->abs_pos())
-                {
-                    stashes.insert(iter, newStash);
-                    return;
-                }
-            }
-
-            // If we get here, the new stash belongs at the end
-            stashes.push_back(newStash);
-        }
+            stashes[newStash.abs_pos()] = newStash;
     }
 }
 
@@ -716,10 +673,10 @@ int LevelStashes::count_stashes() const
     if (!rawcount)
         return (0);
 
-    for (list<Stash>::const_iterator iter = stashes.begin();
+    for (map<int, Stash, ltint>::const_iterator iter = stashes.begin();
             iter != stashes.end(); iter++)
     {
-        if (!iter->enabled)
+        if (!iter->second.enabled)
             --rawcount;
     }
 
@@ -740,13 +697,13 @@ void LevelStashes::display(ostream &os) const
 
     if (stashes.size())
     {
-        const Stash &s = *stashes.begin();
+        const Stash &s = stashes.begin()->second;
         int refx = s.getX(), refy = s.getY();
 
-        for (list<Stash>::const_iterator iter = stashes.begin();
+        for (map<int, Stash, ltint>::const_iterator iter = stashes.begin();
                 iter != stashes.end(); iter++)
         {
-            iter->display(os, refx, refy, short_level_name());
+            iter->second.display(os, refx, refy, short_level_name());
         }
     }
 
@@ -762,10 +719,10 @@ void LevelStashes::save(FILE *file) const
     writeShort(file, static_cast<short>( depth ));
 
     // And write the individual stashes
-    for (list<Stash>::const_iterator iter = stashes.begin();
+    for (map<int, Stash, ltint>::const_iterator iter = stashes.begin();
             iter != stashes.end(); iter++)
     {
-        iter->save(file);
+        iter->second.save(file);
     }
 
     writeShort(file, static_cast<short>( shops.size() ));
@@ -786,7 +743,7 @@ void LevelStashes::load(FILE *file)
         Stash s;
         s.load(file);
         if (!s.empty())
-            stashes.push_back(s);
+            stashes[s.abs_pos()] = s;
     }
 
     shops.clear();
@@ -962,6 +919,7 @@ void StashTracker::update_visible_stashes( StashTracker::stash_update_mode mode)
     if (is_level_untrackable())
         return ;
 
+    LevelStashes *lev = find_current_level();
     for (int cy = 1; cy <= 17; ++cy)
     {
         for (int cx = 9; cx <= 25; ++cx)
@@ -975,13 +933,17 @@ void StashTracker::update_visible_stashes( StashTracker::stash_update_mode mode)
             if (!env.show[cx - 8][cy] && !(cx == 17 && cy == 9))
                 continue;
 
-            if (!update_stash(x, y) && mode == ST_AGGRESSIVE
+            if ((!lev || !lev->update_stash(x, y)) && mode == ST_AGGRESSIVE
                 && igrd[x][y] != NON_ITEM)
             {
-                add_stash(x, y);
+                if (!lev)
+                    lev = &get_current_level();
+                lev->add_stash(x, y);
             }
         }
     }
+    if (lev && !lev->stash_count())
+        remove_level(*lev);
 }
 
 // XXX: move this to global.cc, or find a home in one of the other structs?

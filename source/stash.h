@@ -17,8 +17,8 @@ using std::string;
 using std::ostream;
 using std::istream;
 
-#include <list>
-using std::list;
+#include <map>
+using std::map;
 
 #include <vector>
 using std::vector;
@@ -147,7 +147,9 @@ public:
     bool  in_branch(int) const;
 
     int   stash_count() const { return (stashes.size() + shops.size()); }
-    int   visible_stash_count() const { return (count_stashes() + shops.size()); }
+    int   visible_stash_count() const {
+        return (count_stashes() + shops.size());
+    }
 
     bool  isCurrent() const;
     bool  isBelowPlayer() const;
@@ -157,8 +159,13 @@ private:
     unsigned char branch;
     int depth;
 
-    // and a list of the stashes on this level
-    list<Stash> stashes;
+    struct ltint {
+        bool operator () (const int a, const int b) const {
+            return a < b;
+        }
+    };
+    // and a map of the stashes on this level
+    map<int, Stash, ltint> stashes;
 
     // a vector of shops on this level
     vector<ShopInfo> shops;

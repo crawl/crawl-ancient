@@ -22,7 +22,7 @@
 // for time()
 #include <time.h>
 
-#ifdef USE_MORE_SECURE_SEED
+#if USE_MORE_SECURE_SEED
 
 // for times()
 #include <sys/times.h>
@@ -336,7 +336,7 @@ void seed_rng( void )
 {
     unsigned long seed = time( NULL );
 
-#ifdef USE_MORE_SECURE_SEED
+#if USE_MORE_SECURE_SEED
     struct tms  buf;
     seed += times( &buf ) + getpid();
 #endif
