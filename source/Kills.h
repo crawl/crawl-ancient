@@ -90,7 +90,7 @@ public:
 
     std::string kill_info() const;
 private:
-    std::map<___monster_desc, kill_def::kill_def, ___monster_desc::less_than> kills;
+    std::map<___monster_desc, kill_def, ___monster_desc::less_than> kills;
     std::vector<kill_ghost> ghosts;
 
     void record_ghost_kill(const struct monsters *mon);

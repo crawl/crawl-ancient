@@ -54,12 +54,12 @@ void Kills::record_kill( const struct monsters *mon )
     // Create a descriptor
     ___monster_desc descriptor = mon;
 
-    kill_def::kill_def &k = kills[descriptor];
+    kill_def &k = kills[descriptor];
 
     if (k.kills)
         k.add_kill(mon, get_packed_place());
     else
-        k = kill_def::kill_def(mon);
+        k = kill_def(mon);
 }
 
 struct kill_exp {
@@ -93,13 +93,13 @@ std::string Kills::kill_info() const
 
     long count = 0;
 
-    std::map<___monster_desc, kill_def::kill_def, ___monster_desc::less_than>::
+    std::map<___monster_desc, kill_def, ___monster_desc::less_than>::
         const_iterator iter = kills.begin();
 
     for (; iter != kills.end(); ++iter)
     {
         const ___monster_desc &md = iter->first;
-        const kill_def::kill_def &k = iter->second;
+        const kill_def &k = iter->second;
 
         all_kills.push_back( kill_exp( k.exp, k.base_name(md), k.info(md) ) );
         count += k.kills;
@@ -219,7 +219,7 @@ void Kills::save( FILE *file ) const
     // How many kill records do we have?
     writeLong(file, kills.size());
 
-    std::map<___monster_desc, kill_def::kill_def, ___monster_desc::less_than>::
+    std::map<___monster_desc, kill_def, ___monster_desc::less_than>::
         const_iterator kill_iter = kills.begin();
 
     for ( ; kill_iter != kills.end(); ++kill_iter)
