@@ -64,9 +64,14 @@ static std::string get_macro_file()
     std::string s;
 
     if (SysEnv.crawl_dir)
+        {
         s = SysEnv.crawl_dir;
+    }
 
-    return (s + "macro.txt");
+    if (SysEnv.crawl_macro)
+        return (s + SysEnv.crawl_macro);
+    else
+        return (s + "macro.txt");
 }
 
 /*

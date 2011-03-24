@@ -1,7 +1,6 @@
 # -*- Makefile -*- for Dungeon Crawl (linux)
 
-#APPNAME = crawl4.1
-GAME = crawl4.1
+GAME = crawl-anc
 
 # this file contains a list of the libraries.
 # it will make a variable called OBJECTS that contains all the libraries
@@ -9,17 +8,16 @@ include makefile.obj
 
 OBJECTS += liblinux.o
 
-CXX = g++-4.1
-#CXX = g++
+CXX = g++
 DELETE = rm -f
 COPY = cp
 OS_TYPE = LINUX
 
-CFLAGS = -Wall -Wwrite-strings -Wabi -Wold-style-cast -Woverloaded-virtual -Wsign-promo -Wsynth -W -Wfloat-equal -Wshadow -Wcast-qual -Wconversion -Wredundant-decls -Winline -D$(OS_TYPE) $(EXTRA_FLAGS)
+CFLAGS = -Wall -Wwrite-strings -Wshadow -Wuninitialized -pedantic -D$(OS_TYPE) $(EXTRA_FLAGS)
 # CFLAGS = -Wall -Wwrite-strings -D$(OS_TYPE) $(EXTRA_FLAGS)
 
 # LDFLAGS = -static
-MCHMOD = 2755
+MCHMOD = 0755
 INSTALLDIR = /usr/games
 
 # gsl and gslcblas are for USE_GSL_RAND (see AppHdr.h)
@@ -37,6 +35,7 @@ install: $(GAME)
 
 clean:
 	$(DELETE) *.o
+	$(DELETE) $(GAME)
 
 distclean:
 	$(DELETE) *.o

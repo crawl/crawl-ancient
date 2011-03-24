@@ -2866,7 +2866,7 @@ enum special_missile_type // to separate from weapons in general {dlb}
     SPMSL_FLAME,                       //    1
     SPMSL_ICE,                         //    2
     SPMSL_POISONED,                    //    3
-    SPMSL_POISONED_UNUSED,             //    4 - was SPMSL_POISONED_II
+    SPMSL_POISONED_UNUSED              //    4 - was SPMSL_POISONED_II
 };
 
 enum special_room_type

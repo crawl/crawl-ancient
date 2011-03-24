@@ -17,7 +17,7 @@ void you_teleport( void );
 void you_teleport2( bool allow_control, bool new_abyss_area = false );
 int  blink( void );
 void random_blink( int power );
-int  cast_semi_controlled_blink( int pow );;;;
+int  cast_semi_controlled_blink( int pow );
 
 int  airstrike( int power, const struct bolt &beam );
 int  cast_bone_shards( int power );

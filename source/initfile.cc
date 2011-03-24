@@ -459,7 +459,17 @@ void read_init_file(void)
 
     if (SysEnv.crawl_rc)
     {
-        f = fopen(SysEnv.crawl_rc, "r");
+        if (SysEnv.crawl_dir)
+        {
+            strncpy(name_buff, SysEnv.crawl_dir, kPathLen);
+            name_buff[ kPathLen - 1 ] = '\0';
+            strncat(name_buff, SysEnv.crawl_rc, kPathLen);
+            name_buff[ kPathLen - 1 ] = '\0';
+
+            f = fopen(name_buff, "r");
+        }
+        else
+            f = fopen(SysEnv.crawl_rc, "r");
     }
     else if (SysEnv.crawl_dir)
     {
@@ -470,6 +480,7 @@ void read_init_file(void)
 
         f = fopen(name_buff, "r");
     }
+#if 0
 #ifdef MULTIUSER
     else if (SysEnv.home)
     {
@@ -484,6 +495,7 @@ void read_init_file(void)
 
         f = fopen(name_buff, "r");
     }
+#endif
 #endif
     else
     {
@@ -1171,10 +1183,10 @@ void get_system_environment(void)
 // returns true if no unknown or malformed arguments were found.
 
 static const char *cmd_ops[] = { "scores", "name", "race", "class",
-                                 "pizza", "plain", "dir", "rc", "tscores",
-                                 "vscores" };
+                                 "pizza", "plain", "dir", "rc", "macro",
+                                 "morgue", "tscores", "vscores" };
 
-const int num_cmd_ops = 10;
+const int num_cmd_ops = 12;
 bool arg_seen[num_cmd_ops];
 
 bool parse_args( int argc, char **argv, bool rc_only )
@@ -1236,7 +1248,7 @@ bool parse_args( int argc, char **argv, bool rc_only )
         bool next_is_param = false;
         if (next_arg != NULL)
         {
-            if (next_arg[0] != '-' && next_arg[0] != '/')
+            if (next_arg[0] != '-')
                 next_is_param = true;
         }
 
@@ -1244,8 +1256,8 @@ bool parse_args( int argc, char **argv, bool rc_only )
         switch(o)
         {
         case 0:             // scores
-        case 8:             // tscores
-        case 9:             // vscores
+        case 10:            // tscores
+        case 11:            // vscores
             if (!next_is_param)
                 ecount = SCORE_FILE_ENTRIES;            // default
             else // optional number given
@@ -1264,9 +1276,9 @@ bool parse_args( int argc, char **argv, bool rc_only )
             {
                 Options.sc_entries = ecount;
 
-                if (o == 8)
+                if (o == 10)
                     Options.sc_format = SCORE_TERSE;
-                else if (o == 9)
+                else if (o == 11)
                     Options.sc_format = SCORE_VERBOSE;
 
             }
@@ -1334,12 +1346,30 @@ bool parse_args( int argc, char **argv, bool rc_only )
             nextUsed = true;
             break;
 
-        case 7:
+        case 7:              // rc
             // ALWAYS PARSE
             if (!next_is_param)
                 return (false);
 
             SysEnv.crawl_rc = next_arg;
+            nextUsed = true;
+            break;
+
+        case 8:              // macro
+            // ALWAYS PARSE
+            if (!next_is_param)
+                return (false);
+
+            SysEnv.crawl_macro = next_arg;
+            nextUsed = true;
+            break;
+
+        case 9:             // morgue
+            // ALWAYS PARSE
+            if (!next_is_param)
+                return (false);
+
+            SysEnv.crawl_morgue = next_arg;
             nextUsed = true;
             break;
         } // end switch -- which option?

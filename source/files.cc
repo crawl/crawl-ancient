@@ -1003,8 +1003,13 @@ void save_game( bool leave_game )
     snprintf( charFile, sizeof(charFile), "%s.sav", name_buff );
 
 #else
+#ifdef SAVE_DIR_PATH
+    snprintf( charFile, sizeof(charFile),
+              SAVE_DIR_PATH "%s-%d", you.your_name, static_cast<int>(getuid()) );
+#else
     strncpy( charFile, you.your_name, kFileNameLen );
     charFile[kFileNameLen] = 0;
+#endif
 
     strcpy( stashFile, charFile );
     strcpy( killFile, charFile );

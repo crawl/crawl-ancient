@@ -289,7 +289,7 @@
 #define NUMBER_OF_RUNES_NEEDED    3
 
 // Number of top scores to keep.
-#define SCORE_FILE_ENTRIES      100
+#define SCORE_FILE_ENTRIES      1000
 
 // Darshan's item stack (stash) tracking code:
 #define STASH_TRACKING
@@ -397,7 +397,7 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/var/games/crawl41/"
+    #define SAVE_DIR_PATH       "/crawl-anc/saves/"
 
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
     // to a command to compress and bundle the save game files into a
@@ -411,8 +411,8 @@
     // However, says Rax, if you do, the game won't be able to load save files.
     // I just left them defined rather than fixing the bug because I am a
     // laziness elemental.
-    #define SAVE_PACKAGE_CMD    "/usr/bin/zip -m -q -j -1 %s.zip %s.*"
-    #define LOAD_UNPACKAGE_CMD  "/usr/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
+    // #define SAVE_PACKAGE_CMD    "/usr/bin/zip -m -q -j -1 %s.zip %s.*"
+    // #define LOAD_UNPACKAGE_CMD  "/usr/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
     #define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
@@ -420,8 +420,8 @@
     //#define DO_ANTICHEAT_CHECKS
 
     // This defines the chmod permissions for score and bones files.
-    #define SHARED_FILES_CHMOD_PRIVATE  0664
-    #define SHARED_FILES_CHMOD_PUBLIC   0664
+    #define SHARED_FILES_CHMOD_PRIVATE  0644
+    #define SHARED_FILES_CHMOD_PUBLIC   0644
 
     // If we're on a multiuser system, file locking of shared files is
     // very important (else things will just keep getting corrupted)

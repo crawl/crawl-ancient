@@ -484,7 +484,9 @@ struct system_environment
     char *crawl_name;
     char *crawl_pizza;
     char *crawl_rc;
+    char *crawl_macro;
     char *crawl_dir;
+    char *crawl_morgue;
     int   lines;
     char *home;                 // only used by MULTIUSER systems
     bool  board_with_nail;      // Easter Egg silliness

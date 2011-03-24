@@ -36,7 +36,7 @@ struct monsterentry
 {
     monster_type                mc PACKED;            // monster number
 
-    unsigned char               showchar PACKED;
+    unsigned char               showchar;
     int                         colour PACKED;
     const char                 *name PACKED;
 
@@ -45,7 +45,7 @@ struct monsterentry
 
     short                       weight PACKED;
 
-    char                        exp_mod PACKED;
+    char                        exp_mod;
 
     monster_type                genus PACKED;   // "team" the monster plays for
     monster_type                species PACKED; // corpse type of the monster
@@ -57,10 +57,10 @@ struct monsterentry
     mon_attack_def              attack[4] PACKED;
     unsigned int                hpdice[4] PACKED;
 
-    char                        AC PACKED;
-    char                        ev PACKED;
-    char                        speed PACKED;
-    char                        attack_cost PACKED;
+    char                        AC;
+    char                        ev;
+    char                        speed;
+    char                        attack_cost;
 
     mon_spellbook_type          sec PACKED;
 

@@ -249,8 +249,13 @@ static bool check_saved_game(void)
     }
 
 #else
+#ifdef SAVE_DIR_PATH
+    snprintf( char_fil, sizeof(char_fil),
+              SAVE_DIR_PATH "%s-%d", you.your_name, static_cast<int>(getuid()) );
+#else
     strcpy(char_fil, "");
     strncat(char_fil, you.your_name, kFileNameLen);
+#endif
     strcat(char_fil, ".sav");
 #endif
 

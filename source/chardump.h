@@ -16,7 +16,7 @@
 
 #include <string>
 
-bool dump_char( const char fname[30], bool show_prices );
+bool dump_char( const std::string &fname, bool show_prices );
 void dump_random_items( void );
 std::string munge_description(const std::string &inStr);
 

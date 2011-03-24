@@ -855,7 +855,7 @@ static void dump_mutations( std::string & text )
 // character was successfully saved.
 //
 //---------------------------------------------------------------
-bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
+bool dump_char( const std::string &fname, bool show_prices )  // $$$ a try block?
 {
     char tmp_quant[20];
     bool succeeded = false;
@@ -976,16 +976,18 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 
     char file_name[kPathLen] = "\0";
 
-    if (SysEnv.crawl_dir)
+    if (SysEnv.crawl_morgue)
+        strncpy(file_name, SysEnv.crawl_morgue, kPathLen);
+    else if (SysEnv.crawl_dir)
         strncpy(file_name, SysEnv.crawl_dir, kPathLen);
 
-    strncat(file_name, fname, kPathLen);
+    strncat(file_name, fname.c_str(), kPathLen);
 
 #ifdef STASH_TRACKING
     char stash_file_name[kPathLen] = "";
     strncpy(stash_file_name, file_name, kPathLen);
 #endif
-    if (strcmp(fname, "morgue.txt") != 0) {
+    if (strcmp(fname.c_str(), "morgue.txt") != 0) {
         strncat(file_name, ".txt", kPathLen);
 #ifdef STASH_TRACKING
         strncat(stash_file_name, ".lst", kPathLen);
