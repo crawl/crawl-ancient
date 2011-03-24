@@ -16,6 +16,7 @@
 #include <fstream>
 #include <stdio.h>
 #include <algorithm>
+#include <string.h>
 
 #ifdef STASH_TRACKING
 

@@ -16,6 +16,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "globals.h"
 #include "externs.h"

@@ -20,6 +20,8 @@
 #include "view.h"
 #include <stdarg.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 
 #ifdef DOS
 #include <dos.h>

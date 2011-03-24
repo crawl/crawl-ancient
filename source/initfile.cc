@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string>
 #include <ctype.h>
+#include <string.h>
 
 #include "Kills.h"
 #include "globals.h"

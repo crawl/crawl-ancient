@@ -7,6 +7,8 @@
  */
 
 // Important: AppHdr needed here... otherwise DEBUG/NDEBUG get out of sync!
+#include <string.h>
+
 #include "AppHdr.h"
 #include "globals.h"
 #include "menu.h"

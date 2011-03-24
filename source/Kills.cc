@@ -14,6 +14,7 @@
 #include "tags.h"
 #include "Kills.h"
 #include <algorithm>
+#include <string.h>
 
 #define KILLS_MAJOR_VERSION 4
 #define KILLS_MINOR_VERSION 0

@@ -12,7 +12,7 @@
 
 #include "AppHdr.h"
 
-#include <string>
+#include <string.h>
 #include <stdio.h>
 
 #include "globals.h"

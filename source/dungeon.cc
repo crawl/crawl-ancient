@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include "AppHdr.h"
 #include "abyss.h"

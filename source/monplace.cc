@@ -12,6 +12,7 @@
 #include "monplace.h"
 
 #include <stdio.h>
+#include <string.h>
 
 #include "beam.h"
 #include "globals.h"

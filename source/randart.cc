@@ -17,6 +17,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "dungeon.h"
 #include "globals.h"
