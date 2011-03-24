@@ -1185,9 +1185,10 @@ void get_system_environment(void)
 
 static const char *cmd_ops[] = { "scores", "name", "race", "class",
                                  "pizza", "plain", "dir", "rc", "macro",
-                                 "morgue", "tscores", "vscores" };
+                                 "morgue", "tscores", "vscores",
+                                 "print-charset", };
 
-const int num_cmd_ops = 12;
+const int num_cmd_ops = 13;
 bool arg_seen[num_cmd_ops];
 
 bool parse_args( int argc, char **argv, bool rc_only )
@@ -1373,6 +1374,10 @@ bool parse_args( int argc, char **argv, bool rc_only )
             SysEnv.crawl_morgue = next_arg;
             nextUsed = true;
             break;
+
+        case 12:            // print-charset
+            printf("IBM\n");
+            exit(0);
         } // end switch -- which option?
 
         // update position
