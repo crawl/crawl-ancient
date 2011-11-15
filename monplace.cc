@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <string.h>
 #include "externs.h"
 
 #include "dungeon.h"

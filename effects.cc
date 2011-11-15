@@ -1,6 +1,7 @@
 #include "config.h"
 
 #include <strings.h>
+#include <string.h>
 
 #include "externs.h"
 #include "beam.h"

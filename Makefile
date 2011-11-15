@@ -1,11 +1,11 @@
 # Make file for Dungeon Crawl (linux port only for now)
 
 C_COMP = g++
-C_ARGS = -Wall
-L_ARGS = -static
+C_ARGS = -Wall -Wno-char-subscripts -Wno-parentheses
+#L_ARGS = -static
 MCHMOD = 711
 INSTALLDIR = /usr/games
-LIB = -lncurses
+LIB = -lncursesw
 
 
 # Include for Linux

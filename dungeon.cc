@@ -13,7 +13,8 @@
 
 #include <string.h>
 #include <time.h>
-#include <fstream.h>
+#include <fstream>
+using namespace std;
 #include <fcntl.h>
 
 #ifdef DOS

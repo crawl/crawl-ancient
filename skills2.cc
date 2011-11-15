@@ -10,6 +10,7 @@ This file was extensively modified by Wladimir van der Laan.
 #include "externs.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 //#define DEBUG
 

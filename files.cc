@@ -158,6 +158,7 @@ if (you[0].level_type != 0) strcat(cha_fil, "lab");
  int minvc = 0;
 
  int clouty = 0;
+ int imn = 0;
 
 if (moving_level == 1)
 {
@@ -279,7 +280,6 @@ if (handle == -1)
 
 //   itoa(you[0].your_level, eggo, 10);
 
-int imn = 0;
 strcpy(ghost.gname, "");
 for (imn = 0; imn < 20; imn ++)
 {

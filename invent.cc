@@ -7,7 +7,8 @@
 #include "externs.h"
 
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
+using namespace std;
 #include <string.h>
 
 #include "itemname.h"

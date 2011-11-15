@@ -10,6 +10,7 @@
 
 #include "externs.h"
 #include <stdlib.h>
+#include <string.h>
 
 #include "misc.h"
 #include "output.h"

@@ -1,5 +1,6 @@
 #include "config.h"
 
+#include <string.h>
 #include "beam.h"
 #include "effects.h"
 #include "externs.h"
