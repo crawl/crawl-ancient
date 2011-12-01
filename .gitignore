@@ -1,4 +1,5 @@
 crawl
+crawl4.1
 *.o
 
 scores
@@ -17,4 +18,7 @@ rh.bat
 packaged.txt
 
 *.sav
+*.kil
+*.tc
+*.st
 *.00a
