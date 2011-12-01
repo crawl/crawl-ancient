@@ -18,10 +18,11 @@
 
 struct playerspell
 {
-  int id;
-  const char *title;
-  unsigned int disciplines; //jmf: a bitfield
-  unsigned int level;
+  int                   id;
+  const char           *title;
+  unsigned int          disciplines;   //jmf: a bitfield
+  unsigned int          flags;         // also a bitfield
+  unsigned int          level;
 };
 
 
@@ -31,23 +32,25 @@ void init_playerspells(void);
 int get_spell_slot_by_letter( char letter );
 int get_spell_by_letter( char letter );
 
-bool add_spell_to_memory( int spell );
+int  add_spell_to_memory( int spell );
 bool del_spell_from_memory_by_slot( int slot );
 
 // * called from: spell
-int spell_hunger(int which_spell);
+int spell_hunger( int which_spell );
 
 // * called from: it_use3 - spell - spells3
-int spell_mana(int which_spell);
+int spell_mana( int which_spell );
 
 // * called from: chardump - it_use3 - player - spell - spl-book -
 // *              spells0 - spells3
-int spell_difficulty(int which_spell);
+int spell_level( int which_spell );
 
-int spell_levels_required(int which_spell);
+int spell_levels_required( int which_spell );
+
+unsigned int get_spell_flags( int which_spell );
 
 // * called from: chardump - spell - spl-book - spells0
-bool spell_typematch(int which_spell, unsigned int which_discipline);
+bool spell_typematch( int which_spell, unsigned int which_discipline );
 unsigned int spell_type( int which_spell ); //jmf: simplification of above
 int count_bits( unsigned int bits );
 
@@ -74,8 +77,8 @@ int apply_one_neighbouring_square(int (*func) (int, int, int, int),
 int apply_area_within_radius(int (*func) (int, int, int, int),
                               int x, int y, int pow, int radius, int ctype);
 
-char spell_direction( struct dist &spelld, struct bolt &pbolt,
-                              int restrict = DIR_NONE, int mode = TARG_ENEMY );
+bool spell_direction( struct dist &spelld, struct bolt &pbolt,
+                      int dir_mode = DIR_NONE, int mode = TARG_ENEMY );
 
 void apply_area_cloud(int (*func) (int, int, int, int), int x, int y,
                       int pow, int number, int ctype);
@@ -83,5 +86,9 @@ void apply_area_cloud(int (*func) (int, int, int, int), int x, int y,
 const char *spelltype_name(unsigned int which_spelltype);
 
 int spell_type2skill (unsigned int which_spelltype);
+
+bool spell_is_utility_spell( int spell_id );
+bool spell_is_unholy( int spell_id );
+
 
 #endif

@@ -33,19 +33,7 @@
 #ifndef VERSION_H
 #define VERSION_H
 
-
-// last updated 07august2001 {mv}
-/* ***********************************************************************
- * called from: chardump - command - newgame
- * *********************************************************************** */
-#define VERSION "4.0.0 beta 26"
-
-
-// last updated 20feb2001 {GDL}
-/* ***********************************************************************
- * called from: command
- * *********************************************************************** */
+#define VERSION "4.1.2 alpha"
 #define BUILD_DATE __DATE__
-
 
 #endif

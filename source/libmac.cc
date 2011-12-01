@@ -101,8 +101,6 @@ static CTabHandle sColors = NULL;
 
 static bool sInDialog = false;
 
-extern bool game_has_started;
-
 
 // ========================================================================
 //      Internal Functions
@@ -552,7 +550,7 @@ CApplication::CApplication()
 //---------------------------------------------------------------
 void CApplication::Quit()
 {
-    if (game_has_started)
+    if (Game_Has_Started)
     {
         EAskSaveResult answer = AskSaveChanges();
 
@@ -970,7 +968,7 @@ OSStatus CApplication::DoEnableCommand(MenuRef menuH, MenuCommand command, MenuI
         }
         else if (command == 'Save')
         {
-                if (game_has_started)
+                if (Game_Has_Started)
                         EnableMenuItem(menuH, index);
                 else
                         DisableMenuItem(menuH, index);

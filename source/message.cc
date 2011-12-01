@@ -14,15 +14,21 @@
 #include "message.h"
 #include "religion.h"
 
+#include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 
 #ifdef DOS
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
-
 #include "macro.h"
+
+#include "delay.h"
+#include "player.h"
+#include "misc.h"
 #include "stuff.h"
 #include "view.h"
 
@@ -35,8 +41,6 @@ char Message_Line = 0;                // line of next (previous?) message
 
 static char god_message_altar_colour( char god )
 {
-    int  rnd;
-
     switch (god)
     {
     case GOD_SHINING_ONE:
@@ -46,31 +50,26 @@ static char god_message_altar_colour( char god )
         return (WHITE);
 
     case GOD_ELYVILON:
-        return (LIGHTBLUE);     // really, LIGHTGREY but that's plain text
+        // really, LIGHTGREY but that's plain text
+        return (LIGHTBLUE);
 
     case GOD_OKAWARU:
         return (CYAN);
 
     case GOD_YREDELEMNUL:
-        return (coinflip() ? DARKGREY : RED);
+        return (element_colour( EC_UNHOLY ));
 
     case GOD_KIKUBAAQUDGHA:
-        return (DARKGREY);
+        return (element_colour( EC_NECRO ));
 
     case GOD_XOM:
-        return (random2(15) + 1);
+        return (element_colour( EC_RANDOM ));
 
     case GOD_VEHUMET:
-        rnd = random2(3);
-        return ((rnd == 0) ? LIGHTMAGENTA :
-                (rnd == 1) ? LIGHTRED
-                           : LIGHTBLUE);
+        return (element_colour( EC_VEHUMET ));
 
     case GOD_MAKHLEB:
-        rnd = random2(3);
-        return ((rnd == 0) ? RED :
-                (rnd == 1) ? LIGHTRED
-                           : YELLOW);
+        return (element_colour( EC_FIRE ));
 
     case GOD_TROG:
         return (RED);
@@ -161,13 +160,36 @@ static char channel_to_colour( int channel, int param )
             ret = CYAN;
             break;
 
+        case MSGCH_MULTITURN_ACTION:
         case MSGCH_DIAGNOSTICS:
             ret = DARKGREY;     // makes is easier to ignore at times -- bwr
             break;
 
+        case MSGCH_MONSTER_TARGET:
+        case MSGCH_FLOOR_ITEMS:
+            if (param != BLACK && Options.channels[channel] == MSGCOL_ALTERNATE)
+                ret = param;
+            else if (Options.channels[ MSGCH_PLAIN ] >= MSGCOL_DEFAULT)
+                ret = LIGHTGREY;
+            else
+                ret = Options.channels[ MSGCH_PLAIN ];
+            break;
+
+        case MSGCH_EQUIPMENT:
+            if (param != BLACK
+                && (Options.invent_colours
+                    || Options.channels[channel] == MSGCOL_ALTERNATE))
+            {
+                ret = param;
+            }
+            else
+            {
+                ret = LIGHTGREY;
+            }
+            break;
+
         case MSGCH_PLAIN:
         case MSGCH_ROTTEN_MEAT:
-        case MSGCH_EQUIPMENT:
         default:
             ret = LIGHTGREY;
             break;
@@ -210,22 +232,31 @@ static char channel_to_colour( int channel, int param )
 
 #endif
 
-void mpr(const char *inf, int channel, int param)
+static void do_message_print( msg_channel_type channel, int param,
+                              const char *format, va_list argp )
 {
-    char info2[80];
+    char buff[80];
 
     int colour = channel_to_colour( channel, param );
     if (colour == MSGCOL_MUTED)
         return;
 
-    you.running = 0;
+    interrupt_activity( AI_MESSAGE );
+
     flush_input_buffer( FLUSH_ON_MESSAGE );
+
+    if (channel == MSGCH_WARN)
+        flush_input_buffer( FLUSH_ON_WARNING_MESSAGE );
+    else if (channel == MSGCH_DANGER)
+        flush_input_buffer( FLUSH_ON_DANGER_MESSAGE );
+    else if (channel == MSGCH_PROMPT)
+        flush_input_buffer( FLUSH_ON_PROMPT );
 
 #ifdef DOS_TERM
     window(1, 1, 80, 25);
 #endif
 
-    textcolor(LIGHTGREY);
+    textcolor( LIGHTGREY );
 
     const int num_lines = get_number_of_lines();
 
@@ -233,29 +264,75 @@ void mpr(const char *inf, int channel, int param)
         more();
 
     gotoxy( (Options.delay_message_clear) ? 2 : 1, Message_Line + 18 );
-    strncpy(info2, inf, 78);
-    info2[78] = 0;
 
-    textcolor( colour );
-    cprintf(info2);
-    //
-    // reset colour
-    textcolor(LIGHTGREY);
+    vsnprintf( buff, sizeof( buff ), format, argp );
+    buff[78] = '\0';
+
+    // If you're travelling, only certain user-specified messages can break
+    // travel
+    if (you.running < 0)
+    {
+        std::string message = buff;
+        for (unsigned int i = 0; i < Options.stop_travel.size(); ++i)
+        {
+            if (Options.stop_travel[i].is_filtered( channel, message ))
+            {
+                you.running = 0;
+                break;
+            }
+        }
+    }
+
+    if (Options.sound_mappings.size() > 0)
+    {
+        for (unsigned int i = 0; i < Options.sound_mappings.size(); i++)
+        {
+            if (pattern_match(Options.sound_mappings[i][0].c_str(), buff))
+            {
+                play_sound( Options.sound_mappings[i][1].c_str() );
+                break;
+            }
+        }
+    }
+
+    if (channel != MSGCH_EQUIPMENT)
+    {
+        textcolor( colour );
+        cprintf( buff );
+        textcolor( LIGHTGREY );        // reset colour
+    }
+    else
+    {
+        // Hack to cause equipment list displays to be coloured nicely...
+        // this works because these are currently not stored in the
+        // playback (which would require extra work and probably be
+        // worth starting on a message markup parsing system).
+        std::string str( buff );
+        const int colon = str.find(':');
+
+        textcolor( LIGHTGREY );
+        cprintf( str.substr( 0, colon + 1 ).c_str() );
+
+        textcolor( colour );
+        cprintf( str.substr( colon + 1 ).c_str() );
+        textcolor( LIGHTGREY );
+    }
 
     Message_Line++;
 
     if (Options.delay_message_clear
-            && channel != MSGCH_PROMPT
-            && Message_Line == num_lines - 18)
+        && channel != MSGCH_PROMPT
+        && Message_Line == num_lines - 18)
     {
         more();
     }
 
     // equipment lists just waste space in the message recall
+    // XXX: add floor lists here too? options as to which channels to log?
     if (channel != MSGCH_EQUIPMENT)
     {
         /* Put the message into Store_Message, and move the '---' line forward */
-        Store_Message[ Next_Message ].text = inf;
+        Store_Message[ Next_Message ].text = buff;
         Store_Message[ Next_Message ].channel = channel;
         Store_Message[ Next_Message ].param = param;
         Next_Message++;
@@ -263,7 +340,37 @@ void mpr(const char *inf, int channel, int param)
         if (Next_Message >= NUM_STORED_MESSAGES)
             Next_Message = 0;
     }
-}                               // end mpr()
+}                               // end do_message_print()
+
+void mpr( msg_channel_type channel, int param, const char *format, ... )
+{
+    va_list  argp;
+    va_start( argp, format );
+
+    do_message_print( channel, param, format, argp );
+
+    va_end( argp );
+}
+
+void mpr( msg_channel_type channel, const char *format, ... )
+{
+    va_list  argp;
+    va_start( argp, format );
+
+    do_message_print( channel, 0, format, argp );
+
+    va_end( argp );
+}
+
+void mpr( const char *format, ... )
+{
+    va_list  argp;
+    va_start( argp, format );
+
+    do_message_print( MSGCH_PLAIN, 0, format, argp );
+
+    va_end( argp );
+}
 
 bool any_messages(void)
 {
@@ -272,10 +379,6 @@ bool any_messages(void)
 
 void mesclr( bool force )
 {
-    // if no messages, return.
-    if (!any_messages())
-        return;
-
     if (!force && Options.delay_message_clear)
     {
         gotoxy( 1, Message_Line + 18 );
@@ -321,9 +424,9 @@ void mesclr( bool force )
     Message_Line = 0;
 }                               // end mseclr()
 
-void more(void)
+void more( void )
 {
-    char keypress = 0;
+    int keypress = 0;
 
 #ifdef PLAIN_TERM
     gotoxy( 2, get_number_of_lines() );
@@ -334,12 +437,13 @@ void more(void)
     gotoxy(2, 7);
 #endif
 
-    textcolor(LIGHTGREY);
+    textcolor( LIGHTGREY );
 
 #ifdef DOS
-    cprintf(EOL);
+    cprintf( EOL );
 #endif
-    cprintf("--more--");
+    stop_running();         // guarantee that we stop running
+    cprintf( MORE_STRING );
 
     do
     {
@@ -349,6 +453,41 @@ void more(void)
 
     mesclr( (Message_Line >= get_number_of_lines() - 18) );
 }                               // end more()
+
+std::string get_last_messages(int mcount)
+{
+    if (mcount <= 0)
+        return std::string();
+
+    if (mcount > NUM_STORED_MESSAGES)
+        mcount = NUM_STORED_MESSAGES;
+
+    bool full_buffer = Store_Message[ NUM_STORED_MESSAGES - 1 ].text.length() == 0;
+    int initial = Next_Message - mcount;
+    if (initial < 0 || initial > NUM_STORED_MESSAGES)
+        initial = full_buffer? initial + NUM_STORED_MESSAGES : 0;
+
+    std::string text;
+    int count = 0;
+    for (int i = initial; i != Next_Message; )
+    {
+        if (Store_Message[i].text.length())
+        {
+            text += Store_Message[i].text;
+            text += EOL;
+            count++;
+        }
+
+        if (++i >= NUM_STORED_MESSAGES)
+            i -= NUM_STORED_MESSAGES;
+    }
+
+    // An extra line of clearance.
+    if (count)
+        text += EOL;
+
+    return (text);
+}
 
 void replay_messages(void)
 {

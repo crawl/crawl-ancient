@@ -19,6 +19,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "direct.h"
@@ -26,6 +27,7 @@
 #include "stuff.h"
 #include "itemname.h"
 #include "macro.h"
+#include "misc.h"
 #include "monstuff.h"
 #include "player.h"
 #include "spl-book.h"
@@ -94,10 +96,11 @@ int get_spell_by_letter( char letter )
 
     const int slot = get_spell_slot_by_letter( letter );
 
-    return ((slot == -1) ? SPELL_NO_SPELL : you.spells[slot]);
+    return ((slot == -1) ? static_cast<int>(SPELL_NO_SPELL) : you.spells[slot]);
 }
 
-bool add_spell_to_memory( int spell )
+// Note: returns label, not slot
+int add_spell_to_memory( int spell )
 {
     int i, j;
 
@@ -121,7 +124,7 @@ bool add_spell_to_memory( int spell )
 
     you.spell_no++;
 
-    return (true);
+    return (j);
 }
 
 bool del_spell_from_memory_by_slot( int slot )
@@ -143,53 +146,48 @@ bool del_spell_from_memory_by_slot( int slot )
 }
 
 
-int spell_hunger(int which_spell)
+// "Utility" spells for the sake of simplicity are currently ones with
+// enchantments, translocations, or divinations.
+bool spell_is_utility_spell( int spell_id )
 {
-    int level = seekspell(which_spell)->level;
+    return (spell_typematch( spell_id, SPTYP_ENCHANTMENT | SPTYP_TRANSLOCATION | SPTYP_DIVINATION ));
+}
 
-    switch (level)
-    {
-    case  1: return   50;
-    case  2: return   95;
-    case  3: return  160;
-    case  4: return  250;
-    case  5: return  350;
-    case  6: return  550;
-    case  7: return  700;
-    case  8: return  850;
-    case  9: return 1000;
-    case 10: return 1000;
-    case 11: return 1100;
-    case 12: return 1250;
-    case 13: return 1380;
-    case 14: return 1500;
-    case 15: return 1600;
-    default: return 1600 + (20 * level);
-    }
+bool spell_is_unholy( int spell_id )
+{
+    return (testbits( get_spell_flags( spell_id ), SPFLAG_UNHOLY ));
+}
+
+
+int spell_hunger( int which_spell )
+{
+    const int level = seekspell(which_spell)->level;
+
+    return (15 * level * level + 35);
 }                               // end spell_hunger();
 
 // applied to spell misfires (more power = worse) and triggers
 // for Xom acting (more power = more likely to grab his attention) {dlb}
-int spell_mana(int which_spell)
+int spell_mana( int which_spell )
 {
     return (seekspell(which_spell)->level);
 }
 
 // applied in naughties (more difficult = higher level knowledge = worse)
 // and triggers for Sif acting (same reasoning as above, just good) {dlb}
-int spell_difficulty(int which_spell)
+int spell_level( int which_spell )
 {
     return (seekspell(which_spell)->level);
 }
 
 int spell_levels_required( int which_spell )
 {
-    int levels = spell_difficulty( which_spell );
+    int levels = spell_level( which_spell );
 
     if (which_spell == SPELL_DELAYED_FIREBALL
         && player_has_spell( SPELL_FIREBALL ))
     {
-        levels -= spell_difficulty( SPELL_FIREBALL );
+        levels -= spell_level( SPELL_FIREBALL );
     }
     else if (which_spell == SPELL_FIREBALL
             && player_has_spell( SPELL_DELAYED_FIREBALL ))
@@ -198,6 +196,11 @@ int spell_levels_required( int which_spell )
     }
 
     return (levels);
+}
+
+unsigned int get_spell_flags( int which_spell )
+{
+    return (seekspell(which_spell)->flags);
 }
 
 bool spell_typematch(int which_spell, unsigned int which_discipline)
@@ -455,7 +458,7 @@ int apply_one_neighbouring_square(int (*func) (int, int, int, int), int power)
 {
     struct dist bmove;
 
-    mpr("Which direction? [ESC to cancel]", MSGCH_PROMPT);
+    mpr(MSGCH_PROMPT,"Which direction? [ESC to cancel]" );
     direction( bmove, DIR_DIR, TARG_ENEMY );
 
     if (!bmove.isValid)
@@ -464,10 +467,10 @@ int apply_one_neighbouring_square(int (*func) (int, int, int, int), int power)
         return (0);
     }
 
-    int rv = func(you.x_pos + bmove.dx, you.y_pos + bmove.dy, power, 1);
+    int rv = func( you.x_pos + bmove.dx, you.y_pos + bmove.dy, power, 1 );
 
     if (rv == 0)
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
 
     return (rv);
 }                               // end apply_one_neighbouring_square()
@@ -481,16 +484,12 @@ int apply_area_within_radius( int (*func) (int, int, int, int),
     int rv = 0;
 
     // begin x,y
-    sx = x - radius;
-    sy = y - radius;
-    if (sx < 0) sx = 0;
-    if (sy < 0) sy = 0;
+    sx = MAXIMUM( X_BOUND_1 + 1, x - radius );
+    sy = MAXIMUM( Y_BOUND_1 + 1, y - radius );
 
     // end x,y
-    ex = x + radius;
-    ey = y + radius;
-    if (ex > GXM) ex = GXM;
-    if (ey > GYM) ey = GYM;
+    ex = MINIMUM( X_BOUND_2 - 1, x + radius );
+    ey = MINIMUM( Y_BOUND_2 - 1, y + radius );
 
     for (ix = sx; ix < ex; ix++)
     {
@@ -636,58 +635,70 @@ void apply_area_cloud( int (*func) (int, int, int, int), int x, int y,
         switch (i)
         {
         case 0:
-            apply_area_cloud(func, x + dx, y, pow, spread, ctype);
+            apply_area_cloud( func, x + dx, y, pow, spread, ctype );
             break;
         case 1:
-            apply_area_cloud(func, x - dx, y, pow, spread, ctype);
+            apply_area_cloud( func, x - dx, y, pow, spread, ctype );
             break;
         case 2:
-            apply_area_cloud(func, x, y + dy, pow, spread, ctype);
+            apply_area_cloud( func, x, y + dy, pow, spread, ctype );
             break;
         case 3:
-            apply_area_cloud(func, x, y - dy, pow, spread, ctype);
+            apply_area_cloud( func, x, y - dy, pow, spread, ctype );
             break;
         case 4:
-            apply_area_cloud(func, x + dx, y + dy, pow, spread, ctype);
+            apply_area_cloud( func, x + dx, y + dy, pow, spread, ctype );
             break;
         case 5:
-            apply_area_cloud(func, x - dx, y + dy, pow, spread, ctype);
+            apply_area_cloud( func, x - dx, y + dy, pow, spread, ctype );
             break;
         case 6:
-            apply_area_cloud(func, x + dx, y - dy, pow, spread, ctype);
+            apply_area_cloud( func, x + dx, y - dy, pow, spread, ctype );
             break;
         case 7:
-            apply_area_cloud(func, x - dx, y - dy, pow, spread, ctype);
+            apply_area_cloud( func, x - dx, y - dy, pow, spread, ctype );
             break;
         }
     }
 }                               // end apply_area_cloud()
 
-char spell_direction( struct dist &spelld, struct bolt &pbolt,
-                      int restrict, int mode )
+bool spell_direction( struct dist &spelld, struct bolt &pbolt,
+                      int dir_mode, int mode )
 {
-    if (restrict == DIR_TARGET)
-        mpr( "Choose a target (+/- for next/prev monster)", MSGCH_PROMPT );
+    if (dir_mode == DIR_DIR)
+        mpr( MSGCH_PROMPT, "In which direction?" );
+    else if (dir_mode == DIR_GRID)
+        mpr( MSGCH_PROMPT, "Choose a location (+/- for next/prev monster)" );
+    else if (dir_mode == DIR_TARGET)
+        mpr( MSGCH_PROMPT, "Choose a target (+/- for next/prev monster)" );
     else
-        mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, STD_DIRECTION_PROMPT );
 
     message_current_target();
 
-    direction( spelld, restrict, mode );
+    direction( spelld, dir_mode, mode );
 
-    if (!spelld.isValid)
+    if (spelld.isCancel || !spelld.isValid)
     {
-        // check for user cancel
-        canned_msg(MSG_SPELL_FIZZLES);
-        return -1;
+        canned_msg( (spelld.isCancel) ? MSG_OK : MSG_SPELL_FIZZLES );
+        return (false);
     }
 
-    pbolt.target_x = spelld.tx;
-    pbolt.target_y = spelld.ty;
+    if (dir_mode == DIR_DIR)
+    {
+        pbolt.target_x = you.x_pos + spelld.dx;
+        pbolt.target_y = you.y_pos + spelld.dy;
+    }
+    else
+    {
+        pbolt.target_x = spelld.tx;
+        pbolt.target_y = spelld.ty;
+    }
+
     pbolt.source_x = you.x_pos;
     pbolt.source_y = you.y_pos;
 
-    return 1;
+    return (true);
 }                               // end spell_direction()
 
 const char *spelltype_name(unsigned int which_spelltype)
@@ -776,11 +787,11 @@ static struct playerspell *seekspell(int spell)
 static bool cloud_helper( int (*func) (int, int, int, int), int x, int y,
                           int pow, int ctype )
 {
-    if (grd[x][y] > DNGN_LAST_SOLID_TILE && env.cgrid[x][y] == EMPTY_CLOUD)
+    if (!grid_is_solid( grd[x][y] ) && env.cgrid[x][y] == EMPTY_CLOUD)
     {
-        func(x, y, pow, ctype);
-        return true;
+        func( x, y, pow, ctype );
+        return (true);
     }
 
-    return false;
+    return (false);
 }

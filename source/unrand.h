@@ -1,6 +1,6 @@
 /*
  *  File:       unrand.cc
- *  Summary:    Definitions for unrandom artifacts.
+ *  Summary:    Definitions for unrandom artefacts.
  *  Written by: Linley Henzell
  *
  *  Change History (most recent first):
@@ -187,7 +187,7 @@
         0, 0, 0, 0, 1, 0,       // life prot
         1, 0, 0, 0, 0, 0,       // see invis
         0, 0, 0, 0, 0,
-        0, 0, 0, -3, 0,         // to hit
+        0, 0, 0, -5, 0,         // to hit
         0, 10                   // stealth
     }
     ,
@@ -336,8 +336,8 @@
 
 /* 11 */
 {
-    "crown of Dyrovepreva", "jewelled bronze crown",
-        OBJ_ARMOUR, ARM_HELMET, +3, THELM_SPECIAL, BROWN,
+    "jewelled crown of Dyrovepreva", "jewelled bronze crown",
+        OBJ_ARMOUR, ARM_CAP, +3, THELM_SPECIAL | THELM_DESC_JEWELLED, BROWN,
     {
         0, 0, 0, 0, 2, 0,       // int
         0, 0, 1, 0, 0, 0,       // res elec
@@ -379,7 +379,7 @@
         OBJ_JEWELLERY, AMU_WARDING, +0, 0, LIGHTGREY,
     {
         0, 1, 1, 0, 0, 0,       // AC, EV
-        0, 0, 1, 1, 1, 0,       // res elec, poison, life prot
+        0, 0, 1, 2, 1, 0,       // res elec, poison, life prot
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 1,          // prevent teleport
         0, 2, 0, 0, 0,          // speed metabolism
@@ -494,7 +494,7 @@
     "sling \"Punk\"", "blue sling",
         OBJ_WEAPONS, WPN_SLING, +3, +4, LIGHTBLUE,
     {
-        SPWPN_FROST, 0, 0, 0, 0, 0,
+        SPWPN_FREEZING, 0, 0, 0, 0, 0,
         0, 1, 0, 0, 0, 0,               // res cold
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -512,7 +512,7 @@
     "bow of Krishna \"Sharnga\"", "golden bow",
         OBJ_WEAPONS, WPN_BOW, +8, +8, YELLOW,
     {
-        SPWPN_SPEED, 0, 0, 0, 0, 3,       // dex
+        SPWPN_VORPAL, 0, 0, 0, 0, 3,       // dex
         0, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,       // see invis
         0, 0, 0, 0, 0,
@@ -658,7 +658,7 @@
     "crossbow \"Fiery Devil\"", "flaming crossbow",
         OBJ_WEAPONS, WPN_CROSSBOW, +4, +0, LIGHTRED,
     {
-        SPWPN_FLAME, 0, 0, 0, 0, 0,
+        SPWPN_FLAMING, 0, 0, 0, 0, 0,
         1, 0, 0, 0, 0, 0,               // res fire
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
@@ -857,14 +857,14 @@
         OBJ_WEAPONS, WPN_SPEAR, +2, +10, DARKGRAY,
     {
         SPWPN_VAMPIRICISM, 0, 0, 0, 0, 0,
-        0, 0, 0, 1, 1, 0,       // res poison, prot life
+        0, 0, 0, 2, 1, 0,       // res poison, prot life
         0, 0, 0, 0, 0, 0,
         0, 3, 0, 0, 0,          // noise
         0, 0, 0, 0, 0,
         0, -30                  // stealth
     }
     ,
-        "It's really dark and malign artifact and no wise man would even touch it.",
+        "No wise man would touch this dark and malign artefact.",
         "",
         ""
 }
@@ -892,7 +892,7 @@
 /* 41 */
 {
     "mask of the Dragon", "blue mask",
-        OBJ_ARMOUR, ARM_HELMET, +0, THELM_SPECIAL, BLUE,
+        OBJ_ARMOUR, ARM_CAP, +2, THELM_SPECIAL, BLUE,
     {
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 40,      // res magic
@@ -1056,7 +1056,7 @@
 /* 50 */
 {
     "hat of the Alchemist", "dirty hat",
-        OBJ_ARMOUR, ARM_HELMET, +2, THELM_SPECIAL, MAGENTA,
+        OBJ_ARMOUR, ARM_CAP, +1, THELM_SPECIAL, MAGENTA,
     {
         0, 0, 0, 0, 0, 0,
         1, 1, 1, 0, 0, 30,      // res fire, cold, elec, magic
@@ -1095,7 +1095,7 @@
         OBJ_JEWELLERY, RING_WIZARDRY, +0, 0, LIGHTBLUE,
     {
         0, 0, 0, 0, 3, 0,       // int
-        0, 0, 0, 0, 0, 50,      // res magic
+        0, 0, 0, 0, 0, 60,      // res magic
         0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,
         0, 0, 0, 0, 0,

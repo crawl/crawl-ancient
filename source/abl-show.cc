@@ -30,6 +30,7 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "beam.h"
@@ -69,61 +70,71 @@
 // values -- well, doesn't it? {dlb}
 struct talent
 {
-    int which;
-    int fail;
-    bool is_invocation;
+    ability_type        which;
+    int                 fail;
+    bool                is_invocation;
 };
 
 static FixedVector< talent, 52 >  Curr_abil;
 
-static bool insert_ability( int which_ability );
+static bool insert_ability( ability_type which_ability );
 
 // The description screen was way out of date with the actual costs.
 // This table puts all the information in one place... -- bwr
 //
 // The four numerical fields are: MP, HP, food, and piety.
-// Note:  food_cost  = val + random2avg( val, 2 )
+// Note:  food_cost  = val + roll_dice( 2, val / 2 )
 //        piety_cost = val + random2( (val + 1) / 2 + 1 );
 static const struct ability_def Ability_List[] =
 {
     // NON_ABILITY should always come first
     { ABIL_NON_ABILITY, "No ability", 0, 0, 0, 0, ABFLAG_NONE },
-    { ABIL_SPIT_POISON, "Spit Poison", 0, 0, 40, 0, ABFLAG_BREATH },
-    { ABIL_GLAMOUR, "Glamour", 5, 0, 40, 0, ABFLAG_DELAY },
+    { ABIL_SPIT_POISON, "Spit Poison", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_GLAMOUR, "Glamour", 5, 0, 100, 0, ABFLAG_DELAY },
 
     { ABIL_MAPPING, "Sense Surroundings", 0, 0, 30, 0, ABFLAG_NONE },
     { ABIL_TELEPORTATION, "Teleportation", 3, 0, 200, 0, ABFLAG_NONE },
     { ABIL_BLINK, "Blink", 1, 0, 50, 0, ABFLAG_NONE },
 
-    { ABIL_BREATHE_FIRE, "Breathe Fire", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_FROST, "Breathe Frost", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_POISON, "Breathe Poison Gas", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_LIGHTNING, "Breathe Lightning", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_POWER, "Breathe Power", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_STICKY_FLAME, "Breathe Sticky Flame", 0, 0, 125, 0, ABFLAG_BREATH },
-    { ABIL_BREATHE_STEAM, "Breathe Steam", 0, 0, 75, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_FIRE, "Breathe Fire", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_FROST, "Breathe Frost", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_POISON, "Breathe Poison Gas", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_LIGHTNING, "Breathe Lightning", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_POWER, "Breathe Power", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_STICKY_FLAME, "Breathe Sticky Flame", 0, 0, 150, 0, ABFLAG_BREATH },
+    { ABIL_BREATHE_STEAM, "Breathe Steam", 0, 0, 100, 0, ABFLAG_BREATH },
 
     // Handled with breath weapons, but doesn't cause a breathing delay
-    { ABIL_SPIT_ACID, "Spit Acid", 0, 0, 125, 0, ABFLAG_NONE },
+    { ABIL_SPIT_ACID, "Spit Acid", 0, 0, 150, 0, ABFLAG_BREATH },
 
     { ABIL_FLY, "Fly", 3, 0, 100, 0, ABFLAG_NONE },
-    { ABIL_SUMMON_MINOR_DEMON, "Summon Minor Demon", 3, 3, 75, 0, ABFLAG_NONE },
-    { ABIL_SUMMON_DEMON, "Summon Demon", 5, 5, 150, 0, ABFLAG_NONE },
-    { ABIL_HELLFIRE, "Hellfire", 8, 8, 200, 0, ABFLAG_NONE },
-    { ABIL_TORMENT, "Torment", 9, 0, 250, 0, ABFLAG_PAIN },
-    { ABIL_RAISE_DEAD, "Raise Dead", 5, 5, 150, 0, ABFLAG_NONE },
-    { ABIL_CONTROL_DEMON, "Control Demon", 4, 4, 100, 0, ABFLAG_NONE },
     { ABIL_TO_PANDEMONIUM, "Gate Yourself to Pandemonium", 7, 0, 200, 0, ABFLAG_NONE },
-    { ABIL_CHANNELING, "Channeling", 1, 0, 30, 0, ABFLAG_NONE },
+    { ABIL_CHANNELING, "Channeling", 0, 0, 200, 0, ABFLAG_NONE },
+
     { ABIL_THROW_FLAME, "Throw Flame", 1, 1, 50, 0, ABFLAG_NONE },
+    { ABIL_BOLT_OF_FIRE, "Bolt of Fire", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_HELLFIRE, "Hellfire", 8, 8, 300, 0, ABFLAG_NONE },
+
     { ABIL_THROW_FROST, "Throw Frost", 1, 1, 50, 0, ABFLAG_NONE },
-    { ABIL_BOLT_OF_DRAINING, "Bolt of Draining", 4, 4, 100, 0, ABFLAG_NONE },
+    { ABIL_BOLT_OF_COLD, "Bolt of Cold", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_HELLFROST, "Hellfrost", 8, 8, 300, 0, ABFLAG_NONE },
+
+    { ABIL_PAIN, "Pain", 1, 1, 50, 0, ABFLAG_NONE },
+    { ABIL_BOLT_OF_DRAINING, "Bolt of Draining", 4, 4, 150, 0, ABFLAG_NONE },
+    { ABIL_TORMENT, "Torment", 9, 0, 250, 0, ABFLAG_PAIN },
+
+    { ABIL_RAISE_DEAD, "Raise Dead", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_ENSLAVE_UNDEAD, "Enslave Undead", 7, 7, 200, 0, ABFLAG_NONE },
+
+    { ABIL_SUMMON_MINOR_DEMON, "Summon Minor Demon", 3, 3, 75, 0, ABFLAG_NONE },
+    { ABIL_SUMMON_DEMONS, "Summon Demons", 5, 5, 150, 0, ABFLAG_NONE },
+    { ABIL_CONTROL_DEMON, "Control Demon", 4, 4, 100, 0, ABFLAG_NONE },
 
     // FLY_II used to have ABFLAG_EXHAUSTION, but that's somewhat meaningless
     // as exhaustion's only (and designed) effect is preventing Berserk. -- bwr
-    { ABIL_FLY_II, "Fly", 0, 0, 25, 0, ABFLAG_NONE },
+    { ABIL_FLY_II, "Fly", 0, 0, 100, 0, ABFLAG_NONE },
     { ABIL_DELAYED_FIREBALL, "Release Delayed Fireball", 0, 0, 0, 0, ABFLAG_INSTANT },
-    { ABIL_MUMMY_RESTORATION, "Restoration", 1, 0, 0, 0, ABFLAG_PERMANENT_MP },
+    { ABIL_MUMMY_RESTORATION, "Restoration", 2, 0, 0, 0, ABFLAG_PERMANENT_MP },
 
     // EVOKE abilities use Evocations and come from items:
     // Mapping, Teleportation, and Blink can also come from mutations
@@ -144,22 +155,22 @@ static const struct ability_def Ability_List[] =
     { ABIL_EVOKE_LEVITATE, "Evoke Levitation", 1, 0, 100, 0, ABFLAG_NONE },
     { ABIL_EVOKE_STOP_LEVITATING, "Stop Levitating", 0, 0, 0, 0, ABFLAG_NONE },
 
-    { ABIL_END_TRANSFORMATION, "End Transformation", 0, 0, 0, 0, ABFLAG_NONE },
+    { ABIL_END_TRANSFORMATION, "End Transformation", 0, 0, 250, 0, ABFLAG_NONE },
 
     // INVOCATIONS:
     // Zin
     { ABIL_ZIN_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
-    { ABIL_ZIN_HEALING, "Minor Healing", 2, 0, 50, 1, ABFLAG_NONE },
+    { ABIL_ZIN_HEALING, "Minor Healing", 2, 0, 100, 1, ABFLAG_NONE },
     { ABIL_ZIN_PESTILENCE, "Pestilence", 3, 0, 100, 2, ABFLAG_NONE },
-    { ABIL_ZIN_HOLY_WORD, "Holy Word", 6, 0, 150, 3, ABFLAG_NONE },
-    { ABIL_ZIN_SUMMON_GUARDIAN, "Summon Guardian", 7, 0, 150, 4, ABFLAG_NONE },
+    { ABIL_ZIN_HOLY_WORD, "Holy Word", 6, 0, 150, 2, ABFLAG_NONE },
+    { ABIL_ZIN_SUMMON_GUARDIAN, "Summon Guardian", 7, 0, 150, 3, ABFLAG_NONE },
 
     // The Shining One
     { ABIL_TSO_REPEL_UNDEAD, "Repel Undead", 1, 0, 100, 0, ABFLAG_NONE },
-    { ABIL_TSO_SMITING, "Smiting", 3, 0, 50, 2, ABFLAG_NONE },
+    { ABIL_TSO_SMITING, "Smiting", 3, 0, 50, 1, ABFLAG_NONE },
     { ABIL_TSO_ANNIHILATE_UNDEAD, "Annihilate Undead", 3, 0, 50, 2, ABFLAG_NONE },
-    { ABIL_TSO_THUNDERBOLT, "Thunderbolt", 5, 0, 100, 2, ABFLAG_NONE },
-    { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 4, ABFLAG_NONE },
+    { ABIL_TSO_CLEANSING_FLAME, "Cleansing Flame", 5, 0, 150, 3, ABFLAG_NONE },
+    { ABIL_TSO_SUMMON_DAEVA, "Summon Daeva", 8, 0, 150, 3, ABFLAG_NONE },
 
     // Kikubaaqudgha
     { ABIL_KIKU_RECALL_UNDEAD_SLAVES, "Recall Undead Slaves", 2, 0, 50, 0, ABFLAG_NONE },
@@ -174,12 +185,12 @@ static const struct ability_def Ability_List[] =
     { ABIL_YRED_CONTROL_UNDEAD, "Control Undead", 5, 0, 150, 2, ABFLAG_NONE },
 
     // Vehumet
-    { ABIL_VEHUMET_CHANNEL_ENERGY, "Channel Energy", 0, 0, 50, 0, ABFLAG_NONE },
+    { ABIL_VEHUMET_CHANNEL_ENERGY, "Channel Energy", 0, 0, 150, 2, ABFLAG_NONE },
 
     // Okawaru
     { ABIL_OKAWARU_MIGHT, "Might", 2, 0, 50, 1, ABFLAG_NONE },
-    { ABIL_OKAWARU_HEALING, "Healing", 2, 0, 75, 1, ABFLAG_NONE },
-    { ABIL_OKAWARU_HASTE, "Haste", 5, 0, 100, 3, ABFLAG_NONE },
+    { ABIL_OKAWARU_HEALING, "Healing", 2, 0, 100, 1, ABFLAG_NONE },
+    { ABIL_OKAWARU_HASTE, "Haste", 5, 0, 200, 3, ABFLAG_NONE },
 
     // Makhleb
     { ABIL_MAKHLEB_MINOR_DESTRUCTION, "Minor Destruction", 1, 0, 20, 0, ABFLAG_NONE },
@@ -188,10 +199,10 @@ static const struct ability_def Ability_List[] =
     { ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB, "Greater Servant of Makhleb", 6, 0, 100, 3, ABFLAG_NONE },
 
     // Sif Muna
-    { ABIL_SIF_MUNA_FORGET_SPELL, "Forget Spell", 5, 0, 0, 8, ABFLAG_NONE },
+    { ABIL_SIF_MUNA_FORGET_SPELL, "Forget Spell", 0, 0, 300, 8, ABFLAG_NONE },
 
     // Trog
-    { ABIL_TROG_BERSERK, "Berserk", 0, 0, 200, 0, ABFLAG_NONE },
+    { ABIL_TROG_BERSERK, "Berserk", 0, 0, 100, 0, ABFLAG_NONE },
     { ABIL_TROG_MIGHT, "Might", 0, 0, 200, 1, ABFLAG_NONE },
     { ABIL_TROG_HASTE_SELF, "Haste Self", 0, 0, 250, 3, ABFLAG_NONE },
 
@@ -202,21 +213,20 @@ static const struct ability_def Ability_List[] =
     { ABIL_ELYVILON_RESTORATION, "Restoration", 3, 0, 400, 3, ABFLAG_NONE },
     { ABIL_ELYVILON_GREATER_HEALING, "Greater Healing", 6, 0, 600, 4, ABFLAG_NONE },
 
-    // These six are unused "evil" god abilities:
+    // These are unused "evil" god abilities:
     { ABIL_CHARM_SNAKE, "Charm Snake", 6, 0, 200, 5, ABFLAG_NONE },
     { ABIL_TRAN_SERPENT_OF_HELL, "Turn into Demonic Serpent", 16, 0, 600, 8, ABFLAG_NONE },
     { ABIL_BREATHE_HELLFIRE, "Breathe Hellfire", 0, 8, 200, 0, ABFLAG_BREATH },
 
     { ABIL_ROTTING, "Rotting", 4, 4, 0, 2, ABFLAG_NONE },
     { ABIL_TORMENT_II, "Call Torment", 9, 0, 0, 3, ABFLAG_PAIN },
-    { ABIL_SHUGGOTH_SEED, "Sow Shuggoth Seed", 12, 8, 0, 6, ABFLAG_NONE },
 
+    // any god
     { ABIL_RENOUNCE_RELIGION, "Renounce Religion", 0, 0, 0, 0, ABFLAG_NONE },
 };
 
 
-const struct ability_def & get_ability_def( int abil )
-/****************************************************/
+const struct ability_def & get_ability_def( ability_type abil )
 {
     for (unsigned int i = 0; i < sizeof( Ability_List ); i++)
     {
@@ -228,8 +238,7 @@ const struct ability_def & get_ability_def( int abil )
 }
 
 
-const char * get_ability_name_by_index( char index )
-/**************************************************/
+const char * get_ability_name_by_index( int index )
 {
     const struct ability_def &abil = get_ability_def( Curr_abil[index].which );
 
@@ -238,7 +247,6 @@ const char * get_ability_name_by_index( char index )
 
 
 const std::string make_cost_description( const struct ability_def &abil )
-/***********************************************************************/
 {
     char         tmp_buff[80];  // avoiding string steams for portability
     std::string  ret = "";
@@ -327,36 +335,37 @@ const std::string make_cost_description( const struct ability_def &abil )
     return (ret);
 }
 
-
 /*
    Activates a menu which gives player access to all of their non-spell
    special abilities - Eg naga's spit poison, or the Invocations you get
    from worshipping. Generated dynamically - the function checks to see which
    abilities you have every time.
  */
-bool activate_ability(void)
-/*************************/
+bool activate_ability( void )
 {
-    unsigned char keyin = 0;
-    unsigned char spc, spc2;
+    int keyin = 0;
+    int spc, spc2;
 
     int power;
+    int delay;
     struct dist abild;
     struct bolt beam;
     struct dist spd;
 
     unsigned char abil_used;
+    bool succ;
+    bool ret = true;
 
     // early returns prior to generation of ability list {dlb}:
-    if (you.conf)
-    {
-        mpr("You're too confused!");
-        return (false);
-    }
-
     if (you.berserker)
     {
         canned_msg(MSG_TOO_BERSERK);
+        return (false);
+    }
+
+    if (you.conf)
+    {
+        canned_msg(MSG_TOO_CONFUSED);
         return (false);
     }
 
@@ -380,7 +389,7 @@ bool activate_ability(void)
         }
 
         if (need_prompt)
-            mpr( "Use which ability? (? or * to list)", MSGCH_PROMPT );
+            mpr( MSGCH_PROMPT, "Use which ability? (? or * to list)" );
 
         if (need_getch)
             keyin = get_ch();
@@ -409,7 +418,7 @@ bool activate_ability(void)
         }
     }
 
-    spc = (int) keyin;
+    spc = keyin;
 
     if (!isalpha( spc ))
     {
@@ -452,751 +461,826 @@ bool activate_ability(void)
     // no turning back now... {dlb}
     const struct ability_def abil = get_ability_def(Curr_abil[abil_used].which);
 
-    // currently only delayed fireball is instantaneous -- bwr
-    you.turn_is_over = ((abil.flags & ABFLAG_INSTANT) ? 0 : 1);
-
-    if (random2avg(100, 3) < Curr_abil[abil_used].fail)
-    {
-        mpr("You fail to use your ability.");
-        return (false);
-    }
-
     if (!enough_mp( abil.mp_cost, false ))
         return (false);
 
     if (!enough_hp( abil.hp_cost, false ))
         return (false);
 
-    // Note: the costs will not be applied until after this switch
-    // statement... it's assumed that only failures have returned! -- bwr
-    switch (abil.ability)
+    // Finally test the activation... failure will still result in
+    // costs below, although success might give the player an
+    // additional chance to abort. -- bwr
+    if (roll_curved_percentile() < Curr_abil[abil_used].fail)
     {
-    case ABIL_MUMMY_RESTORATION:
-        mpr( "You infuse your body with magical energy." );
-        restore_stat( STAT_ALL, false );
-        unrot_hp( 100 );
-        break;
-
-    case ABIL_DELAYED_FIREBALL:
-        // Note: power level of ball calculated at release -- bwr
-        fireball( calc_spell_power( SPELL_DELAYED_FIREBALL, true ) );
-
-        // only one allowed since this is instantaneous -- bwr
-        you.attribute[ ATTR_DELAYED_FIREBALL ] = 0;
-        break;
-
-    case ABIL_GLAMOUR:
-        if (you.duration[DUR_GLAMOUR])
+        mpr("You fail to use your ability.");
+        ret = false;
+    }
+    else
+    {
+        // Note: the costs will not be applied until after this switch
+        // statement... it's assumed that only aborts have returned! -- bwr
+        switch (abil.ability)
         {
-            canned_msg(MSG_CANNOT_DO_YET);
-            return (false);
-        }
-
-        mpr("You use your Elvish wiles.");
-
-        cast_glamour( 10 + random2(you.experience_level)
-                         + random2(you.experience_level) );
-
-        you.duration[DUR_GLAMOUR] = 20 + random2avg(13, 3);
-        break;
-
-    case ABIL_SPIT_POISON:      // Naga + spit poison mutation
-        if (you.duration[DUR_BREATH_WEAPON])
-        {
-            canned_msg(MSG_CANNOT_DO_YET);
-            return (false);
-        }
-        else if (spell_direction(abild, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-        else
-        {
-            mpr("You spit poison.");
-
-            zapping( ZAP_SPIT_POISON,
-                     you.experience_level
-                        + you.mutation[MUT_SPIT_POISON] * 5
-                        + (you.species == SP_NAGA) * 10,
-                     beam );
-
-            you.duration[DUR_BREATH_WEAPON] = 3 + random2(5);
-        }
-        break;
-
-    case ABIL_EVOKE_MAPPING:    // randarts
-        mpr("You sense your surroundings.");
-
-        magic_mapping(  3 + roll_dice( 2, you.skills[SK_EVOCATIONS] ),
-                       40 + roll_dice( 2, you.skills[SK_EVOCATIONS] ) );
-
-        exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    case ABIL_MAPPING:          // Gnome + sense surrounds mut
-        mpr("You sense your surroundings.");
-
-        magic_mapping(  3 + roll_dice( 2, you.experience_level )
-                            + you.mutation[MUT_MAPPING] * 10,
-                       40 + roll_dice( 2, you.experience_level ) );
-        break;
-
-    case ABIL_EVOKE_TELEPORTATION:    // ring of teleportation
-    case ABIL_TELEPORTATION:          // teleport mut
-        if (you.mutation[MUT_TELEPORT_AT_WILL] == 3)
-            you_teleport2( true, true ); // instant and to new area of Abyss
-        else
-            you_teleport();
-
-        if (abil.ability == ABIL_EVOKE_TELEPORTATION)
-            exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    case ABIL_BREATHE_FIRE:
-    case ABIL_BREATHE_FROST:
-    case ABIL_BREATHE_POISON:
-    case ABIL_BREATHE_LIGHTNING:
-    case ABIL_SPIT_ACID:
-    case ABIL_BREATHE_POWER:
-    case ABIL_BREATHE_STICKY_FLAME:
-    case ABIL_BREATHE_STEAM:
-        if (you.duration[DUR_BREATH_WEAPON]
-            && Curr_abil[abil_used].which != ABIL_SPIT_ACID)
-        {
-            canned_msg(MSG_CANNOT_DO_YET);
-            return (false);
-        }
-        else if (spell_direction( abild, beam ) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        switch (Curr_abil[abil_used].which)
-        {
-        case ABIL_BREATHE_FIRE:
-            power = you.experience_level;
-            power += you.mutation[MUT_BREATHE_FLAMES] * 4;
-
-            if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
-                power += 12;
-
-            // don't check for hell serpents - they get hell fire,
-            // never regular fire (GDL)
-
-            snprintf( info, INFO_SIZE, "You breathe fire%c", (power < 15)?'.':'!');
-            mpr(info);
-
-            zapping( ZAP_BREATHE_FIRE, power, beam);
+        case ABIL_MUMMY_RESTORATION:
+            mpr( "You infuse your body with magical energy." );
+            restore_stat( STAT_ALL );
+            unrot_hp( 100 );
             break;
 
-        case ABIL_BREATHE_FROST:
-            mpr("You exhale a wave of freezing cold.");
-            zapping(ZAP_BREATHE_FROST, you.experience_level, beam);
+        case ABIL_DELAYED_FIREBALL:
+            // Note: power level of ball calculated at release -- bwr
+            if (!fireball( calc_spell_power( SPELL_DELAYED_FIREBALL ) ))
+                return (false);
+
+            // only one allowed since this is instantaneous -- bwr
+            you.attribute[ ATTR_DELAYED_FIREBALL ] = 0;
             break;
 
-        case ABIL_BREATHE_POISON:
-            mpr("You exhale a blast of poison gas.");
-            zapping(ZAP_BREATHE_POISON, you.experience_level, beam);
+        case ABIL_GLAMOUR:
+            if (you.duration[DUR_GLAMOUR])
+            {
+                canned_msg(MSG_CANNOT_DO_YET);
+                return (false);
+            }
+
+            mpr( "You use your Elvish wiles." );
+
+            cast_glamour( (you.xp_level - 4) * 10 );
+            you.duration[DUR_GLAMOUR] = 20 + random2(20);
             break;
 
-        case ABIL_BREATHE_LIGHTNING:
-            mpr("You spit a bolt of lightning.");
-            zapping(ZAP_LIGHTNING, (you.experience_level * 2), beam);
+        case ABIL_EVOKE_MAPPING:    // randarts
+            if (you.level_type == LEVEL_LABYRINTH
+                || you.level_type == LEVEL_ABYSS)
+            {
+                canned_msg( MSG_DISORIENTED );
+            }
+            else
+            {
+                mpr("You sense your surroundings.");
+
+                magic_mapping( 6 + (you.skills[SK_EVOCATIONS] + random2(3)) / 3,
+                               40 + roll_dice( 2, you.skills[SK_EVOCATIONS] ) );
+
+                exercise( SK_EVOCATIONS, 1 );
+            }
             break;
 
+        case ABIL_MAPPING:          // Gnome + sense surrounds mut
+            if (you.level_type == LEVEL_LABYRINTH
+                    || you.level_type == LEVEL_ABYSS)
+            {
+                canned_msg( MSG_DISORIENTED );
+            }
+            else if (you.level_type == LEVEL_PANDEMONIUM
+                        && you.mutation[MUT_PANDEMONIUM] < 2)
+            {
+                mpr("You are not attuned to Pandemonium.");
+            }
+            else
+            {
+                mpr("You sense your surroundings.");
+
+                int radius = 10 * you.mutation[MUT_MAPPING] + random2(6);
+                power = 40 + roll_dice( 2, you.xp_level );
+
+                if (you.species == SP_GNOME)
+                {
+                    radius += 6 + you.xp_level + random2(3);
+                    power = 55 + roll_dice( 3, (you.xp_level + 1) / 2 );
+                }
+
+                magic_mapping( radius, power );
+            }
+            break;
+
+        case ABIL_EVOKE_TELEPORTATION:    // ring of teleportation
+        case ABIL_TELEPORTATION:          // teleport mut
+            if (you.mutation[MUT_TELEPORT_AT_WILL] == 3)
+                you_teleport2( true, true ); // instant and to new area of Abyss
+            else
+                you_teleport();
+
+            if (abil.ability == ABIL_EVOKE_TELEPORTATION)
+                exercise( SK_EVOCATIONS, 1 );
+            break;
+
+        case ABIL_SPIT_POISON:          // Naga + spit poison mutation
+        case ABIL_BREATHE_HELLFIRE:     // hell serpent transformation
+        case ABIL_BREATHE_FIRE:         // mutation, dragon-form, drconian
         case ABIL_SPIT_ACID:
-            mpr("You spit acid.");
-            zapping(ZAP_BREATHE_ACID, you.experience_level, beam);
-            break;
-
+        case ABIL_BREATHE_FROST:
+        case ABIL_BREATHE_POISON:
+        case ABIL_BREATHE_LIGHTNING:
         case ABIL_BREATHE_POWER:
-            mpr("You spit a bolt of incandescent energy.");
-            zapping(ZAP_BREATHE_POWER, you.experience_level, beam);
-            break;
-
         case ABIL_BREATHE_STICKY_FLAME:
-            mpr("You spit a glob of burning liquid.");
-            zapping(ZAP_STICKY_FLAME, you.experience_level, beam);
-            break;
-
         case ABIL_BREATHE_STEAM:
-            mpr("You exhale a blast of scalding steam.");
-            zapping(ZAP_BREATHE_STEAM, you.experience_level, beam);
+            if (you.duration[DUR_BREATH_WEAPON])
+            {
+                canned_msg(MSG_CANNOT_DO_YET);
+                return (false);
+            }
+            else if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            power = (you.xp_level < 3) ? you.xp_level * 2
+                                       : you.xp_level + 3;
+
+            delay = 50 - power;
+
+            switch (Curr_abil[abil_used].which)
+            {
+            case ABIL_BREATHE_HELLFIRE:
+                // only available from hell serpent transformation
+                power = 50;
+                zapping( ZAP_HELLFIRE, power, beam );
+                break;
+
+            case ABIL_BREATHE_FIRE:
+                // don't check for hell serpents - they get hell fire,
+                // never regular fire (GDL)
+                if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
+                {
+                    power = 50;
+                    delay -= 10;
+                }
+                else if (you.mutation[MUT_BREATHE_FLAMES])
+                {
+                    power += 5 + 5 * you.mutation[MUT_BREATHE_FLAMES];
+                    delay -= 3 * you.mutation[MUT_BREATHE_FLAMES];
+                }
+
+                mpr( "You breathe fire%c", (power < 15) ? '.' : '!' );
+
+                zapping( ZAP_BREATHE_FIRE, power, beam );
+                break;
+
+            case ABIL_BREATHE_FROST:
+                mpr("You exhale a wave of freezing cold.");
+                zapping( ZAP_BREATHE_FROST, power, beam );
+                break;
+
+            case ABIL_BREATHE_POISON:
+                mpr("You exhale a blast of poison gas.");
+                zapping( ZAP_BREATHE_POISON, power, beam );
+                break;
+
+            case ABIL_BREATHE_LIGHTNING:
+                mpr("You spit a bolt of lightning.");
+                zapping( ZAP_BREATHE_LIGHTNING, power, beam );
+                break;
+
+            case ABIL_SPIT_ACID:
+                mpr("You spit acid.");
+                zapping( ZAP_BREATHE_ACID, power, beam );
+                break;
+
+            case ABIL_BREATHE_POWER:
+                mpr("You spit a bolt of incandescent energy.");
+                zapping( ZAP_BREATHE_POWER, power, beam );
+                break;
+
+            case ABIL_BREATHE_STICKY_FLAME:
+                mpr("You spit a glob of burning liquid.");
+                zapping( ZAP_BREATHE_STICKY_FLAME, power, beam );
+                break;
+
+            case ABIL_BREATHE_STEAM:
+                delay /= 2;
+                mpr("You exhale a blast of scalding steam.");
+                zapping( ZAP_BREATHE_STEAM, power, beam );
+                break;
+
+            case ABIL_SPIT_POISON:
+                if (you.mutation[MUT_SPIT_POISON])
+                {
+                    power += 5 + 5 * you.mutation[MUT_SPIT_POISON];
+                    delay -= 3 * you.mutation[MUT_SPIT_POISON];
+                }
+
+                mpr("You spit poison.");
+                zapping( ZAP_SPIT_POISON, power, beam );
+                break;
+
+            default:
+                break;
+            }
+
+            you.duration[DUR_BREATH_WEAPON] = 3 + roll_dice( 2, delay );
             break;
 
-        }
+        case ABIL_BLINK:            // mutation
+            random_blink( 8 + (you.xp_level + 3) * 3 );
+            break;
 
-        if (Curr_abil[abil_used].which != ABIL_SPIT_ACID)
-        {
-            you.duration[DUR_BREATH_WEAPON] = 3 + random2(5)
-                                                + random2(30 - you.experience_level);
-        }
-
-        if (Curr_abil[abil_used].which == ABIL_BREATHE_STEAM)
-        {
-            you.duration[DUR_BREATH_WEAPON] /= 2;
-        }
-        break;
-
-    case ABIL_EVOKE_BLINK:      // randarts
-    case ABIL_BLINK:            // mutation
-        random_blink(true);
-
-        if (abil.ability == ABIL_EVOKE_BLINK)
+        case ABIL_EVOKE_BLINK:      // randarts
+            random_blink( 8 + skill_bump( SK_EVOCATIONS ) * 3 );
             exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    case ABIL_EVOKE_BERSERK:    // amulet of rage, randarts
-        if (you.hunger_state < HS_SATIATED)
-        {
-            mpr("You're too hungry to berserk.");
-            return (false);
-        }
-
-        go_berserk(true);
-        exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    // fly (kenku) -- eventually becomes permanent (see acr.cc)
-    case ABIL_FLY:
-        cast_fly( you.experience_level * 4 );
-
-        if (you.experience_level > 14)
-        {
-            mpr("You feel very comfortable in the air.");
-            you.levitation = 100;
-            you.duration[DUR_CONTROLLED_FLIGHT] = 100;
-        }
-        break;
-
-    case ABIL_FLY_II:           // Fly (Draconians, or anything else with wings)
-        if (you.exhausted)
-        {
-            mpr("You're too exhausted to fly.");
-            return (false);
-        }
-        else if (you.burden_state != BS_UNENCUMBERED)
-        {
-            mpr("You're carrying too much weight to fly.");
-            return (false);
-        }
-        else
-        {
-            cast_fly( you.experience_level * 2 );
-            // you.attribute[ATTR_EXPENSIVE_FLIGHT] = 1;  // unused
-        }
-        break;
-
-    // DEMONIC POWERS:
-    case ABIL_SUMMON_MINOR_DEMON:
-        summon_ice_beast_etc( you.experience_level * 4,
-                                     summon_any_demon(DEMON_LESSER) );
-        break;
-
-    case ABIL_SUMMON_DEMON:
-        summon_ice_beast_etc( you.experience_level * 4,
-                                     summon_any_demon(DEMON_COMMON) );
-        break;
-
-    case ABIL_HELLFIRE:
-        your_spells(SPELL_HELLFIRE, 20 + you.experience_level, false);
-        break;
-
-    case ABIL_TORMENT:
-        if (you.is_undead)
-        {
-            mpr("The unliving cannot use this ability.");
-            return (false);
-        }
-
-        torment(you.x_pos, you.y_pos);
-        break;
-
-    case ABIL_RAISE_DEAD:
-        your_spells(SPELL_ANIMATE_DEAD, you.experience_level * 5, false);
-        break;
-
-    case ABIL_CONTROL_DEMON:
-        if (spell_direction(abild, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping(ZAP_CONTROL_DEMON, you.experience_level * 5, beam);
-        break;
-
-    case ABIL_TO_PANDEMONIUM:
-        if (you.level_type == LEVEL_PANDEMONIUM)
-        {
-            mpr("You're already here.");
-            return (false);
-        }
-
-        banished(DNGN_ENTER_PANDEMONIUM);
-        break;
-
-    case ABIL_CHANNELING:
-        mpr("You channel some magical energy.");
-        inc_mp(1 + random2(5), false);
-        break;
-
-    case ABIL_THROW_FLAME:
-    case ABIL_THROW_FROST:
-        if (spell_direction(abild, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping( (Curr_abil[abil_used].which == ABIL_THROW_FLAME ? ZAP_FLAME
-                                                                 : ZAP_FROST),
-                    you.experience_level * 3,
-                    beam );
-        break;
-
-    case ABIL_BOLT_OF_DRAINING:
-        if (spell_direction(abild, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping(ZAP_NEGATIVE_ENERGY, you.experience_level * 6, beam);
-        break;
-
-    case ABIL_EVOKE_TURN_INVISIBLE:     // ring, randarts, darkness items
-        if (you.hunger_state < HS_SATIATED)
-        {
-            mpr("You're too hungry to turn invisible.");
-            return (false);
-        }
-
-        potion_effect( POT_INVISIBILITY, 2 * you.skills[SK_EVOCATIONS] + 5 );
-        contaminate_player( 1 + random2(3) );
-        exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    case ABIL_EVOKE_TURN_VISIBLE:
-        mpr("You feel less transparent.");
-        you.invis = 1;
-        break;
-
-    case ABIL_EVOKE_LEVITATE:           // ring, boots, randarts
-        potion_effect( POT_LEVITATION, 2 * you.skills[SK_EVOCATIONS] + 30 );
-        exercise( SK_EVOCATIONS, 1 );
-        break;
-
-    case ABIL_EVOKE_STOP_LEVITATING:
-        mpr("You feel heavy.");
-        you.levitation = 1;
-        break;
-
-    case ABIL_END_TRANSFORMATION:
-        mpr("You feel almost normal.");
-        you.duration[DUR_TRANSFORMATION] = 2;
-        break;
-
-    // INVOCATIONS:
-    case ABIL_ZIN_REPEL_UNDEAD:
-    case ABIL_TSO_REPEL_UNDEAD:
-        turn_undead(you.piety);
-
-        if (!you.duration[DUR_REPEL_UNDEAD])
-            mpr( "You feel a holy aura protecting you." );
-
-        you.duration[DUR_REPEL_UNDEAD] += 8
-                                + roll_dice(2, 2 * you.skills[SK_INVOCATIONS]);
-
-        if (you.duration[ DUR_REPEL_UNDEAD ] > 50)
-            you.duration[ DUR_REPEL_UNDEAD ] = 50;
-
-        exercise(SK_INVOCATIONS, 1);
-        break;
-
-    case ABIL_ZIN_HEALING:
-        if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
             break;
 
-        exercise(SK_INVOCATIONS, 1 + random2(3));
-        break;
+        case ABIL_EVOKE_BERSERK:    // amulet of rage, randarts
+            if (you.hunger_state < HS_SATIATED)
+            {
+                mpr("You're too hungry to go berserk.");
+                return (false);
+            }
 
-    case ABIL_ZIN_PESTILENCE:
-        mpr( "You call forth a swarm of pestilential beasts!" );
-
-        if (!summon_swarm( you.skills[SK_INVOCATIONS] * 8, false, true ))
-            mpr( "Nothing seems to have answered your call." );
-
-        exercise( SK_INVOCATIONS, 2 + random2(4) );
-        break;
-
-    case ABIL_ZIN_HOLY_WORD:
-        holy_word( you.skills[SK_INVOCATIONS] * 8 );
-        exercise(SK_INVOCATIONS, 3 + random2(5));
-        break;
-
-    case ABIL_ZIN_SUMMON_GUARDIAN:
-        summon_ice_beast_etc(you.skills[SK_INVOCATIONS] * 4, MONS_ANGEL);
-        exercise(SK_INVOCATIONS, 8 + random2(10));
-        break;
-
-    case ABIL_TSO_SMITING:
-        cast_smiting( you.skills[SK_INVOCATIONS] * 6 );
-        exercise( SK_INVOCATIONS, (coinflip()? 3 : 2) );
-        break;
-
-    case ABIL_TSO_ANNIHILATE_UNDEAD:
-        if (spell_direction(spd, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping(ZAP_DISPEL_UNDEAD, you.skills[SK_INVOCATIONS] * 6, beam);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
-
-    case ABIL_TSO_THUNDERBOLT:
-        if (spell_direction(spd, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping(ZAP_LIGHTNING, you.skills[SK_INVOCATIONS] * 6, beam);
-        exercise(SK_INVOCATIONS, 3 + random2(6));
-        break;
-
-    case ABIL_TSO_SUMMON_DAEVA:
-        summon_ice_beast_etc(you.skills[SK_INVOCATIONS] * 4, MONS_DAEVA);
-        exercise(SK_INVOCATIONS, 8 + random2(10));
-        break;
-
-    case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
-        recall(1);
-        exercise(SK_INVOCATIONS, 1);
-        break;
-
-    case ABIL_KIKU_ENSLAVE_UNDEAD:
-        if (spell_direction(spd, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        zapping( ZAP_ENSLAVE_UNDEAD, you.skills[SK_INVOCATIONS] * 8, beam );
-        exercise(SK_INVOCATIONS, 5 + random2(5));
-        break;
-
-    case ABIL_KIKU_INVOKE_DEATH:
-        summon_ice_beast_etc(20 + you.skills[SK_INVOCATIONS] * 3, MONS_REAPER);
-        exercise(SK_INVOCATIONS, 10 + random2(14));
-        break;
-
-    case ABIL_YRED_ANIMATE_CORPSE:
-        mpr("You call on the dead to walk for you...");
-
-        animate_a_corpse( you.x_pos, you.y_pos, BEH_FRIENDLY,
-                          you.pet_target, CORPSE_BODY );
-
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
-
-    case ABIL_YRED_RECALL_UNDEAD:
-        recall(1);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
-
-    case ABIL_YRED_ANIMATE_DEAD:
-        mpr("You call on the dead to walk for you...");
-
-        animate_dead( 1 + you.skills[SK_INVOCATIONS], BEH_FRIENDLY,
-                      you.pet_target, 1 );
-
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
-
-    case ABIL_YRED_DRAIN_LIFE:
-        drain_life( you.skills[SK_INVOCATIONS] );
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
-
-    case ABIL_YRED_CONTROL_UNDEAD:
-        mass_enchantment( ENCH_CHARM, you.skills[SK_INVOCATIONS] * 8, MHITYOU );
-        exercise(SK_INVOCATIONS, 3 + random2(4));
-        break;
-
-    case ABIL_VEHUMET_CHANNEL_ENERGY:
-        mpr("You channel some magical energy.");
-
-        inc_mp(1 + random2(you.skills[SK_INVOCATIONS] / 4 + 2), false);
-        exercise(SK_INVOCATIONS, 1 + random2(3));
-        break;
-
-    case ABIL_OKAWARU_MIGHT:
-        potion_effect( POT_MIGHT, you.skills[SK_INVOCATIONS] * 8 );
-        exercise(SK_INVOCATIONS, 1 + random2(3));
-        break;
-
-    case ABIL_OKAWARU_HEALING:
-        if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
+            go_berserk(true);
+            exercise( SK_EVOCATIONS, 1 );
             break;
 
-        exercise(SK_INVOCATIONS, 2 + random2(5));
-        break;
+        // fly (kenku) -- eventually becomes permanent (see acr.cc)
+        case ABIL_FLY:
+            cast_fly( you.xp_level * 4 );
 
-    case ABIL_OKAWARU_HASTE:
-        potion_effect( POT_SPEED, you.skills[SK_INVOCATIONS] * 8 );
-        exercise(SK_INVOCATIONS, 3 + random2(7));
-        break;
-
-    case ABIL_MAKHLEB_MINOR_DESTRUCTION:
-        if (spell_direction(spd, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        power = you.skills[SK_INVOCATIONS]
-                    + random2( 1 + you.skills[SK_INVOCATIONS] )
-                    + random2( 1 + you.skills[SK_INVOCATIONS] );
-
-        switch (random2(5))
-        {
-        case 0: zapping( ZAP_FLAME,        power,     beam ); break;
-        case 1: zapping( ZAP_PAIN,         power,     beam ); break;
-        case 2: zapping( ZAP_STONE_ARROW,  power,     beam ); break;
-        case 3: zapping( ZAP_ELECTRICITY,  power,     beam ); break;
-        case 4: zapping( ZAP_BREATHE_ACID, power / 2, beam ); break;
-        }
-
-        exercise(SK_INVOCATIONS, 1);
-        break;
-
-    case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:
-        summon_ice_beast_etc( 20 + you.skills[SK_INVOCATIONS] * 3,
-                              MONS_NEQOXEC + random2(5) );
-
-        exercise(SK_INVOCATIONS, 2 + random2(3));
-        break;
-
-    case ABIL_MAKHLEB_MAJOR_DESTRUCTION:
-        if (spell_direction(spd, beam) == -1)
-        {
-            canned_msg(MSG_OK);
-            return (false);
-        }
-
-        power = you.skills[SK_INVOCATIONS] * 3
-                    + random2( 1 + you.skills[SK_INVOCATIONS] )
-                    + random2( 1 + you.skills[SK_INVOCATIONS] );
-
-        switch (random2(8))
-        {
-        case 0: zapping( ZAP_FIRE,               power, beam ); break;
-        case 1: zapping( ZAP_FIREBALL,           power, beam ); break;
-        case 2: zapping( ZAP_LIGHTNING,          power, beam ); break;
-        case 3: zapping( ZAP_NEGATIVE_ENERGY,    power, beam ); break;
-        case 4: zapping( ZAP_STICKY_FLAME,       power, beam ); break;
-        case 5: zapping( ZAP_IRON_BOLT,          power, beam ); break;
-        case 6: zapping( ZAP_ORB_OF_ELECTRICITY, power, beam ); break;
-
-        case 7:
-            you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
-            mpr("Makhleb hurls a blast of lightning!");
-
-            // make a divine lightning bolt...
-            beam.beam_source = NON_MONSTER;
-            beam.type = SYM_BURST;
-            beam.damage = dice_def( 3, 30 );
-            beam.flavour = BEAM_ELECTRICITY;
-            beam.target_x = you.x_pos;
-            beam.target_y = you.y_pos;
-            strcpy(beam.beam_name, "blast of lightning");
-            beam.colour = LIGHTCYAN;
-            beam.thrower = KILL_YOU;
-            beam.aux_source = "Makhleb's lightning strike";
-            beam.ex_size = 1 + you.skills[SK_INVOCATIONS] / 8;
-            beam.isTracer = false;
-
-            // ... and fire!
-            explosion(beam);
-
-            // protection down
-            mpr("Your divine protection wanes.");
-            you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
-            break;
-        }
-
-        exercise(SK_INVOCATIONS, 3 + random2(5));
-        break;
-
-    case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:
-        summon_ice_beast_etc( 20 + you.skills[SK_INVOCATIONS] * 3,
-                              MONS_EXECUTIONER + random2(5) );
-
-        exercise(SK_INVOCATIONS, 6 + random2(6));
-        break;
-
-    case ABIL_TROG_BERSERK:
-        // Trog abilities don't use or train invocations.
-        if (you.hunger_state < HS_SATIATED)
-        {
-            mpr("You're too hungry to berserk.");
-            return (false);
-        }
-
-        go_berserk(true);
-        break;
-
-    case ABIL_TROG_MIGHT:
-        // Trog abilities don't use or train invocations.
-        potion_effect( POT_MIGHT, 150 );
-        break;
-
-    case ABIL_TROG_HASTE_SELF:
-        // Trog abilities don't use or train invocations.
-        potion_effect( POT_SPEED, 150 );
-        break;
-
-    case ABIL_SIF_MUNA_FORGET_SPELL:
-        cast_selective_amnesia(true);
-        break;
-
-    case ABIL_ELYVILON_LESSER_HEALING:
-        if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
+            if (you.xp_level > 14)
+            {
+                mpr("You feel very comfortable in the air.");
+                you.levitation = 100;
+                you.duration[DUR_CONTROLLED_FLIGHT] = 100;
+            }
             break;
 
-        exercise( SK_INVOCATIONS, 1 );
-        break;
-
-    case ABIL_ELYVILON_PURIFICATION:
-        purification();
-        exercise( SK_INVOCATIONS, 2 + random2(3) );
-        break;
-
-    case ABIL_ELYVILON_HEALING:
-        if (!cast_healing( 10 + (you.skills[SK_INVOCATIONS] / 3) ))
+        case ABIL_FLY_II:       // Fly (Draconians, or anything else with wings)
+            if (you.exhausted)
+            {
+                mpr("You're too exhausted to fly.");
+                return (false);
+            }
+            else if (you.burden_state != BS_UNENCUMBERED)
+            {
+                mpr("You're carrying too much weight to fly.");
+                return (false);
+            }
+            else
+            {
+                cast_fly( you.xp_level * 2 );
+                // you.attribute[ATTR_EXPENSIVE_FLIGHT] = 1;  // unused
+            }
             break;
 
-        exercise( SK_INVOCATIONS, 3 + random2(5) );
-        break;
-
-    case ABIL_ELYVILON_RESTORATION:
-        restore_stat( STAT_ALL, false );
-        unrot_hp( 100 );
-
-        exercise( SK_INVOCATIONS, 4 + random2(6) );
-        break;
-
-    case ABIL_ELYVILON_GREATER_HEALING:
-        if (!cast_healing( 20 + you.skills[SK_INVOCATIONS] * 2 ))
+        // DEMONIC POWERS:
+        case ABIL_SUMMON_MINOR_DEMON:
+        case ABIL_SUMMON_DEMONS:
+            summon_demons( 4 * you.xp_level,
+                           (abil.ability == ABIL_SUMMON_DEMONS) );
             break;
 
-        exercise( SK_INVOCATIONS, 6 + random2(10) );
-        break;
+        case ABIL_RAISE_DEAD:
+            power = 10;
 
-    //jmf: intended as invocations from evil god(s):
-    case ABIL_CHARM_SNAKE:
-        cast_snake_charm( you.experience_level * 2
-                            + you.skills[SK_INVOCATIONS] * 3 );
+            if (you.mutation[MUT_RAISE_DEAD] > 1)
+                power += 20 + 5 * you.xp_level;
 
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
+            your_spells( SPELL_ANIMATE_DEAD, power, false );
+            break;
 
-    case ABIL_TRAN_SERPENT_OF_HELL:
-        transform(10 + (you.experience_level * 2) +
-                  (you.skills[SK_INVOCATIONS] * 3), TRAN_SERPENT_OF_HELL);
+        case ABIL_ENSLAVE_UNDEAD:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
 
-        exercise(SK_INVOCATIONS, 6 + random2(9));
-        break;
+            zapping( ZAP_ENSLAVE_UNDEAD, 4 * you.xp_level, beam );
+            break;
 
-    case ABIL_BREATHE_HELLFIRE:
-        if (you.duration[DUR_BREATH_WEAPON])
-        {
-            canned_msg(MSG_CANNOT_DO_YET);
-            return (false);
-        }
+        case ABIL_CONTROL_DEMON:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
 
-        your_spells( SPELL_HELLFIRE, 20 + you.experience_level, false );
+            zapping( ZAP_CONTROL_DEMON, 4 * you.xp_level, beam );
+            break;
 
-        you.duration[DUR_BREATH_WEAPON] +=
-                        3 + random2(5) + random2(30 - you.experience_level);
-        break;
+        case ABIL_TO_PANDEMONIUM:
+            if (you.level_type == LEVEL_PANDEMONIUM
+                && (you.mutation[MUT_PANDEMONIUM] < 3 || !one_chance_in(3)))
+            {
+                mpr("You're stuck here.");
+            }
+            else if (you.level_type == LEVEL_PANDEMONIUM
+                    || yesno( "Are you sure you want to gate yourself to Pandemonium?" ))
+            {
+                banished( DNGN_ENTER_PANDEMONIUM );
+            }
+            break;
 
-    case ABIL_ROTTING:
-        cast_rotting(you.experience_level * 2 + you.skills[SK_INVOCATIONS] * 3);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
+        case ABIL_CHANNELING:
+            mpr( "You channel some magical energy." );
+            power = (you.mutation[MUT_CHANNEL_HELL] > 1) ? 5 : 3;
+            inc_mp( roll_dice( 1, power ), false );
+            break;
 
-    case ABIL_TORMENT_II:
-        if (you.is_undead)
-        {
-            mpr("The unliving cannot use this ability.");
-            return (false);
-        }
+        case ABIL_THROW_FLAME:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
 
-        torment(you.x_pos, you.y_pos);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
+            zapping( ZAP_FLAME, 2 * you.xp_level, beam );
+            break;
 
-    case ABIL_SHUGGOTH_SEED:
-        if (you.duration[DUR_SHUGGOTH_SEED_RELOAD])
-        {
-            canned_msg(MSG_CANNOT_DO_YET);
-            return (false);
-        }
+        case ABIL_BOLT_OF_FIRE:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
 
-        cast_shuggoth_seed( you.experience_level * 2
+            zapping( ZAP_FIRE, 3 * you.xp_level, beam );
+            break;
+
+        case ABIL_HELLFIRE:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_HELLFIRE, 4 * you.xp_level, beam );
+            break;
+
+        case ABIL_THROW_FROST:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_FROST, 2 * you.xp_level, beam );
+            break;
+
+        case ABIL_BOLT_OF_COLD:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_COLD, 3 * you.xp_level, beam );
+            break;
+
+
+        case ABIL_HELLFROST:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_HELLFROST, 4 * you.xp_level, beam );
+            break;
+
+        case ABIL_PAIN:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_PAIN, 2 * you.xp_level, beam );
+            break;
+
+        case ABIL_BOLT_OF_DRAINING:
+            if (!spell_direction( abild, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_NEGATIVE_ENERGY, 3 * you.xp_level, beam );
+            break;
+
+        case ABIL_TORMENT:
+            if (you.is_undead)
+            {
+                mpr("The unliving cannot use this ability.");
+                return (false);
+            }
+
+            torment( you.x_pos, you.y_pos );
+            break;
+
+        case ABIL_EVOKE_TURN_INVISIBLE:     // ring, randarts, darkness items
+            if (you.hunger_state < HS_SATIATED)
+            {
+                mpr("You're too hungry to turn invisible.");
+                return (false);
+            }
+
+            potion_effect( POT_INVISIBILITY, 2 * you.skills[SK_EVOCATIONS] + 5 );
+            contaminate_player( 1 + random2(3) );
+            exercise( SK_EVOCATIONS, 1 );
+            break;
+
+        case ABIL_EVOKE_TURN_VISIBLE:
+            mpr( "You feel less transparent." );
+            you.invis = 1;
+            break;
+
+        case ABIL_EVOKE_LEVITATE:           // ring, boots, randarts
+            potion_effect( POT_LEVITATION, 2 * you.skills[SK_EVOCATIONS] + 30 );
+            exercise( SK_EVOCATIONS, 1 );
+            break;
+
+        case ABIL_EVOKE_STOP_LEVITATING:
+            mpr( "You feel heavy." );
+            you.levitation = 1;
+            break;
+
+        case ABIL_END_TRANSFORMATION:
+            mpr( "You feel almost normal." );
+            power = 2 + random2(4);
+            if (you.duration[DUR_TRANSFORMATION] > power)
+                you.duration[DUR_TRANSFORMATION] = power;
+            break;
+
+        // INVOCATIONS:
+        case ABIL_ZIN_REPEL_UNDEAD:
+        case ABIL_TSO_REPEL_UNDEAD:
+            turn_undead(you.piety);
+
+            if (!you.duration[DUR_REPEL_UNDEAD])
+                mpr( "You feel a holy aura protecting you." );
+
+            you.duration[DUR_REPEL_UNDEAD] += 8
+                                    + roll_dice(2, 2 * you.skills[SK_INVOCATIONS]);
+
+            if (you.duration[DUR_REPEL_UNDEAD] > 50)
+                you.duration[DUR_REPEL_UNDEAD] = 50;
+
+            exercise( SK_INVOCATIONS, 1 );
+            break;
+
+        case ABIL_ZIN_HEALING:
+            if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, 1 + random2(3) );
+            break;
+
+        case ABIL_ZIN_PESTILENCE:
+            mpr( "You call forth a swarm of pestilential beasts!" );
+
+            if (!summon_swarm( 30 + you.skills[SK_INVOCATIONS] * 5, false, true ))
+                mpr( "Nothing seems to have answered your call." );
+
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_ZIN_HOLY_WORD:
+            holy_word( you.skills[SK_INVOCATIONS] * 8, false );
+            exercise( SK_INVOCATIONS, 3 + random2(5) );
+            break;
+
+        case ABIL_ZIN_SUMMON_GUARDIAN:
+            summon_ice_beast_etc( you.skills[SK_INVOCATIONS] * 4,
+                                  MONS_ANGEL, BEH_GOD_GIFT );
+
+            exercise( SK_INVOCATIONS, 8 + random2(10) );
+            break;
+
+        case ABIL_TSO_SMITING:
+            if (!cast_smiting( you.skills[SK_INVOCATIONS] * 4 ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, (coinflip()? 3 : 2) );
+            break;
+
+        case ABIL_TSO_ANNIHILATE_UNDEAD:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping(ZAP_DISPEL_UNDEAD, 50 + you.skills[SK_INVOCATIONS] * 6, beam);
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_TSO_CLEANSING_FLAME:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_CLEANSING_FLAME, 20 + you.skills[SK_INVOCATIONS] * 5, beam );
+            exercise( SK_INVOCATIONS, 3 + random2(6) );
+            break;
+
+        case ABIL_TSO_SUMMON_DAEVA:
+            summon_ice_beast_etc( you.skills[SK_INVOCATIONS] * 4,
+                                  MONS_DAEVA, BEH_GOD_GIFT );
+
+            exercise( SK_INVOCATIONS, 8 + random2(10) );
+            break;
+
+        case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
+            recall( true );
+            break;
+
+        case ABIL_KIKU_ENSLAVE_UNDEAD:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            zapping( ZAP_ENSLAVE_UNDEAD, you.skills[SK_NECROMANCY] * 8, beam );
+            break;
+
+        case ABIL_KIKU_INVOKE_DEATH:
+            summon_ice_beast_etc( 20 + you.skills[SK_NECROMANCY] * 3,
+                                  MONS_REAPER, BEH_GOD_GIFT );
+            break;
+
+        case ABIL_YRED_ANIMATE_CORPSE:
+            mpr("You call on the dead to walk for you...");
+
+            succ = animate_a_corpse( you.x_pos, you.y_pos, BEH_FRIENDLY,
+                                     you.pet_target, CORPSE_BODY );
+
+            exercise( SK_INVOCATIONS, ((succ) ? 2 + random2(4) : 1) );
+            break;
+
+        case ABIL_YRED_RECALL_UNDEAD:
+            recall( true );
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_YRED_ANIMATE_DEAD:
+            mpr("You call on the dead to walk for you...");
+            animate_dead( 12 + 8 * you.skills[SK_INVOCATIONS],
+                          you.x_pos, you.y_pos, BEH_FRIENDLY, you.pet_target, 1 );
+
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_YRED_DRAIN_LIFE:
+            drain_life( 4 * you.skills[SK_INVOCATIONS] );
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_YRED_CONTROL_UNDEAD:
+            mass_enchantment( ENCH_CHARM, you.skills[SK_INVOCATIONS] * 8,
+                              MHITYOU );
+
+            exercise( SK_INVOCATIONS, 3 + random2(4) );
+            break;
+
+        case ABIL_VEHUMET_CHANNEL_ENERGY:
+            mpr("You channel some magical energy.");
+
+            inc_mp( 1 + random2( 2 + skill_bump(SK_INVOCATIONS) / 6 ), false );
+            exercise( SK_INVOCATIONS, 3 + random2(4) );
+            break;
+
+        case ABIL_OKAWARU_MIGHT:
+            potion_effect( POT_MIGHT, you.skills[SK_INVOCATIONS] * 8 );
+            exercise( SK_INVOCATIONS, 1 + random2(3) );
+            break;
+
+        case ABIL_OKAWARU_HEALING:
+            if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, 2 + random2(5) );
+            break;
+
+        case ABIL_OKAWARU_HASTE:
+            potion_effect( POT_SPEED, you.skills[SK_INVOCATIONS] * 8 );
+            exercise( SK_INVOCATIONS, 3 + random2(7) );
+            break;
+
+        case ABIL_MAKHLEB_MINOR_DESTRUCTION:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            power = you.skills[SK_INVOCATIONS]
+                        + random2( 1 + you.skills[SK_INVOCATIONS] )
+                        + random2( 1 + you.skills[SK_INVOCATIONS] );
+
+            switch (random2(5))
+            {
+            case 0: zapping( ZAP_FLAME,        power,     beam ); break;
+            case 1: zapping( ZAP_PAIN,         power,     beam ); break;
+            case 2: zapping( ZAP_STONE_ARROW,  power,     beam ); break;
+            case 3: zapping( ZAP_ELECTRICITY,  power,     beam ); break;
+            case 4: zapping( ZAP_BREATHE_ACID, power / 2, beam ); break;
+            }
+
+            exercise( SK_INVOCATIONS, 1 );
+            break;
+
+        case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:
+            summon_ice_beast_etc( 20 + you.skills[SK_INVOCATIONS] * 3,
+                                  MONS_NEQOXEC + random2(5), BEH_GOD_GIFT );
+
+            exercise( SK_INVOCATIONS, 2 + random2(3) );
+            break;
+
+        case ABIL_MAKHLEB_MAJOR_DESTRUCTION:
+            if (!spell_direction( spd, beam ))
+            {
+                canned_msg(MSG_OK);
+                return (false);
+            }
+
+            power = you.skills[SK_INVOCATIONS] * 2
+                        + random2( 1 + you.skills[SK_INVOCATIONS] )
+                        + random2( 1 + you.skills[SK_INVOCATIONS] )
+                        + random2( 1 + you.skills[SK_INVOCATIONS] );
+
+            switch (random2(8))
+            {
+            case 0: zapping( ZAP_FIRE,               power, beam ); break;
+            case 1: zapping( ZAP_FIREBALL,           power, beam ); break;
+            case 2: zapping( ZAP_LIGHTNING,          power, beam ); break;
+            case 3: zapping( ZAP_NEGATIVE_ENERGY,    power, beam ); break;
+            case 4: zapping( ZAP_STICKY_FLAME,       power, beam ); break;
+            case 5: zapping( ZAP_IRON_BOLT,          power, beam ); break;
+            case 6: zapping( ZAP_ORB_OF_ELECTRICITY, power, beam ); break;
+
+            case 7:
+                you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 1;
+                mpr("Makhleb hurls a blast of lightning!");
+
+                // make a divine lightning bolt...
+                beam.beam_source = MHITYOU;
+                beam.type = SYM_BURST;
+                beam.damage = dice_def( 3, 30 );
+                beam.flavour = BEAM_ELECTRICITY;
+                beam.target_x = you.x_pos;
+                beam.target_y = you.y_pos;
+                strcpy(beam.name, "blast of lightning");
+                beam.colour = LIGHTCYAN;
+                beam.thrower = KILL_YOU;
+                beam.aux_source = "Makhleb's lightning strike";
+                beam.ex_size = 1 + you.skills[SK_INVOCATIONS] / 8;
+                beam.is_tracer = false;
+
+                // ... and fire!
+                explosion(beam);
+
+                // protection down
+                mpr("Your divine protection wanes.");
+                you.attribute[ATTR_DIVINE_LIGHTNING_PROTECTION] = 0;
+                break;
+            }
+
+            exercise( SK_INVOCATIONS, 3 + random2(5) );
+            break;
+
+        case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:
+            summon_ice_beast_etc( 20 + you.skills[SK_INVOCATIONS] * 3,
+                                  MONS_EXECUTIONER + random2(5), BEH_GOD_GIFT );
+
+            exercise( SK_INVOCATIONS, 6 + random2(6) );
+            break;
+
+        case ABIL_TROG_BERSERK:
+            // Trog abilities don't use or train invocations.
+            if (you.hunger_state < HS_SATIATED)
+            {
+                mpr("You're too hungry to berserk.");
+                return (false);
+            }
+
+            go_berserk(true);
+            break;
+
+        case ABIL_TROG_MIGHT:
+            // Trog abilities don't use or train invocations.
+            potion_effect( POT_MIGHT, 150 );
+            break;
+
+        case ABIL_TROG_HASTE_SELF:
+            // Trog abilities don't use or train invocations.
+            potion_effect( POT_SPEED, 150 );
+            break;
+
+        case ABIL_SIF_MUNA_FORGET_SPELL:
+            cast_selective_amnesia(true);
+            break;
+
+        case ABIL_ELYVILON_LESSER_HEALING:
+            if (!cast_healing( 3 + (you.skills[SK_INVOCATIONS] / 6) ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, 1 );
+            break;
+
+        case ABIL_ELYVILON_PURIFICATION:
+            purification();
+            exercise( SK_INVOCATIONS, 2 + random2(3) );
+            break;
+
+        case ABIL_ELYVILON_HEALING:
+            if (!cast_healing( 10 + (you.skills[SK_INVOCATIONS] / 3) ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, 3 + random2(5) );
+            break;
+
+        case ABIL_ELYVILON_RESTORATION:
+            restore_stat( STAT_ALL );
+            unrot_hp( 100 );
+
+            exercise( SK_INVOCATIONS, 4 + random2(6) );
+            break;
+
+        case ABIL_ELYVILON_GREATER_HEALING:
+            if (!cast_healing( 20 + you.skills[SK_INVOCATIONS] * 2 ))
+                return (false);
+
+            exercise( SK_INVOCATIONS, 6 + random2(10) );
+            break;
+
+        //jmf: intended as invocations from evil god(s):
+        case ABIL_CHARM_SNAKE:
+            cast_snake_charm( you.xp_level * 2
                                 + you.skills[SK_INVOCATIONS] * 3 );
 
-        you.duration[DUR_SHUGGOTH_SEED_RELOAD] = 10 + random2avg(39, 2);
-        exercise(SK_INVOCATIONS, 2 + random2(4));
-        break;
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
 
-    case ABIL_RENOUNCE_RELIGION:
-        if (yesno("Really renounce your faith, foregoing its fabulous benefits?")
-            && yesno( "Are you sure you won't change your mind later?" ))
-        {
-            excommunication();
-        }
-        else
-        {
-            canned_msg(MSG_OK);
-        }
-        break;
+        case ABIL_TRAN_SERPENT_OF_HELL:
+            transform(10 + (you.xp_level * 2) +
+                      (you.skills[SK_INVOCATIONS] * 3), TRAN_SERPENT_OF_HELL);
 
-    default:
-        mpr("Sorry, you can't do that.");
-        break;
+            exercise( SK_INVOCATIONS, 6 + random2(9) );
+            break;
+
+        case ABIL_ROTTING:
+            cast_rotting(you.xp_level * 2 + you.skills[SK_INVOCATIONS] * 3);
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_TORMENT_II:
+            if (you.is_undead)
+            {
+                mpr("The unliving cannot use this ability.");
+                return (false);
+            }
+
+            torment( you.x_pos, you.y_pos );
+            exercise( SK_INVOCATIONS, 2 + random2(4) );
+            break;
+
+        case ABIL_RENOUNCE_RELIGION:
+            if (yesno("Really renounce your faith, foregoing its fabulous benefits?")
+                && yesno( "Are you sure you won't change your mind later?" ))
+            {
+                excommunication();
+            }
+            else
+            {
+                canned_msg(MSG_OK);
+            }
+            break;
+
+        default:
+            mpr( "That ability does not exist." );
+            return (false);
+        }
     }
 
-    // All failures should have returned by this point, so we'll
+    // All abort type failures should have returned by this point, so we'll
     // apply the costs -- its not too neat, but it works for now. -- bwr
-    const int food_cost = abil.food_cost + random2avg(abil.food_cost, 2);
+    const int food_cost = abil.food_cost + roll_dice( 2, abil.food_cost / 2 );
     const int piety_cost = abil.piety_cost + random2((abil.piety_cost + 1) / 2 + 1);
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "Cost: mp=%d; hp=%d; food=%d; piety=%d",
-              abil.mp_cost, abil.hp_cost, food_cost, piety_cost );
-
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, "Cost: mp=%d; hp=%d; food=%d; piety=%d",
+         abil.mp_cost, abil.hp_cost, food_cost, piety_cost );
 #endif
+
+    // currently only delayed fireball is instantaneous -- bwr
+    you.turn_is_over = ((abil.flags & ABFLAG_INSTANT) ? false : true);
 
     if (abil.mp_cost)
     {
         dec_mp( abil.mp_cost );
         if (abil.flags & ABFLAG_PERMANENT_MP)
-            rot_mp(1);
+            rot_mp( abil.mp_cost );
     }
 
     if (abil.hp_cost)
     {
         dec_hp( abil.hp_cost, false );
         if (abil.flags & ABFLAG_PERMANENT_HP)
-            rot_hp(1);
+            rot_hp( abil.hp_cost );
     }
 
     if (food_cost)
@@ -1205,17 +1289,16 @@ bool activate_ability(void)
     if (piety_cost)
         lose_piety( piety_cost );
 
-    return (true);
+    return (ret);
 }  // end activate_ability()
 
 
 // Lists any abilities the player may possess
-char show_abilities( void )
-/*************************/
+unsigned char show_abilities( void )
 {
     int loopy = 0;
-    char lines = 0;
-    unsigned char anything = 0;
+    int lines = 0;
+    int anything = 0;
     char ki;
     bool can_invoke = false;
 
@@ -1258,7 +1341,7 @@ char show_abilities( void )
             if (lines > num_lines - 2)
             {
                 gotoxy(1, num_lines);
-                cprintf("-more-");
+                cprintf( MORE_STRING );
 
                 ki = getch();
 
@@ -1315,25 +1398,14 @@ char show_abilities( void )
 
                 int spell_f = Curr_abil[loopy].fail;
 
-                cprintf( (spell_f >= 100) ? "Useless"   :
-                         (spell_f >   90) ? "Terrible"  :
-                         (spell_f >   80) ? "Cruddy"    :
-                         (spell_f >   70) ? "Bad"       :
-                         (spell_f >   60) ? "Very Poor" :
-                         (spell_f >   50) ? "Poor"      :
-                         (spell_f >   40) ? "Fair"      :
-                         (spell_f >   30) ? "Good"      :
-                         (spell_f >   20) ? "Very Good" :
-                         (spell_f >   10) ? "Great"     :
-                         (spell_f >    0) ? "Excellent" :
-                                            "Perfect" );
+                cprintf( failure_description(spell_f) );
 
                 gotoxy(70, wherey());
             }                              // end if conditional
         }                                  // end "for loopy"
     }
 
-    if (anything > 0)
+    if (anything)
     {
         ki = getch();
 
@@ -1364,12 +1436,10 @@ char show_abilities( void )
     return (ki);
 }                               // end show_abilities()
 
-
 bool generate_abilities( void )
-/*****************************/
 {
     int loopy;
-    int ability = -1;                   // used with draconian checks {dlb}
+    ability_type abil = ABIL_NON_ABILITY;   // used with draconian checks {dlb}
 
     // fill array of structs with "empty" values {dlb}:
     for (loopy = 0; loopy < 52; loopy++)
@@ -1383,89 +1453,82 @@ bool generate_abilities( void )
 
     // Mummies get the ability to restore HPs and stats, but it
     // costs permanent MP (and those can never be recovered).  -- bwr
-    if (you.species == SP_MUMMY && you.experience_level >= 13)
+    if (check_species_physiology( SP_MUMMY ) && you.xp_level >= 13)
     {
         insert_ability( ABIL_MUMMY_RESTORATION );
     }
 
     // checking for species-related abilities and mutagenic counterparts {dlb}:
-    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_NONE
-        && ((you.species == SP_GREY_ELF && you.experience_level >= 5)
-            || (you.species == SP_HIGH_ELF && you.experience_level >= 15)))
+    if ((check_species_physiology( SP_GREY_ELF ) && you.xp_level >= 5)
+        || (check_species_physiology( SP_HIGH_ELF ) && you.xp_level >= 15))
     {
         insert_ability( ABIL_GLAMOUR );
     }
 
-    if (you.species == SP_NAGA)
-    {
-        if (you.mutation[MUT_BREATHE_POISON])
-            insert_ability( ABIL_BREATHE_POISON );
-        else
-            insert_ability( ABIL_SPIT_POISON );
-    }
-    else if (you.mutation[MUT_SPIT_POISON])
-    {
+    if (you.mutation[MUT_SPIT_POISON] == 3)
+        insert_ability( ABIL_BREATHE_POISON );
+    else if (check_species_physiology(SP_NAGA) || you.mutation[MUT_SPIT_POISON])
         insert_ability( ABIL_SPIT_POISON );
-    }
 
-    if (player_genus(GENPC_DRACONIAN))
+    if (player_genus(GENPC_DRACONIAN) && !transform_changed_physiology())
     {
-        if (you.experience_level >= 7)
+        if (you.xp_level >= 7)
         {
-            ability = (
-                (you.species == SP_GREEN_DRACONIAN)  ? ABIL_BREATHE_POISON :
-                (you.species == SP_RED_DRACONIAN)    ? ABIL_BREATHE_FIRE :
-                (you.species == SP_WHITE_DRACONIAN)  ? ABIL_BREATHE_FROST :
-                (you.species == SP_GOLDEN_DRACONIAN) ? ABIL_SPIT_ACID :
-                (you.species == SP_BLACK_DRACONIAN)  ? ABIL_BREATHE_LIGHTNING :
-                (you.species == SP_PURPLE_DRACONIAN) ? ABIL_BREATHE_POWER :
-                (you.species == SP_PALE_DRACONIAN)   ? ABIL_BREATHE_STEAM :
-                (you.species == SP_MOTTLED_DRACONIAN)? ABIL_BREATHE_STICKY_FLAME:
-                                                     -1);
+            abil = ((you.species == SP_GREEN_DRACONIAN)  ? ABIL_BREATHE_POISON :
+                    (you.species == SP_RED_DRACONIAN)    ? ABIL_BREATHE_FIRE :
+                    (you.species == SP_WHITE_DRACONIAN)  ? ABIL_BREATHE_FROST :
+                    (you.species == SP_YELLOW_DRACONIAN) ? ABIL_SPIT_ACID :
+                    (you.species == SP_BLACK_DRACONIAN)  ? ABIL_BREATHE_LIGHTNING :
+                    (you.species == SP_PURPLE_DRACONIAN) ? ABIL_BREATHE_POWER :
+                    (you.species == SP_PALE_DRACONIAN)   ? ABIL_BREATHE_STEAM :
+                    (you.species == SP_MOTTLED_DRACONIAN)? ABIL_BREATHE_STICKY_FLAME
+                                                         : ABIL_NON_ABILITY);
 
-            if (ability != -1)
-                insert_ability( ability );
+            if (abil != ABIL_NON_ABILITY)
+                insert_ability( abil );
         }
     }
 
-    //jmf: alternately put check elsewhere
-    if ((you.level_type == LEVEL_DUNGEON
-            && (you.species == SP_GNOME || you.mutation[MUT_MAPPING]))
-        || (you.level_type == LEVEL_PANDEMONIUM
-            && you.mutation[MUT_MAPPING] == 3))
-    {
+    if (you.species == SP_GNOME || you.mutation[MUT_MAPPING])
         insert_ability( ABIL_MAPPING );
-    }
 
     if (!you.duration[DUR_CONTROLLED_FLIGHT] && !player_is_levitating())
     {
         // kenku can fly, but only from the ground
         // (until levitation 15, when it becomes permanent until revoked)
         //jmf: "upgrade" for draconians -- expensive flight
-        if (you.species == SP_KENKU && you.experience_level >= 5)
+        if (you.species == SP_KENKU && you.xp_level >= 5)
             insert_ability( ABIL_FLY );
-        else if (player_genus(GENPC_DRACONIAN) && you.mutation[MUT_BIG_WINGS])
+        else if (player_genus( GENPC_DRACONIAN )
+                && !transform_changed_physiology()
+                && you.mutation[MUT_BIG_WINGS])
+        {
             insert_ability( ABIL_FLY_II );
+        }
     }
 
     // demonic powers {dlb}:
-    if (you.mutation[MUT_SUMMON_MINOR_DEMONS])
+    if (you.mutation[MUT_SUMMON_DEMONS] == 1)
         insert_ability( ABIL_SUMMON_MINOR_DEMON );
+    else if (you.mutation[MUT_SUMMON_DEMONS])
+        insert_ability( ABIL_SUMMON_DEMONS );
 
-    if (you.mutation[MUT_SUMMON_DEMONS])
-        insert_ability( ABIL_SUMMON_DEMON );
+    if (you.mutation[MUT_SUMMON_DEMONS] == 3)
+        insert_ability( ABIL_CONTROL_DEMON );
 
-    if (you.mutation[MUT_HURL_HELLFIRE])
-        insert_ability( ABIL_HELLFIRE );
+    if (you.mutation[MUT_CALL_TORMENT] > 1)
+        insert_ability( ABIL_BOLT_OF_DRAINING );
+    else if (you.mutation[MUT_CALL_TORMENT] == 1)
+        insert_ability( ABIL_PAIN );
 
-    if (you.mutation[MUT_CALL_TORMENT])
+    if (you.mutation[MUT_CALL_TORMENT] == 3)
         insert_ability( ABIL_TORMENT );
 
     if (you.mutation[MUT_RAISE_DEAD])
         insert_ability( ABIL_RAISE_DEAD );
 
-    if (you.mutation[MUT_CONTROL_DEMONS])
-        insert_ability( ABIL_CONTROL_DEMON );
+    if (you.mutation[MUT_RAISE_DEAD] == 3)
+        insert_ability( ABIL_ENSLAVE_UNDEAD );
 
     if (you.mutation[MUT_PANDEMONIUM])
         insert_ability( ABIL_TO_PANDEMONIUM );
@@ -1473,16 +1536,21 @@ bool generate_abilities( void )
     if (you.mutation[MUT_CHANNEL_HELL])
         insert_ability( ABIL_CHANNELING );
 
-    if (you.mutation[MUT_THROW_FLAMES])
+    if (you.mutation[MUT_THROW_FLAMES] >= 3)
+        insert_ability( ABIL_HELLFIRE );
+    else if (you.mutation[MUT_THROW_FLAMES] == 2)
+        insert_ability( ABIL_BOLT_OF_FIRE );
+    else if (you.mutation[MUT_THROW_FLAMES])
         insert_ability( ABIL_THROW_FLAME );
 
-    if (you.mutation[MUT_THROW_FROST])
+    if (you.mutation[MUT_THROW_FROST] >= 3)
+        insert_ability( ABIL_HELLFROST );
+    else if (you.mutation[MUT_THROW_FROST] == 2)
+        insert_ability( ABIL_BOLT_OF_COLD );
+    else if (you.mutation[MUT_THROW_FROST])
         insert_ability( ABIL_THROW_FROST );
 
-    if (you.mutation[MUT_SMITE])
-        insert_ability( ABIL_BOLT_OF_DRAINING );
-
-    if (you.duration[DUR_TRANSFORMATION])
+    if (you.duration[DUR_TRANSFORMATION] && transform_can_untransform())
         insert_ability( ABIL_END_TRANSFORMATION );
 
     if (you.mutation[MUT_BLINK])
@@ -1517,7 +1585,7 @@ bool generate_abilities( void )
             if (you.piety >= 75)
                 insert_ability( ABIL_TSO_ANNIHILATE_UNDEAD );
             if (you.piety >= 100)
-                insert_ability( ABIL_TSO_THUNDERBOLT );
+                insert_ability( ABIL_TSO_CLEANSING_FLAME );
             if (you.piety >= 120)
                 insert_ability( ABIL_TSO_SUMMON_DAEVA );
             break;
@@ -1624,10 +1692,10 @@ bool generate_abilities( void )
     }
 
     // evocations from items:
-    if (scan_randarts(RAP_BLINK))
+    if (scan_randarts( RAP_BLINK ))
         insert_ability( ABIL_EVOKE_BLINK );
 
-    if (wearing_amulet(AMU_RAGE) || scan_randarts(RAP_BERSERK))
+    if (player_equip( EQ_AMULET, AMU_RAGE ) || scan_randarts( RAP_BERSERK ))
         insert_ability( ABIL_EVOKE_BERSERK );
 
     if (scan_randarts( RAP_MAPPING ))
@@ -1686,7 +1754,6 @@ bool generate_abilities( void )
 // protect any bindings the character might have made into the
 // traditional invocation slots (A-E and X). -- bwr
 void set_god_ability_helper( int abil, char letter )
-/**************************************************/
 {
     int i;
     const int index = letter_to_index( letter );
@@ -1706,7 +1773,6 @@ void set_god_ability_helper( int abil, char letter )
 }
 
 void set_god_ability_slots( void )
-/********************************/
 {
     ASSERT( you.religion != GOD_NO_GOD );
 
@@ -1803,8 +1869,7 @@ void set_god_ability_slots( void )
 
 
 // returns index to Curr_abil, -1 on failure
-static int find_ability_slot( int which_ability )
-/***********************************************/
+static int find_ability_slot( ability_type which_ability )
 {
     int  slot;
     for (slot = 0; slot < 52; slot++)
@@ -1855,11 +1920,18 @@ static int find_ability_slot( int which_ability )
     return (slot);
 }
 
-static bool insert_ability( int which_ability )
-/**********************************************/
+static int calc_invoke_fail( int base, int skill )
+{
+    const int ret = base - (you.piety * (skill + 2) + 20) / 40;
+
+    return ((ret < 1) ? 1 : ret);
+}
+
+static bool insert_ability( ability_type which_ability )
 {
     ASSERT( which_ability != ABIL_NON_ABILITY );
 
+    int tmp;
     int failure = 0;
     bool perfect = false;  // is perfect
     bool invoc = false;
@@ -1883,13 +1955,13 @@ static bool insert_ability( int which_ability )
 
     // begin species abilities - some are mutagenic, too {dlb}
     case ABIL_GLAMOUR:
-        failure = 50 - (you.experience_level * 2);
+        failure = 50 - (you.xp_level * 2);
         break;
 
     case ABIL_SPIT_POISON:
         failure = ((you.species == SP_NAGA) ? 20 : 40)
                         - 10 * you.mutation[MUT_SPIT_POISON]
-                        - you.experience_level;
+                        - you.xp_level;
         break;
 
     case ABIL_EVOKE_MAPPING:
@@ -1899,89 +1971,83 @@ static bool insert_ability( int which_ability )
     case ABIL_MAPPING:
         failure = ((you.species == SP_GNOME) ? 20 : 40)
                         - 10 * you.mutation[MUT_MAPPING]
-                        - you.experience_level;
+                        - you.xp_level;
         break;
 
     case ABIL_BREATHE_FIRE:
         failure = ((you.species == SP_RED_DRACONIAN) ? 30 : 50)
                         - 10 * you.mutation[MUT_BREATHE_FLAMES]
-                        - you.experience_level;
+                        - you.xp_level;
 
         if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
             failure -= 20;
         break;
 
+    case ABIL_SPIT_ACID:
     case ABIL_BREATHE_FROST:
     case ABIL_BREATHE_POISON:
-    case ABIL_SPIT_ACID:
     case ABIL_BREATHE_LIGHTNING:
     case ABIL_BREATHE_POWER:
     case ABIL_BREATHE_STICKY_FLAME:
-        failure = 30 - you.experience_level;
+        failure = 30 - you.xp_level;
 
         if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
             failure -= 20;
         break;
 
     case ABIL_BREATHE_STEAM:
-        failure = 20 - you.experience_level;
+        failure = 20 - you.xp_level;
 
         if (you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON)
             failure -= 20;
         break;
 
     case ABIL_FLY:              // this is for kenku {dlb}
-        failure = 45 - (3 * you.experience_level);
+        failure = 45 - (3 * you.xp_level);
         break;
 
     case ABIL_FLY_II:           // this is for draconians {dlb}
-        failure = 45 - (you.experience_level + you.strength);
+        failure = 45 - (you.xp_level + you.str);
         break;
         // end species abilties (some mutagenic)
 
         // begin demonic powers {dlb}
     case ABIL_THROW_FLAME:
     case ABIL_THROW_FROST:
-        failure = 10 - you.experience_level;
+    case ABIL_PAIN:
+        failure = 20 - you.xp_level;
         break;
 
-    case ABIL_SUMMON_MINOR_DEMON:
-        failure = 27 - you.experience_level;
-        break;
-
+    case ABIL_SUMMON_DEMONS:
     case ABIL_CHANNELING:
     case ABIL_BOLT_OF_DRAINING:
-        failure = 30 - you.experience_level;
-        break;
-
+    case ABIL_BOLT_OF_FIRE:
+    case ABIL_BOLT_OF_COLD:
     case ABIL_CONTROL_DEMON:
-        failure = 35 - you.experience_level;
-        break;
-
-    case ABIL_SUMMON_DEMON:
-        failure = 40 - you.experience_level;
+    case ABIL_ENSLAVE_UNDEAD:
+        failure = 40 - you.xp_level;
         break;
 
     case ABIL_TO_PANDEMONIUM:
-        failure = 57 - (you.experience_level * 2);
+        failure = 57 - (you.xp_level * 2);
         break;
 
     case ABIL_HELLFIRE:
+    case ABIL_HELLFROST:
     case ABIL_RAISE_DEAD:
-        failure = 50 - you.experience_level;
+        failure = 50 - you.xp_level;
         break;
 
     case ABIL_TORMENT:
-        failure = 60 - you.experience_level;
+        failure = 60 - you.xp_level;
         break;
 
     case ABIL_BLINK:
-        failure = 30 - (10 * you.mutation[MUT_BLINK]) - you.experience_level;
+        failure = 40 - 10 * (you.mutation[MUT_BLINK] > 0) - you.xp_level;
         break;
 
     case ABIL_TELEPORTATION:
-        failure = ((you.mutation[MUT_TELEPORT_AT_WILL] > 1) ? 30 : 50)
-                    - you.experience_level;
+        failure = 50 - 20 * (you.mutation[MUT_TELEPORT_AT_WILL] > 1) - you.xp_level;
         break;
         // end demonic powers {dlb}
 
@@ -1992,7 +2058,7 @@ static bool insert_ability( int which_ability )
         break;
 
     case ABIL_BREATHE_HELLFIRE:
-        failure = 32 - you.experience_level;
+        failure = 32 - you.xp_level;
         break;
         // end transformation abilities {dlb}
         //
@@ -2026,93 +2092,109 @@ static bool insert_ability( int which_ability )
         break;
         // end item abilities - some possibly mutagenic {dlb}
 
-        // begin invocations {dlb}
-    case ABIL_ELYVILON_PURIFICATION:
+    // begin invocations {dlb}
+    // XXX: are these values appropriate? -- bwr
+    case ABIL_ZIN_REPEL_UNDEAD:                         // piety 30
+    case ABIL_TSO_REPEL_UNDEAD:                         // piety 30
+    case ABIL_ELYVILON_LESSER_HEALING:                  // piety 30
+    case ABIL_YRED_ANIMATE_CORPSE:                      // piety 30
         invoc = true;
-        failure = 20 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = calc_invoke_fail( 30, you.skills[SK_INVOCATIONS] + 3 );
         break;
 
-    case ABIL_ZIN_REPEL_UNDEAD:
-    case ABIL_TSO_REPEL_UNDEAD:
-    case ABIL_KIKU_RECALL_UNDEAD_SLAVES:
-    case ABIL_OKAWARU_MIGHT:
-    case ABIL_ELYVILON_LESSER_HEALING:
+    case ABIL_TROG_BERSERK:                             // piety 30
         invoc = true;
-        failure = 30 - (you.piety / 20) - (6 * you.skills[SK_INVOCATIONS]);
+        failure = calc_invoke_fail( 30, you.skills[SK_FIGHTING] + 3 );
         break;
 
-    // These three are Trog abilities... Invocations means nothing -- bwr
-    case ABIL_TROG_BERSERK:    // piety >= 30
+    case ABIL_OKAWARU_MIGHT:                            // piety 30
         invoc = true;
-        failure = 30 - you.piety;       // starts at 0%
+        failure = calc_invoke_fail( 30, (you.skills[SK_INVOCATIONS]
+                                        + you.skills[SK_FIGHTING]) / 2 + 3 );
         break;
 
-    case ABIL_TROG_MIGHT:         // piety >= 50
+    case ABIL_KIKU_RECALL_UNDEAD_SLAVES:                // piety 30
         invoc = true;
-        failure = 80 - you.piety;       // starts at 30%
+        failure = calc_invoke_fail( 40, you.skills[SK_NECROMANCY] );
         break;
 
-    case ABIL_TROG_HASTE_SELF:       // piety >= 100
+
+    case ABIL_ZIN_HEALING:                              // piety 50
+    case ABIL_TSO_SMITING:                              // piety 50
+    case ABIL_OKAWARU_HEALING:                          // piety 50
+    case ABIL_MAKHLEB_MINOR_DESTRUCTION:                // piety 50
+    case ABIL_YRED_RECALL_UNDEAD:                       // piety 50
+    case ABIL_ELYVILON_PURIFICATION:                    // piety 50
         invoc = true;
-        failure = 160 - you.piety;      // starts at 60%
+        failure = calc_invoke_fail( 40, you.skills[SK_INVOCATIONS] );
         break;
 
-    case ABIL_YRED_ANIMATE_CORPSE:
+    case ABIL_TROG_MIGHT:                               // piety 50
         invoc = true;
-        failure = 40 - (you.piety / 20) - (3 * you.skills[SK_INVOCATIONS]);
+        failure = calc_invoke_fail( 50, you.skills[SK_FIGHTING] );
         break;
 
-    case ABIL_ZIN_HEALING:
-    case ABIL_TSO_SMITING:
-    case ABIL_OKAWARU_HEALING:
-    case ABIL_MAKHLEB_MINOR_DESTRUCTION:
-    case ABIL_SIF_MUNA_FORGET_SPELL:
-    case ABIL_KIKU_ENSLAVE_UNDEAD:
-    case ABIL_YRED_ANIMATE_DEAD:
-    case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:
-    case ABIL_ELYVILON_HEALING:
+    case ABIL_SIF_MUNA_FORGET_SPELL:                    // piety 50
         invoc = true;
-        failure = 40 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = calc_invoke_fail( 50, you.skills[SK_SPELLCASTING] );
         break;
 
-    case ABIL_VEHUMET_CHANNEL_ENERGY:
+    case ABIL_MAKHLEB_LESSER_SERVANT_OF_MAKHLEB:        // piety 75
+    case ABIL_ELYVILON_HEALING:                         // piety 75
+    case ABIL_TSO_ANNIHILATE_UNDEAD:                    // piety 75
+    case ABIL_ZIN_PESTILENCE:                           // piety 75
+    case ABIL_YRED_ANIMATE_DEAD:                        // piety 75
         invoc = true;
-        failure = 40 - you.intel - you.skills[SK_INVOCATIONS];
+        failure = calc_invoke_fail( 60, you.skills[SK_INVOCATIONS] );
         break;
 
-    case ABIL_YRED_RECALL_UNDEAD:
+    case ABIL_KIKU_ENSLAVE_UNDEAD:                      // piety 75
         invoc = true;
-        failure = 50 - (you.piety / 20) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = calc_invoke_fail( 75, you.skills[SK_NECROMANCY] );
         break;
 
-    case ABIL_ZIN_PESTILENCE:
-    case ABIL_TSO_ANNIHILATE_UNDEAD:
+    case ABIL_ZIN_HOLY_WORD:                            // piety 100
+    case ABIL_TSO_CLEANSING_FLAME:                      // piety 100
+    case ABIL_MAKHLEB_MAJOR_DESTRUCTION:                // piety 100
+    case ABIL_YRED_DRAIN_LIFE:                          // piety 100
         invoc = true;
-        failure = 60 - (you.piety / 20) - (5 * you.skills[SK_INVOCATIONS]);
+        failure = calc_invoke_fail( 80, you.skills[SK_INVOCATIONS] );
         break;
 
-    case ABIL_MAKHLEB_MAJOR_DESTRUCTION:
-    case ABIL_YRED_DRAIN_LIFE:
+    case ABIL_TROG_HASTE_SELF:                          // piety 100
         invoc = true;
-        failure = 60 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = calc_invoke_fail( 80, you.skills[SK_FIGHTING] );
         break;
 
-    case ABIL_ZIN_HOLY_WORD:
-    case ABIL_TSO_THUNDERBOLT:
-    case ABIL_ELYVILON_RESTORATION:
-    case ABIL_YRED_CONTROL_UNDEAD:
-    case ABIL_OKAWARU_HASTE:
-    case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:
+    case ABIL_ELYVILON_RESTORATION:                     // piety 100
         invoc = true;
-        failure = 70 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
+        failure = calc_invoke_fail( 90, you.skills[SK_INVOCATIONS] );
         break;
 
-    case ABIL_ZIN_SUMMON_GUARDIAN:
-    case ABIL_TSO_SUMMON_DAEVA:
-    case ABIL_KIKU_INVOKE_DEATH:
-    case ABIL_ELYVILON_GREATER_HEALING:
+    case ABIL_VEHUMET_CHANNEL_ENERGY:                   // piety 100
         invoc = true;
-        failure = 80 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
+        tmp = 1 + stat_mult( you.intel, you.skills[SK_CONJURATIONS] );
+        failure = calc_invoke_fail( 90, tmp );
+        break;
+
+    case ABIL_ZIN_SUMMON_GUARDIAN:                      // piety 120
+    case ABIL_TSO_SUMMON_DAEVA:                         // piety 120
+    case ABIL_YRED_CONTROL_UNDEAD:                      // piety 120
+    case ABIL_MAKHLEB_GREATER_SERVANT_OF_MAKHLEB:       // piety 120
+    case ABIL_ELYVILON_GREATER_HEALING:                 // piety 120
+        invoc = true;
+        failure = calc_invoke_fail( 100, you.skills[SK_INVOCATIONS] );
+        break;
+
+    case ABIL_OKAWARU_HASTE:                            // piety 120
+        invoc = true;
+        failure = calc_invoke_fail( 90, (you.skills[SK_INVOCATIONS]
+                                        + you.skills[SK_FIGHTING]) / 2 + 1 );
+        break;
+
+    case ABIL_KIKU_INVOKE_DEATH:                        // piety 120
+        invoc = true;
+        failure = calc_invoke_fail( 90, you.skills[SK_NECROMANCY] );
         break;
 
         //jmf: following for to-be-created gods
@@ -2134,11 +2216,6 @@ static bool insert_ability( int which_ability )
     case ABIL_TORMENT_II:
         invoc = true;
         failure = 70 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 4);
-        break;
-
-    case ABIL_SHUGGOTH_SEED:
-        invoc = true;
-        failure = 85 - (you.piety / 25) - (you.skills[SK_INVOCATIONS] * 3);
         break;
 
     case ABIL_RENOUNCE_RELIGION:

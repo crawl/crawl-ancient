@@ -22,13 +22,16 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "debug.h"
 #include "delay.h"
+#include "effects.h"
 #include "invent.h"
 #include "items.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "item_use.h"
 #include "it_use2.h"
 #include "macro.h"
@@ -38,19 +41,19 @@
 #include "player.h"
 #include "religion.h"
 #include "skills2.h"
-#include "spells2.h"
+// #include "spells2.h"
 #include "stuff.h"
-#include "wpn-misc.h"
 
-static bool  can_ingest(int what_isit, int kindof_thing, bool suppress_msg);
+static void  describe_food_change( int hunger_increment );
+static bool  food_change( bool suppress_message );
+
+static bool  can_ingest( const item_def &item, bool suppress_msg );
 static bool  eat_from_floor(void);
-static int   determine_chunk_effect(int which_chunk_type, bool rotten_chunk);
-static void  eat_chunk( int chunk_effect );
-static void  eat_from_inventory(int which_inventory_slot);
-static void  eating(unsigned char item_class, int item_type);
+
+static int   determine_chunk_effect( int which_chunk_type, bool rotten_chunk );
 static void  ghoul_eat_flesh( int chunk_effect );
-static void  describe_food_change(int hunger_increment);
-static bool  food_change(bool suppress_message);
+static void  eat_chunk( bool from_inv, int id );
+static void  eating( bool from_inv, int id );
 
 /*
  **************************************************
@@ -65,10 +68,6 @@ void make_hungry( int hunger_amount, bool suppress_msg )
     if (you.is_undead == US_UNDEAD)
         return;
 
-#if DEBUG_DIAGNOSTICS
-    set_redraw_status( REDRAW_HUNGER );
-#endif
-
     you.hunger -= hunger_amount;
 
     if (you.hunger < 0)
@@ -77,7 +76,8 @@ void make_hungry( int hunger_amount, bool suppress_msg )
     // so we don't get two messages, ever.
     bool state_message = food_change(false);
 
-    if (!suppress_msg && !state_message)
+    // ... except that there are no messages above hungry.
+    if (!suppress_msg && (!state_message || you.hunger_state > HS_HUNGRY))
         describe_food_change( -hunger_amount );
 }                               // end make_hungry()
 
@@ -88,13 +88,19 @@ void lessen_hunger( int satiated_amount, bool suppress_msg )
 
     you.hunger += satiated_amount;
 
-    if (you.hunger > 12000)
-        you.hunger = 12000;
+#if DEBUG_DIAGNOSTICS
+    mpr( MSGCH_DIAGNOSTICS, "feeding: %d; stomach: %d",
+          satiated_amount, you.hunger );
+#endif
+
+    if (you.hunger > HUNGER_MAX_FOOD)
+        you.hunger = HUNGER_MAX_FOOD;
 
     // so we don't get two messages, ever
     bool state_message = food_change(false);
 
-    if (!suppress_msg && !state_message)
+    // ... except that there are no messages above hungry.
+    if (!suppress_msg && (!state_message || you.hunger_state > HS_HUNGRY))
         describe_food_change(satiated_amount);
 }                               // end lessen_hunger()
 
@@ -106,7 +112,7 @@ void set_hunger( int new_hunger_level, bool suppress_msg )
     int hunger_difference = (new_hunger_level - you.hunger);
 
     if (hunger_difference < 0)
-        make_hungry( abs(hunger_difference), suppress_msg );
+        make_hungry( abs( hunger_difference ), suppress_msg );
     else if (hunger_difference > 0)
         lessen_hunger( hunger_difference, suppress_msg );
 }                               // end set_hunger()
@@ -115,7 +121,6 @@ void set_hunger( int new_hunger_level, bool suppress_msg )
 // to a weapon is done using the wield_weapon code.
 // special cases like staves of power or other special weps are taken
 // care of by calling wield_effects()    {gdl}
-
 void weapon_switch( int targ )
 {
     if (targ == -1)
@@ -129,8 +134,7 @@ void weapon_switch( int targ )
 
         char let = index_to_letter( targ );
 
-        snprintf( info, INFO_SIZE, "Switching back to %c - %s.", let, buff );
-        mpr( info );
+        mpr( "Switching back to %c - %s.", let, buff );
     }
 
     // unwield the old weapon and wield the new.
@@ -139,37 +143,68 @@ void weapon_switch( int targ )
     // Well yeah, but that's because interacting with the wielding
     // code is a mess... this whole function's purpose was to
     // isolate this hack until there's a proper way to do things. -- bwr
-    if (you.equip[EQ_WEAPON] != -1)
-        unwield_item(you.equip[EQ_WEAPON]);
 
+    unwield_item( true );               // remove old first if required
     you.equip[EQ_WEAPON] = targ;
 
     // special checks: staves of power, etc
     if (targ != -1)
-        wield_effects( targ, false );
+        wield_effects( false );
+}
+
+
+int find_butcher_knife( void )
+{
+    // We'll now proceed to look through the entire inventory for
+    // choppers/slicers.  We'll skip special weapons because
+    // wielding/unwielding a foo of distortion would be disastrous.
+    //
+    // XXX: Protecting against a weapon of distortion is a bit spoilerish...
+    // it's not something that players can be expected to know and thus
+    // this code might expose more information than it should.  A better
+    // solution would probably be a option that takes a range to search,
+    // so the player can move items they never want to use [1] for this
+    // to safe slots.
+    //
+    // [1] Note that this might include large weapons, demonic weapons,
+    // or weapons only usable as tools (when weapons are available),
+    // which if caught in the middle of a disection by surprise might
+    // also be disastrous.  Naturally, the player can already order the
+    // inventory to stop these (and they can also do that for distortion)...
+    // but if an auto safty is required it should be non-spoiler.
+    int i;
+    for (i = 0; i < ENDOFPACK; ++i)
+    {
+        if (is_valid_item( you.inv[i] )
+            && can_cut_meat( you.inv[i] )
+            && you.inv[i].base_type == OBJ_WEAPONS
+            && item_known_uncursed(you.inv[i])
+            && item_ident( you.inv[i], ISFLAG_KNOW_TYPE )
+            // && get_weapon_brand(you.inv[i]) != SPWPN_DISTORTION
+            && can_wield( you.inv[i] ))
+        {
+            break;
+        }
+    }
+
+    return (i);
 }
 
 bool butchery(void)
 {
-    char str_pass[ ITEMNAME_SIZE ];
-    int items_here = 0;
-    int o = igrd[you.x_pos][you.y_pos];
-    int k = 0;
-    int item_got;
+    char str_pass[ITEMNAME_SIZE];
+    int obj;
+    int work_req;
+    int wpn;
     unsigned char keyin;
 
     bool can_butcher = false;
     bool wpn_switch = false;
     bool new_cursed = false;
+    bool found_body = false;
     int old_weapon = you.equip[EQ_WEAPON];
 
-    bool barehand_butcher = (you.equip[ EQ_GLOVES ] == -1)
-                && (you.species == SP_TROLL
-                    || you.species == SP_GHOUL
-                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS
-                    || you.attribute[ATTR_TRANSFORMATION] == TRAN_DRAGON
-                    || you.mutation[MUT_CLAWS]);
-
+    const bool barehand_butcher = player_barehand_butcher();
 
     if (igrd[you.x_pos][you.y_pos] == NON_ITEM)
     {
@@ -177,85 +212,46 @@ bool butchery(void)
         return (false);
     }
 
-    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (!player_access_floor())
     {
-        mpr("You can't reach the floor from up here.");
+        canned_msg( MSG_CANT_REACH );
         return (false);
     }
 
-    if (barehand_butcher)
-        can_butcher = true;
-    else
+    can_butcher = player_can_cut_meat();
+
+    if (!can_butcher && Options.easy_butcher)
     {
-        if (you.equip[EQ_WEAPON] != -1)
+        // mv: check for berserk first
+        if (you.berserker)
         {
-            can_butcher = can_cut_meat( you.inv[you.equip[EQ_WEAPON]].base_type,
-                                        you.inv[you.equip[EQ_WEAPON]].sub_type );
+            mpr ("You are too berserk to search for a butchering knife!");
+            return (false);
         }
 
-        // Should probably check for cursed-weapons, bare hands and
-        // non-weapons in hand here, but wield_weapon will be used for
-        // this swap and it will do all that (although the player might
-        // be annoyed with the excess prompt).
-        if (Options.easy_butcher && !can_butcher)
+        const int knife = find_butcher_knife();
+        if (knife != ENDOFPACK)
         {
-            const int a_slot = letter_to_index('a');
-            const int b_slot = letter_to_index('b');
-            int swap_slot = a_slot;
-
-            //mv: check for berserk first
-            if (you.berserker)
-            {
-                mpr ("You are too berserk to search for a butchering knife!");
-                return (false);
-            }
-
-            // Find out which slot is our auto-swap slot
-            if (you.equip[EQ_WEAPON] == a_slot)
-                swap_slot = b_slot;
-
-
-            // check if the swap slot is appropriate first
-            if (you.equip[EQ_WEAPON] != swap_slot)
-            {
-                if (is_valid_item( you.inv[ swap_slot ] ) // must have one
-
-                    // must be able to cut with it
-                    && can_cut_meat( you.inv[ swap_slot ].base_type,
-                                     you.inv[ swap_slot ].sub_type )
-
-                    // must be known to be uncursed weapon
-                    && you.inv[ swap_slot ].base_type == OBJ_WEAPONS
-                    && item_known_uncursed( you.inv[ swap_slot ] ))
-                {
-                    mpr( "Switching to your swap slot weapon." );
-                    wpn_switch = true;
-                    wield_weapon( true );
-                }
-            }
-
-            // if we didn't swap above, then we still can't cut... let's
-            // call wield_weapon() in the "prompt the user" way...
-            if (!wpn_switch)
-            {
-                // prompt for new weapon
-                mpr( "What would you like to use?", MSGCH_PROMPT );
-                wield_weapon( false );
-
-                // let's see if the user did something...
-                if (you.equip[EQ_WEAPON] != old_weapon)
-                    wpn_switch = true;
-            }
+            mpr( "Switching to a butchering implement." );
+            wpn_switch = true;
+            wield_weapon( true, knife );
         }
 
-        // weapon might have changed (to bare hands as well), we'll
-        // update the can_butcher status accordingly (note: if we could
-        // butcher with our bare hands we wouldn't be here) -- bwr
-        if (wpn_switch && you.equip[EQ_WEAPON] != -1)
+        // if we didn't swap above, then we still can't cut... let's
+        // call wield_weapon() in the "prompt the user" way...
+        if (!wpn_switch)
         {
-            can_butcher = can_cut_meat( you.inv[you.equip[EQ_WEAPON]].base_type,
-                                        you.inv[you.equip[EQ_WEAPON]].sub_type );
+            // prompt for new weapon
+            mpr( MSGCH_PROMPT, "What would you like to use?" );
+            wield_weapon( false );
+
+            // let's see if the user did something...
+            if (you.equip[EQ_WEAPON] != old_weapon)
+                wpn_switch = true;
         }
+
+        if (wpn_switch)
+            can_butcher = player_can_cut_meat();
     }
 
     // Account for the weapon switch above if it happened... we're
@@ -264,12 +260,12 @@ bool butchery(void)
     // character fails to or decides not to butcher past this point,
     // they have achieved something and there should be a cost.
     if (wpn_switch)
-        start_delay( DELAY_UNINTERUPTABLE, 1, old_weapon );
+        start_delay( DELAY_UNINTERUPTABLE, 1 );
 
     // check to see if the new implement is cursed - if so,  set a
     // flag indicating this.  If a player actually butchers anything,
     // this flag can be checked before switching back.
-    int wpn = you.equip[EQ_WEAPON];
+    wpn = you.equip[EQ_WEAPON];
 
     if (wpn != -1
         && you.inv[wpn].base_type == OBJ_WEAPONS
@@ -279,213 +275,80 @@ bool butchery(void)
     }
 
     // Final checks and clue-giving...
-    if (!barehand_butcher && you.equip[EQ_WEAPON] == -1)
+    if (!can_butcher)
     {
-        if (you.equip[ EQ_GLOVES ] == -1)
+        if (!barehand_butcher && you.equip[EQ_WEAPON] == -1)
             mpr("What, with your bare hands?");
-        else
+        else if (barehand_butcher && you.equip[ EQ_GLOVES ] != -1)
             mpr("You can't use your claws with your gloves on!");
+        else
+            mpr("Maybe you should try using a sharper implement.");
 
-        // Switching back to avoid possible bug where player can use
-        // this to switch weapons in zero time.
-        if (wpn_switch)
-            weapon_switch( old_weapon );
-
-        return (false);
-    }
-    else if (!can_butcher)
-    {
-        mpr("Maybe you should try using a sharper implement.");
-
-        // Switching back to avoid possible bug where player can use
-        // this to switch weapons in zero time.
-        if (wpn_switch && !new_cursed)
-            weapon_switch( old_weapon );
-
-        return (false);
+        goto abort_butcher;
     }
 
     // No turning back at this point, we better be qualified.
     ASSERT( can_butcher );
 
-    int last_item = NON_ITEM;
-
-    int objl = igrd[you.x_pos][you.y_pos];
-    int hrg = 0;
-    int counter = 0;
-
-    while (objl != NON_ITEM)
+    for (obj = igrd[you.x_pos][you.y_pos]; obj != NON_ITEM; obj = mitm[obj].link)
     {
-        counter++;
-
-        last_item = objl;
-
-        hrg = mitm[objl].link;
-        objl = hrg;
-        items_here++;
-
-        if (counter > 1000)
+        if (mitm[obj].base_type != OBJ_CORPSES
+            || mitm[obj].sub_type != CORPSE_BODY)
         {
-            error_message_to_player();
-
-            if (wpn_switch && !new_cursed)
-                weapon_switch( old_weapon );
-
-            return (false);
+            continue;
         }
-    }
 
-    if (items_here == 1
-            && (mitm[igrd[you.x_pos][you.y_pos]].base_type == OBJ_CORPSES &&
-                mitm[igrd[you.x_pos][you.y_pos]].sub_type == CORPSE_BODY))
-    {
-        strcpy(info, "Butcher ");
-        it_name(igrd[you.x_pos][you.y_pos], DESC_NOCAP_A, str_pass);
-        strcat(info, str_pass);
-        strcat(info, "\?");
-        mpr(info, MSGCH_PROMPT);
+        found_body = true;
 
-        unsigned char keyin = getch();
+        strcpy( info, "Butcher " );
+        it_name( obj, DESC_NOCAP_A, str_pass );
+        strcat( info, str_pass );
+        strcat( info, "\?" );
+        mpr( MSGCH_PROMPT, info );
 
+        keyin = getch();
         if (keyin == 0)
         {
             getch();
             keyin = 0;
         }
 
-        if (keyin != 'y' && keyin != 'Y')
+        if (keyin == 'q' || keyin == ESCAPE)
         {
+            canned_msg( MSG_OK );
+            goto abort_butcher;
+        }
+
+        if (keyin == 'y' || keyin == 'Y')
+        {
+            if (player_size() >= SIZE_GIANT)
+                mpr("You start tearing the corpse apart.");
+            else if (barehand_butcher && you.equip[EQ_GLOVES] == -1)
+                mpr("You start ripping the corpse apart.");
+            else
+                mpr("You start hacking away.");
+
+            if (!offer_corpse(obj))
+            {
+                work_req = 3 - mitm[obj].plus2;
+                if (work_req < 0)
+                    work_req = 0;
+
+                start_delay( DELAY_BUTCHER, work_req, obj );
+            }
+
+            // need to count the swap delay in this case
             if (wpn_switch && !new_cursed)
-                weapon_switch( old_weapon );
+                start_delay( DELAY_WEAPON_SWAP, 1, old_weapon );
 
-            return (false);
+            you.turn_is_over = true;
+            return (true);
         }
+    }           // for o
 
-        int item_got = igrd[you.x_pos][you.y_pos];
+    mpr( "There isn't anything%s to dissect here.", (found_body) ? " else" : "" );
 
-        last_item = NON_ITEM;
-
-        if (barehand_butcher)
-            mpr("You start tearing the corpse apart.");
-        else
-            mpr("You start hacking away.");
-
-        if (you.duration[DUR_PRAYER]
-            && (you.religion == GOD_OKAWARU
-                || you.religion == GOD_MAKHLEB || you.religion == GOD_TROG))
-        {
-            offer_corpse(item_got);
-            destroy_item(item_got);
-            // XXX: need an extra turn here for weapon swapping?
-        }
-        else
-        {
-            int work_req = 3 - mitm[item_got].plus2;
-            if (work_req < 0)
-                work_req = 0;
-
-            start_delay( DELAY_BUTCHER, work_req, item_got );
-        }
-
-        // cue up switching weapon back
-        if (wpn_switch && !new_cursed)
-            start_delay( DELAY_WEAPON_SWAP, 1, old_weapon );
-
-        you.turn_is_over = 1;
-
-        return (true);
-
-    }                           // end "if items_here == 1"
-    else if (items_here > 1)
-    {
-        last_item = NON_ITEM;
-        o = igrd[you.x_pos][you.y_pos];
-
-        for (k = 0; k < items_here; k++)
-        {
-            if (mitm[o].base_type != OBJ_CORPSES
-                    || mitm[o].sub_type != CORPSE_BODY)
-            {
-                goto out_of_eating;
-            }
-
-            strcpy(info, "Butcher ");
-            it_name(o, DESC_NOCAP_A, str_pass);
-            strcat(info, str_pass);
-            strcat(info, "\?");
-            mpr(info, MSGCH_PROMPT);
-
-            keyin = getch();
-            if (keyin == 0)
-            {
-                getch();
-                keyin = 0;
-            }
-
-            if (keyin == 'q')
-            {
-                if (wpn_switch && !new_cursed)
-                    weapon_switch( old_weapon );
-
-                return (false);
-            }
-
-            if (keyin == 'y')
-            {
-                item_got = o;
-
-                if (barehand_butcher)
-                    mpr("You start tearing the corpse apart.");
-                else
-                    mpr("You start hacking away.");
-
-                if (you.duration[DUR_PRAYER]
-                    && (you.religion == GOD_OKAWARU
-                        || you.religion == GOD_MAKHLEB
-                        || you.religion == GOD_TROG))
-                {
-                    offer_corpse(item_got);
-                    destroy_item(item_got);
-                    // XXX: need an extra turn here for weapon swapping?
-                }
-                else
-                {
-                    int work_req = 3 - mitm[item_got].plus2;
-                    if (work_req < 0)
-                        work_req = 0;
-
-                    start_delay( DELAY_BUTCHER, work_req, item_got );
-                }
-
-                if (wpn_switch && !new_cursed)
-                {
-                    // weapon_switch( old_weapon );
-                    // need to count the swap delay in this case
-                    start_delay( DELAY_WEAPON_SWAP, 1, old_weapon );
-                }
-
-                you.turn_is_over = 1;
-                return (true);
-            }
-
-          out_of_eating:
-
-            if (is_valid_item( mitm[o] ))
-                last_item = o;
-
-            hrg = mitm[o].link;
-            o = hrg;
-
-            if (o == NON_ITEM)
-                break;
-
-            if (items_here == 0)
-                break;
-        }                       // end "for k" loop
-    }
-
-    mpr("There isn't anything to dissect here.");
-
+abort_butcher:
     if (wpn_switch && !new_cursed)
         weapon_switch( old_weapon );
 
@@ -502,7 +365,7 @@ void eat_food(void)
         return;
     }
 
-    if (you.hunger >= 11000)
+    if (you.hunger >= HUNGER_ENGORGED)
     {
         mpr("You're too full to eat anything.");
         return;
@@ -511,10 +374,7 @@ void eat_food(void)
     if (igrd[you.x_pos][you.y_pos] != NON_ITEM)
     {
         if (eat_from_floor())
-        {
-            burden_change();    // ghouls regain strength from rotten food
             return;
-        }
     }
 
     if (inv_count() < 1)
@@ -538,16 +398,10 @@ void eat_food(void)
         return;
     }
 
-    if (!can_ingest( you.inv[which_inventory_slot].base_type,
-                        you.inv[which_inventory_slot].sub_type, false ))
-    {
+    if (!can_ingest( you.inv[which_inventory_slot], false ))
         return;
-    }
 
-    eat_from_inventory(which_inventory_slot);
-
-    burden_change();
-    you.turn_is_over = 1;
+    eating( true, which_inventory_slot );
 }                               // end eat_food()
 
 /*
@@ -558,44 +412,42 @@ void eat_food(void)
  **************************************************
 */
 
-static bool food_change(bool suppress_message)
+static bool food_change( bool suppress_message )
 {
-    char newstate = HS_ENGORGED;
     bool state_changed = false;
 
-    // this case shouldn't actually happen:
-    if (you.is_undead == US_UNDEAD)
-        you.hunger = 6000;
+    // If non-hungry undead should not be here, let's check if they are here.
+    ASSERT( you.is_undead != US_UNDEAD );
 
-    // take care of ghouls - they can never be 'full'
-    if (you.species == SP_GHOUL && you.hunger > 6999)
-        you.hunger = 6999;
+    // Hungry dead (ie ghouls) cannot be full.
+    if (you.is_undead == US_HUNGRY_DEAD && you.hunger >= HUNGER_FULL)
+        you.hunger = HUNGER_FULL - 1;
 
-    // get new hunger state
-    if (you.hunger <= 1000)
-        newstate = HS_STARVING;
-    else if (you.hunger <= 2600)
-        newstate = HS_HUNGRY;
-    else if (you.hunger < 7000)
-        newstate = HS_SATIATED;
-    else if (you.hunger < 11000)
-        newstate = HS_FULL;
+    // get new hunger state (note: HUNGER marks points away from the middle)
+    const char newstate = ((you.hunger >= HUNGER_ENGORGED) ? HS_ENGORGED :
+                           (you.hunger >= HUNGER_FULL)     ? HS_FULL :
+                           (you.hunger <= HUNGER_STARVING) ? HS_STARVING :
+                           (you.hunger <= HUNGER_HUNGRY)   ? HS_HUNGRY
+                                                           : HS_SATIATED);
 
     if (newstate != you.hunger_state)
     {
         state_changed = true;
         you.hunger_state = newstate;
-        set_redraw_status( REDRAW_HUNGER );
+
+        // Stop the travel command, if it's in progress and we just got hungry
+        if (newstate < HS_SATIATED)
+            interrupt_activity( AI_HUNGRY );
 
         if (suppress_message == false)
         {
             switch (you.hunger_state)
             {
             case HS_STARVING:
-                mpr("You are starving!", MSGCH_FOOD);
+                mpr( MSGCH_FOOD, "You are starving!" );
                 break;
             case HS_HUNGRY:
-                mpr("You are feeling hungry.", MSGCH_FOOD);
+                mpr( MSGCH_FOOD, "You are feeling hungry." );
                 break;
             default:
                 break;
@@ -608,55 +460,34 @@ static bool food_change(bool suppress_message)
 
 
 // food_increment is positive for eating,  negative for hungering
-static void describe_food_change(int food_increment)
+static void describe_food_change( int food_increment )
 {
-    int magnitude = (food_increment > 0)?food_increment:(-food_increment);
-
-    if (magnitude == 0)
+    if (food_increment == 0)
         return;
 
-    strcpy(info, (magnitude <= 100) ? "You feel slightly " :
-                 (magnitude <= 350) ? "You feel somewhat " :
-                 (magnitude <= 800) ? "You feel a quite a bit "
-                                    : "You feel a lot ");
+    const int magnitude = abs( food_increment );
 
-    if ((you.hunger_state > HS_SATIATED) ^ (food_increment < 0))
-        strcat(info, "more ");
-    else
-        strcat(info, "less ");
+    mpr( MSGCH_FOOD, "You feel %s%s %s.",
+                (magnitude <  100) ? "slightly " :
+                (magnitude <  200) ? "a bit "    :
+                (magnitude <  400) ? ""          :
+                (magnitude <  800) ? "much "
+                                   : "a lot ",
 
-    strcat(info, (you.hunger_state > HS_SATIATED) ? "full."
-                                                  : "hungry.");
-    mpr(info);
+                ((you.hunger_state > HS_SATIATED) ^ (food_increment < 0))
+                    ? "more" : "less",
+
+                (you.hunger_state > HS_SATIATED) ? "full" : "hungry" );
 }                               // end describe_food_change()
 
-static void eat_from_inventory(int which_inventory_slot)
-{
-    if (you.inv[which_inventory_slot].sub_type == FOOD_CHUNK)
-    {
-        // this is a bit easier to read... most compilers should
-        // handle this the same -- bwr
-        const int mons_type = you.inv[ which_inventory_slot ].plus;
-        const int chunk_type = mons_corpse_thingy( mons_type );
-        const bool rotten = (you.inv[which_inventory_slot].special < 100);
-
-        eat_chunk( determine_chunk_effect( chunk_type, rotten ) );
-    }
-    else
-    {
-        eating( you.inv[which_inventory_slot].base_type,
-                you.inv[which_inventory_slot].sub_type );
-    }
-
-    dec_inv_item_quantity( which_inventory_slot, 1 );
-}                               // end eat_from_inventory()
-
-
+// Returns true if no further attempts to eat should be made and false
+// otherwise (typically true means we ate already, but see the auto_list
+// case below where we fake that).
 static bool eat_from_floor(void)
 {
     char str_pass[ ITEMNAME_SIZE ];
 
-    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (!player_access_floor())
         return (false);
 
     for (int o = igrd[you.x_pos][you.y_pos]; o != NON_ITEM; o = mitm[o].link)
@@ -665,9 +496,8 @@ static bool eat_from_floor(void)
             continue;
 
         it_name( o, DESC_NOCAP_A, str_pass );
-        snprintf( info, INFO_SIZE, "Eat %s%s?", (mitm[o].quantity > 1) ? "one of " : "",
-                 str_pass );
-        mpr( info, MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, "Eat %s%s?",
+                (mitm[o].quantity > 1) ? "one of " : "", str_pass );
 
         unsigned char keyin = tolower( getch() );
 
@@ -682,94 +512,19 @@ static bool eat_from_floor(void)
 
         if (keyin == 'y')
         {
-            if (!can_ingest( mitm[o].base_type, mitm[o].sub_type, false ))
-                return (false);
+            // XXX: Do we really want to fake eating for auto_list just
+            // so the error message comes up? -- bwr
+            if (!can_ingest( mitm[o], false ))
+                return (Options.auto_list);
 
-            if (mitm[o].sub_type == FOOD_CHUNK)
-            {
-                const int chunk_type = mons_corpse_thingy( mitm[o].plus );
-                const bool rotten = (mitm[o].special < 100);
-
-                eat_chunk( determine_chunk_effect( chunk_type, rotten ) );
-            }
-            else
-            {
-                eating( mitm[o].base_type, mitm[o].sub_type );
-            }
-
-            you.turn_is_over = 1;
-
-            dec_mitm_item_quantity( o, 1 );
-
+            eating( false, o );
+            // dec_mitm_item_quantity( o, 1 );
             return (true);
         }
     }
 
     return (false);
 }
-
-
-// never called directly - chunk_effect values must pass
-// through food::determine_chunk_effect() first {dlb}:
-static void eat_chunk( int chunk_effect )
-{
-
-    bool likes_chunks = (you.species == SP_KOBOLD || you.species == SP_OGRE
-                         || you.species == SP_TROLL
-                         || you.mutation[MUT_CARNIVOROUS] > 0);
-
-    if (you.species == SP_GHOUL)
-    {
-        ghoul_eat_flesh( chunk_effect );
-        start_delay( DELAY_EAT, 2 );
-        lessen_hunger( 1000, true );
-    }
-    else
-    {
-        switch (chunk_effect)
-        {
-        case CE_MUTAGEN_RANDOM:
-            mpr("This meat tastes really weird.");
-            mutate(100);
-            break;
-
-        case CE_MUTAGEN_BAD:
-            mpr("This meat tastes *really* weird.");
-            give_bad_mutation();
-            break;
-
-        case CE_HCL:
-            rot_player( 10 + random2(10) );
-            disease_player( 50 + random2(100) );
-            break;
-
-        case CE_POISONOUS:
-            mpr("Yeeuch - this meat is poisonous!");
-            poison_player( 3 + random2(4) );
-            break;
-
-        case CE_ROTTEN:
-        case CE_CONTAMINATED:
-            mpr("There is something wrong with this meat.");
-            disease_player( 50 + random2(100) );
-            break;
-
-        // note that this is the only case that takes time and forces redraw
-        case CE_CLEAN:
-            strcpy(info, "This raw flesh ");
-
-            strcat(info, (likes_chunks) ? "tastes good."
-                                        : "is not very appetising.");
-            mpr(info);
-
-            start_delay( DELAY_EAT, 2 );
-            lessen_hunger( 1000, true );
-            break;
-        }
-    }
-
-    return;
-}                               // end eat_chunk()
 
 static void ghoul_eat_flesh( int chunk_effect )
 {
@@ -804,293 +559,306 @@ static void ghoul_eat_flesh( int chunk_effect )
         }
     }
 
-    if (you.strength < you.max_strength && one_chance_in(5))
+    if (you.str < you.max_str && one_chance_in(5))
     {
         mpr("You feel your strength returning.");
-        you.strength++;
-        you.redraw_strength = 1;
+        you.str++;
+        set_redraw_status( REDRAW_STRENGTH );
+        burden_change();
     }
 
     if (healed && you.hp < you.hp_max)
-        inc_hp(1 + random2(5) + random2(1 + you.experience_level), false);
+        inc_hp( 1 + random2(5) + random2(1 + you.xp_level), false );
 
-    calc_hp();
+    calc_hp_max();
 
     return;
 }                               // end ghoul_eat_flesh()
 
-static void eating(unsigned char item_class, int item_type)
+// never called directly - chunk_effect values must pass
+// through food::determine_chunk_effect() first {dlb}:
+static void eat_chunk( bool from_inv, int id )
 {
-    int temp_rand;              // probability determination {dlb}
-    int food_value = 0;
-    int how_herbivorous = you.mutation[MUT_HERBIVOROUS];
-    int how_carnivorous = you.mutation[MUT_CARNIVOROUS];
-    int carnivore_modifier = 0;
-    int herbivore_modifier = 0;
+    const item_def &item = (from_inv) ? you.inv[id] : mitm[id];
 
-    switch (item_class)
+    // Used for the cases where the food isn't "eaten", but just
+    // has an effect and disappears.
+    bool (*dec_quant_func)( int, int ) = (from_inv) ? dec_inv_item_quantity
+                                                    : dec_mitm_item_quantity;
+
+    const int mons_type = item.plus;
+    const int chunk_type = mons_corpse_effect( mons_type );
+    const bool rotten = (item.special < 100);
+
+    const int chunk_effect = determine_chunk_effect( chunk_type, rotten );
+    // const int value = food_value( item );
+
+    const bool likes_chunks = (you.species == SP_KOBOLD
+                                 || you.species == SP_OGRE
+                                 || you.species == SP_TROLL
+                                 || you.species == SP_GHOUL
+                                 || you.species == SP_GIANT
+                                 || you.mutation[MUT_CARNIVOROUS]);
+
+    const int delay_needed = food_turns( item ) - item.plus2 - 1;
+    ASSERT (delay_needed >= 0);
+
+    if (you.species == SP_GHOUL)
     {
-    case OBJ_FOOD:
-        // apply base sustenance {dlb}:
-        switch (item_type)
-        {
-        case FOOD_MEAT_RATION:
-        case FOOD_ROYAL_JELLY:
-            food_value = 5000;
-            break;
-        case FOOD_BREAD_RATION:
-            food_value = 4400;
-            break;
-        case FOOD_HONEYCOMB:
-            food_value = 2000;
-            break;
-        case FOOD_SNOZZCUMBER:  // maybe a nasty side-effect from RD's book?
-        case FOOD_PIZZA:
-        case FOOD_BEEF_JERKY:
-            food_value = 1500;
-            break;
-        case FOOD_CHEESE:
-        case FOOD_SAUSAGE:
-            food_value = 1200;
-            break;
-        case FOOD_ORANGE:
-        case FOOD_BANANA:
-        case FOOD_LEMON:
-            food_value = 1000;
-            break;
-        case FOOD_PEAR:
-        case FOOD_APPLE:
-        case FOOD_APRICOT:
-            food_value = 700;
-            break;
-        case FOOD_CHOKO:
-        case FOOD_RAMBUTAN:
-        case FOOD_LYCHEE:
-            food_value = 600;
-            break;
-        case FOOD_STRAWBERRY:
-            food_value = 200;
-            break;
-        case FOOD_GRAPE:
-            food_value = 100;
-            break;
-        case FOOD_SULTANA:
-            food_value = 70;     // will not save you from starvation
-            break;
-        default:
-            break;
-        }                       // end base sustenance listing {dlb}
+        // XXX: this and other side-effects (ie royal jelly) should probably
+        // be moved over to delay.cc to match the other delays (so that
+        // the benefit is only gained when the chunk is fully eaten, instead
+        // of gained on the first nibble).
 
-        // next, sustenance modifier for carnivores/herbivores {dlb}:
-        // for some reason, sausages do not penalize herbivores {dlb}:
-        switch (item_type)
-        {
-        case FOOD_MEAT_RATION:
-            carnivore_modifier = 500;
-            herbivore_modifier = -1500;
-            break;
-        case FOOD_BEEF_JERKY:
-            carnivore_modifier = 200;
-            herbivore_modifier = -200;
-            break;
-        case FOOD_BREAD_RATION:
-            carnivore_modifier = -1000;
-            herbivore_modifier = 500;
-            break;
-        case FOOD_BANANA:
-        case FOOD_ORANGE:
-        case FOOD_LEMON:
-            carnivore_modifier = -300;
-            herbivore_modifier = 300;
-            break;
-        case FOOD_PEAR:
-        case FOOD_APPLE:
-        case FOOD_APRICOT:
-        case FOOD_CHOKO:
-        case FOOD_SNOZZCUMBER:
-        case FOOD_RAMBUTAN:
-        case FOOD_LYCHEE:
-            carnivore_modifier = -200;
-            herbivore_modifier = 200;
-            break;
-        case FOOD_STRAWBERRY:
-            carnivore_modifier = -50;
-            herbivore_modifier = 50;
-            break;
-        case FOOD_GRAPE:
-        case FOOD_SULTANA:
-            carnivore_modifier = -20;
-            herbivore_modifier = 20;
-            break;
-        default:
-            carnivore_modifier = 0;
-            herbivore_modifier = 0;
-            break;
-        }                    // end carnivore/herbivore modifier listing {dlb}
+        // only apply ghoul recovery once per chunk:
+        if (item.plus2 == 0)
+            ghoul_eat_flesh( chunk_effect );
+        else
+            mpr("This raw flesh tastes good.");
 
-        // next, let's take care of messaging {dlb}:
-        if (how_carnivorous > 0 && carnivore_modifier < 0)
-            mpr("Blech - you need meat!");
-        else if (how_herbivorous > 0 && herbivore_modifier < 0)
-            mpr("Blech - you need greens!");
-
-        if (how_herbivorous < 1)
+        start_delay( DELAY_EAT, delay_needed, from_inv, id );
+    }
+    else
+    {
+        switch (chunk_effect)
         {
-            switch (item_type)
-            {
-            case FOOD_MEAT_RATION:
-                mpr("That meat ration really hit the spot!");
-                break;
-            case FOOD_BEEF_JERKY:
-                strcpy(info, "That beef jerky was ");
-                strcat(info, (one_chance_in(4)) ? "jerk-a-riffic"
-                                                : "delicious");
-                strcat(info, "!");
-                mpr(info);
-                break;
-            default:
-                break;
-            }
+        case CE_MUTAGEN_RANDOM:
+            mpr("This meat tastes really weird.");
+            mutate( PICK_RANDOM_MUTATION );
+            dec_quant_func( id, 1 );
+            break;
+
+        case CE_MUTAGEN_BAD:
+            mpr("This meat tastes *really* weird.");
+            give_bad_mutation();
+            dec_quant_func( id, 1 );
+            break;
+
+        case CE_HCL:
+            rot_player( 10 + random2(10) );
+            disease_player( 50 + random2(100) );
+            dec_quant_func( id, 1 );
+            break;
+
+        case CE_POISONOUS:
+            mpr("Yeeuch - this meat is poisonous!");
+
+            // Note that res_poison is applied in chunk conversion too,
+            // so the res_poison case here is really just res_poison == 1.
+            if (player_res_poison())
+                poison_player( 1 + random2(3) );
+            else
+                poison_player( 3 + random2(4) );
+
+            dec_quant_func( id, 1 );
+            break;
+
+        case CE_ROTTEN:
+        case CE_CONTAMINATED:
+            mpr("There is something wrong with this meat.");
+            disease_player( 50 + random2(100) );
+            dec_quant_func( id, 1 );
+            break;
+
+        // note that this is the only case that takes time and forces redraw
+        case CE_CLEAN:
+            strcpy(info, "This raw flesh ");
+
+            strcat(info, (likes_chunks) ? "tastes good."
+                                        : "is not very appetising.");
+            mpr(info);
+
+            start_delay( DELAY_EAT, delay_needed, from_inv, id );
+            break;
         }
+    }
 
-        if (how_carnivorous < 1)
+    return;
+}                               // end eat_chunk()
+
+static void eating( bool from_inv, int id )
+{
+    const item_def &item = (from_inv) ? you.inv[id] : mitm[id];
+
+    int temp_rand;              // probability determination {dlb}
+
+    const int how_herbivorous = you.mutation[MUT_HERBIVOROUS];
+    const int how_carnivorous = you.mutation[MUT_CARNIVOROUS];
+
+    const int value = food_value( item );
+    const int delay_needed = food_turns( item ) - item.plus2 - 1;
+
+    ASSERT (delay_needed >= 0);
+
+    if (item.base_type != OBJ_FOOD)
+        return;
+
+    if (value <= 0)
+    {
+        mpr( "That has no food value for you." );
+        return;
+    }
+
+    // committed to eating now:
+    you.turn_is_over = true;
+
+    if (item.sub_type == FOOD_CHUNK)
+    {
+        eat_chunk( from_inv, id );
+        return;
+    }
+
+    // Take care of messaging {dlb}:
+    if (how_carnivorous && food_is_veg( item ))
+        mpr("Blech - you need meat!");
+    else if (how_herbivorous && food_is_meat( item ))
+        mpr("Blech - you need greens!");
+
+    // NOTE: Any food with special random messages or side effects
+    // currently only takes one turn to eat... if this changes then
+    // those items will have to have special code (like ghoul chunks)
+    // to guarantee that the special thing is only done once.
+
+    if (!how_herbivorous)
+    {
+        switch (item.sub_type)
         {
-            switch (item_type)
-            {
-            case FOOD_BREAD_RATION:
-                mpr("That bread ration really hit the spot!");
-                break;
-            case FOOD_PEAR:
-            case FOOD_APPLE:
-            case FOOD_APRICOT:
-                strcpy(info, "Mmmm... Yummy ");
-                strcat(info, (item_type == FOOD_APPLE)   ? "apple." :
-                             (item_type == FOOD_PEAR)    ? "pear." :
-                             (item_type == FOOD_APRICOT) ? "apricot."
+        case FOOD_MEAT_RATION:
+            mpr("This meat ration really hits the spot!");
+            break;
+        case FOOD_BEEF_JERKY:
+            strcpy(info, "This beef jerky is ");
+            strcat(info, (one_chance_in(4)) ? "jerk-a-riffic"
+                                            : "delicious");
+            strcat(info, "!");
+            mpr(info);
+            break;
+        default:
+            break;
+        }
+    }
+
+    if (!how_carnivorous)
+    {
+        switch (item.sub_type)
+        {
+        case FOOD_BREAD_RATION:
+            mpr("This bread ration really hits the spot!");
+            break;
+        case FOOD_PEAR:
+        case FOOD_APPLE:
+        case FOOD_APRICOT:
+            strcpy(info, "Mmmm... Yummy ");
+            strcat(info, (item.sub_type == FOOD_APPLE)   ? "apple." :
+                         (item.sub_type == FOOD_PEAR)    ? "pear." :
+                         (item.sub_type == FOOD_APRICOT) ? "apricot."
                                                          : "fruit.");
-                mpr(info);
-                break;
-            case FOOD_CHOKO:
-                mpr("That choko was very bland.");
-                break;
-            case FOOD_SNOZZCUMBER:
-                mpr("That snozzcumber tasted truly putrid!");
-                break;
-            case FOOD_ORANGE:
-                strcpy(info, "That orange was delicious!");
-                if (one_chance_in(8))
-                    strcat(info, " Even the peel tasted good!");
-                mpr(info);
-                break;
-            case FOOD_BANANA:
-                strcpy(info, "That banana was delicious!");
-                if (one_chance_in(8))
-                    strcat(info, " Even the peel tasted good!");
-                mpr(info);
-                break;
-            case FOOD_STRAWBERRY:
-                mpr("That strawberry was delicious!");
-                break;
-            case FOOD_RAMBUTAN:
-                mpr("That rambutan was delicious!");
-                break;
-            case FOOD_LEMON:
-                mpr("That lemon was rather sour... But delicious nonetheless!");
-                break;
-            case FOOD_GRAPE:
-                mpr("That grape was delicious!");
-                break;
-            case FOOD_SULTANA:
-                mpr("That sultana was delicious! (but very small)");
-                break;
-            case FOOD_LYCHEE:
-                mpr("That lychee was delicious!");
-                break;
-            default:
-                break;
-            }
-        }
-
-        switch (item_type)
-        {
-        case FOOD_HONEYCOMB:
-            mpr("That honeycomb was delicious.");
-            break;
-        case FOOD_ROYAL_JELLY:
-            mpr("That royal jelly was delicious!");
-            restore_stat(STAT_ALL, false);
-            break;
-        case FOOD_PIZZA:
-            strcpy(info, "Mmm... ");
-
-            if (SysEnv.crawl_pizza && !one_chance_in(3))
-                strcat(info, SysEnv.crawl_pizza);
-            else
-            {
-                temp_rand = random2(9);
-
-                strcat(info, (temp_rand == 0) ? "Ham and pineapple." :
-                             (temp_rand == 1) ? "Extra thick crust." :
-                             (temp_rand == 2) ? "Vegetable." :
-                             (temp_rand == 3) ? "Pepperoni." :
-                             (temp_rand == 4) ? "Yeuchh - Anchovies!" :
-                             (temp_rand == 5) ? "Cheesy." :
-                             (temp_rand == 6) ? "Supreme." :
-                             (temp_rand == 7) ? "Super Supreme!"
-                                              : "Chicken.");
-            }
             mpr(info);
             break;
-        case FOOD_CHEESE:
-            strcpy(info, "Mmm... ");
-            temp_rand = random2(9);
-
-            strcat(info, (temp_rand == 0) ? "Cheddar" :
-                         (temp_rand == 1) ? "Edam" :
-                         (temp_rand == 2) ? "Wensleydale" :
-                         (temp_rand == 3) ? "Camembert" :
-                         (temp_rand == 4) ? "Goat cheese" :
-                         (temp_rand == 5) ? "Fruit cheese" :
-                         (temp_rand == 6) ? "Mozzarella" :
-                         (temp_rand == 7) ? "Sheep cheese"
-                                          : "Yak cheese");
-
-            strcat(info, ".");
+        case FOOD_CHOKO:
+            mpr("This choko is very bland.");
+            break;
+        case FOOD_SNOZZCUMBER:
+            mpr("This snozzcumber tastes truly putrid!");
+            break;
+        case FOOD_ORANGE:
+            strcpy(info, "This orange is delicious!");
+            if (one_chance_in(8))
+                strcat(info, " Even the peel tastes good!");
             mpr(info);
             break;
-        case FOOD_SAUSAGE:
-            mpr("That sausage was delicious!");
+        case FOOD_BANANA:
+            strcpy(info, "This banana is delicious!");
+            if (one_chance_in(8))
+                strcat(info, " Even the peel tastes good!");
+            mpr(info);
+            break;
+        case FOOD_STRAWBERRY:
+            mpr("This strawberry is delicious!");
+            break;
+        case FOOD_RAMBUTAN:
+            mpr("This rambutan is delicious!");
+            break;
+        case FOOD_LEMON:
+            mpr("This lemon is rather sour... but delicious nonetheless!");
+            break;
+        case FOOD_GRAPE:
+            mpr("This grape is delicious!");
+            break;
+        case FOOD_SULTANA:
+            mpr("This sultana is delicious! (but very small)");
+            break;
+        case FOOD_LYCHEE:
+            mpr("This lychee is delicious!");
             break;
         default:
             break;
         }
+    }
 
-        // finally, modify player's hunger level {dlb}:
-        if (carnivore_modifier && how_carnivorous > 0)
-            food_value += (carnivore_modifier * how_carnivorous);
-
-        if (herbivore_modifier && how_herbivorous > 0)
-            food_value += (herbivore_modifier * how_herbivorous);
-
-        if (food_value > 0)
-        {
-            if (item_type == FOOD_MEAT_RATION || item_type == FOOD_BREAD_RATION)
-                start_delay( DELAY_EAT, 3 );
-            else
-                start_delay( DELAY_EAT, 1 );
-
-            lessen_hunger( food_value, true );
-        }
+    switch (item.sub_type)
+    {
+    case FOOD_HONEYCOMB:
+        mpr("This honeycomb is delicious.");
         break;
 
+    case FOOD_ROYAL_JELLY:
+        mpr("This royal jelly is delicious!");
+        restore_stat( STAT_ALL );
+        break;
+
+    case FOOD_PIZZA:
+        if (SysEnv.crawl_pizza && one_chance_in(3))
+        {
+            snprintf( info, INFO_SIZE, "Mmm... %s", SysEnv.crawl_pizza );
+        }
+        else
+        {
+            temp_rand = random2(9);
+
+            snprintf( info, INFO_SIZE, "Mmm... %s",
+                         (temp_rand == 0) ? "Ham and pineapple." :
+                         (temp_rand == 1) ? "Extra thick crust." :
+                         (temp_rand == 2) ? "Vegetable." :
+                         (temp_rand == 3) ? "Pepperoni." :
+                         (temp_rand == 4) ? "Yeuchh - Anchovies!" :
+                         (temp_rand == 5) ? "Cheesy." :
+                         (temp_rand == 6) ? "Supreme." :
+                         (temp_rand == 7) ? "Super Supreme!"
+                                          : "Chicken." );
+        }
+
+        mpr(info);
+        break;
+
+    case FOOD_CHEESE:
+        strcpy(info, "Mmm... ");
+        temp_rand = random2(9);
+
+        strcat(info, (temp_rand == 0) ? "Cheddar" :
+                     (temp_rand == 1) ? "Edam" :
+                     (temp_rand == 2) ? "Wensleydale" :
+                     (temp_rand == 3) ? "Camembert" :
+                     (temp_rand == 4) ? "Goat cheese" :
+                     (temp_rand == 5) ? "Fruit cheese" :
+                     (temp_rand == 6) ? "Mozzarella" :
+                     (temp_rand == 7) ? "Sheep cheese"
+                                      : "Yak cheese");
+
+        strcat(info, ".");
+        mpr(info);
+        break;
+    case FOOD_SAUSAGE:
+        mpr("This sausage is delicious!");
+        break;
     default:
         break;
     }
 
-    return;
+    start_delay( DELAY_EAT, delay_needed, from_inv, id );
 }                               // end eating()
 
-static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
+static bool can_ingest( const item_def &item, bool suppress_msg )
 {
     bool survey_says = false;
 
@@ -1103,44 +871,32 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
     // ur_chunkslover not defined in terms of ur_carnivorous because
     // a player could be one and not the other IMHO - 13mar2000 {dlb}
     bool ur_chunkslover = (you.hunger_state <= HS_HUNGRY
-                           || wearing_amulet(AMU_THE_GOURMAND)
+                           || player_equip( EQ_AMULET, AMU_THE_GOURMAND )
                            || you.species == SP_KOBOLD
                            || you.species == SP_OGRE
                            || you.species == SP_TROLL
                            || you.species == SP_GHOUL
                            || you.mutation[MUT_CARNIVOROUS]);
 
-    switch (what_isit)
+    // other object types are set to return false for now until
+    // someone wants to recode the eating code to permit consumption
+    // of things other than just food -- corpses first, then more
+    // exotic stuff later would be good to explore - 13mar2000 {dlb}
+    if (item.base_type == OBJ_FOOD)
     {
-    case OBJ_FOOD:
-        switch (kindof_thing)
+        survey_says = true;
+
+        if (food_is_veg( item ))
         {
-        case FOOD_BREAD_RATION:
-        case FOOD_PEAR:
-        case FOOD_APPLE:
-        case FOOD_CHOKO:
-        case FOOD_SNOZZCUMBER:
-        case FOOD_PIZZA:
-        case FOOD_APRICOT:
-        case FOOD_ORANGE:
-        case FOOD_BANANA:
-        case FOOD_STRAWBERRY:
-        case FOOD_RAMBUTAN:
-        case FOOD_LEMON:
-        case FOOD_GRAPE:
-        case FOOD_SULTANA:
-        case FOOD_LYCHEE:
             if (ur_carnivorous)
             {
                 survey_says = false;
                 if (!suppress_msg)
                     mpr("Sorry, you're a carnivore.");
             }
-            else
-                survey_says = true;
-            break;
-
-        case FOOD_CHUNK:
+        }
+        else if (item.sub_type == FOOD_CHUNK)
+        {
             if (ur_herbivorous)
             {
                 survey_says = false;
@@ -1153,22 +909,7 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
                 if (!suppress_msg)
                     mpr("You aren't quite hungry enough to eat that!");
             }
-            else
-                survey_says = true;
-            break;
-
-        default:
-            return (true);
         }
-        break;
-
-    // other object types are set to return false for now until
-    // someone wants to recode the eating code to permit consumption
-    // of things other than just food -- corpses first, then more
-    // exotic stuff later would be good to explore - 13mar2000 {dlb}
-    case OBJ_CORPSES:
-    default:
-        return (false);
     }
 
     return (survey_says);
@@ -1178,125 +919,107 @@ static bool can_ingest(int what_isit, int kindof_thing, bool suppress_msg)
 // addition (long missing and requested), what follows is an expansion of how
 // chunks were handled in the codebase up to this date -- I have never really
 // understood why liches are hungry and not true undead beings ... {dlb}:
-static int determine_chunk_effect(int which_chunk_type, bool rotten_chunk)
+static int determine_chunk_effect( int which_chunk_type, bool rotten_chunk )
 {
-    int poison_resistance_level = player_res_poison();
     int this_chunk_effect = which_chunk_type;
 
-    // determine the initial effect of eating a particular chunk {dlb}:
+    // cover resistances to bad effects (makes them merely contaminated) -- bwr
     switch (this_chunk_effect)
     {
     case CE_HCL:
     case CE_MUTAGEN_RANDOM:
-        if (you.species == SP_GHOUL
-                || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
-        {
-            this_chunk_effect = CE_CLEAN;
-        }
+        if (you.is_undead)
+            this_chunk_effect = CE_CONTAMINATED;
         break;
 
     case CE_POISONOUS:
-        if (you.species == SP_GHOUL
-                || you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH
-                || poison_resistance_level > 0)
-        {
-            this_chunk_effect = CE_CLEAN;
-        }
-        break;
-
-    case CE_CONTAMINATED:
-        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
-            this_chunk_effect = CE_CLEAN;
-        else
-        {
-            switch (you.species)
-            {
-            case SP_GHOUL:
-                // Doing this here causes a odd message later. -- bwr
-                // this_chunk_effect = CE_ROTTEN;
-                break;
-
-            case SP_KOBOLD:
-            case SP_TROLL:
-                if (!one_chance_in(45))
-                    this_chunk_effect = CE_CLEAN;
-                break;
-
-            case SP_HILL_ORC:
-            case SP_OGRE:
-                if (!one_chance_in(15))
-                    this_chunk_effect = CE_CLEAN;
-                break;
-
-            default:
-                if (!one_chance_in(3))
-                    this_chunk_effect = CE_CLEAN;
-                break;
-            }
-        }
+        if (player_res_poison() > 1)
+            this_chunk_effect = CE_CONTAMINATED;
         break;
 
     default:
         break;
     }
 
-    // determine effects of rotting on base chunk effect {dlb}:
-    if (rotten_chunk)
+    // now apply resistance to contaminated meat -- bwr
+    if (this_chunk_effect == CE_CONTAMINATED)
+    {
+        switch (you.species)
+        {
+        case SP_GHOUL:
+            // Ghouls love contaminated meat, pass it through without save.
+            break;
+
+        case SP_TROLL:
+            if (!one_chance_in(15))
+                this_chunk_effect = CE_CLEAN;
+            break;
+
+        case SP_HILL_ORC:
+        case SP_KOBOLD:
+        case SP_OGRE:
+            if (!one_chance_in(5))
+                this_chunk_effect = CE_CLEAN;
+            break;
+
+        default:
+            if (coinflip())
+                this_chunk_effect = CE_CLEAN;
+            break;
+        }
+    }
+
+    // now apply the decay state without clobbering unnecessarily -- bwr
+    if (rotten_chunk && !player_equip( EQ_AMULET, AMU_THE_GOURMAND ))
     {
         switch (this_chunk_effect)
         {
         case CE_CLEAN:
         case CE_CONTAMINATED:
-            this_chunk_effect = CE_ROTTEN;
+            if (you.attribute[ATTR_TRANSFORMATION] != TRAN_LICH)
+            {
+                switch (you.species)
+                {
+                case SP_KOBOLD:
+                case SP_TROLL:
+                    if (one_chance_in(3))
+                        this_chunk_effect = CE_ROTTEN;
+                    break;
+                case SP_HILL_ORC:
+                case SP_OGRE:
+                    if (!one_chance_in(3))
+                        this_chunk_effect = CE_ROTTEN;
+                    break;
+                default:
+                    this_chunk_effect = CE_ROTTEN;
+                    break;
+                }
+            }
             break;
+
         case CE_MUTAGEN_RANDOM:
             this_chunk_effect = CE_MUTAGEN_BAD;
             break;
+
         default:
+            // XXX: all others are already bad enough or worse than rotten?
+            // -- we probably eventually want these as flags so we can
+            // have poisonous, rotten meat (for lots of nasty).
             break;
         }
     }
 
-    // one last chance for some species to safely eat rotten food {dlb}:
-    if (this_chunk_effect == CE_ROTTEN)
+    // Ghouls with amulets of the gormand have chunks made tastier. -- bwr
+    if (you.species == SP_GHOUL && player_equip( EQ_AMULET, AMU_THE_GOURMAND ))
     {
-        if (you.attribute[ATTR_TRANSFORMATION] == TRAN_LICH)
-            this_chunk_effect = CE_CLEAN;
-        else
+        // have to handle rotten_chunk here to undo the above "AotG protection
+        if (rotten_chunk
+            || (this_chunk_effect == CE_CONTAMINATED && one_chance_in(3)))
         {
-            switch (you.species)
-            {
-            case SP_KOBOLD:
-            case SP_TROLL:
-                if (!one_chance_in(15))
-                    this_chunk_effect = CE_CLEAN;
-                break;
-            case SP_HILL_ORC:
-            case SP_OGRE:
-                if (!one_chance_in(5))
-                    this_chunk_effect = CE_CLEAN;
-                break;
-            default:
-                break;
-            }
+            this_chunk_effect = CE_ROTTEN;
         }
-    }
-
-    // the amulet of the gourmad will permit consumption of rotting meat as
-    // though it were "clean" meat - ghouls can expect the reverse, as they
-    // prize rotten meat ... yum! {dlb}:
-    if (wearing_amulet(AMU_THE_GOURMAND))
-    {
-        if (you.species == SP_GHOUL)
-        {
-            if (this_chunk_effect == CE_CLEAN)
-                this_chunk_effect = CE_ROTTEN;
-        }
-        else
-        {
-            if (this_chunk_effect == CE_ROTTEN)
-                this_chunk_effect = CE_CLEAN;
-        }
+        else if (this_chunk_effect == CE_CLEAN && one_chance_in(3))
+            this_chunk_effect = CE_CONTAMINATED;
     }
 
     return (this_chunk_effect);

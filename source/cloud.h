@@ -14,9 +14,13 @@
 
 #include "externs.h"
 
+bool is_cloud( int x, int y );
+int get_cloud_type( int x, int y );
+
 void delete_cloud( int cloud );
 void move_cloud( int cloud, int new_x, int new_y );
 
-void place_cloud(unsigned char cl_type, unsigned char ctarget_x, unsigned char ctarget_y, unsigned char cl_range);
+void place_cloud( int cl_type, int ctarget_x, int ctarget_y, int cl_range,
+                  bool affect_grid = true );
 
 #endif

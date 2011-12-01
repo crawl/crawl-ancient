@@ -18,19 +18,22 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "abl-show.h"
+#include "food.h"
 #include "invent.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "item_use.h"
 #include "items.h"
 #include "ouch.h"
+#include "player.h"
 #include "spl-cast.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "version.h"
-#include "wpn-misc.h"
 
 static void adjust_item(void);
 static void adjust_spells(void);
@@ -39,7 +42,7 @@ static void adjust_ability(void);
 void quit_game(void)
 {
     if (yesno("Really quit?", false))
-        ouch(-9999, 0, KILLED_BY_QUITTING);
+        ouch( INSTANT_DEATH, 0, KILLED_BY_QUITTING );
 }                               // end quit_game()
 
 void version(void)
@@ -49,7 +52,7 @@ void version(void)
 
 void adjust(void)
 {
-    mpr( "Adjust (i)tems, (s)pells, or (a)bilities?", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Adjust (i)tems, (s)pells, or (a)bilities?" );
 
     unsigned char keyin = tolower( get_ch() );
 
@@ -98,8 +101,8 @@ static void adjust_item(void)
     you.inv[to_slot] = you.inv[from_slot];
     you.inv[from_slot] = tmp;
 
-    you.inv[from_slot].link = from_slot;
-    you.inv[to_slot].link = to_slot;
+    you.inv[from_slot].slot = from_slot;
+    you.inv[to_slot].slot = to_slot;
 
     for (int i = 0; i < NUM_EQUIP; i++)
     {
@@ -119,7 +122,7 @@ static void adjust_item(void)
     }
 
     if (to_slot == you.equip[EQ_WEAPON] || from_slot == you.equip[EQ_WEAPON])
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
 }                               // end adjust_item()
 
 static void adjust_spells_cleanup(bool needs_redraw)
@@ -128,10 +131,36 @@ static void adjust_spells_cleanup(bool needs_redraw)
         redraw_screen();
 }
 
+static unsigned char read_spell_letter( const char *prompt,
+                                        unsigned char (*show_func)(void),
+                                        bool &needs_redraw )
+{
+    unsigned char keyin;
+
+    for (;;)
+    {
+        mpr( MSGCH_PROMPT, prompt );
+        keyin = get_ch();
+
+        if (keyin == '?' || keyin == '*')
+        {
+            keyin = show_func();
+            needs_redraw = true;
+        }
+
+        if (isalpha( keyin ) || keyin == ESCAPE)
+            break;
+        else
+            mesclr( true );
+    }
+
+    return (keyin);
+}
+
 static void adjust_spells(void)
 {
     unsigned char index_1, index_2;
-    unsigned char nthing = 0;
+    unsigned char keyin;
 
     bool needs_redraw = false;
 
@@ -141,40 +170,20 @@ static void adjust_spells(void)
         return;
     }
 
-  query:
-    mpr("Adjust which spell?", MSGCH_PROMPT);
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
-    {
-        if (keyin == '*' || keyin == '?')
-        {
-            nthing = list_spells();
-            needs_redraw = true;
-        }
-
-        if (isalpha( nthing ) || nthing == ESCAPE)
-            keyin = nthing;
-        else
-        {
-            mesclr( true );
-            goto query;
-        }
-    }
+    keyin = read_spell_letter( "Adjust which spell?", list_spells, needs_redraw );
 
     if (keyin == ESCAPE)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         canned_msg( MSG_OK );
         return;
     }
 
-    int input_1 = (int) keyin;
+    int input_1 = static_cast<int>( keyin );
 
     if (!isalpha( input_1 ))
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("You don't know that spell.");
         return;
     }
@@ -184,53 +193,34 @@ static void adjust_spells(void)
 
     if (spell == SPELL_NO_SPELL)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("You don't know that spell.");
         return;
     }
 
     // print out targeted spell:
-    snprintf( info, INFO_SIZE, "%c - %s", input_1, spell_title( spell ) );
-    mpr(info);
+    adjust_spells_cleanup( needs_redraw );
+    mpr( "%c - %s", input_1, spell_title( spell ) );
 
-    mpr( "Adjust to which letter?", MSGCH_PROMPT );
-
-    keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
-    {
-        if (keyin == '*' || keyin == '?')
-        {
-            nthing = list_spells();
-            needs_redraw = true;
-        }
-
-        if (isalpha( nthing ) || nthing == ESCAPE)
-            keyin = nthing;
-        else
-        {
-            mesclr( true );
-            goto query;
-        }
-    }
+    keyin = read_spell_letter( "Adjust to which letter?", list_spells, needs_redraw );
 
     if (keyin == ESCAPE)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         canned_msg( MSG_OK );
         return;
     }
 
-    int input_2 = (int) keyin;
+    int input_2 = static_cast<int>( keyin );
 
     if (!isalpha( input_2 ))
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("What?");
         return;
     }
 
-    adjust_spells_cleanup(needs_redraw);
+    adjust_spells_cleanup( needs_redraw );
 
     index_2 = letter_to_index( input_2 );
 
@@ -240,25 +230,19 @@ static void adjust_spells(void)
     you.spell_letter_table[index_1] = tmp;
 
     // print out spell in new slot (now at input_2)
-    snprintf( info, INFO_SIZE, "%c - %s", input_2,
-              spell_title( get_spell_by_letter(input_2) ) );
-
-    mpr(info);
+    mpr( "%c - %s", input_2, spell_title( get_spell_by_letter(input_2) ) );
 
     // print out other spell if one was involved (now at input_1)
     spell = get_spell_by_letter( input_1 );
+
     if (spell != SPELL_NO_SPELL)
-    {
-        snprintf( info, INFO_SIZE, "%c - %s", input_1, spell_title(spell) );
-        mpr(info);
-    }
+        mpr( "%c - %s", input_1, spell_title(spell) );
 }                               // end adjust_spells()
 
 static void adjust_ability(void)
 {
-    unsigned char index_1, index_2;
-    unsigned char nthing = 0;
-
+    int index_1, index_2;
+    unsigned char keyin;
     bool needs_redraw = false;
 
     if (!generate_abilities())
@@ -267,40 +251,20 @@ static void adjust_ability(void)
         return;
     }
 
-  query:
-    mpr( "Adjust which ability?", MSGCH_PROMPT );
-
-    unsigned char keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
-    {
-        if (keyin == '*' || keyin == '?')
-        {
-            nthing = show_abilities();
-            needs_redraw = true;
-        }
-
-        if (isalpha( nthing ) || nthing == ESCAPE)
-            keyin = nthing;
-        else
-        {
-            mesclr( true );
-            goto query;
-        }
-    }
+    keyin = read_spell_letter( "Adjust which ability?", show_abilities, needs_redraw );
 
     if (keyin == ESCAPE)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         canned_msg( MSG_OK );
         return;
     }
 
-    int input_1 = (int) keyin;
+    int input_1 = static_cast<int>( keyin );
 
     if (!isalpha( input_1 ))
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("You don't have that ability.");
         return;
     }
@@ -309,55 +273,35 @@ static void adjust_ability(void)
 
     if (you.ability_letter_table[index_1] == ABIL_NON_ABILITY)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("You don't have that ability.");
         return;
     }
 
     // print out targeted spell:
-    snprintf( info, INFO_SIZE, "%c - %s", input_1,
-              get_ability_name_by_index( index_1 ) );
+    adjust_spells_cleanup( needs_redraw );
 
-    mpr(info);
+    mpr( "%c - %s", input_1, get_ability_name_by_index( index_1 ) );
 
-    mpr( "Adjust to which letter?", MSGCH_PROMPT );
-
-    keyin = get_ch();
-
-    if (keyin == '?' || keyin == '*')
-    {
-        if (keyin == '*' || keyin == '?')
-        {
-            nthing = show_abilities();
-            needs_redraw = true;
-        }
-
-        if (isalpha( nthing ) || nthing == ESCAPE)
-            keyin = nthing;
-        else
-        {
-            mesclr( true );
-            goto query;
-        }
-    }
+    keyin = read_spell_letter( "Adjust to which letter?", show_abilities, needs_redraw );
 
     if (keyin == ESCAPE)
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         canned_msg( MSG_OK );
         return;
     }
 
-    int input_2 = (int) keyin;
+    int input_2 = static_cast<int>( keyin );
 
     if (!isalpha( input_2 ))
     {
-        adjust_spells_cleanup(needs_redraw);
+        adjust_spells_cleanup( needs_redraw );
         mpr("What?");
         return;
     }
 
-    adjust_spells_cleanup(needs_redraw);
+    adjust_spells_cleanup( needs_redraw );
 
     index_2 = letter_to_index( input_2 );
 
@@ -370,17 +314,10 @@ static void adjust_ability(void)
     // This is because nothing actually moves until generate_abilities is
     // called again... fortunately that has to be done everytime because
     // that's the silly way this system currently works.  -- bwr
-    snprintf( info, INFO_SIZE, "%c - %s", input_2,
-              get_ability_name_by_index( index_1 ) );
-
-    mpr(info);
+    mpr( "%c - %s", input_2, get_ability_name_by_index( index_1 ) );
 
     if (you.ability_letter_table[index_1] != ABIL_NON_ABILITY)
-    {
-        snprintf( info, INFO_SIZE, "%c - %s", input_1,
-                  get_ability_name_by_index( index_2 ) );
-        mpr(info);
-    }
+        mpr( "%c - %s", input_1, get_ability_name_by_index( index_2 ) );
 }                               // end adjust_ability()
 
 void list_armour(void)
@@ -388,6 +325,7 @@ void list_armour(void)
     for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
     {
         int armour_id = you.equip[i];
+        int colour = LIGHTGREY;
 
         strcpy( info,
                 (i == EQ_CLOAK)       ? "Cloak  " :
@@ -411,13 +349,14 @@ void list_armour(void)
             char str_pass[ ITEMNAME_SIZE ];
             in_name(armour_id, DESC_INVENTORY, str_pass);
             strcat(info, str_pass);
+            colour = you.inv[armour_id].colour;
         }
         else
         {
             strcat(info, "    none");
         }
 
-        mpr( info, MSGCH_EQUIPMENT );
+        mpr( MSGCH_EQUIPMENT, colour, info );
     }
 }                               // end list_armour()
 
@@ -426,6 +365,7 @@ void list_jewellery(void)
     for (int i = EQ_LEFT_RING; i <= EQ_AMULET; i++)
     {
         int jewellery_id = you.equip[i];
+        int colour = LIGHTGREY;
 
         strcpy( info, (i == EQ_LEFT_RING)  ? "Left ring " :
                       (i == EQ_RIGHT_RING) ? "Right ring" :
@@ -439,77 +379,104 @@ void list_jewellery(void)
             char str_pass[ ITEMNAME_SIZE ];
             in_name(jewellery_id, DESC_INVENTORY, str_pass);
             strcat(info, str_pass);
+            colour = you.inv[jewellery_id].colour;
         }
         else
         {
             strcat(info, "    none");
         }
 
-        mpr( info, MSGCH_EQUIPMENT );
+        mpr( MSGCH_EQUIPMENT, colour, info );
     }
 }                               // end list_jewellery()
 
 void list_weapons(void)
 {
+    char str_pass[ ITEMNAME_SIZE ];
     const int weapon_id = you.equip[EQ_WEAPON];
+    int colour = LIGHTGREY;
 
     // Output the current weapon
     //
     // Yes, this is already on the screen... I'm outputing it
     // for completeness and to avoid confusion.
-    strcpy(info, "Current   : ");
+    strcpy( info, "Current      : " );
 
     if (weapon_id != -1)
     {
-        char str_pass[ ITEMNAME_SIZE ];
         in_name( weapon_id, DESC_INVENTORY_EQUIP, str_pass );
-        strcat(info, str_pass);
+        strcat( info, str_pass );
+        colour = you.inv[weapon_id].colour;
     }
     else
     {
         if (you.attribute[ATTR_TRANSFORMATION] == TRAN_BLADE_HANDS)
-            strcat(info, "    blade hands");
+        {
+            strcat( info, "    blade hands" );
+            colour = RED;
+        }
         else
-            strcat(info, "    empty hands");
+            strcat( info, "    empty hands" );
     }
 
-    mpr(info);
+    mpr( MSGCH_EQUIPMENT, colour, info );
 
     // Print out the swap slots
     for (int i = 0; i <= 1; i++)
     {
+        colour = LIGHTGREY;
+
         // We'll avoid repeating the current weapon for these slots,
         // in order to keep things clean.
         if (weapon_id == i)
             continue;
 
-        strcpy(info, (i == 0) ? "Primary   : " : "Secondary : ");
+        strcpy( info, (i == 0) ? "Primary      : " : "Secondary    : " );
 
         if (is_valid_item( you.inv[i] ))
         {
-            char str_pass[ ITEMNAME_SIZE ];
             in_name(i, DESC_INVENTORY_EQUIP, str_pass);
             strcat(info, str_pass);
+            colour = you.inv[i].colour;
         }
         else
             strcat(info, "    none");
 
-        mpr(info);              // Output slot
+        mpr( MSGCH_EQUIPMENT, colour, info );              // Output lot
     }
 
     // Now we print out the current default fire weapon
-    strcpy(info, "Firing    : ");
+    strcpy(info, "Firing       : ");
+    colour = LIGHTGREY;
 
     const int item = get_fire_item_index();
-
     if (item == ENDOFPACK)
         strcat(info, "    nothing");
     else
     {
-        char str_pass[ ITEMNAME_SIZE ];
         in_name( item, DESC_INVENTORY_EQUIP, str_pass );
         strcat( info, str_pass );
+        colour = you.inv[item].colour;
     }
 
-    mpr( info, MSGCH_EQUIPMENT );
+    mpr( MSGCH_EQUIPMENT, colour, info );
+
+    if (!player_can_cut_meat() && Options.easy_butcher)
+    {
+        strcpy( info, "Cutting Tool : " );
+        colour = LIGHTGREY;
+
+        const int knife = find_butcher_knife();
+        if (knife == ENDOFPACK)
+            strcat( info, "    nothing" );
+        else
+        {
+            in_name( knife, DESC_INVENTORY_EQUIP, str_pass );
+            strcat( info, str_pass );
+            colour = you.inv[knife].colour;
+        }
+
+        mpr( MSGCH_EQUIPMENT, colour, info );
+    }
+
 }                               // end list_weapons()

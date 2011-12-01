@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "abyss.h"
@@ -29,185 +30,60 @@
 #include "invent.h"
 #include "it_use2.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "mon-util.h"
+#include "ouch.h"
 #include "player.h"
 #include "skills2.h"
+#include "spells2.h"
 #include "spells3.h"
 #include "spells4.h"
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
-#include "wpn-misc.h"
 
-void blink(void)
+bool something_there( int x, int y )
 {
-    struct dist beam;
+    return ((x == you.x_pos && y == you.y_pos)
+            || grid_is_solid( grd[x][y] )
+            || (mgrd[x][y] != NON_MONSTER
+                && !mons_is_submerged( &menv[ mgrd[x][y] ] ))
+            || is_cloud( x, y ));
+}
 
-    // yes, there is a logic to this ordering {dlb}:
-    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
-        mpr("You feel a weird sense of stasis.");
-    else if (you.level_type == LEVEL_ABYSS && !one_chance_in(3))
-        mpr("The power of the Abyss keeps you in your place!");
-    else if (you.conf)
-        random_blink(false);
-    else if (!allow_control_teleport(true))
-    {
-        mpr("A powerful magic interferes with your control of the blink.");
-        random_blink(false);
-    }
-    else
-    {
-        // query for location {dlb}:
-        for (;;)
-        {
-            mpr("Blink to where?", MSGCH_PROMPT);
-
-            direction( beam, DIR_TARGET );
-
-            if (!beam.isValid)
-            {
-                canned_msg(MSG_SPELL_FIZZLES);
-                return;         // early return {dlb}
-            }
-
-            if (see_grid(beam.tx, beam.ty))
-                break;
-            else
-            {
-                mesclr();
-                mpr("You can't blink there!");
-            }
-        }
-
-        if (grd[beam.tx][beam.ty] <= DNGN_LAST_SOLID_TILE
-            || mgrd[beam.tx][beam.ty] != NON_MONSTER)
-        {
-            mpr("Oops! Maybe something was there already.");
-            random_blink(false);
-        }
-        else if (you.level_type == LEVEL_ABYSS)
-        {
-            abyss_teleport( false );
-            you.pet_target = MHITNOT;
-        }
-        else
-        {
-            you.x_pos = beam.tx;
-            you.y_pos = beam.ty;
-
-            // controlling teleport contaminates the player -- bwr
-            contaminate_player( 1 );
-        }
-
-        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
-        {
-            you.duration[DUR_CONDENSATION_SHIELD] = 0;
-            you.redraw_armour_class = 1;
-        }
-    }
-
-    return;
-}                               // end blink()
-
-void random_blink(bool allow_partial_control)
-{
-    int tx, ty;
-    bool succ = false;
-
-    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
-        mpr("You feel a weird sense of stasis.");
-    else if (you.level_type == LEVEL_ABYSS && !one_chance_in(3))
-    {
-        mpr("The power of the Abyss keeps you in your place!");
-    }
-    else if (!random_near_space(you.x_pos, you.y_pos, tx, ty))
-    {
-        mpr("You feel jittery for a moment.");
-    }
-
-#ifdef USE_SEMI_CONTROLLED_BLINK
-    //jmf: add back control, but effect is cast_semi_controlled_blink(pow)
-    else if (you.attribute[ATTR_CONTROL_TELEPORT] && !you.conf
-             && allow_partial_control && allow_control_teleport())
-    {
-        mpr("You may select the general direction of your translocation.");
-        cast_semi_controlled_blink(100);
-        succ = true;
-    }
-#endif
-
-    else
-    {
-        mpr("You blink.");
-
-        succ = true;
-        you.x_pos = tx;
-        you.y_pos = ty;
-
-        if (you.level_type == LEVEL_ABYSS)
-        {
-            abyss_teleport( false );
-            you.pet_target = MHITNOT;
-        }
-    }
-
-    if (succ && you.duration[DUR_CONDENSATION_SHIELD] > 0)
-    {
-        you.duration[DUR_CONDENSATION_SHIELD] = 0;
-        you.redraw_armour_class = 1;
-    }
-
-    return;
-}                               // end random_blink()
-
-void fireball(int power)
+// Not actually used for the fireball spell, but for delayed fireball ability.
+int fireball( int power )
 {
     struct dist fire_ball;
 
-    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
-
+    mpr( MSGCH_PROMPT, STD_DIRECTION_PROMPT );
     message_current_target();
 
     direction( fire_ball, DIR_NONE, TARG_ENEMY );
 
     if (!fire_ball.isValid)
-        canned_msg(MSG_SPELL_FIZZLES);
-    else
     {
-        struct bolt beam;
-
-        beam.source_x = you.x_pos;
-        beam.source_y = you.y_pos;
-        beam.target_x = fire_ball.tx;
-        beam.target_y = fire_ball.ty;
-
-        zapping(ZAP_FIREBALL, power, beam);
+        canned_msg(MSG_SPELL_FIZZLES);
+        return (SPRET_ABORT);
     }
 
-    return;
+    struct bolt beam;
+
+    beam.source_x = you.x_pos;
+    beam.source_y = you.y_pos;
+    beam.target_x = fire_ball.tx;
+    beam.target_y = fire_ball.ty;
+
+    zapping( ZAP_FIREBALL, power, beam );
+
+    return (SPRET_SUCCESS);
 }                               // end fireball()
 
-void cast_fire_storm(int powc)
+void cast_fire_storm( int powc, struct bolt &beam )
 {
-    struct bolt beam;
-    struct dist targ;
-
-    mpr("Where?");
-
-    direction( targ, DIR_TARGET, TARG_ENEMY );
-
-    beam.target_x = targ.tx;
-    beam.target_y = targ.ty;
-
-    if (!targ.isValid)
-    {
-        canned_msg(MSG_SPELL_FIZZLES);
-        return;
-    }
-
     beam.ex_size = 2 + (random2(powc) > 75);
     beam.flavour = BEAM_LAVA;
     beam.type = SYM_ZAP;
@@ -215,19 +91,162 @@ void cast_fire_storm(int powc)
     beam.beam_source = MHITYOU;
     beam.thrower = KILL_YOU_MISSILE;
     beam.aux_source = NULL;
-    beam.obviousEffect = false;
-    beam.isBeam = false;
-    beam.isTracer = false;
+    beam.obvious_effect = false;
+    beam.is_beam = false;
+    beam.is_explosion = true;
+    beam.is_enchant = false;
+    beam.is_tracer = false;
+    beam.is_energy = true;
     beam.ench_power = powc;     // used for radius
-    strcpy( beam.beam_name, "great blast of fire" );
-    beam.hit = 20 + powc / 10;
-    beam.damage = calc_dice( 6, 15 + powc );
+    strcpy( beam.name, "great blast of fire" );
+    beam.hit = 100;
+    beam.damage = calc_dice( 3, 15 + (powc * 3) / 5 );
 
     explosion( beam );
     mpr("A raging storm of fire appears!");
 
-    viewwindow(1, false);
+    viewwindow(true, false);
 }                               // end cast_fire_storm()
+
+void cast_chain_lightning( int powc )
+{
+    struct bolt beam;
+
+    // initialize beam structure
+    strcpy( beam.name, "lightning arc" );
+    beam.aux_source = "chain lightning";
+    beam.beam_source = MHITYOU;
+    beam.thrower = KILL_YOU_MISSILE;
+    beam.range = 8;
+    beam.rangeMax = 8;
+    beam.hit = AUTOMATIC_HIT;
+    beam.type = SYM_ZAP;
+    beam.flavour = BEAM_ELECTRICITY;
+    beam.obvious_effect = true;
+    beam.is_beam = false;            // since we want to stop at our target
+    beam.is_enchant = false;
+    beam.is_explosion = false;
+    beam.is_tracer = false;
+    beam.is_energy = true;
+
+    int sx, sy;
+    int tx, ty;
+    int i;
+
+    for (sx = you.x_pos, sy = you.y_pos;
+         powc > 0;
+         powc -= 8 + random2(13), sx = tx, sy = ty)
+    {
+        // infinity as far as this spell is concerned
+        // (Range - 1) is used because the distance is randomized and
+        // may be shifted by one.
+        int min_dist = MONSTER_LOS_RANGE - 1;
+
+        int dist;
+        int count = 0;
+
+        tx = -1;
+        ty = -1;
+
+        for (i = 0; i < MAX_MONSTERS; i++)
+        {
+            struct monsters *monster = &menv[i];
+
+            if (monster->type == -1)
+                continue;
+
+            dist = grid_distance( sx, sy, monster->x, monster->y );
+
+            // check for the source of this arc
+            if (!dist)
+                continue;
+
+            // randomize distance (arcs don't care about a couple of feet)
+            dist += (random2(3) - 1);
+
+            // always ignore targets further than current one
+            if (dist > min_dist)
+                continue;
+
+            if (!check_line_of_sight( sx, sy, monster->x, monster->y ))
+                continue;
+
+            count++;
+
+            if (dist < min_dist)
+            {
+                // switch to looking for closer targets (but not always)
+                if (!one_chance_in(10))
+                {
+                    min_dist = dist;
+                    tx = monster->x;
+                    ty = monster->y;
+                    count = 0;
+                }
+            }
+            else if (tx == -1 || one_chance_in( count ))
+            {
+                // either first target, or new selected target at min_dist
+                tx = monster->x;
+                ty = monster->y;
+
+                // need to set min_dist for first target case
+                if (dist < min_dist)
+                    min_dist = dist;
+            }
+        }
+
+        // now check if the player is a target:
+        dist = grid_distance( sx, sy, you.x_pos, you.y_pos );
+
+        if (dist)       // ie player was not the source
+        {
+            // distance randomized (as above)
+            dist += (random2(3) - 1);
+
+            // select player if only, closest, or randomly selected
+            if ((tx == -1
+                    || dist < min_dist
+                    || (dist == min_dist && one_chance_in( count + 1 )))
+                && check_line_of_sight( sx, sy, you.x_pos, you.y_pos ))
+            {
+                tx = you.x_pos;
+                ty = you.y_pos;
+            }
+        }
+
+        const bool see_source = see_grid( sx, sy );
+        const bool see_targ   = see_grid( tx, ty );
+
+        if (tx == -1)
+        {
+            if (see_source)
+                mpr( "The lightning grounds out." );
+
+            break;
+        }
+
+        // Trying to limit message spamming here so we'll only mention
+        // the thunder when it's out of LoS.
+        if (noisy( SL_THUNDER, sx, sy ) && !see_source)
+            mpr( "You hear a mighty clap of thunder!" );
+
+        if (see_source && !see_targ)
+            mpr( "The lightning arcs out of your line of sight!" );
+        else if (!see_source && see_targ)
+            mpr( "The lightning arc suddenly appears!" );
+
+        beam.source_x = sx;
+        beam.source_y = sy;
+        beam.target_x = tx;
+        beam.target_y = ty;
+        beam.colour = element_colour( EC_ELECTRICITY );
+        beam.damage = calc_dice( 2, 10 + powc / 2 );        // from beam.cc
+        fire_beam( beam );
+    }
+
+    more();
+}
 
 void identify(int power)
 {
@@ -259,52 +278,20 @@ void identify(int power)
         mpr( str_pass );
 
         if (item_slot == you.equip[EQ_WEAPON])
-            you.wield_change = true;
+            set_redraw_status( REDRAW_WIELD );
 
         id_used--;
     }
     while (id_used > 0);
 }                               // end identify()
 
-void conjure_flame(int pow)
+int cast_small_cloud( int pow, struct bolt &beam, int cloud )
 {
-    struct dist spelld;
-
-    bool done_first_message = false;
-
-    for (;;)
+    if (something_there( beam.target_x, beam.target_y ))
     {
-        if (done_first_message)
-            mpr("Where would you like to place the cloud?", MSGCH_PROMPT);
-        else
-        {
-            mpr("You cast a flaming cloud spell! But where?", MSGCH_PROMPT);
-            done_first_message = true;
-        }
-
-        direction( spelld, DIR_TARGET, TARG_ENEMY );
-
-        if (!spelld.isValid)
-        {
-            canned_msg(MSG_SPELL_FIZZLES);
-            return;
-        }
-
-        if (!see_grid(spelld.tx, spelld.ty))
-        {
-            mpr("You can't see that place!");
-            continue;
-        }
-
-        if (grd[ spelld.tx ][ spelld.ty ] <= DNGN_LAST_SOLID_TILE
-            || mgrd[ spelld.tx ][ spelld.ty ] != NON_MONSTER
-            || env.cgrid[ spelld.tx ][ spelld.ty ] != EMPTY_CLOUD)
-        {
-            mpr( "There's already something there!" );
-            continue;
-        }
-
-        break;
+        mpr( "There's already something there!" );
+        canned_msg( MSG_SPELL_FIZZLES );
+        return (SPRET_FAIL);
     }
 
     int durat = 5 + (random2(pow) / 2) + (random2(pow) / 2);
@@ -312,164 +299,120 @@ void conjure_flame(int pow)
     if (durat > 23)
         durat = 23;
 
-    place_cloud( CLOUD_FIRE, spelld.tx, spelld.ty, durat );
-}                               // end cast_conjure_flame()
+    place_cloud( cloud, beam.target_x, beam.target_y, durat );
 
-void stinking_cloud( int pow )
+    return (SPRET_SUCCESS);
+}
+
+void stinking_cloud( int pow, struct bolt &beam )
 {
-    struct dist spelld;
-    struct bolt beem;
+    strcpy( beam.name, "ball of vapour" );
+    beam.colour = GREEN;
+    beam.range = 7;
+    beam.rangeMax = 7;
+    beam.damage = dice_def( 1, 0 );
+    beam.hit = 20 + pow / 5;
+    beam.type = SYM_ZAP;
+    beam.flavour = BEAM_MMISSILE;
+    beam.ench_power = pow;
+    beam.beam_source = MHITYOU;
+    beam.thrower = KILL_YOU;
+    beam.aux_source = NULL;
+    beam.is_beam = false;
+    beam.is_enchant = false;
+    beam.is_energy = true;
+    beam.is_tracer = false;
+    beam.is_explosion = true;
 
-    mpr( STD_DIRECTION_PROMPT, MSGCH_PROMPT );
-
-    message_current_target();
-
-    direction( spelld, DIR_NONE, TARG_ENEMY );
-
-    if (!spelld.isValid)
-    {
-        canned_msg(MSG_SPELL_FIZZLES);
-        return;
-    }
-
-    beem.target_x = spelld.tx;
-    beem.target_y = spelld.ty;
-
-    beem.source_x = you.x_pos;
-    beem.source_y = you.y_pos;
-
-    strcpy(beem.beam_name, "ball of vapour");
-    beem.colour = GREEN;
-    beem.range = 6;
-    beem.rangeMax = 6;
-    beem.damage = dice_def( 1, 0 );
-    beem.hit = 20;
-    beem.type = SYM_ZAP;
-    beem.flavour = BEAM_MMISSILE;
-    beem.ench_power = pow;
-    beem.beam_source = MHITYOU;
-    beem.thrower = KILL_YOU;
-    beem.aux_source = NULL;
-    beem.isBeam = false;
-    beem.isTracer = false;
-
-    fire_beam(beem);
+    fire_beam( beam );
 }                               // end stinking_cloud()
 
-void cast_big_c(int pow, char cty)
+void big_cloud( char clouds, char cl_x, char cl_y, int pow, int size )
 {
-    struct dist cdis;
-
-    mpr("Where do you want to put it?", MSGCH_PROMPT);
-    direction( cdis, DIR_TARGET, TARG_ENEMY );
-
-    if (!cdis.isValid)
-    {
-        canned_msg(MSG_SPELL_FIZZLES);
-        return;
-    }
-
-    big_cloud( cty, cdis.tx, cdis.ty, pow, 8 + random2(3) );
-}                               // end cast_big_c()
-
-void big_cloud(char clouds, char cl_x, char cl_y, int pow, int size)
-{
-    apply_area_cloud(make_a_normal_cloud, cl_x, cl_y, pow, size, clouds);
+    apply_area_cloud( make_a_normal_cloud, cl_x, cl_y, pow, size, clouds );
 }                               // end big_cloud()
 
-static char healing_spell( int healed )
+void cast_big_cloud( int pow, struct bolt &beam, int cloud )
+{
+    big_cloud( cloud, beam.target_x, beam.target_y, pow / 10, 8 + random2(3) );
+}                               // end cast_big_c()
+
+static int healing_spell( int healed )
 {
     int mgr = 0;
     struct monsters *monster = 0;       // NULL {dlb}
     struct dist bmove;
 
-    mpr("Which direction?", MSGCH_PROMPT);
+    mpr(MSGCH_PROMPT,"Which direction?" );
     direction( bmove, DIR_DIR, TARG_FRIEND );
 
     if (!bmove.isValid)
     {
         canned_msg( MSG_HUH );
-        return 0;
+        return (SPRET_ABORT);
     }
 
     mgr = mgrd[you.x_pos + bmove.dx][you.y_pos + bmove.dy];
 
     if (bmove.dx == 0 && bmove.dy == 0)
     {
-        mpr("You are healed.");
-        inc_hp(healed, false);
-        return 1;
+        mpr( "You are healed." );
+        inc_hp( healed, false );
+        you.duration[DUR_CUT] = 0;
+        return (SPRET_SUCCESS);
     }
 
     if (mgr == NON_MONSTER)
     {
         mpr("There isn't anything there!");
-        return -1;
+        return (SPRET_FAIL);  // not ABORT since could be trying for invis mon
     }
 
     monster = &menv[mgr];
 
-    if (heal_monster(monster, healed, false))
+    if (heal_monster( monster, healed, false ))
     {
-        strcpy(info, "You heal ");
-        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-        strcat(info, ".");
-        mpr(info);
+        mon_msg( monster, "You heal %s.", false );
 
         if (monster->hit_points == monster->max_hit_points)
-            simple_monster_message( monster, " is completely healed." );
+            mon_msg( monster, " is completely healed." );
         else
-            print_wounds(monster);
+            print_wounds( monster );
     }
     else
     {
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     }
 
-    return 1;
+    return (SPRET_SUCCESS);
 }                               // end healing_spell()
 
-#if 0
-char cast_lesser_healing( int pow )
-{
-    return healing_spell(5 + random2avg(7, 2));
-}                               // end lesser healing()
-
-char cast_greater_healing( int pow )
-{
-    return healing_spell(15 + random2avg(29, 2));
-}                               // end cast_greater_healing()
-
-char cast_greatest_healing( int pow )
-{
-    return healing_spell(50 + random2avg(49, 2));
-}                               // end cast_greatest_healing()
-#endif
-
-char cast_healing( int pow )
+int cast_healing( int pow )
 {
     if (pow > 50)
         pow = 50;
 
-    return (healing_spell( pow + roll_dice( 2, pow ) - 2 ));
+    return (healing_spell( pow + roll_dice(2, pow) ));
 }
 
 bool cast_revivification(int power)
 {
-    int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;
-    int loss = 0;
 
     if (you.hp == you.hp_max)
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     else if (you.hp_max < 21)
-        mpr("You lack the resilience to cast this spell.");
+        mpr( "You lack the resilience to cast this spell." );
     else
     {
-        mpr("Your body is healed in an amazingly painful way.");
+        mpr( "Your body is healed in an amazingly painful way." );
 
-        loss = 2;
-        for (loopy = 0; loopy < 9; loopy++)
+        const int dam = you.hp_max - you.hp;
+
+        int loss = 3 + random2(4);
+        const int max_extra = 9 + random2(dam) / 5;
+
+        for (int loopy = 0; loopy < max_extra; loopy++)
         {
             if (random2(power) < 8)
                 loss++;
@@ -486,7 +429,7 @@ bool cast_revivification(int power)
 void cast_cure_poison(int mabil)
 {
     if (!you.poison)
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     else
         reduce_poison_player( 2 + random2(mabil) + random2(3) );
 
@@ -503,6 +446,7 @@ void purification(void)
     you.slow = 0;
     you.disease = 0;
     you.paralysis = 0;          // can't currently happen -- bwr
+    you.duration[DUR_STUN] = 0;
 }                               // end purification()
 
 int allowed_deaths_door_hp(void)
@@ -526,10 +470,12 @@ void cast_deaths_door(int pow)
         mpr("You feel invincible!");
         mpr("You seem to hear sand running through an hourglass...");
 
-        set_hp( allowed_deaths_door_hp(), false );
-        deflate_hp( you.hp_max, false );
+        const int hp = allowed_deaths_door_hp();
 
-        you.deaths_door = 10 + random2avg(13, 3) + (random2(pow) / 10);
+        if (you.hp > hp)
+            set_hp( hp, false );
+
+        you.deaths_door = 7 + roll_dice(3,5) + (random2(pow) / 10);
 
         if (you.deaths_door > 25)
             you.deaths_door = 23 + random2(5);
@@ -541,35 +487,28 @@ void cast_deaths_door(int pow)
 // can't use beam variables here, because of monster_die and the puffs of smoke
 void abjuration(int pow)
 {
-    struct monsters *monster = 0;       // NULL {dlb}
-
-    mpr("Send 'em back where they came from!");
+    mpr( "Send 'em back where they came from!" );
 
     for (int ab = 0; ab < MAX_MONSTERS; ab++)
     {
-        monster = &menv[ab];
+        struct monsters *const mon = &menv[ab];
 
-        int abjLevel;
-
-        if (monster->type == -1 || !mons_near(monster))
-            continue;
-
-        if (mons_friendly(monster))
-            continue;
-
-        abjLevel = mons_del_ench(monster, ENCH_ABJ_I, ENCH_ABJ_VI);
-        if (abjLevel != ENCH_NONE)
+        if (mon->type == -1
+            || !mons_near(mon)
+            || mons_friendly(mon))
         {
-            abjLevel -= 1 + (random2(pow) / 8);
-
-            if (abjLevel < ENCH_ABJ_I)
-                monster_die(monster, KILL_RESET, 0);
-            else
-            {
-                simple_monster_message(monster, " shudders.");
-                mons_add_ench(monster, abjLevel);
-            }
+            continue;
         }
+
+        mon_enchant_def *const ench = mons_has_ench( mon, ENCH_SUMMONED );
+
+        if (!ench)
+            continue;
+
+        const int dur = levels_to_dur( ENCH_SUMMONED, 1 + (random2(pow) / 8) );
+
+        if (!mons_dec_ench_ptr( mon, ench, dur ))
+            mon_msg( mon, " shudders." );
     }
 }                               // end abjuration()
 
@@ -585,9 +524,6 @@ void antimagic( void )
 
     if (you.slow)
         you.slow = 1;
-
-    if (you.paralysis)
-        you.paralysis = 1;
 
     if (you.conf)
         you.conf = 1;
@@ -618,6 +554,12 @@ void antimagic( void )
 
     if (you.fire_shield)
         you.fire_shield = 1;
+
+    if (you.confusing_touch)
+        you.confusing_touch = 1;
+
+    if (you.sure_blade)
+        you.sure_blade = 1;
 
     if (you.duration[DUR_SWIFTNESS])
         you.duration[DUR_SWIFTNESS] = 1;
@@ -659,117 +601,118 @@ void antimagic( void )
     contaminate_player( -1 * (1+random2(5)));
 }                               // end antimagic()
 
-void extension(int pow)
+void extension( int pow )
 {
     int contamination = random2(2);
 
     if (you.haste)
     {
-        potion_effect(POT_SPEED, pow);
+        potion_effect( POT_SPEED, pow );
         contamination++;
     }
 
     if (you.slow)
-        potion_effect(POT_SLOWING, pow);
+        potion_effect( POT_SLOWING, pow );
 
 #if 0
-    if (you.paralysis)
-        potion_effect(POT_PARALYSIS, pow);  // how did you cast extension?
-
     if (you.conf)
         potion_effect(POT_CONFUSION, pow);  // how did you cast extension?
 #endif
 
     if (you.might)
     {
-        potion_effect(POT_MIGHT, pow);
+        potion_effect( POT_MIGHT, pow );
         contamination++;
     }
 
-    if (you.levitation)
-        potion_effect(POT_LEVITATION, pow);
-
     if (you.invis)
     {
-        potion_effect(POT_INVISIBILITY, pow);
+        potion_effect( POT_INVISIBILITY, pow );
         contamination++;
     }
 
     if (you.duration[DUR_ICY_ARMOUR])
-        ice_armour(pow, true);
+        ice_armour( pow, true );
 
     if (you.duration[DUR_REPEL_MISSILES])
-        missile_prot(pow);
-
-    if (you.duration[DUR_REGENERATION])
-        cast_regen(pow);
+        missile_prot( pow );
 
     if (you.duration[DUR_DEFLECT_MISSILES])
-        deflection(pow);
+        deflection( pow );
+
+    if (you.duration[DUR_REGENERATION])
+        cast_regen( pow );
 
     if (you.fire_shield)
     {
-        you.fire_shield += random2(pow / 20);
+        you.fire_shield += 5 + random2(pow / 10);
 
         if (you.fire_shield > 50)
             you.fire_shield = 50;
 
-        mpr("Your ring of flames roars with new vigour!");
+        mpr( "Your ring of flames roars with new vigour!" );
     }
 
-    if ( !(you.duration[DUR_WEAPON_BRAND] < 1
-                 || you.duration[DUR_WEAPON_BRAND] > 80) )
-    {
-        you.duration[DUR_WEAPON_BRAND] += 5 + random2(8);
-    }
+    const int wpn = get_inv_wielded();
+
+    if (you.duration[DUR_WEAPON_BRAND] && wpn != -1)
+        brand_weapon( get_weapon_brand( you.inv[wpn] ), pow );
+
+    if (you.confusing_touch)
+        cast_confusing_touch( pow );
+
+    if (you.sure_blade)
+        cast_sure_blade( pow );
 
     if (you.duration[DUR_SWIFTNESS])
-        cast_swiftness(pow);
+        cast_swiftness( pow );
 
     if (you.duration[DUR_INSULATION])
-        cast_insulation(pow);
+        cast_insulation( pow );
 
     if (you.duration[DUR_STONEMAIL])
-        stone_scales(pow);
+        stone_scales( pow );
 
     if (you.duration[DUR_CONTROLLED_FLIGHT])
-        cast_fly(pow);
+        cast_fly( pow );
+    else if (you.levitation)
+        potion_effect( POT_LEVITATION, pow );
 
     if (you.duration[DUR_CONTROL_TELEPORT])
-        cast_teleport_control(pow);
+        cast_teleport_control( pow );
 
     if (you.duration[DUR_RESIST_POISON])
-        cast_resist_poison(pow);
+        cast_resist_poison( pow );
 
     if (you.duration[DUR_TRANSFORMATION])
     {
         mpr("Your transformation has been extended.");
-        you.duration[DUR_TRANSFORMATION] += random2(pow);
+        you.duration[DUR_TRANSFORMATION] += 5 + random2( pow );
         if (you.duration[DUR_TRANSFORMATION] > 100)
             you.duration[DUR_TRANSFORMATION] = 100;
     }
 
     //jmf: added following
     if (you.duration[DUR_STONESKIN])
-        cast_stoneskin(pow);
+        cast_stoneskin( pow );
 
     if (you.duration[DUR_FORESCRY])
-        cast_forescry(pow);
+        cast_forescry( pow );
 
     if (you.duration[DUR_SEE_INVISIBLE])
-        cast_see_invisible(pow);
+        cast_see_invisible( pow );
 
     if (you.duration[DUR_SILENCE])   //how precisely did you cast extension?
-        cast_silence(pow);
+        cast_silence( pow );
 
     if (you.duration[DUR_CONDENSATION_SHIELD])
-        cast_condensation_shield(pow);
+        cast_condensation_shield( pow );
 
     if (contamination)
         contaminate_player( contamination );
 }                               // end extension()
 
-void ice_armour(int pow, bool extending)
+void ice_armour( int pow, bool extending )
 {
     if (!player_light_armour())
     {
@@ -796,7 +739,7 @@ void ice_armour(int pow, bool extending)
         else
             mpr( "A film of ice covers your body!" );
 
-        you.redraw_armour_class = 1;
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
     }
 
     you.duration[DUR_ICY_ARMOUR] += 20 + random2(pow) + random2(pow);
@@ -824,8 +767,8 @@ void stone_scales(int pow)
         else
             mpr( "A set of stone scales covers your body!" );
 
-        you.redraw_evasion = 1;
-        you.redraw_armour_class = 1;
+        set_redraw_status( REDRAW_EVASION );
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
     }
 
     dur_change = 20 + random2(pow) + random2(pow);
@@ -858,9 +801,14 @@ void deflection(int pow)
         you.duration[DUR_DEFLECT_MISSILES] = 100;
 }                               // end cast_deflection()
 
-void cast_regen(int pow)
+void cast_regen( int pow )
 {
-    //if (pow > 150) pow = 150;
+    if (you.hunger <= HUNGER_HUNGRY)
+    {
+        mpr( "Your system is currently too weak to regenerate." );
+        return;
+    }
+
     mpr("Your skin crawls.");
 
     you.duration[DUR_REGENERATION] += 5 + roll_dice( 2, pow / 3 + 1 );
@@ -899,10 +847,7 @@ void cast_swiftness(int power)
     dur_incr = 20 + random2( power );
 
     // Centaurs do have feet and shouldn't get here anyways -- bwr
-    snprintf( info, INFO_SIZE, "You feel quick%s",
-              (you.species == SP_NAGA) ? "." : " on your feet." );
-
-    mpr(info);
+    mpr( "You feel quick%s",  (you.species == SP_NAGA) ? "." : " on your feet." );
 
     if (dur_incr + you.duration[DUR_SWIFTNESS] > 100)
         you.duration[DUR_SWIFTNESS] = 100;
@@ -949,7 +894,7 @@ void cast_insulation(int power)
 
 void cast_resist_poison(int power)
 {
-    int dur_incr = 10 + random2(power);
+    int dur_incr = 10 + roll_dice(2, power);
 
     mpr("You feel resistant to poison.");
 
@@ -962,9 +907,6 @@ void cast_resist_poison(int power)
 void cast_teleport_control(int power)
 {
     int dur_incr = 10 + random2(power);
-
-    if (you.duration[DUR_CONTROL_TELEPORT] == 0)
-        you.attribute[ATTR_CONTROL_TELEPORT]++;
 
     mpr("You feel in control.");
 
@@ -988,37 +930,38 @@ void cast_ring_of_flames(int power)
 
 void cast_confusing_touch(int power)
 {
-    snprintf( info, INFO_SIZE, "Your %s begin to glow %s.",
-              your_hand(true), (you.confusing_touch ? "brighter" : "red") );
-
-    mpr( info );
+    mpr( "Your %s begin to glow %s.", your_hand(true),
+            (you.confusing_touch ? "brighter" : "red") );
 
     you.confusing_touch += 5 + (random2(power) / 5);
 
-    if (you.confusing_touch > 50)
-        you.confusing_touch = 50;
-
+    if (you.confusing_touch > 30)
+        you.confusing_touch = 30;
 }                               // end cast_confusing_touch()
 
 bool cast_sure_blade(int power)
 {
     bool success = false;
 
-    if (you.equip[EQ_WEAPON] == -1)
+    const int wpn = get_inv_wielded();
+
+    if (wpn == -1)
         mpr("You aren't wielding a weapon!");
-    else if (weapon_skill( you.inv[you.equip[EQ_WEAPON]].base_type,
-                     you.inv[you.equip[EQ_WEAPON]].sub_type) != SK_SHORT_BLADES)
-    {
+    else if (weapon_skill( you.inv[wpn] ) != SK_SHORT_BLADES)
         mpr("You cannot bond with this weapon.");
-    }
     else
     {
         if (!you.sure_blade)
+        {
             mpr("You become one with your weapon.");
+            set_redraw_status( REDRAW_WIELD );
+        }
         else if (you.sure_blade < 25)
             mpr("Your bond becomes stronger.");
+        else
+            mpr("Your bond remains the same.");
 
-        you.sure_blade += 8 + (random2(power) / 10);
+        you.sure_blade += 8 + (random2(power) / 5);
 
         if (you.sure_blade > 25)
             you.sure_blade = 25;
@@ -1036,7 +979,25 @@ void manage_fire_shield(void)
     if (!you.fire_shield)
         return;
 
-    char stx = 0, sty = 0;
+    if (you.attribute[ATTR_TRANSFORMATION] == TRAN_ICE_BEAST)
+    {
+        int res = player_res_fire();
+
+        int dam = (roll_dice(3,10) + 7) * you.time_taken;
+
+        if (res < 0)
+            dam += (roll_dice(2,10) + 1) * you.time_taken;
+
+        dam = (dam + 5) / 10;
+
+        if (dam > 0)
+        {
+            mpr( MSGCH_WARN, "You're melting!" );
+            ouch( dam, 0, KILLED_BY_MELTING );
+        }
+    }
+
+    int stx = 0, sty = 0;
 
     for (stx = -1; stx < 2; stx++)
     {
@@ -1045,14 +1006,11 @@ void manage_fire_shield(void)
             if (sty == 0 && stx == 0)
                 continue;
 
-            //if ( one_chance_in(3) ) beam.range ++;
+            const int x = you.x_pos + stx;
+            const int y = you.y_pos + sty;
 
-            if (grd[you.x_pos + stx][you.y_pos + sty] > DNGN_LAST_SOLID_TILE
-                && env.cgrid[you.x_pos + stx][you.y_pos + sty] == EMPTY_CLOUD)
-            {
-                place_cloud( CLOUD_FIRE, you.x_pos + stx, you.y_pos + sty,
-                             1 + random2(6) );
-            }
+            if (!grid_is_solid( grd[x][y] ) && !is_cloud( x, y ))
+                place_cloud( CLOUD_FIRE, x, y, 1 + random2(6) );
         }
     }
 }                               // end manage_fire_shield()

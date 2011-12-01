@@ -78,10 +78,13 @@
 #include "AppHdr.h"
 
 #include "abl-show.h"
+#include "dungeon.h"
 #include "enum.h"
+#include "globals.h"
 #include "externs.h"
 #include "files.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "randart.h"
@@ -89,21 +92,19 @@
 #include "skills2.h"
 #include "stuff.h"
 #include "tags.h"
+#include "view.h"
+
+// used only for converting boots
+enum boot_type
+{
+    TBOOT_BOOTS = 0,
+    TBOOT_NAGA_BARDING,
+    TBOOT_CENTAUR_BARDING,
+    NUM_BOOT_TYPES
+};
 
 // THE BIG IMPORTANT TAG CONSTRUCTION/PARSE BUFFER
 static char *tagBuffer = NULL;
-
-// These three are defined in overmap.cc
-extern FixedArray < unsigned char, MAX_LEVELS, MAX_BRANCHES > altars_present;
-extern FixedVector < char, MAX_BRANCHES > stair_level;
-extern FixedArray < unsigned char, MAX_LEVELS, MAX_BRANCHES > feature;
-
-extern unsigned char your_sign; /* these two are defined in view.cc */
-extern unsigned char your_colour;
-
-// temp file pairs used for file level cleanup
-FixedArray < bool, MAX_LEVELS, MAX_BRANCHES > tmp_file_pairs;
-
 
 // static helpers
 static void tag_construct_you(struct tagHeader &th);
@@ -127,35 +128,36 @@ static void tag_construct_ghost(struct tagHeader &th);
 static void tag_read_ghost(struct tagHeader &th, char minorVersion);
 
 // provide a wrapper for file writing, just in case.
-int write2(FILE * file, char *buffer, unsigned int count)
+int write2( FILE * file, const char *buffer, unsigned int count )
 {
-    return fwrite(buffer, 1, count, file);
+    return (fwrite( buffer, 1, count, file ));
 }
 
 // provide a wrapper for file reading, just in case.
-int read2(FILE * file, char *buffer, unsigned int count)
+int read2( FILE * file, char *buffer, unsigned int count )
 {
-    return fread(buffer, 1, count, file);
+    return (fread( buffer, 1, count, file ));
 }
 
-void marshallByte(struct tagHeader &th, char data)
+void marshallByte( struct tagHeader &th, char data )
 {
     tagBuffer[th.offset] = data;
     th.offset += 1;
 }
 
-char unmarshallByte(struct tagHeader &th)
+char unmarshallByte( struct tagHeader &th )
 {
     char data = tagBuffer[th.offset];
     th.offset += 1;
-    return data;
+
+    return (data);
 }
 
 // marshall 2 byte short in network order
-void marshallShort(struct tagHeader &th, short data)
+void marshallShort( struct tagHeader &th, short data )
 {
-    char b2 = (char)(data & 0x00FF);
-    char b1 = (char)((data & 0xFF00) >> 8);
+    char b2 = static_cast<char> (data & 0x00FF);
+    char b1 = static_cast<char>((data & 0xFF00) >> 8);
 
     tagBuffer[th.offset] = b1;
     tagBuffer[th.offset + 1] = b2;
@@ -164,7 +166,7 @@ void marshallShort(struct tagHeader &th, short data)
 }
 
 // unmarshall 2 byte short in network order
-short unmarshallShort(struct tagHeader &th)
+short unmarshallShort( struct tagHeader &th )
 {
     short b1 = tagBuffer[th.offset];
     short b2 = tagBuffer[th.offset + 1];
@@ -172,16 +174,17 @@ short unmarshallShort(struct tagHeader &th)
     short data = (b1 << 8) | (b2 & 0x00FF);
 
     th.offset += 2;
-    return data;
+
+    return (data);
 }
 
 // marshall 4 byte int in network order
-void marshallLong(struct tagHeader &th, long data)
+void marshallLong( struct tagHeader &th, long data )
 {
-    char b4 = (char) (data & 0x000000FF);
-    char b3 = (char)((data & 0x0000FF00) >> 8);
-    char b2 = (char)((data & 0x00FF0000) >> 16);
-    char b1 = (char)((data & 0xFF000000) >> 24);
+    char b4 = static_cast<char> (data & 0x000000FF);
+    char b3 = static_cast<char>((data & 0x0000FF00) >> 8);
+    char b2 = static_cast<char>((data & 0x00FF0000) >> 16);
+    char b1 = static_cast<char>((data & 0xFF000000) >> 24);
 
     tagBuffer[th.offset] = b1;
     tagBuffer[th.offset + 1] = b2;
@@ -192,7 +195,7 @@ void marshallLong(struct tagHeader &th, long data)
 }
 
 // unmarshall 4 byte int in network order
-long unmarshallLong(struct tagHeader &th)
+long unmarshallLong( struct tagHeader &th )
 {
     long b1 = tagBuffer[th.offset];
     long b2 = tagBuffer[th.offset + 1];
@@ -203,60 +206,67 @@ long unmarshallLong(struct tagHeader &th)
     data |= ((b3 & 0x000000FF) << 8) | (b4 & 0x000000FF);
 
     th.offset += 4;
-    return data;
+
+    return (data);
 }
 
 // single precision float -- marshall in network order.
-void marshallFloat(struct tagHeader &th, float data)
+void marshallFloat( struct tagHeader &th, float data )
 {
-    long intBits = *((long *)(&data));
-    marshallLong(th, intBits);
+    long intBits = *(reinterpret_cast<long *>( &data ));
+
+    marshallLong( th, intBits );
 }
 
 // single precision float -- unmarshall in network order.
-float unmarshallFloat(struct tagHeader &th)
+float unmarshallFloat( struct tagHeader &th )
 {
     long intBits = unmarshallLong(th);
 
-    return *((float *)(&intBits));
+    // XXX: Note that this is used for a double!  Evil!
+    return (*(reinterpret_cast<float *>( &intBits )));
 }
 
 // string -- marshall length & string data
-void marshallString(struct tagHeader &th, char *data, int maxSize)
+void marshallString( struct tagHeader &th, char *data, int maxSize )
 {
     // allow for very long strings.
     short len = strlen(data);
+
     if (maxSize > 0 && len > maxSize)
         len = maxSize;
-    marshallShort(th, len);
+
+    marshallShort( th, len );
 
     // put in the actual string -- we'll null terminate on
     // unmarshall.
-    memcpy(&tagBuffer[th.offset], data, len);
+    memcpy( &tagBuffer[th.offset], data, len );
 
     th.offset += len;
 }
 
 // string -- unmarshall length & string data
-void unmarshallString(struct tagHeader &th, char *data, int maxSize)
+void unmarshallString( struct tagHeader &th, char *data, int maxSize )
 {
     // get length
     short len = unmarshallShort(th);
     int copylen = len;
+
     if (len > maxSize && maxSize > 0)
         copylen = maxSize;
 
     // read the actual string and null terminate
-    memcpy(data, &tagBuffer[th.offset], copylen);
+    memcpy( data, &tagBuffer[th.offset], copylen );
     data[copylen] = '\0';
 
     th.offset += len;
 }
 
 // boolean (to avoid system-dependant bool implementations)
-void marshallBoolean(struct tagHeader &th, bool data)
+void marshallBoolean( struct tagHeader &th, bool data )
 {
     char charRep = 0;       // for false
+
     if (data)
         charRep = 1;
 
@@ -265,7 +275,7 @@ void marshallBoolean(struct tagHeader &th, bool data)
 }
 
 // boolean (to avoid system-dependant bool implementations)
-bool unmarshallBoolean(struct tagHeader &th)
+bool unmarshallBoolean( struct tagHeader &th )
 {
     bool data;
 
@@ -275,7 +285,8 @@ bool unmarshallBoolean(struct tagHeader &th)
         data = false;
 
     th.offset += 1;
-    return data;
+
+    return (data);
 }
 
 // Saving the date as a string so we're not reliant on a particular epoch.
@@ -286,7 +297,6 @@ void make_date_string( time_t in_date, char buff[20] )
         buff[0] = '\0';
         return;
     }
-
 
     struct tm *date = localtime( &in_date );
 
@@ -328,15 +338,15 @@ time_t parse_date_string( char buff[20] )
 }
 
 // PUBLIC TAG FUNCTIONS
-void tag_init(long largest_tag)
+void tag_init( long largest_tag )
 {
     if (tagBuffer != NULL)
         return;
 
-    tagBuffer = (char *)malloc(largest_tag);
+    tagBuffer = static_cast<char *>( malloc( largest_tag ) );
 }
 
-void tag_construct(struct tagHeader &th, int tagID)
+void tag_construct( struct tagHeader &th, int tagID )
 {
     th.offset = 0;
     th.tagID = tagID;
@@ -373,11 +383,10 @@ void tag_construct(struct tagHeader &th, int tagID)
     }
 }
 
-void tag_write(struct tagHeader &th, FILE *saveFile)
+void tag_write( struct tagHeader &th, FILE *saveFile )
 {
     const int tagHdrSize = 6;
     int tagSize=0;
-
     char swap[tagHdrSize];
 
     // make sure there is some data to write!
@@ -415,7 +424,7 @@ void tag_write(struct tagHeader &th, FILE *saveFile)
 
 // minorVersion is available for any sub-readers that need it
 // (like TAG_LEVEL_MONSTERS)
-int tag_read(FILE *fp, char minorVersion)
+int tag_read( FILE *fp, char minorVersion )
 {
     const int tagHdrSize = 6;
     struct tagHeader hdr, th;
@@ -470,7 +479,7 @@ int tag_read(FILE *fp, char minorVersion)
             return 0;
     }
 
-    return hdr.tagID;
+    return (hdr.tagID);
 }
 
 
@@ -484,27 +493,27 @@ int tag_read(FILE *fp, char minorVersion)
 
 // minorVersion is available for any child functions that need
 // it (currently none)
-void tag_missing(int tag, char minorVersion)
+void tag_missing( int tag, char minorVersion )
 {
     UNUSED( minorVersion );
 
-    switch(tag)
+    switch (tag)
     {
         case TAG_LEVEL_ATTITUDE:
             tag_missing_level_attitude();
             break;
         default:
             perror("Tag %d is missing;  file is likely corrupt.");
-            end(-1);
+            end (-1);
     }
 }
 
 // utility
-void tag_set_expected(char tags[], int fileType)
+void tag_set_expected( char tags[], int fileType )
 {
     int i;
 
-    for(i=0; i<NUM_TAGS; i++)
+    for (i = 0; i < NUM_TAGS; i++)
     {
         tags[i] = -1;
         switch(fileType)
@@ -536,7 +545,7 @@ void tag_set_expected(char tags[], int fileType)
 // be restored even if a later version increases these constants.
 
 // --------------------------- player tags (foo.sav) -------------------- //
-static void tag_construct_you(struct tagHeader &th)
+static void tag_construct_you( struct tagHeader &th )
 {
     char buff[20];      // used for date string
     int i,j;
@@ -553,14 +562,14 @@ static void tag_construct_you(struct tagHeader &th)
     marshallByte(th,you.rotting);
     marshallByte(th,you.exhausted);
     marshallByte(th,you.deaths_door);
-    marshallByte(th,your_sign);
-    marshallByte(th,your_colour);
+    marshallByte(th,you.symbol);
+    marshallByte(th,you.colour);
     marshallByte(th,you.pet_target);
 
-    marshallByte(th,you.max_level);
+    marshallByte(th,you.max_xp_level);
     marshallByte(th,you.where_are_you);
     marshallByte(th,you.char_direction);
-    marshallByte(th,you.your_level);
+    marshallByte(th,you.depth);
     marshallByte(th,you.is_undead);
     marshallByte(th,you.special_wield);
     marshallByte(th,you.berserker);
@@ -593,6 +602,8 @@ static void tag_construct_you(struct tagHeader &th)
     marshallByte(th,you.poison);
 
     marshallShort(th, you.hunger);
+    marshallShort(th, you.magic_contamination);
+    marshallShort( th, you.shield_blocks );
 
     // how many you.equip?
     marshallByte(th, NUM_EQUIP);
@@ -601,7 +612,7 @@ static void tag_construct_you(struct tagHeader &th)
 
     marshallByte(th,you.magic_points);
     marshallByte(th,you.max_magic_points);
-    marshallByte(th,you.strength);
+    marshallByte(th,you.str);
     marshallByte(th,you.intel);
     marshallByte(th,you.dex);
     marshallByte(th,you.confusing_touch);
@@ -610,15 +621,15 @@ static void tag_construct_you(struct tagHeader &th)
     marshallByte(th,you.magic_points_regeneration);
 
     marshallShort(th, you.hit_points_regeneration * 100);
-    marshallLong(th, you.experience);
+    marshallLong(th, you.xp);
     marshallLong(th, you.gold);
 
     marshallByte(th,you.char_class);
-    marshallByte(th,you.experience_level);
+    marshallByte(th,you.xp_level);
     marshallLong(th, you.exp_available);
 
     /* max values */
-    marshallByte(th,you.max_strength);
+    marshallByte(th,you.max_str);
     marshallByte(th,you.max_intel);
     marshallByte(th,you.max_dex);
 
@@ -632,12 +643,12 @@ static void tag_construct_you(struct tagHeader &th)
 
     marshallString(th, you.class_name, 30);
 
-    marshallShort(th, you.burden);
+    marshallShort( th, you.burden );
 
     // how many spells?
     marshallByte(th, 25);
     for (i = 0; i < 25; ++i)
-        marshallByte(th, you.spells[i]);
+        marshallByte( th, you.spells[i] );
 
     marshallByte(th, 52);
     for (i = 0; i < 52; i++)
@@ -648,31 +659,31 @@ static void tag_construct_you(struct tagHeader &th)
         marshallShort( th, you.ability_letter_table[i] );
 
     // how many skills?
-    marshallByte(th, 50);
-    for (j = 0; j < 50; ++j)
+    marshallByte(th, MAX_SKILLS);
+    for (j = 0; j < MAX_SKILLS; ++j)
     {
-        marshallByte(th,you.skills[j]);   /* skills! */
-        marshallByte(th,you.practise_skill[j]);   /* skills! */
-        marshallLong(th,you.skill_points[j]);
-        marshallByte(th,you.skill_order[j]);   /* skills ordering */
+        marshallByte( th, you.skills[j] );   /* skills! */
+        marshallByte( th, you.practise_skill[j] );   /* skills! */
+        marshallLong( th, you.skill_points[j] );
+        marshallByte( th, you.skill_order[j] );   /* skills ordering */
     }
 
     // how many durations?
-    marshallByte(th, NUM_DURATIONS);
+    marshallByte( th, NUM_DURATIONS );
     for (j = 0; j < NUM_DURATIONS; ++j)
-        marshallByte(th,you.duration[j]);
+        marshallByte( th, you.duration[j] );
 
     // how many attributes?
-    marshallByte(th, 30);
-    for (j = 0; j < 30; ++j)
-        marshallByte(th,you.attribute[j]);
+    marshallByte( th, NUM_ATTRIBUTES );
+    for (j = 0; j < NUM_ATTRIBUTES; ++j)
+        marshallByte( th, you.attribute[j] );
 
     // how many mutations/demon powers?
-    marshallShort(th, 100);
-    for (j = 0; j < 100; ++j)
+    marshallShort( th, MAX_MUTATIONS );
+    for (j = 0; j < MAX_MUTATIONS; ++j)
     {
-        marshallByte(th,you.mutation[j]);
-        marshallByte(th,you.demon_pow[j]);
+        marshallByte( th, you.mutation[j] );
+        marshallByte( th, you.demon_pow[j] );
     }
 
     // how many penances?
@@ -685,13 +696,22 @@ static void tag_construct_you(struct tagHeader &th)
     for (i = 0; i < MAX_NUM_GODS; i++)
         marshallByte(th, you.worshipped[i]);
 
+    // which gods have been worshipped by this character?
+    marshallByte(th, MAX_NUM_GODS);
+    for (i = 0; i < MAX_NUM_GODS; i++)
+        marshallShort(th, you.num_gifts[i]);
+
     marshallByte(th, you.gift_timeout);
     marshallByte(th, you.normal_vision);
     marshallByte(th, you.current_vision);
     marshallByte(th, you.hell_exit);
 
     // elapsed time
-    marshallFloat(th, (float)you.elapsed_time);
+    // XXX: This is actually a double (Jesse intentionally chose double
+    // over single precision out of consern for how high it might actuall
+    // get).  It's not really known if we need all that, but this is
+    // tempting fate and the whole thing should be looked into.  -- bwr
+    marshallFloat( th, static_cast<float>( you.elapsed_time ) );
 
     // wizard mode used
     marshallByte(th, you.wizard);
@@ -723,25 +743,33 @@ static void tag_construct_you_items(struct tagHeader &th)
     marshallByte(th, ENDOFPACK);
     for (i = 0; i < ENDOFPACK; ++i)
     {
-        marshallByte(th,you.inv[i].base_type);
-        marshallByte(th,you.inv[i].sub_type);
-        marshallShort(th,you.inv[i].plus);
-        marshallLong(th,you.inv[i].special);
-        marshallByte(th,you.inv[i].colour);
-        marshallLong(th,you.inv[i].flags);
-        marshallShort(th,you.inv[i].quantity);
-        marshallShort(th,you.inv[i].plus2);
+        marshallByte( th, you.inv[i].base_type );
+        marshallByte( th, you.inv[i].sub_type );
+        marshallShort( th, you.inv[i].plus );
+        marshallLong( th, you.inv[i].special );
+        marshallByte( th, you.inv[i].colour );
+        marshallLong( th, you.inv[i].flags );
+        marshallShort( th, you.inv[i].quantity );
+        marshallShort( th, you.inv[i].plus2 );
+
+        marshallByte( th, RAP_NUM_PROPERTIES );
+        for (j = 0; j < RAP_NUM_PROPERTIES; j++)
+        {
+            marshallShort( th, you.inv[i].ra_props[j] );
+        }
     }
+
+    marshallShort( th, you.nemelex_altar_index );
 
     // item descrip for each type & subtype
     // how many types?
-    marshallByte(th, 5);
+    marshallByte(th, NUM_IDESC);
     // how many subtypes?
-    marshallByte(th, 50);
-    for (i = 0; i < 5; ++i)
+    marshallByte(th, MAX_SUBTYPES);
+    for (i = 0; i < NUM_IDESC; ++i)
     {
-        for (j = 0; j < 50; ++j)
-            marshallByte(th, you.item_description[i][j]);
+        for (j = 0; j < MAX_SUBTYPES; ++j)
+            marshallLong( th, you.item_description[i][j] );
     }
 
     // identification status
@@ -752,19 +780,19 @@ static void tag_construct_you_items(struct tagHeader &th)
 
     // this is really dumb. We copy the id[] array from itemname
     // to the stack,  for no good reason that I can see.
-    char identy[4][50];
+    char identy[NUM_IDTYPE][MAX_SUBTYPES];
 
     save_id(identy);
 
-    for (i = 0; i < 4; ++i)
+    for (i = 0; i < NUM_IDTYPE; ++i)
     {
-        for (j = 0; j < 50; ++j)
+        for (j = 0; j < MAX_SUBTYPES; ++j)
             marshallByte(th, identy[i][j]);
     }
 
     // how many unique items?
-    marshallByte(th, 50);
-    for (j = 0; j < 50; ++j)
+    marshallByte(th, MAX_SUBTYPES);
+    for (j = 0; j < MAX_SUBTYPES; ++j)
     {
         marshallByte(th,you.unique_items[j]);     /* unique items */
         marshallByte(th,you.had_book[j]);
@@ -782,8 +810,8 @@ static void tag_construct_you_dungeon(struct tagHeader &th)
     int i,j;
 
     // how many unique creatures?
-    marshallByte(th, 50);
-    for (j = 0; j < 50; ++j)
+    marshallByte(th, MAX_UNIQ_MONS);
+    for (j = 0; j < MAX_UNIQ_MONS; ++j)
         marshallByte(th,you.unique_creatures[j]); /* unique beasties */
 
     // how many branches?
@@ -791,7 +819,7 @@ static void tag_construct_you_dungeon(struct tagHeader &th)
     for (j = 0; j < 30; ++j)
     {
         marshallByte(th,you.branch_stairs[j]);
-        marshallByte(th,stair_level[j]);
+        marshallByte(th,env.stair_level[j]);
     }
 
     // how many levels?
@@ -800,9 +828,9 @@ static void tag_construct_you_dungeon(struct tagHeader &th)
     {
         for (j = 0; j < MAX_BRANCHES; ++j)
         {
-            marshallByte(th,altars_present[i][j]);
-            marshallByte(th,feature[i][j]);
-            marshallBoolean(th,tmp_file_pairs[i][j]);
+            marshallByte(th,env.altars_present[i][j]);
+            marshallByte(th,env.feature[i][j]);
+            marshallBoolean(th,env.level_files[i][j]);
         }
     }
 }
@@ -826,18 +854,27 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     you.rotting = unmarshallByte(th);
     you.exhausted = unmarshallByte(th);
     you.deaths_door = unmarshallByte(th);
-    your_sign = unmarshallByte(th);
-    your_colour = unmarshallByte(th);
+    you.symbol = unmarshallByte(th);
+    you.colour = unmarshallByte(th);
     you.pet_target = unmarshallByte(th);
 
-    you.max_level = unmarshallByte(th);
+    you.max_xp_level = unmarshallByte(th);
     you.where_are_you = unmarshallByte(th);
     you.char_direction = unmarshallByte(th);
-    you.your_level = unmarshallByte(th);
+    you.depth = unmarshallByte(th);
     you.is_undead = unmarshallByte(th);
+
     you.special_wield = unmarshallByte(th);
     you.berserker = unmarshallByte(th);
     you.berserk_penalty = unmarshallByte(th);
+
+    if (you.special_wield == SPWLD_SHADOW)
+        you.flash_colour = DARKGREY;
+    else if (you.berserker)
+        you.flash_colour = RED;
+    else
+        you.flash_colour = BLACK;
+
     you.level_type = unmarshallByte(th);
     you.synch_time = unmarshallByte(th);
     you.disease = unmarshallByte(th);
@@ -849,6 +886,17 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     you.poison = unmarshallByte(th);
     you.hunger = unmarshallShort(th);
 
+    if (minorVersion >= 3)
+    {
+        you.magic_contamination = unmarshallShort(th);
+        you.shield_blocks = unmarshallShort(th);
+    }
+    else
+    {
+        you.magic_contamination = 0;
+        you.shield_blocks = 0;
+    }
+
     // how many you.equip?
     count_c = unmarshallByte(th);
     for (i = 0; i < count_c; ++i)
@@ -856,7 +904,7 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
 
     you.magic_points = unmarshallByte(th);
     you.max_magic_points = unmarshallByte(th);
-    you.strength = unmarshallByte(th);
+    you.str = unmarshallByte(th);
     you.intel = unmarshallByte(th);
     you.dex = unmarshallByte(th);
     you.confusing_touch = unmarshallByte(th);
@@ -865,15 +913,15 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     you.magic_points_regeneration = unmarshallByte(th);
 
     you.hit_points_regeneration = unmarshallShort(th) / 100;
-    you.experience = unmarshallLong(th);
+    you.xp = unmarshallLong(th);
     you.gold = unmarshallLong(th);
 
     you.char_class = unmarshallByte(th);
-    you.experience_level = unmarshallByte(th);
+    you.xp_level = unmarshallByte(th);
     you.exp_available = unmarshallLong(th);
 
     /* max values */
-    you.max_strength = unmarshallByte(th);
+    you.max_str = unmarshallByte(th);
     you.max_intel = unmarshallByte(th);
     you.max_dex = unmarshallByte(th);
 
@@ -974,6 +1022,10 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
         count_c = unmarshallByte(th);
         for (i = 0; i < count_c; i++)
             you.worshipped[i] = unmarshallByte(th);
+
+        count_c = unmarshallByte(th);
+        for (i = 0; i < count_c; i++)
+            you.num_gifts[i] = unmarshallShort(th);
     }
     else
     {
@@ -990,12 +1042,12 @@ static void tag_read_you(struct tagHeader &th, char minorVersion)
     you.hell_exit = unmarshallByte(th);
 
     // elapsed time
-    you.elapsed_time = (double)unmarshallFloat(th);
+    you.elapsed_time = static_cast<double>( unmarshallFloat(th) );
 
     if (minorVersion >= 1)
     {
         // wizard mode
-        you.wizard = (bool) unmarshallByte(th);
+        you.wizard = static_cast<bool>( unmarshallByte(th) );
 
         // time of character creation
         unmarshallString( th, buff, 20 );
@@ -1025,8 +1077,8 @@ static void tag_convert_to_4_3_item( item_def &item )
         return;
 
     // First, convert ident into flags:
-    item.flags = (ident == 3) ? ISFLAG_IDENT_MASK :
-                 (ident >  0) ? ISFLAG_KNOW_CURSE
+    item.flags = (ident == 3) ? static_cast<unsigned long>(ISFLAG_IDENT_MASK) :
+                 (ident >  0) ? static_cast<unsigned long>(ISFLAG_KNOW_CURSE)
                               : 0;
 
     switch (item.base_type)
@@ -1048,8 +1100,8 @@ static void tag_convert_to_4_3_item( item_def &item )
             {
                 switch (special / 30)
                 {
-                case DARM_EMBROIDERED_SHINY:
-                    set_equip_desc( item, ISFLAG_EMBROIDERED_SHINY );
+                case DARM_SHINY:
+                    set_equip_desc( item, ISFLAG_SHINY );
                     break;
                 case DARM_RUNED:
                     set_equip_desc( item, ISFLAG_RUNED );
@@ -1254,25 +1306,25 @@ static void tag_read_you_items(struct tagHeader &th, char minorVersion)
     {
         if (minorVersion < 1)
         {
-            you.inv[i].base_type = (unsigned char) unmarshallByte(th);
-            you.inv[i].sub_type = (unsigned char) unmarshallByte(th);
-            you.inv[i].plus = (unsigned char) unmarshallByte(th);
-            you.inv[i].special = (unsigned char) unmarshallByte(th);
-            you.inv[i].colour = (unsigned char) unmarshallByte(th);
-            you.inv[i].flags = (unsigned char) unmarshallByte(th);
+            you.inv[i].base_type = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].sub_type = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].plus = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].special = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].colour = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].flags = static_cast<unsigned char>( unmarshallByte(th) );
             you.inv[i].quantity = unmarshallShort(th);
-            you.inv[i].plus2 = (unsigned char) unmarshallByte(th);
+            you.inv[i].plus2 = static_cast<unsigned char>( unmarshallByte(th) );
 
             tag_convert_to_4_3_item( you.inv[i] );
         }
         else
         {
-            you.inv[i].base_type = (unsigned char) unmarshallByte(th);
-            you.inv[i].sub_type = (unsigned char) unmarshallByte(th);
+            you.inv[i].base_type = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].sub_type = static_cast<unsigned char>( unmarshallByte(th) );
             you.inv[i].plus = unmarshallShort(th);
-            you.inv[i].special = unmarshallLong(th);
-            you.inv[i].colour = (unsigned char) unmarshallByte(th);
-            you.inv[i].flags = (unsigned long) unmarshallLong(th);
+            you.inv[i].special = static_cast<unsigned long>( unmarshallLong(th) );
+            you.inv[i].colour = static_cast<unsigned char>( unmarshallByte(th) );
+            you.inv[i].flags = static_cast<unsigned long>( unmarshallLong(th) );
             you.inv[i].quantity = unmarshallShort(th);
             you.inv[i].plus2 = unmarshallShort(th);
         }
@@ -1280,18 +1332,103 @@ static void tag_read_you_items(struct tagHeader &th, char minorVersion)
         // these never need to be saved for items in the inventory -- bwr
         you.inv[i].x = -1;
         you.inv[i].y = -1;
-        you.inv[i].link = i;
+        you.inv[i].link = NON_ITEM;
+        you.inv[i].slot = i;
+
+        if (minorVersion >= 3)
+        {
+            int num_props = unmarshallByte( th );
+            for (j = 0; j < num_props; j++)
+            {
+                you.inv[i].ra_props[j] = unmarshallShort( th );
+            }
+        }
+        else
+        {
+            // calculate randart properties the old way:
+            if (is_random_artefact( you.inv[i] ))
+                old_randart_properties( you.inv[i] );
+            else if (you.inv[i].base_type == OBJ_WEAPONS)
+            {
+                // old bow ego types now converted to using appropriate regular
+                if (you.inv[i].special == SPWPN_UNUSED_I)
+                    you.inv[i].special = SPWPN_FLAMING;
+                else if (you.inv[i].special == SPWPN_UNUSED_II)
+                    you.inv[i].special = SPWPN_FREEZING;
+            }
+
+            // convert old hacks into actual new armour sub_types:
+            if (you.inv[i].base_type == OBJ_ARMOUR)
+            {
+                if (you.inv[i].sub_type == ARM_HELMET)
+                {
+                    const int type = get_helmet_type( you.inv[i] );
+
+                    if (type == THELM_CAP
+                        || type == THELM_WIZARD_HAT
+                        || type == THELM_SPECIAL)
+                    {
+                        you.inv[i].sub_type = ARM_CAP;
+                    }
+                }
+                else if (you.inv[i].sub_type == ARM_BOOTS)
+                {
+                    if (you.inv[i].plus2 == TBOOT_NAGA_BARDING)
+                        you.inv[i].sub_type = ARM_NAGA_BARDING;
+                    else if (you.inv[i].plus2 == TBOOT_CENTAUR_BARDING)
+                        you.inv[i].sub_type = ARM_CENTAUR_BARDING;
+                }
+            }
+
+            if (you.inv[i].base_type == OBJ_STAVES
+                && you.inv[i].sub_type == STAFF_STRIKING)
+            {
+                you.inv[i].base_type = OBJ_MISCELLANY;
+                you.inv[i].sub_type = MISC_ROD_OF_STRIKING;
+            }
+        }
     }
 
+    if (minorVersion >= 3)
+        you.nemelex_altar_index = unmarshallShort(th);
+    else
+        you.nemelex_altar_index = -1;
+
     // item descrip for each type & subtype
+    long scroll_ii[ MAX_SUBTYPES ];     // for updating old savefiles
+
     // how many types?
     count_c = unmarshallByte(th);
     // how many subtypes?
     count_c2 = unmarshallByte(th);
+
     for (i = 0; i < count_c; ++i)
     {
+        if (minorVersion < 3)
+        {
+            for (j = 0; j < count_c2; ++j)
+            {
+                if (i < NUM_IDESC)
+                    you.item_description[i][j] = unmarshallByte(th);
+                else
+                    scroll_ii[ MAX_SUBTYPES ] = unmarshallByte(th);
+            }
+        }
+        else
+        {
+            for (j = 0; j < count_c2; ++j)
+                you.item_description[i][j] = unmarshallLong(th);
+        }
+    }
+
+    if (minorVersion >= 3)
+    {
         for (j = 0; j < count_c2; ++j)
-            you.item_description[i][j] = unmarshallByte(th);
+        {
+            you.item_description[ IDESC_SCROLLS ][j] <<= 16;
+            you.item_description[ IDESC_SCROLLS ][j] |= (scroll_ii[j] << 8);
+            you.item_description[ IDESC_SCROLLS ][j] |= OBJ_SCROLLS;
+        }
     }
 
     // identification status
@@ -1361,7 +1498,7 @@ static void tag_read_you_dungeon(struct tagHeader &th)
     for (j = 0; j < count_c; ++j)
     {
         you.branch_stairs[j] = unmarshallByte(th);
-        stair_level[j] = unmarshallByte(th);
+        env.stair_level[j] = unmarshallByte(th);
     }
 
     // how many levels?
@@ -1370,9 +1507,9 @@ static void tag_read_you_dungeon(struct tagHeader &th)
     {
         for (j = 0; j < count_c; ++j)
         {
-            altars_present[i][j] = unmarshallByte(th);
-            feature[i][j] = unmarshallByte(th);
-            tmp_file_pairs[i][j] = unmarshallBoolean(th);
+            env.altars_present[i][j] = unmarshallByte(th);
+            env.feature[i][j] = unmarshallByte(th);
+            env.level_files[i][j] = unmarshallBoolean(th);
         }
     }
 }
@@ -1384,7 +1521,7 @@ static void tag_construct_level(struct tagHeader &th)
     int i;
     int count_x, count_y;
 
-    marshallFloat(th, (float)you.elapsed_time);
+    marshallFloat(th, static_cast<float>( you.elapsed_time ) );
 
     // map grids
     // how many X?
@@ -1396,7 +1533,7 @@ static void tag_construct_level(struct tagHeader &th)
         for (count_y = 0; count_y < GYM; count_y++)
         {
             marshallByte(th, grd[count_x][count_y]);
-            marshallByte(th, env.map[count_x][count_y]);
+            marshallShort(th, env.map[count_x][count_y]);
             marshallByte(th, env.cgrid[count_x][count_y]);
         }
     }
@@ -1417,9 +1554,9 @@ static void tag_construct_level(struct tagHeader &th)
     marshallByte(th, 5);
     for (i = 0; i < 5; i++)
     {
-        marshallByte(th, env.shop[i].keeper_name[0]);
-        marshallByte(th, env.shop[i].keeper_name[1]);
-        marshallByte(th, env.shop[i].keeper_name[2]);
+        marshallByte(th, kNameLen);
+        marshallString(th, env.shop[i].keeper_name, kNameLen);
+
         marshallByte(th, env.shop[i].x);
         marshallByte(th, env.shop[i].y);
         marshallByte(th, env.shop[i].greed);
@@ -1430,7 +1567,7 @@ static void tag_construct_level(struct tagHeader &th)
 
 static void tag_construct_level_items(struct tagHeader &th)
 {
-    int i;
+    int i, j;
 
     // how many traps?
     marshallShort(th, MAX_TRAPS);
@@ -1439,6 +1576,7 @@ static void tag_construct_level_items(struct tagHeader &th)
         marshallByte(th, env.trap[i].type);
         marshallByte(th, env.trap[i].x);
         marshallByte(th, env.trap[i].y);
+        marshallShort(th, env.trap[i].ammo);
     }
 
     // how many items?
@@ -1457,8 +1595,14 @@ static void tag_construct_level_items(struct tagHeader &th)
         marshallShort(th, mitm[i].y);
         marshallLong(th, mitm[i].flags);
 
-        marshallShort(th, mitm[i].link);                //  unused
+        marshallShort(th, mitm[i].slot);
         marshallShort(th, igrd[mitm[i].x][mitm[i].y]);  //  unused
+
+        marshallByte( th, RAP_NUM_PROPERTIES );
+        for (j = 0; j < RAP_NUM_PROPERTIES; j++)
+        {
+            marshallShort( th, mitm[i].ra_props[j] );
+        }
     }
 }
 
@@ -1477,31 +1621,43 @@ static void tag_construct_level_monsters(struct tagHeader &th)
     marshallByte(th, NUM_MON_ENCHANTS);
     // how many monster inventory slots?
     marshallByte(th, NUM_MONSTER_SLOTS);
+    // how many monster spell slots?
+    marshallByte(th, NUM_MONSTER_SPELL_SLOTS);
 
     for (i = 0; i < MAX_MONSTERS; i++)
     {
-        marshallByte(th, menv[i].armour_class);
-        marshallByte(th, menv[i].evasion);
-        marshallByte(th, menv[i].hit_dice);
-        marshallByte(th, menv[i].speed);
-        marshallByte(th, menv[i].speed_increment);
-        marshallByte(th, menv[i].behaviour);
-        marshallByte(th, menv[i].x);
-        marshallByte(th, menv[i].y);
-        marshallByte(th, menv[i].target_x);
-        marshallByte(th, menv[i].target_y);
-        marshallByte(th, menv[i].flags);
+        marshallByte( th, menv[i].armour_class );
+        marshallByte( th, menv[i].evasion );
+        marshallByte( th, menv[i].hit_dice );
+        marshallByte( th, menv[i].speed );
+        marshallByte( th, menv[i].energy );
+        marshallByte( th, menv[i].behaviour );
+        marshallByte( th, menv[i].x );
+        marshallByte( th, menv[i].y );
+        marshallByte( th, menv[i].target_x );
+        marshallByte( th, menv[i].target_y );
+        marshallLong( th, menv[i].flags );
+        marshallByte( th, menv[i].shield_blocks );
 
         for (j = 0; j < NUM_MON_ENCHANTS; j++)
-            marshallByte(th, menv[i].enchantment[j]);
+        {
+            marshallByte( th, menv[i].ench[j].type );
+            marshallByte( th, menv[i].ench[j].source );
+            marshallShort( th, menv[i].ench[j].duration );
+            marshallShort( th, menv[i].ench[j].work );
+        }
 
-        marshallShort(th, menv[i].type);
-        marshallShort(th, menv[i].hit_points);
-        marshallShort(th, menv[i].max_hit_points);
-        marshallShort(th, menv[i].number);
+        marshallShort( th, menv[i].type );
+        marshallShort( th, menv[i].hit_points );
+        marshallShort( th, menv[i].max_hit_points );
+        marshallShort( th, menv[i].number );
+        marshallShort( th, menv[i].colour );
 
         for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-            marshallShort(th, menv[i].inv[j]);
+            marshallShort( th, menv[i].inv[j] );
+
+        for (j = 0; j < NUM_MONSTER_SPELL_SLOTS; j++)
+            marshallShort( th, menv[i].spells[j] );
     }
 }
 
@@ -1525,7 +1681,7 @@ static void tag_read_level( struct tagHeader &th, char minorVersion )
     int i,j;
     int gx, gy;
 
-    env.elapsed_time = (double)unmarshallFloat(th);
+    env.elapsed_time = static_cast<double>( unmarshallFloat(th) );
 
     // map grids
     // how many X?
@@ -1537,9 +1693,23 @@ static void tag_read_level( struct tagHeader &th, char minorVersion )
         for (j = 0; j < gy; j++)
         {
             grd[i][j] = unmarshallByte(th);
-            env.map[i][j] = unmarshallByte(th);
-            if (env.map[i][j] == 201)       // what is this??
-                env.map[i][j] = 239;
+
+            if (minorVersion >= 6)
+                env.map[i][j] = unmarshallShort(th);
+            else
+            {
+                env.map[i][j] = unmarshallByte(th);
+
+                // what is this??
+                // It seems to be a conversion into the Arch character
+                // for the IBM character set.  In ANSI 437, 201 is
+                // a double-line lower-right corner square.  -- bwr
+                if (env.map[i][j] == 201)
+                    env.map[i][j] = 239;
+
+                if (env.map[i][j] != 0)
+                    set_terrain_seen( i, j );
+            }
 
             mgrd[i][j] = NON_MONSTER;
             env.cgrid[i][j] = unmarshallByte(th);
@@ -1569,9 +1739,24 @@ static void tag_read_level( struct tagHeader &th, char minorVersion )
     gx = unmarshallByte(th);
     for (i = 0; i < gx; i++)
     {
-        env.shop[i].keeper_name[0] = unmarshallByte(th);
-        env.shop[i].keeper_name[1] = unmarshallByte(th);
-        env.shop[i].keeper_name[2] = unmarshallByte(th);
+        if (minorVersion >= 6)
+        {
+            const int len = unmarshallByte(th);
+            unmarshallString( th, env.shop[i].keeper_name, len );
+        }
+        else
+        {
+            const int seed = (unmarshallByte(th) << 16)
+                                | (unmarshallByte(th) << 8)
+                                | unmarshallByte(th);
+
+            char buff[ ITEMNAME_SIZE ];
+            make_name( seed, false, buff );
+
+            strncpy( env.shop[i].keeper_name, buff, kNameLen );
+            env.shop[i].keeper_name[ kNameLen - 1 ] = '\0';
+        }
+
         env.shop[i].x = unmarshallByte(th);
         env.shop[i].y = unmarshallByte(th);
         env.shop[i].greed = unmarshallByte(th);
@@ -1582,7 +1767,7 @@ static void tag_read_level( struct tagHeader &th, char minorVersion )
 
 static void tag_read_level_items(struct tagHeader &th, char minorVersion)
 {
-    int i;
+    int i, j;
     int count;
 
     // how many traps?
@@ -1592,6 +1777,11 @@ static void tag_read_level_items(struct tagHeader &th, char minorVersion)
         env.trap[i].type = unmarshallByte(th);
         env.trap[i].x = unmarshallByte(th);
         env.trap[i].y = unmarshallByte(th);
+
+        if (minorVersion >= 6)
+            env.trap[i].ammo = unmarshallShort(th);
+        else
+            arm_trap(i);
     }
 
     // how many items?
@@ -1600,31 +1790,31 @@ static void tag_read_level_items(struct tagHeader &th, char minorVersion)
     {
         if (minorVersion < 3)
         {
-            mitm[i].base_type = (unsigned char) unmarshallByte(th);
-            mitm[i].sub_type = (unsigned char) unmarshallByte(th);
-            mitm[i].plus = (unsigned char) unmarshallByte(th);
-            mitm[i].plus2 = (unsigned char) unmarshallByte(th);
-            mitm[i].special = (unsigned char) unmarshallByte(th);
+            mitm[i].base_type = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].sub_type = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].plus = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].plus2 = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].special = static_cast<unsigned char>( unmarshallByte(th) );
             mitm[i].quantity = unmarshallLong(th);
-            mitm[i].colour = (unsigned char) unmarshallByte(th);
-            mitm[i].x = (unsigned char) unmarshallByte(th);
-            mitm[i].y = (unsigned char) unmarshallByte(th);
-            mitm[i].flags = (unsigned char) unmarshallByte(th);
+            mitm[i].colour = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].x = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].y = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].flags = static_cast<unsigned char>( unmarshallByte(th) );
 
             tag_convert_to_4_3_item( mitm[i] );
         }
         else
         {
-            mitm[i].base_type = (unsigned char) unmarshallByte(th);
-            mitm[i].sub_type = (unsigned char) unmarshallByte(th);
+            mitm[i].base_type = static_cast<unsigned char>( unmarshallByte(th) );
+            mitm[i].sub_type = static_cast<unsigned char>( unmarshallByte(th) );
             mitm[i].plus = unmarshallShort(th);
             mitm[i].plus2 = unmarshallShort(th);
             mitm[i].special = unmarshallLong(th);
             mitm[i].quantity = unmarshallShort(th);
-            mitm[i].colour = (unsigned char) unmarshallByte(th);
+            mitm[i].colour = static_cast<unsigned char>( unmarshallByte(th) );
             mitm[i].x = unmarshallShort(th);
             mitm[i].y = unmarshallShort(th);
-            mitm[i].flags = (unsigned long) unmarshallLong(th);
+            mitm[i].flags = static_cast<unsigned long>( unmarshallLong(th) );
         }
 
         // pre 4.2 files had monster items stacked at (2,2) -- moved to (0,0)
@@ -1634,15 +1824,68 @@ static void tag_read_level_items(struct tagHeader &th, char minorVersion)
             mitm[i].y = 0;
         }
 
-        unmarshallShort(th);  // mitm[].link -- unused
+        if (minorVersion >= 6)
+            mitm[i].slot = unmarshallShort(th);
+        else
+        {
+            mitm[i].slot = -1;
+            unmarshallShort(th);
+        }
+
         unmarshallShort(th);  // igrd[mitm[i].x][mitm[i].y] -- unused
+
+        if (minorVersion >= 6)
+        {
+            int num_props = unmarshallByte( th );
+            for (j = 0; j < num_props; j++)
+            {
+                mitm[i].ra_props[j] = unmarshallShort( th );
+            }
+        }
+        else
+        {
+            // calculate randart properties the old way:
+            if (is_random_artefact( mitm[i] ))
+                old_randart_properties( mitm[i] );
+            else if (you.inv[i].base_type == OBJ_WEAPONS)
+            {
+                // old bow ego types now converted to using appropriate regular
+                if (you.inv[i].special == SPWPN_UNUSED_I)
+                    you.inv[i].special = SPWPN_FLAMING;
+                else if (you.inv[i].special == SPWPN_UNUSED_II)
+                    you.inv[i].special = SPWPN_FREEZING;
+            }
+
+            // convert old hacks into actual new armour sub_types:
+            if (you.inv[i].base_type == OBJ_ARMOUR)
+            {
+                if (mitm[i].sub_type == ARM_HELMET)
+                {
+                    const int type = get_helmet_type( mitm[i] );
+
+                    if (type == THELM_CAP
+                        || type == THELM_WIZARD_HAT
+                        || type == THELM_SPECIAL)
+                    {
+                        mitm[i].sub_type = ARM_CAP;
+                    }
+                }
+                else if (mitm[i].sub_type == ARM_BOOTS)
+                {
+                    if (mitm[i].plus2 == TBOOT_NAGA_BARDING)
+                        mitm[i].sub_type = ARM_NAGA_BARDING;
+                    else if (mitm[i].plus2 == TBOOT_CENTAUR_BARDING)
+                        mitm[i].sub_type = ARM_CENTAUR_BARDING;
+                }
+            }
+        }
     }
 }
 
 static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
 {
     int i,j;
-    int count, ecount, icount;
+    int count, ecount, icount, scount;
 
     // how many mons_alloc?
     count = unmarshallByte(th);
@@ -1655,6 +1898,8 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
     ecount = unmarshallByte(th);
     // how many monster inventory slots?
     icount = unmarshallByte(th);
+    // how many monster spell slots?
+    scount = unmarshallByte(th);
 
     for (i = 0; i < count; i++)
     {
@@ -1662,13 +1907,23 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
         menv[i].evasion = unmarshallByte(th);
         menv[i].hit_dice = unmarshallByte(th);
         menv[i].speed = unmarshallByte(th);
-        menv[i].speed_increment = unmarshallByte(th);
-        menv[i].behaviour = unmarshallByte(th);
+        menv[i].energy = unmarshallByte(th);
+        menv[i].behaviour = static_cast< beh_type >( unmarshallByte(th) );
         menv[i].x = unmarshallByte(th);
         menv[i].y = unmarshallByte(th);
         menv[i].target_x = unmarshallByte(th);
         menv[i].target_y = unmarshallByte(th);
-        menv[i].flags = unmarshallByte(th);
+
+        if (minorVersion >= 6)
+        {
+            menv[i].flags = unmarshallLong(th);
+            menv[i].shield_blocks = unmarshallByte(th);
+        }
+        else
+        {
+            menv[i].flags = unmarshallByte(th);
+            menv[i].shield_blocks = 0;
+        }
 
         // VERSION NOTICE:  for pre 4.2 files,  flags was either 0
         // or 1.  Now,  we can transfer ENCH_CREATED_FRIENDLY over
@@ -1676,26 +1931,121 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
         // Also need to take care of ENCH_FRIEND_ABJ_xx flags
 
         for (j = 0; j < ecount; j++)
-            menv[i].enchantment[j] = unmarshallByte(th);
+        {
+            menv[i].ench[j].type = static_cast<enchant_type>( unmarshallByte(th) );
+
+            if (minorVersion >= 6)
+            {
+                menv[i].ench[j].source = unmarshallByte(th);
+                menv[i].ench[j].duration = unmarshallShort(th);
+                menv[i].ench[j].work = unmarshallShort(th);
+            }
+            else
+            {
+                menv[i].ench[j].source = MHITNOT;
+                menv[i].ench[j].work = 0;
+
+                // XXX: need to do convert durations, source, and types here!
+                const int ench = static_cast<int>( menv[i].ench[j].type );
+
+                if (ench >= ENCH_POISON && ench < ENCH_POISON + 4)
+                {
+                    menv[i].ench[j].type = ENCH_POISON;
+                    menv[i].ench[j].source = MHITYOU;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_POISON, ench - ENCH_POISON + 1 );
+                }
+                else if (ench >= 57 && ench <= 60)
+                {
+                    menv[i].ench[j].type = ENCH_POISON;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_POISON, ench - 56 );
+                }
+                else if (ench >= ENCH_ROT && ench < ENCH_ROT + 4)
+                {
+                    menv[i].ench[j].type = ENCH_ROT;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_ROT, ench - ENCH_ROT + 1 );
+                }
+                else if (ench >= ENCH_SUMMONED && ench < ENCH_SUMMONED + 6)
+                {
+                    menv[i].ench[j].type = ENCH_SUMMONED;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_SUMMONED, ench - ENCH_SUMMONED + 1 );
+                }
+                else if (ench >= ENCH_BACKLIGHT && ench < ENCH_BACKLIGHT + 4)
+                {
+                    menv[i].ench[j].type = ENCH_BACKLIGHT;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_BACKLIGHT, ench - ENCH_BACKLIGHT + 1 );
+                }
+                else if (ench >= 31 && ench <= 34)
+                {
+                    menv[i].ench[j].type = ENCH_STICKY_FLAME;
+                    menv[i].ench[j].source = MHITYOU;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_STICKY_FLAME, ench - 30 );
+                }
+                else if (ench >= ENCH_STICKY_FLAME && ench <= ENCH_STICKY_FLAME + 4)
+                {
+                    menv[i].ench[j].type = ENCH_STICKY_FLAME;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_STICKY_FLAME, ench - ENCH_STICKY_FLAME + 1 );
+                }
+                else if (ench >= ENCH_TELEPORT && ench < ENCH_TELEPORT + 4)
+                {
+                    menv[i].ench[j].type = ENCH_TELEPORT;
+                    menv[i].ench[j].duration = levels_to_dur( ENCH_TELEPORT, ench - ENCH_TELEPORT + 1 );
+                }
+                else if (ench == 73)
+                {
+                    menv[i].ench[j].type = ENCH_NONE;
+                    set_mons_flag( &menv[i], MF_SUBMERGED );
+                }
+                else if (ench == 74)
+                {
+                    menv[i].ench[j].type = ENCH_NONE;
+                    set_mons_flag( &menv[i], MF_SHORT_LIVED );
+                }
+                else if (ench == 38)
+                {
+                    menv[i].ench[j].type = ENCH_NONE;
+                    set_mons_flag( &menv[i], MF_GLOW_SHAPESHIFT );
+                }
+                else if (ench == 39)
+                {
+                    menv[i].ench[j].type = ENCH_NONE;
+                    set_mons_flag( &menv[i], MF_SHAPESHIFT );
+                }
+                else
+                {
+                    menv[i].ench[j].duration = levels_to_dur( menv[i].ench[j].type );
+                }
+
+                if (menv[i].ench[j].type == ENCH_HASTE)
+                    menv[i].speed /= 2;
+                else if (menv[i].ench[j].type == ENCH_SLOW)
+                    menv[i].speed *= 2;
+            }
+        }
+
+        // a bit of safety code:
+        if (minorVersion >= 6 && menv[i].speed > 30)
+            menv[i].speed = 30;
 
         if (minorVersion < 2)
         {
             menv[i].flags = 0;
-            for(j=0; j<NUM_MON_ENCHANTS; j++)
+            for (j = 0; j  <NUM_MON_ENCHANTS; j++)
             {
-                if (j>=ecount)
-                    menv[i].enchantment[j] = ENCH_NONE;
+                if (j >= ecount)
+                    menv[i].ench[j].type = ENCH_NONE;
                 else
                 {
-                    if (menv[i].enchantment[j] == 71) // old ENCH_CREATED_FRIENDLY
+                    if (menv[i].ench[j].type == 71) // old ENCH_CREATED_FRIENDLY
                     {
-                        menv[i].enchantment[j] = ENCH_NONE;
+                        menv[i].ench[j].type = ENCH_NONE;
                         menv[i].flags |= MF_CREATED_FRIENDLY;
                     }
-                    if (menv[i].enchantment[j] >= 65 // old ENCH_FRIEND_ABJ_I
-                      && menv[i].enchantment[j] <= 70) // old ENCH_FRIEND_ABJ_VI
+
+                    if (menv[i].ench[j].type >= 65 // old ENCH_FRIEND_ABJ_I
+                      && menv[i].ench[j].type <= 70) // old ENCH_FRIEND_ABJ_VI
                     {
-                        menv[i].enchantment[j] -= (65 - ENCH_ABJ_I);
+                        int tmp = menv[i].ench[j].type - (65 - ENCH_SUMMONED);
+                        menv[i].ench[j].type = static_cast<enchant_type>(tmp);
                         menv[i].flags |= MF_CREATED_FRIENDLY;
                     }
                 }
@@ -1707,8 +2057,24 @@ static void tag_read_level_monsters(struct tagHeader &th, char minorVersion)
         menv[i].max_hit_points = unmarshallShort(th);
         menv[i].number = unmarshallShort(th);
 
+        if (minorVersion >= 6)
+            menv[i].colour = unmarshallShort(th);
+        else
+            menv[i].colour = mons_class_colour( menv[i].type );
+
         for (j = 0; j < icount; j++)
             menv[i].inv[j] = unmarshallShort(th);
+
+        if (minorVersion >= 6)
+        {
+            for (j = 0; j < scount; j++)
+                menv[i].spells[j] = unmarshallShort(th);
+        }
+        else
+        {
+            const int &book = mons_spell_template_index( &menv[i] );
+            mons_load_spells( &menv[i], book );
+        }
 
         // place monster
         if (menv[i].type != -1)
@@ -1741,16 +2107,16 @@ void tag_missing_level_attitude()
     // can be used to determine friendly/neutral/
     // hostile.
     int i;
-    bool isFriendly;
-    unsigned int new_beh = BEH_WANDER;
+    bool      is_friendly;
+    beh_type  new_beh = BEH_WANDER;
 
-    for(i=0; i<MAX_MONSTERS; i++)
+    for (i = 0; i < MAX_MONSTERS; i++)
     {
         // only do actual monsters
         if (menv[i].type < 0)
             continue;
 
-        isFriendly = testbits(menv[i].flags, MF_CREATED_FRIENDLY);
+        is_friendly = testbits(menv[i].flags, MF_CREATED_FRIENDLY);
 
         menv[i].foe = MHITNOT;
 
@@ -1769,13 +2135,13 @@ void tag_missing_level_attitude()
                 break;
             case 7:         // old BEH_ENSLAVED
                 if (!mons_has_ench(&menv[i], ENCH_CHARM))
-                    isFriendly = true;
+                    is_friendly = true;
                 break;
             default:
                 break;
         }
 
-        menv[i].attitude = (isFriendly)?ATT_FRIENDLY : ATT_HOSTILE;
+        menv[i].attitude = (is_friendly) ? ATT_FRIENDLY : ATT_HOSTILE;
         menv[i].behaviour = new_beh;
         menv[i].foe_memory = 0;
     }
@@ -1788,22 +2154,26 @@ static void tag_construct_ghost(struct tagHeader &th)
 {
     int i;
 
-    marshallString(th, ghost.name, 20);
+    marshallByte( th, kNameLen );
+    marshallString( th, env.ghost.name, kNameLen );
 
     // how many ghost values?
-    marshallByte(th, 20);
+    marshallByte( th, NUM_GHOST_VALUES );
 
-    for (i = 0; i < 20; i++)
-        marshallShort( th, ghost.values[i] );
+    for (i = 0; i < NUM_GHOST_VALUES; i++)
+        marshallShort( th, env.ghost.values[i] );
 }
 
-static void tag_read_ghost(struct tagHeader &th, char minorVersion)
+static void tag_read_ghost( struct tagHeader &th, char minorVersion )
 {
     int i, count_c;
 
-    snprintf( info, INFO_SIZE, "minor version = %d", minorVersion );
+    if (minorVersion < 5)
+        count_c = 20;
+    else
+        count_c = unmarshallByte(th);
 
-    unmarshallString(th, ghost.name, 20);
+    unmarshallString( th, env.ghost.name, count_c );
 
     // how many ghost values?
     count_c = unmarshallByte(th);
@@ -1812,19 +2182,19 @@ static void tag_read_ghost(struct tagHeader &th, char minorVersion)
     {
         // for version 4.4 we moved from unsigned char to shorts -- bwr
         if (minorVersion < 4)
-            ghost.values[i] = unmarshallByte(th);
+            env.ghost.values[i] = unmarshallByte(th);
         else
-            ghost.values[i] = unmarshallShort(th);
+            env.ghost.values[i] = unmarshallShort(th);
     }
 
     if (minorVersion < 4)
     {
         // Getting rid 9of hopefulling the last) of this silliness -- bwr
-        if (ghost.values[ GVAL_RES_FIRE ] >= 97)
-            ghost.values[ GVAL_RES_FIRE ] -= 100;
+        if (env.ghost.values[ GVAL_RES_FIRE ] >= 97)
+            env.ghost.values[ GVAL_RES_FIRE ] -= 100;
 
-        if (ghost.values[ GVAL_RES_COLD ] >= 97)
-            ghost.values[ GVAL_RES_COLD ] -= 100;
+        if (env.ghost.values[ GVAL_RES_COLD ] >= 97)
+            env.ghost.values[ GVAL_RES_COLD ] -= 100;
     }
 }
 

@@ -18,29 +18,17 @@
 #include <string>
 #include <ctype.h>
 
+#include "Kills.h"
+#include "globals.h"
 #include "externs.h"
 #include "defines.h"
+#include "misc.h"
 #include "player.h"
+#include "stash.h"
 #include "stuff.h"
+#include "travel.h"
 #include "items.h"
 #include "view.h"
-
-game_options    Options;
-
-extern void (*viewwindow) (char, bool);
-extern unsigned char (*mapch) (unsigned char);
-extern unsigned char (*mapch2) (unsigned char);
-extern unsigned char mapchar3(unsigned char ldfk);
-extern unsigned char mapchar4(unsigned char ldfk);
-
-#ifdef LINUX
-extern int character_set;       // unices only
-#endif
-
-static std::string & tolower_string( std::string &str );
-
-const static char *obj_syms = ")([/%.?=!.+\\0}X$";
-const static int   obj_syms_len = 16;
 
 // also used with macros
 std::string & trim_string( std::string &str )
@@ -63,8 +51,14 @@ std::string & trim_string( std::string &str )
     return (str);
 }
 
+template<class T> void append_vector( std::vector<T> &dest,
+                                      const std::vector<T> &src)
+{
+    dest.insert( dest.end(), src.begin(), src.end() );
+}
+
 // returns -1 if unmatched else returns 0-15
-static short str_to_colour( const std::string &str )
+short str_to_colour( const std::string &str )
 {
     int ret;
 
@@ -85,9 +79,9 @@ static short str_to_colour( const std::string &str )
     if (ret == 16)
     {
         if (str == "lightgray")
-            ret = 7;
+            ret = LIGHTGREY;
         else if (str == "darkgray")
-            ret = 8;
+            ret = DARKGREY;
     }
 
     return ((ret == 16) ? -1 : ret);
@@ -121,8 +115,9 @@ static short str_to_channel( const std::string &str )
     const std::string cols[ NUM_MESSAGE_CHANNELS ] =
     {
         "plain", "prompt", "god", "duration", "danger", "warning", "food",
-        "recovery", "talk", "intrinsic_gain", "mutation", "monster_spell",
-        "monster_enchant", "monster_damage", "rotten_meat", "equipment",
+        "recovery", "sound", "talk", "intrinsic_gain", "mutation",
+        "monster_spell", "monster_enchant", "monster_damage", "monster_target",
+        "rotten_meat", "equipment", "floor_items", "multiturn_action",
         "diagnostic",
     };
 
@@ -169,6 +164,8 @@ static unsigned int str_to_fire_types( const std::string &str )
         return (FIRE_HAND_AXE);
     else if (str == "club")
         return (FIRE_CLUB);
+    else if (str == "rock")
+        return (FIRE_ROCK);
 
     return (FIRE_NONE);
 }
@@ -233,7 +230,51 @@ static char str_to_class( const std::string &str )
     return ((index != -1) ? index_to_letter( index ) : '\0');
 }
 
-static std::string & tolower_string( std::string &str )
+static unsigned char read_char( const std::string &chr )
+{
+    unsigned char ret = 0;
+
+    if (chr.length() > 0 && isdigit( chr[0] ))
+    {
+        ret = atoi( chr.c_str() );
+    }
+    else if (chr.length() >= 3 && chr[0] == '\'')
+    {
+        // simulating C-style character definition
+        ret = ((chr[1] == '\\') ? chr[2] : chr[1]);
+    }
+
+    return (ret);
+}
+
+static void set_char_table_entry( const std::string &key,
+                                  const std::string &value )
+{
+    const std::string terrain[ NUM_DCHAR_TYPES ] =
+    {
+        "wall", "wall_magic", "floor", "floor_magic",
+        "door_open", "door_closed", "trap", "stairs_down", "stairs_up",
+        "altar", "arch", "fountain", "wavy", "statue",
+        "invis_in_water", "item_detected",
+        "item_orb", "item_weapon", "item_armour", "item_wand",
+        "item_food", "item_scroll", "item_ring", "item_potion",
+        "item_missile", "item_book", "item_stave", "item_miscellany",
+        "item_corpse", "item_gold", "item_amulet", "cloud"
+    };
+
+    for (int i = 0; i < NUM_DCHAR_TYPES; i++)
+    {
+        if (key == terrain[i])
+        {
+            const unsigned char chr = read_char( value );
+            if (chr)
+                Options.char_table[i] = chr;
+            break;
+        }
+    }
+}
+
+std::string & tolower_string( std::string &str )
 {
     if (str.length())
     {
@@ -259,20 +300,56 @@ static bool read_bool( const std::string &field, bool def_value )
     return (ret);
 }
 
+static std::vector<std::string> split( const char *sep, std::string s )
+{
+    std::vector<std::string> segments;
+
+    std::string::size_type pos;
+    while ((pos = s.find(sep, 0)) != std::string::npos)
+    {
+        if (pos > 0)
+            segments.push_back(s.substr(0, pos));
+
+        s.erase(0, pos + 1);
+    }
+
+    if (s.length() > 0)
+        segments.push_back(s);
+
+    for (int i = 0, count = segments.size(); i < count; ++i)
+        trim_string(segments[i]);
+
+    return (segments);
+}
+
 void read_init_file(void)
 {
-    unsigned int i;
+    unsigned int i, count;
 
     // Option initialization
+    Options.activity_interrupts[ ACT_MULTIDROP ] =
+            AI_HP_LOSS | AI_STAT_CHANGE | AI_TELEPORT;
+
+    Options.activity_interrupts[ ACT_RUNNING ] =
+            0xFFFF ^ AI_SEE_MONSTER;
+
+    Options.activity_interrupts[ ACT_TRAVELING ] =
+            0xFFFF ^ (AI_MESSAGE | AI_SEE_MONSTER);
+
     Options.autopickups            = 0x0000;
+    Options.autopickup_on_look     = true;
     Options.verbose_dump           = false;
+    Options.detailed_stat_dump     = true;
     Options.colour_map             = false;
     Options.clean_map              = false;
     Options.show_uncursed          = true;
+    Options.invent_weights         = true;
+    Options.invent_colours         = false;
     Options.always_greet           = false;
     Options.easy_open              = true;
     Options.easy_armour            = true;
     Options.easy_butcher           = false;
+    Options.easy_reach             = true;
     Options.easy_confirm           = CONFIRM_SAFE_EASY;
     Options.easy_quit_item_prompts = false;
     Options.weapon                 = WPN_UNKNOWN;
@@ -287,10 +364,36 @@ void read_init_file(void)
     Options.terse_hand             = true;
     Options.auto_list              = false;
     Options.delay_message_clear    = false;
+    Options.old_skill_countdown    = false;
+    Options.skill_countdown        = false;
+    Options.colour_rotten          = BLACK;     // leave unchanged
+    Options.number_walk_items      = 5;         // matches old behaviour
+    Options.colourful_corpses      = false;
+    Options.prompt_move_modifiers  = true;
 
-    Options.flush_input[ FLUSH_ON_FAILURE ]     = true;
-    Options.flush_input[ FLUSH_BEFORE_COMMAND ] = false;
-    Options.flush_input[ FLUSH_ON_MESSAGE ]     = false;
+    Options.pickup_dropped         = true;
+    Options.travel_colour          = true;
+    Options.travel_delay           = -1;
+    Options.travel_stair_cost      = 500;
+    Options.item_colour            = false;
+    Options.easy_exit_menu         = true;
+
+#ifdef STASH_TRACKING
+    Options.stash_tracking         = STM_NONE;
+#endif
+    Options.explore_item_stop      = true;
+    Options.dump_kill_places       = KDO_ONE_PLACE;
+    Options.dump_message_count     = 4;
+
+    Options.drop_mode              = DM_SINGLE;
+
+    Options.flush_input[ FLUSH_ON_FAILURE ]          = true;
+    Options.flush_input[ FLUSH_BEFORE_COMMAND ]      = false;
+    Options.flush_input[ FLUSH_ON_MESSAGE ]          = false;
+    Options.flush_input[ FLUSH_ON_WARNING_MESSAGE ]  = false;
+    Options.flush_input[ FLUSH_ON_DANGER_MESSAGE ]   = false;
+    Options.flush_input[ FLUSH_ON_PROMPT ]           = false;
+    Options.flush_input[ FLUSH_ON_UNSAFE_YES_OR_NO_PROMPT ]   = true;
 
     Options.lowercase_invocations  = false;
 
@@ -304,18 +407,28 @@ void read_init_file(void)
     for (i = 2; i < NUM_FIRE_TYPES; i++)
         Options.fire_order[i] = FIRE_NONE;
 
+    // set the list order to the identity matrix
+    for (i = 0; i < NUM_OBJECT_CLASSES; i++)
+        Options.list_order[i] = i;
+
     // These are only used internally, and only from the commandline:
     // XXX: These need a better place.
-    Options.sc_entries             = 0;
-    Options.sc_format              = SCORE_REGULAR;
+    Options.sc_entries = 0;
+    Options.sc_format = SCORE_REGULAR;
 
-#ifdef USE_COLOUR_OPTS
     Options.friend_brand  = CHATTR_NORMAL;
     Options.no_dark_brand = 0;
+
+#ifdef USE_ASCII_CHARACTERS
+    Options.char_set = CSET_ASCII;
+#else
+    Options.char_set = CSET_IBM;
 #endif
 
+    init_char_table( Options.char_set );
+
 #ifdef WIZARD
-    Options.wiz_mode      = WIZ_NO;
+    Options.wiz_mode = WIZ_NO;
 #endif
 
     // map each colour to itself as default
@@ -329,8 +442,11 @@ void read_init_file(void)
         Options.colour[i] = i;
 #endif
 
+    // Setup travel information. What's a better place to do this?
+    initialise_travel();
+
     // map each channel to plain (well, default for now since I'm testing)
-    for (int i = 0; i < NUM_MESSAGE_CHANNELS; i++)
+    for (i = 0; i < NUM_MESSAGE_CHANNELS; i++)
         Options.channels[i] = MSGCOL_DEFAULT;
 
     FILE *f;
@@ -422,7 +538,9 @@ void read_init_file(void)
         // some fields want capitals... none care about external spaces
         trim_string( field );
         if (key != "name" && key != "crawl_dir"
-            && key != "race" && key != "class")
+            && key != "race" && key != "class" && key != "ban_pickup"
+            && key != "stop_travel" && key != "sound"
+            && key != "drop_filter")
         {
             tolower_string( field );
         }
@@ -432,43 +550,21 @@ void read_init_file(void)
         {
             for (i = 0; i < field.length(); i++)
             {
-                char type = field[i];
+                const int type = conv_char_to_obj_class( field[i] );
 
-                // Make the amulet symbol equiv to ring -- bwross
-                switch (type)
-                {
-                case '"':
-                    // also represents jewellery
-                    type = '=';
-                    break;
-
-                case '|':
-                    // also represents staves
-                    type = '\\';
-                    break;
-
-                case ':':
-                    // also represents books
-                    type = '+';
-                    break;
-
-                case 'x':
-                    // also corpses
-                    type = 'X';
-                    break;
-                }
-
-                for (j = 0; j < obj_syms_len && type != obj_syms[j]; j++)
-                    ;
-
-                if (j < obj_syms_len)
-                    Options.autopickups |= (1L << j);
+                if (type != OBJ_UNASSIGNED)
+                    Options.autopickups |= (1L << type);
                 else
                 {
                     fprintf( stderr, "Bad object type '%c' for autopickup.\n",
-                             type );
+                             field[i] );
                 }
             }
+        }
+        else if (key == "autopickup_on_look")
+        {
+            // Auto-pickup items while using ';'
+            Options.autopickup_on_look = read_bool( field, Options.autopickup_on_look );
         }
         else if (key == "name")
         {
@@ -476,10 +572,41 @@ void read_init_file(void)
             strncpy(you.your_name, field.c_str(), kNameLen);
             you.your_name[ kNameLen - 1 ] = '\0';
         }
+        else if (key == "lines")
+        {
+            SysEnv.lines = atoi( field.c_str() );
+        }
+        else if (key == "char_set")
+        {
+            bool valid = true;
+
+            if (field == "ascii")
+                Options.char_set = CSET_ASCII;
+            else if (field == "ibm")
+                Options.char_set = CSET_IBM;
+            else if (field == "dec")
+                Options.char_set = CSET_DEC;
+            else
+            {
+                fprintf( stderr, "Bad character set: %s\n", field.c_str() );
+                valid = false;
+            }
+
+            if (valid)
+                init_char_table( Options.char_set );
+        }
+        else if (key == "char_table")
+        {
+            set_char_table_entry( subkey, field );
+        }
         else if (key == "verbose_dump")
         {
             // gives verbose info in char dumps
             Options.verbose_dump = read_bool( field, Options.verbose_dump );
+        }
+        else if (key == "detailed_stat_dump")
+        {
+            Options.detailed_stat_dump = read_bool( field, Options.detailed_stat_dump );
         }
         else if (key == "clean_map")
         {
@@ -522,6 +649,27 @@ void read_init_file(void)
             // automatic knife switching
             Options.easy_butcher = read_bool( field, Options.easy_butcher );
         }
+        else if (key == "easy_reach")
+        {
+            // automatic knife switching
+            Options.easy_reach = read_bool( field, Options.easy_reach );
+        }
+        else if (key == "colour_rotten" || key == "color_rotten")
+        {
+            // automatic colour shift of rotten meat
+            const int rot_col = str_to_colour( field );
+
+            if (rot_col != -1)
+                Options.colour_rotten = rot_col;
+        }
+        else if (key == "colourful_corpses" || key == "colorful_corpses")
+        {
+            Options.colourful_corpses = read_bool( field, Options.colourful_corpses );
+        }
+        else if (key == "prompt_move_modifiers")
+        {
+            Options.prompt_move_modifiers = read_bool( field, Options.prompt_move_modifiers );
+        }
         else if (key == "colour" || key == "color")
         {
             const int orig_col   = str_to_colour( subkey );
@@ -559,7 +707,6 @@ void read_init_file(void)
                 fprintf( stderr, "Bad colour -- %s\n", field.c_str() );
 
         }
-#ifdef USE_COLOUR_OPTS
         else if (key == "friend_brand")
         {
             // Use curses attributes to mark friend
@@ -587,11 +734,20 @@ void read_init_file(void)
             // This option will use light-grey instead in these cases.
             Options.no_dark_brand = read_bool( field, Options.no_dark_brand );
         }
-#endif
         else if (key == "show_uncursed")
         {
             // label known uncursed items as "uncursed"
             Options.show_uncursed = read_bool( field, Options.show_uncursed );
+        }
+        else if (key == "invent_weights")
+        {
+            // show weights in inventory
+            Options.invent_weights = read_bool( field, Options.invent_weights );
+        }
+        else if (key == "invent_colours")
+        {
+            // solour items in inventory listing
+            Options.invent_colours = read_bool( field, Options.invent_colours );
         }
         else if (key == "always_greet")
         {
@@ -671,12 +827,24 @@ void read_init_file(void)
                          field.c_str() );
             }
         }
+        else if (key == "number_walk_items")
+        {
+            Options.number_walk_items = atoi( field.c_str() );
+            if (Options.number_walk_items < 0)
+            {
+                Options.number_walk_items = 0;
+                fprintf( stderr, "Bad HP attention percentage -- %s\n",
+                         field.c_str() );
+            }
+        }
         else if (key == "crawl_dir")
         {
             // We shouldn't bother to allocate this a second time
             // if the user puts two crawl_dir lines in the init file.
             if (!SysEnv.crawl_dir)
-                SysEnv.crawl_dir = (char *) calloc(kPathLen, sizeof(char));
+            {
+                SysEnv.crawl_dir = static_cast<char *>( calloc( kPathLen, sizeof(char) ) );
+            }
 
             if (SysEnv.crawl_dir)
             {
@@ -727,11 +895,90 @@ void read_init_file(void)
                 Options.flush_input[FLUSH_ON_MESSAGE]
                     = read_bool(field, Options.flush_input[FLUSH_ON_MESSAGE]);
             }
+            else if (subkey == "warning_message")
+            {
+                Options.flush_input[FLUSH_ON_WARNING_MESSAGE]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_WARNING_MESSAGE]);
+            }
+            else if (subkey == "danger_message")
+            {
+                Options.flush_input[FLUSH_ON_DANGER_MESSAGE]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_DANGER_MESSAGE]);
+            }
+            else if (subkey == "prompt")
+            {
+                Options.flush_input[FLUSH_ON_PROMPT]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_PROMPT]);
+            }
+            else if (subkey == "unsafe_yes_or_no_prompt")
+            {
+                Options.flush_input[FLUSH_ON_UNSAFE_YES_OR_NO_PROMPT]
+                    = read_bool(field, Options.flush_input[FLUSH_ON_UNSAFE_YES_OR_NO_PROMPT]);
+            }
         }
         else if (key == "lowercase_invocations")
         {
             Options.lowercase_invocations
                     = read_bool(field, Options.lowercase_invocations);
+        }
+        else if (key == "old_skill_countdown")
+        {
+            Options.old_skill_countdown
+                    = read_bool( field, Options.old_skill_countdown );
+        }
+        else if (key == "skill_countdown")
+        {
+            Options.skill_countdown
+                    = read_bool( field, Options.skill_countdown );
+        }
+        else if (key == "list_order")
+        {
+            // Because we can't rely on the player to be sensible, we're
+            // doing it this way so we can guarantee that the player's
+            // inventory lists will be usable.
+            bool listed[ NUM_OBJECT_CLASSES ];
+
+            for( i = 0; i < NUM_OBJECT_CLASSES; i++)
+                listed[i] = false;
+
+            j = 0;      // used for the list_order array
+
+            // Handle the input:
+            for (i = 0; i < field.length() && j < NUM_OBJECT_CLASSES; i++)
+            {
+                const int type = conv_char_to_obj_class( field[i] );
+
+                if (type != OBJ_UNASSIGNED && !listed[type])
+                {
+                    Options.list_order[j] = type;
+                    listed[type] = true;
+                    j++;
+                }
+                else if (listed[type])
+                {
+                    fprintf( stderr, "Duplicated class '%c' in list_order.\n",
+                             field[i] );
+                }
+                else
+                {
+                    fprintf( stderr, "Bad object type '%c' in list_order.\n",
+                             field[i] );
+                }
+            }
+
+            // Make sure everything is going to be listed:
+            for ( ; j < NUM_OBJECT_CLASSES; j++)
+            {
+                for (i = 0; i < NUM_OBJECT_CLASSES; i++)
+                {
+                    if (!listed[i])
+                    {
+                        Options.list_order[j] = i;
+                        listed[i] = true;
+                        break;
+                    }
+                }
+            }
         }
         else if (key == "wiz_mode")
         {
@@ -746,6 +993,144 @@ void read_init_file(void)
             else
                 fprintf(stderr, "Unknown wiz_mode option: %s\n", field.c_str());
 #endif
+        }
+        else if (key == "ban_pickup")
+        {
+            append_vector( Options.banned_objects, split(",", field) );
+        }
+        else if (key == "pickup_thrown")
+        {
+            Options.pickup_thrown = read_bool(field, Options.pickup_thrown);
+        }
+        else if (key == "pickup_dropped")
+        {
+            Options.pickup_dropped = read_bool(field, Options.pickup_dropped);
+        }
+        else if (key == "travel_delay")
+        {
+            // Read travel delay in milliseconds.
+            Options.travel_delay = atoi( field.c_str() );
+            if (Options.travel_delay < -1)
+                Options.travel_delay = -1;
+            else if (Options.travel_delay > 2000)
+                Options.travel_delay = 2000;
+        }
+        else if (key == "travel_stair_cost")
+        {
+            Options.travel_stair_cost = atoi( field.c_str() );
+            if (Options.travel_stair_cost < 1)
+                Options.travel_stair_cost = 1;
+            else if (Options.travel_stair_cost > 1000)
+                Options.travel_stair_cost = 1000;
+        }
+        else if (key == "stop_travel")
+        {
+            std::vector<std::string> fragments = split(",", field);
+
+            for (i = 0, count = fragments.size(); i < count; ++i)
+            {
+                if (fragments[i].length() == 0)
+                    continue;
+
+                std::string::size_type pos = fragments[i].find(":");
+
+                if (pos && pos != std::string::npos)
+                {
+                    std::string prefix = fragments[i].substr(0, pos);
+                    int channel = str_to_channel( prefix );
+
+                    if (channel != -1 || prefix == "any")
+                    {
+                        std::string frag = fragments[i].substr( pos + 1 );
+                        trim_string( frag );
+                        Options.stop_travel.push_back( message_filter( channel, frag ) );
+                        continue;
+                    }
+                }
+
+                Options.stop_travel.push_back( message_filter( fragments[i] ) );
+            }
+        }
+        else if (key == "drop_filter")
+        {
+            append_vector( Options.drop_filter, split(",", field) );
+
+            for (i = 0, count = Options.drop_filter.size(); i < count; ++i)
+                Options.drop_filter[i] = "*" + Options.drop_filter[i] + "*";
+        }
+        else if (key == "travel_avoid_terrain")
+        {
+            std::vector<std::string> seg = split(",", field);
+
+            for (i = 0, count = seg.size(); i < count; ++i)
+                prevent_travel_to( seg[i] );
+        }
+        else if (key == "travel_colour")
+        {
+            Options.travel_colour = read_bool(field, Options.travel_colour);
+        }
+        else if (key == "item_colour")
+        {
+            Options.item_colour = read_bool(field, Options.item_colour);
+        }
+        else if (key == "easy_exit_menu")
+        {
+            Options.easy_exit_menu = read_bool(field, Options.easy_exit_menu);
+        }
+        else if (key == "explore_item_stop")
+        {
+            Options.explore_item_stop = read_bool(field, Options.explore_item_stop);
+        }
+#ifdef STASH_TRACKING
+        else if (key == "stash_tracking")
+        {
+            Options.stash_tracking = (field == "explicit") ? STM_EXPLICIT :
+                                     (field == "dropped")  ? STM_DROPPED  :
+                                     (field == "all")      ? STM_ALL
+                                                           : STM_NONE;
+        }
+        else if (key == "stash_filter")
+        {
+            std::vector<std::string> seg = split(",", field);
+
+            for (i = 0, count = seg.size(); i < count; ++i)
+                Stash::filter( seg[i] );
+        }
+#endif
+        else if (key == "sound")
+        {
+            std::vector<std::string> seg = split(",", field);
+
+            for (i = 0, count = seg.size(); i < count; ++i)
+            {
+                const std::string &sub = seg[i];
+                std::string::size_type cpos = sub.find(":", 0);
+
+                if (cpos != std::string::npos)
+                {
+                    FixedVector<std::string, 2> mapping;
+
+                    mapping[0] = sub.substr(0, cpos);
+                    mapping[1] = sub.substr(cpos + 1);
+                    Options.sound_mappings.push_back(mapping);
+                }
+            }
+        }
+        else if (key == "dump_kill_places")
+        {
+            Options.dump_kill_places = (field == "none") ? KDO_NO_PLACES :
+                                       (field == "all")  ? KDO_ALL_PLACES
+                                                         : KDO_ONE_PLACE;
+        }
+        else if (key == "dump_message_count")
+        {
+            // Capping is implicit
+            Options.dump_message_count = atoi( field.c_str() );
+        }
+        else if (key == "drop_mode")
+        {
+            if (field.find("multi") != std::string::npos)
+                Options.drop_mode = DM_MULTI;
         }
     }
 
@@ -766,6 +1151,11 @@ void get_system_environment(void)
 
     // The full path to the init file -- this over-rides CRAWL_DIR
     SysEnv.crawl_rc = getenv("CRAWL_RC");
+
+    // Get number of lines from environment... can get overridden
+    // by the Option "lines" if required.
+    char *tmp = getenv("LINES");
+    SysEnv.lines = (tmp == NULL) ? 0 : atoi(tmp);
 
     // rename giant and giant spiked clubs
     SysEnv.board_with_nail = (getenv("BOARD_WITH_NAIL") != NULL);
@@ -798,16 +1188,16 @@ bool parse_args( int argc, char **argv, bool rc_only )
     int ecount;
 
     // initialize
-    for(int i=0; i<num_cmd_ops; i++)
+    for (int i = 0; i < num_cmd_ops; i++)
         arg_seen[i] = false;
 
-    while(current < argc)
+    while (current < argc)
     {
         // get argument
         arg = argv[current];
 
         // next argument (if there is one)
-        if (current+1 < argc)
+        if (current + 1 < argc)
             next_arg = argv[current+1];
         else
             next_arg = NULL;
@@ -826,7 +1216,7 @@ bool parse_args( int argc, char **argv, bool rc_only )
             arg = &arg[1];
 
         int o;
-        for(o = 0; o < num_cmd_ops; o++)
+        for (o = 0; o < num_cmd_ops; o++)
         {
             if (stricmp(cmd_ops[o], arg) == 0)
                 break;
@@ -930,12 +1320,8 @@ bool parse_args( int argc, char **argv, bool rc_only )
 
             if (!rc_only)
             {
-                viewwindow = &viewwindow3;
-                mapch = &mapchar3;
-                mapch2 = &mapchar4;
-#ifdef LINUX
-                character_set = 0;
-#endif
+                Options.char_set = CSET_ASCII;
+                init_char_table( CSET_ASCII );
             }
             break;
 

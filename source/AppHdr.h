@@ -53,8 +53,6 @@
 #ifdef LINUX
 
     #define PLAIN_TERM
-    // #define CHARACTER_SET           A_ALTCHARSET
-    #define CHARACTER_SET           0
     #define USE_ASCII_CHARACTERS
     #define MULTIUSER
 
@@ -85,9 +83,6 @@
     #define MULTIUSER
     #include "liblinux.h"
 
-    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
-    #define CHARACTER_SET           0
-
     // Set curses include file if you don't want the default curses.h
     #define USE_CURSES
     // #define CURSES_INCLUDE_FILE     <ncurses.h>
@@ -117,9 +112,6 @@
     #define PLAIN_TERM
     #define MULTIUSER
     #include "liblinux.h"
-
-    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
-    #define CHARACTER_SET           0
 
     // Set curses include file if you don't want the default curses.h
     // Under HP-UX its typically easier to use ncurses than try and
@@ -154,9 +146,6 @@
 //#define MULTIUSER
     #include "liblinux.h"
 
-    // The ALTCHARSET may come across as DEC characters/JIS on non-ibm platforms
-    #define CHARACTER_SET           0
-
     // Set curses include file if you don't want the default curses.h
     #define USE_CURSES
     // #define CURSES_INCLUDE_FILE     <ncurses.h>
@@ -183,7 +172,6 @@
 #elif defined(USE_EMX)
     #define DOS_TERM
     #define EOL "\n"
-    #define CHARACTER_SET           A_ALTCHARSET
 
     #include <string>
     #include "libemx.h"
@@ -192,30 +180,27 @@
     #include <string>
     #include "WinHdr.h"
     #error MSVC is not supported yet
-    #define CHARACTER_SET           A_ALTCHARSET
 
 // macintosh is predefined on all the common Mac compilers
 #elif defined(macintosh)
     #define PLAIN_TERM
     #define HAS_NAMESPACES  1
     #define EOL "\r"
-    #define CHARACTER_SET           A_ALTCHARSET
     #include <string>
     #include "libmac.h"
 
 #if OSX
     #define USE_8_COLOUR_TERM_MAP
 
-    // Darkgrey is a particular problem in the 8 colour mode.  Popular v
-    // alues for replacing it around here are: WHITE, BLUE, and MAGENTA.
+    // Darkgrey is a particular problem in the 8 colour mode.  Popular
+    // values for replacing it around here are: WHITE, BLUE, and MAGENTA.
     #define COL_TO_REPLACE_DARKGREY     MAGENTA
 #endif
 
 #elif defined(DOS)
     #define DOS_TERM
     #define SHORT_FILE_NAMES
-    #define EOL "\n\r"
-    #define CHARACTER_SET           A_ALTCHARSET
+    #define EOL "\r\n"
 
     #include <string>
 
@@ -223,12 +208,11 @@
         #define NEED_SNPRINTF
     #endif
 
-#elif defined(WIN32CONSOLE) && (defined(__IBMCPP__) || defined(__BCPLUSPLUS__))
+#elif defined(WIN32CONSOLE) && (defined(__IBMCPP__) || defined(__BCPLUSPLUS__) || defined(__MINGW32__))
     #include "libw32c.h"
     #define PLAIN_TERM
     #define SHORT_FILE_NAMES
     #define EOL "\n"
-    #define CHARACTER_SET           A_ALTCHARSET
     #define getstr(X,Y)         getConsoleString(X,Y)
 #else
     #error unsupported compiler
@@ -243,6 +227,8 @@
     #define DEBUG       1
 
     // Outputs many "hidden" details, defaults to wizard on.
+    //
+    // Note that level 2 produces even more noise
     #define DEBUG_DIAGNOSTICS   1
 
     // Scan for bad items before every input (may be slow)
@@ -275,11 +261,6 @@
 //  Curses features:
 // =========================================================================
 #ifdef USE_CURSES
-    // This will allow using the standout attribute in curses to
-    // mark friendly monsters... results depend on the type of
-    // term used... under X Windows try "rxvt".
-    #define USE_COLOUR_OPTS
-
     // For cases when the game will be played on terms that don't support the
     // curses "bold == lighter" 16 colour mode. -- bwr
     //
@@ -297,13 +278,6 @@
 // number of back messages saved during play (currently none saved into files)
 #define NUM_STORED_MESSAGES   1000
 
-// if this works out okay, eventually we can change this to USE_OLD_RANDOM
-#define USE_NEW_RANDOM
-
-// Uncomment this if you find the labyrinth to be buggy and want to
-// remove it from the game.
-// #define SHUT_LABYRINTH
-
 // Define USE_MACRO if you want to use the macro patch in macro.cc.
 #define USE_MACROS
 
@@ -317,17 +291,16 @@
 // Number of top scores to keep.
 #define SCORE_FILE_ENTRIES      100
 
+// Darshan's item stack (stash) tracking code:
+#define STASH_TRACKING
+
 // Option to allow scoring of wizard characters.  Note that even if
 // you define this option, wizard characters are still tagged as such
 // in the score file.
 // #define SCORE_WIZARD_CHARACTERS
 
-// ================================================= --------------------------
-//jmf: New defines for a bunch of optional features.
-// ================================================= --------------------------
-
-// New silence code -- seems to actually work! Use it!
-#define USE_SILENCE_CODE
+// For those that prefer the field of view == move distance
+//#define USE_SQUARE_FOV
 
 // Use special colours for various channels of messages
 #define USE_COLOUR_MESSAGES
@@ -339,7 +312,7 @@
 #define USE_SEMI_CONTROLLED_BLINK
 
 // Use new system for weighting str and dex based on weapon type, -- bwr
-#define USE_NEW_COMBAT_STATS
+// #define USE_NEW_COMBAT_STATS
 
 // Use this is you want the occasional spellcaster or ranger type wanderer
 // to show up... comment it if you find these types silly or too powerful,
@@ -352,16 +325,63 @@
 //mv: (new 9 Aug 01) switches on new unrands
 #define USE_NEW_UNRANDS
 
+// bwr: use the new "twisty" passages (all alike) labyrinth
+#define USE_NEW_LABYRINTH           1
+
+// bwr: Make monsters "explode" and scatter their items on death.  This
+//      is the maximum grid_distance an item can scatter (0 or undefine
+//      for none).  This is a compile time option because it does affect
+//      the game more than options normally allow.
+#define SCATTER_RADIUS              2
+
+// Define this to use GNU scientific library PRNGs.  This is not
+// necessary, but may be useful in some rare situations (the MT19937
+// generator we're packaging with the code now should be well beyond
+// good enough for almost everybody).   Note that you will want to
+// check to see that -lgsl and -lgslcblas are added to the LIB variable
+// in the makefile you are using (also check that the the include
+// path (probably -I/usr/local/include) is set in INCLUDES).
+//
+// Note that if you use this there may very well be license problems
+// with distributing binaries.
+//
+// #define USE_GSL_RAND                1
+
+#if USE_GSL_RAND
+
+#include <gsl/gsl_rng.h>
+
+// MT-19937 is both high quality and very fast.
+#define GSL_RAND_GENERATOR          gsl_rng_mt19937
+
+#endif
+
+// This option will allow the use of the clib rand().  It's seriously
+// not recommended as the typical implications of rand() are not nearly
+// powerful enough for Crawl.  In fact, some (ie Borland with it's very
+// small range) are downright catastropic and fail miserably with the
+// current code.  Use this only as a last resort.
+//
+// #define USE_SYSTEM_RAND         1
+
+// Use this to seed the PRNG with a bit more than just time()... turning
+// this off is perfectly okay, the game just becomes more exploitable
+// with a bit of hacking (ie only by people who know how).
+//
+// For now, we'll make it default to on for Linux (who should have
+// no problems with compiling this).
+#ifdef LINUX
+#define USE_MORE_SECURE_SEED    1
+#else
+#define USE_MORE_SECURE_SEED    0
+#endif
+
 // mv: (new 9 Aug 01) turns off missile trails, might be slow on some computers
 // #define MISSILE_TRAILS_OFF
 
-// bwr: allow player to destroy items in inventory (but not equiped items)
-// See comment at items.cc::cmd_destroy_item() for details/issues.
-// #define ALLOW_DESTROY_ITEM_COMMAND
-
 // bwr: set this to non-zero if you want to know the pluses, "runed" status
 // of the monster's weapons in the hiscore file.
-// #define HISCORE_WEAPON_DETAIL   1
+#define HISCORE_WEAPON_DETAIL   1
 
 // ====================== -----------------------------------------------------
 //jmf: end of new defines
@@ -377,7 +397,7 @@
     // Setting it to nothing or not setting it will cause all game files to
     // be dumped in the current directory.
     //
-    #define SAVE_DIR_PATH       "/opt/crawl/lib/"
+    #define SAVE_DIR_PATH       "/var/games/crawl41/"
 
     // will make this little thing go away.  Define SAVE_PACKAGE_CMD
     // to a command to compress and bundle the save game files into a
@@ -388,14 +408,16 @@
     // PACKAGE_SUFFIX is used when the package file name is needed
     //
     // Comment these lines out if you want to leave the save files uncompressed.
-    //
+    // However, says Rax, if you do, the game won't be able to load save files.
+    // I just left them defined rather than fixing the bug because I am a
+    // laziness elemental.
     #define SAVE_PACKAGE_CMD    "/usr/bin/zip -m -q -j -1 %s.zip %s.*"
     #define LOAD_UNPACKAGE_CMD  "/usr/bin/unzip -q -o %s.zip -d" SAVE_DIR_PATH
     #define PACKAGE_SUFFIX      ".zip"
 
     // This provides some rudimentary protection against people using
     // save file cheats on multi-user systems.
-    #define DO_ANTICHEAT_CHECKS
+    //#define DO_ANTICHEAT_CHECKS
 
     // This defines the chmod permissions for score and bones files.
     #define SHARED_FILES_CHMOD_PRIVATE  0664

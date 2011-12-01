@@ -18,32 +18,18 @@
 #define MAKE_GOOD_ITEM          351
 
 void item_colour( item_def &item );
+void arm_trap( int trap_id, int amount = -1 );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: files
- * *********************************************************************** */
-void builder(int level_number, char level_type);
+void builder( int level_number, int level_type );
 
+// used for wizard shop generation in acr.cc
+void place_spec_shop( int level_number, int shop_x, int shop_y, shop_type force_type );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: abyss - debug - dungeon - effects - religion - spells4
- * *********************************************************************** */
-int items( int allow_uniques, int force_class, int force_type,
-           bool dont_place, int item_level, int item_race );
+int make_item( int allow_uniques, int force_class, int force_type,
+               bool dont_place, int item_level, int item_race );
 
-// last updated 13mar2001 {gdl}
-/* ***********************************************************************
- * called from: dungeon monplace
- * *********************************************************************** */
 void give_item(int mid, int level_number);
 
-
-// last updated 13mar2001 {gdl}
-/* ***********************************************************************
- * called from: dungeon monplace
- * *********************************************************************** */
 void define_zombie(int mid, int ztype, int cs, int power);
 
 #endif

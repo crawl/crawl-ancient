@@ -14,183 +14,102 @@
 #ifndef STUFF_H
 #define STUFF_H
 
+#include "enum.h"
+#include "defines.h"
 #include "externs.h"
 
-char *const make_time_string(time_t abs_time, char *const buff, int buff_size);
+char *const make_time_string( time_t abs_time, char *const buff,
+                              int buff_size, bool terse = false );
+
+char *const number_string( int num );
+
+bool in_bounds( int x, int y );
+bool map_bounds( int x, int y );
 
 void set_redraw_status( unsigned long flags );
 
 void tag_followers( void );
 void untag_followers( void );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void cf_setseed(void);
+void seed_rng( void );
 
-
-/* ***********************************************************************
- * called from: xxx
- * *********************************************************************** */
 bool coinflip(void);
+bool one_chance_in( int a_million );
+unsigned long random_int( void );
+int random2( int randmax );
 
-
-/* ***********************************************************************
- * called from: xxx
- * *********************************************************************** */
-bool one_chance_in(int a_million);
-
-
-/* ***********************************************************************
- * called from: xxx
- * *********************************************************************** */
-int random2(int randmax);
-
-
-/* ***********************************************************************
- * called from: xxx
- * *********************************************************************** */
-int random2avg( int max, int rolls );
-
-int roll_dice( int num, int size );
+// regular one based dice
+int roll_dice( int num, int size, bool zero_base = false );
 int roll_dice( const struct dice_def &dice );
 
+// zero based dice cover functions
+int roll_zdice( int num, int size );
+int roll_zdice( const struct dice_def &dice );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: beam - fight - misc
- * *********************************************************************** */
-int random2limit(int max, int limit);
+int roll_curved_percentile( void );
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: bang - beam - monplace - monstuff - spells1 - spells2 -
- *              spells4 - view
- * *********************************************************************** */
-bool see_grid(unsigned char grx, unsigned char gry);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: spells2
- * *********************************************************************** */
 int stepdown_value(int base_value, int stepping, int first_step, int last_step, int ceiling_value);
 
+int div_rand_round( int num, int den );
+int conv_double_rand_round( double num );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - command - effects - food - item_use - items -
- *              newgame - ouch - shopping - spell - spl-book - spells1 -
- *              spells3
- * *********************************************************************** */
 unsigned char get_ch(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: files - newgame - ouch
- * *********************************************************************** */
 void end(int end_arg);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: newgame
- * *********************************************************************** */
 void modify_all_stats(int STmod, int IQmod, int DXmod);
 
+void redraw_screen( void );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - command - direct - invent - item_use -
- *              religion - shopping - spell - spl-book - spells3
- * *********************************************************************** */
-void redraw_screen(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - beam - command - decks - debug - effects -
- *              it_use3 - item_use - items - misc - ouch - religion -
- *              spell - spl-book - spells - spells1 - spells2 - spells3 -
- *              spells4
- * *********************************************************************** */
 void canned_msg(unsigned char which_message);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - command - it_use3 - item_use - items -
- *              misc - ouch - religion - spl-book - spells4
- * *********************************************************************** */
 bool yesno( const char * str, bool safe = true, bool clear_after = true );
 
-
-// last updated 21may2000 {dlb}
-/* ***********************************************************************
- * called from: fight - monstuff - spells4 - view
- * *********************************************************************** */
 int grid_distance( int x, int y, int x2, int y2 );
 int distance( int x, int y, int x2, int y2);
 bool adjacent( int x, int y, int x2, int y2 );
 
+int skill_bump( int skill );
 
-// last updated 21may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - bang - beam - effects - fight - it_use2 -
- *              it_use3 - monstuff - mstuff2 - religion - spell - spells -
- *              spells3 - spells4 - stuff - view
- * *********************************************************************** */
-bool silenced(char x, char y);
+int stat_mult( int stat_level, int value, int div = 20, int shift = 3 );
+int stat_div( int stat_level, int value, int mult = 20, int shift = 3 );
 
+bool silenced( int x, int y );
 
-// last updated XXmay2000 {dlb}
-/* ***********************************************************************
- * called from: xxx
- * *********************************************************************** */
-bool player_can_hear(char x, char y);
+bool player_can_hear( int x, int y );
 
+// random in bounds grid (clear guarantees floor, empty guarantees NON_MONSTER)
+void random_in_bounds( int &x_pos, int &y_pos, int terr = DNGN_FLOOR,
+                       bool empty = false, bool excl = true );
 
-// last updated 27may2000 {dlb}
-/* ***********************************************************************
- * called from: dungeon - files - it_use2 - it_use3 - monstuff - mon-util -
- *              mstuff2 - newgame - spells - view
- * *********************************************************************** */
-unsigned char random_colour(void);
+void random_place_rectangle( int &x1, int &y1, int &x2, int &y2,
+                             bool excl = true );
 
+bool in_rectangle( int px, int py, int rx1, int ry1, int rx2, int ry2,
+                   bool excl = false );
 
-// last updated 08jun2000 {dlb}
-/* ***********************************************************************
- * called from: ability - chardump - command - files - invent - item_use -
- *              items - newgame - spl-book - spells0 - spells1
- * *********************************************************************** */
+bool rectangles_overlap( int ax1, int ay1, int ax2, int ay2,
+                         int bx1, int by1, int bx2, int by2,
+                         bool excl = false );
+
+int  race_colour( unsigned long race );
+bool is_element_colour( int col );
+int  element_colour( int element, bool no_random = false );
+
 char index_to_letter (int the_index);
+int  letter_to_index(int the_letter);
+int  near_stairs( int px, int py, int max_dist, unsigned char &stair_gfx );
 
+void init_id_array( char temp_id[NUM_IDTYPE][MAX_SUBTYPES],
+                    item_type_id_state_type val );
 
-// last updated 08jun2000 {dlb}
-/* ***********************************************************************
- * called from: ability - command - food - it_use3 - item_use - items -
- *              spell - spl-book - spells1 - spells3
- * *********************************************************************** */
-int letter_to_index(int the_letter);
-
-
-// last updated 16mar2001 {dlb}
-/* ***********************************************************************
- * called from: monplace
- * *********************************************************************** */
-int near_stairs(int px, int py, int max_dist, unsigned char &stair_gfx);
-
-// last updated 16mar2001 {dlb}
-/* ***********************************************************************
- * called from: fight
- * *********************************************************************** */
-// just want to do this in a consistent fashion
 inline bool testbits(unsigned int flags, unsigned int test)
 {
     return ((flags & test) == test);
+}
+
+inline int sgn( int x )
+{
+    return ((x < 0) ? -1 : (x > 0));
 }
 
 #endif

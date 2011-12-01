@@ -9,16 +9,15 @@
  *                                                                      7 functions from dump_char, dumps artifact info.
  */
 
+#include <string>
 
 #ifndef CHARDUMP_H
 #define CHARDUMP_H
 
+#include <string>
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - ouch
- * *********************************************************************** */
 bool dump_char( const char fname[30], bool show_prices );
-
+void dump_random_items( void );
+std::string munge_description(const std::string &inStr);
 
 #endif

@@ -12,16 +12,14 @@
 #ifndef MONPLACE_H
 #define MONPLACE_H
 
+#include "defines.h"
 #include "enum.h"
 #include "FixVec.h"
 
-// last updated 13mar2001 {gdl}
 /* ***********************************************************************
- * called from: acr - lev-pand - monplace - dungeon
- *
  * Usage:
- * mon_type     WANDERING_MONSTER, RANDOM_MONSTER, or monster type
- * behaviour     standard behaviours (BEH_ENSLAVED, etc)
+ * mclass       WANDERING_MONSTER, RANDOM_MONSTER, or monster type
+ * behaviour    standard behaviours (BEH_ENSLAVED, etc)
  * target       MHITYOU, MHITNOT, or monster id
  * extra        various things like skeleton/zombie types, colours, etc
  * summoned     monster is summoned?
@@ -33,47 +31,37 @@
  *              1 = try to place the monster near the player
  *              2 = don't place the monster near the player
  *              3 = place the monster near stairs (regardless of player pos)
+ * power        level of monster
  * *********************************************************************** */
-int mons_place( int mon_type, char behaviour, int target, bool summoned,
+int mons_place( int mclass, beh_type behaviour, int target, bool summoned,
                 int px, int py, int level_type = LEVEL_DUNGEON,
-                int proximity = PROX_ANYWHERE, int extra = 250 );
+                int proximity = PROX_ANYWHERE, int power = -1, int extra = 250 );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - debug - decks - effects - fight - it_use3 - item_use -
- *              items - monstuff - mstuff2 - religion - spell - spells -
- *              spells2 - spells3 - spells4
- * *********************************************************************** */
-int create_monster( int cls, int dur, int beha, int cr_x, int cr_y,
-                    int hitting, int zsec );
+int create_monster( int cls, beh_type beha = BEH_HOSTILE, int dur = 0,
+                    int cr_x = -1, int cr_y = -1, int hitting = MHITYOU,
+                    int zsec = 250, bool force_pos = false, int power = -1 );
 
+// simple front end for the common case of summoning around the player
+int simple_summon( int cls, int dur, bool hostile );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: misc - monplace - spells3
- * *********************************************************************** */
 bool empty_surrounds( int emx, int emy, unsigned char spc_wanted,
-                      bool allow_centre, FixedVector<char, 2>& empty );
+                      int radius, bool allow_centre, bool check_los,
+                      FixedVector<char, 2>& empty );
 
+monster_type rand_imp( void );
+monster_type rand_demon( demon_class_type demon_class = DEMON_RANDOM );
+monster_type rand_dragon( dragon_class_type type );
 
-// last updated 12may2000 {dlb}
 /* ***********************************************************************
- * called from: ability - acr - items - maps - mstuff2 - spell - spells
- * *********************************************************************** */
-int summon_any_demon( char demon_class );
-
-
-// last update 13mar2001 {gdl}
-/* ***********************************************************************
- * called from: dungeon monplace
- *
  * This isn't really meant to be a public function.  It is a low level
  * monster placement function used by dungeon building routines and
  * mons_place().  If you need to put a monster somewhere,  use mons_place().
  * Summoned creatures can be created with create_monster().
  * *********************************************************************** */
-bool place_monster( int &id, int mon_type, int power, char behaviour,
+bool place_monster( int &id, int mclass, int power, beh_type behaviour,
                     int target, bool summoned, int px, int py, bool allow_bands,
                     int proximity = PROX_ANYWHERE, int extra = 250 );
+
+int place_unique_monsters( bool just_one, int prox );
 
 #endif  // MONPLACE_H

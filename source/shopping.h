@@ -16,28 +16,15 @@
 
 int randart_value( const item_def &item );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: chardump - invent - ouch - religion - shopping
- * *********************************************************************** */
-
 // ident == true overrides the item ident level and gives the price
 // as if the item was fully id'd
-unsigned int item_value( item_def item, char id[4][50], bool ident = false );
+unsigned int item_value( item_def item, char id[NUM_IDTYPE][MAX_SUBTYPES],
+                         bool ident = false );
 
+unsigned int item_value( item_def item );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: misc
- * *********************************************************************** */
 void shop(void);
 
-
-
-// last updated 06mar2001 {gdl}
-/* ***********************************************************************
- * called from: items direct
- * *********************************************************************** */
 const char *shop_name(int sx, int sy);
 
 #endif

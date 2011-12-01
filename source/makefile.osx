@@ -14,9 +14,9 @@ DELETE = rm -f
 COPY = cp
 OS_TYPE = BSD
 
-CFLAGS = -D$(OS_TYPE) -DOSX $(EXTRA_FLAGS) -Wall -Werror \
-            -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes \
-            -Wmissing-declarations
+CFLAGS = -D$(OS_TYPE) -DOSX $(EXTRA_FLAGS) -Wall \
+            -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes
+
 
 LDFLAGS = -L/sw/lib -L/usr/lib
 MCHMOD = 711

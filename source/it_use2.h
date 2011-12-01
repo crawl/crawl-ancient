@@ -20,24 +20,24 @@
  * called from: ability - beam - decks - item_use - misc - religion -
  *              spell - spells - spells1
  * *********************************************************************** */
-bool potion_effect(char pot_eff, int pow);
+bool potion_effect( char pot_eff, int pow );
 
 
 /* ***********************************************************************
  * called from: item_use
  * *********************************************************************** */
-void unuse_randart(unsigned char unw);
+void unuse_randart( unsigned char unw );
 
 
 /* ***********************************************************************
  * called from: item_use - transfor
  * *********************************************************************** */
-void unwear_armour(char unw);
+void unwear_armour( char unw );
 
 
 /* ***********************************************************************
  * called from: decks - it_use3 - item_use - items - spells3 - transfor
  * *********************************************************************** */
-void unwield_item(char unw);
+void unwield_item( bool no_empty_hand_msg = false );
 
 #endif

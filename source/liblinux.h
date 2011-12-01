@@ -11,7 +11,7 @@
 char *strlwr(char *str);
 char getche(void);
 
-
+int getch_ck(void);
 int clrscr(void);
 int cprintf(const char *format,...);
 int gotoxy(int x, int y);
@@ -29,6 +29,9 @@ void clear_to_end_of_line(void);
 void clear_to_end_of_screen(void);
 int get_number_of_lines_from_curses(void);
 void get_input_line_from_curses( char *const buff, int len );
+
+void set_altcharset( bool alt_on );
+bool get_altcharset( void );
 
 void _setcursortype(int curstype);
 void delay(unsigned long time);

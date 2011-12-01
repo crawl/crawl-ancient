@@ -54,6 +54,11 @@
 #include <sys/stat.h>
 #endif
 
+#ifdef __MINGW32__
+#include <io.h>
+#endif
+
+#include "globals.h"
 #include "externs.h"
 
 #include "chardump.h"
@@ -62,6 +67,7 @@
 #include "hiscores.h"
 #include "invent.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "macro.h"
 #include "mon-util.h"
@@ -76,73 +82,139 @@
 
 
 void end_game( struct scorefile_entry &se );
-void item_corrode( char itco );
-
 
 /* NOTE: DOES NOT check for hellfire!!! */
-int check_your_resists(int hurted, int flavour)
+// When warn_only is true we don't bother giving resist messages, we only
+// give the more interesting susceptible messages.
+//
+// Note: sometimes damage gets passed in here magnified 10x, so it's important
+// that everything here be applied as a ratio for now.
+int check_your_resists( int hurted, beam_type flavour, bool warn_only )
 {
-    int resist;
+    int   resist;
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "checking resistance: flavour=%d", flavour );
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, "checking resistance: flavour=%d", flavour );
 #endif
 
-    if (flavour == BEAM_FIRE || flavour == BEAM_LAVA
-        || flavour == BEAM_HELLFIRE || flavour == BEAM_EXPLOSION
-        || flavour == BEAM_FRAG)
+    // currently this only does condensation shield checks... still does
+    // because we're calling it without any strength.
+    expose_player_to_element( flavour );
+
+    // duplicating old behaviour of these being "fire", but tagging and
+    // handling the special cases here now.
+    if (flavour == BEAM_NAPALM)
     {
-        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+        if ((you.species == SP_MOTTLED_DRACONIAN && you.xp_level >= 7)
+            || player_equip( EQ_BODY_ARMOUR, ARM_MOTTLED_DRAGON_ARMOUR ))
         {
-            mpr( "Your icy shield dissipates!", MSGCH_DURATION );
-            you.duration[DUR_CONDENSATION_SHIELD] = 0;
-            you.redraw_armour_class = 1;
+            if (!warn_only)
+                canned_msg( MSG_YOU_RESIST );
+
+            return (0);
         }
+
+        flavour = BEAM_FIRE;
+    }
+    else if (flavour == BEAM_STEAM)
+    {
+        if ((you.species == SP_PALE_DRACONIAN && you.xp_level >= 7)
+            || player_equip( EQ_BODY_ARMOUR, ARM_STEAM_DRAGON_ARMOUR ))
+        {
+            if (!warn_only)
+                canned_msg( MSG_YOU_RESIST );
+
+            return (0);
+        }
+
+        flavour = BEAM_FIRE;
     }
 
     switch (flavour)
     {
     case BEAM_FIRE:
         resist = player_res_fire();
+
         if (resist > 0)
         {
-            canned_msg(MSG_YOU_RESIST);
-            hurted /= (1 + (resist * resist));
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
+            hurted /= (1 + resist);
         }
         else if (resist < 0)
         {
             mpr("It burns terribly!");
-            hurted *= 15;
-            hurted /= 10;
+            hurted = (hurted * (10 - 5 * resist)) / 10;
+        }
+        break;
+
+    case BEAM_HELLFIRE:
+        resist = player_res_fire();
+
+        if (resist >= 3)
+        {
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
+            hurted = (hurted * 2) / 3;
+        }
+        else if (resist <= 0)
+        {
+            mpr("It burns terribly!");
+            hurted = (hurted * (15 - 5 * resist)) / 10;
         }
         break;
 
     case BEAM_COLD:
         resist = player_res_cold();
+
         if (resist > 0)
         {
-            canned_msg(MSG_YOU_RESIST);
-            hurted /= (1 + (resist * resist));
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
+            hurted /= (1 + resist);
         }
         else if (resist < 0)
         {
             mpr("You feel a terrible chill!");
-            hurted *= 15;
-            hurted /= 10;
+            hurted = (hurted * (10 - 5 * resist)) / 10;
+        }
+        break;
+
+    case BEAM_HELLFROST:
+        resist = player_res_cold();
+
+        if (resist >= 3)
+        {
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
+            hurted = (hurted * 2) / 3;
+        }
+        else if (resist <= 0)
+        {
+            mpr("You feel a terrible chill!");
+            hurted = (hurted * (15 - 5 * resist)) / 10;
         }
         break;
 
     case BEAM_ELECTRICITY:
         resist = player_res_electricity();
+
         if (resist >= 3)
         {
-            canned_msg(MSG_YOU_RESIST);
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
             hurted = 0;
         }
         else if (resist > 0)
         {
-            canned_msg(MSG_YOU_RESIST);
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
             hurted /= 3;
         }
         break;
@@ -151,37 +223,36 @@ int check_your_resists(int hurted, int flavour)
     case BEAM_POISON:
         resist = player_res_poison();
 
-        if (!resist)
-            poison_player( coinflip() ? 2 : 1 );
-        else
+        poison_player( coinflip() ? 2 : 1 );
+
+        if (resist > 0)
         {
-            canned_msg(MSG_YOU_RESIST);
-            hurted /= 3;
+            if (!warn_only)
+                canned_msg(MSG_YOU_RESIST);
+
+            hurted /= (resist + 1);
         }
         break;
 
     case BEAM_POISON_ARROW:
-        resist = player_res_poison();
-
-        if (!resist)
+        if (!you.is_undead)
             poison_player( 6 + random2(3), true );
-        else
-        {
-            mpr("You partially resist.");
-            hurted /= 2;
 
-            if (!you.is_undead)
-                poison_player( coinflip() ? 2 : 3, true );
+        if (player_res_poison() > 0)
+        {
+            if (!warn_only)
+                mpr("You partially resist.");
+
+            hurted /= 2;
         }
         break;
 
     case BEAM_NEG:
         resist = player_prot_life();
 
+        // Note: messages handled by drain_exp()
         if (resist > 0)
-        {
-            hurted -= (resist * hurted) / 3;
-        }
+            hurted -= (hurted * resist) / 3;
 
         drain_exp();
         break;
@@ -191,14 +262,15 @@ int check_your_resists(int hurted, int flavour)
 
         if (resist > 0)
         {
-            mpr("You partially resist.");
+            if (!warn_only)
+                mpr("You partially resist.");
+
             hurted /= 2;
         }
         else if (resist < 0)
         {
             mpr("You feel a painful chill!");
-            hurted *= 13;
-            hurted /= 10;
+            hurted = (hurted * (11 - 2 * resist)) / 10;
         }
         break;
 
@@ -207,33 +279,69 @@ int check_your_resists(int hurted, int flavour)
 
         if (resist > 1)
         {
-            mpr("You partially resist.");
-            hurted /= (1 + resist);
+            if (!warn_only)
+                mpr("You partially resist.");
+
+            hurted /= resist;
         }
         else if (resist < 0)
         {
             mpr("It burns terribly!");
-            hurted *= 15;
-            hurted /= 10;
+            hurted = (hurted * (10 - 5 * resist)) / 10;
         }
+        break;
+
+    case BEAM_ACID:
+        if (player_res_acid())
+        {
+            if (!warn_only)
+                canned_msg( MSG_YOU_RESIST );
+
+            hurted /= 3;
+        }
+        break;
+
+    case BEAM_MIASMA:
+        if (player_prot_life() > random2(3))
+        {
+            if (!warn_only)
+                canned_msg( MSG_YOU_RESIST );
+
+            hurted = 0;
+        }
+        break;
+
+    case BEAM_HOLY:
+        if (!you.is_undead && you.species != SP_DEMONSPAWN)
+        {
+            if (!warn_only)
+                canned_msg( MSG_YOU_RESIST );
+
+            hurted = 0;
+        }
+        break;
+
+    default:
         break;
     }                           /* end switch */
 
     return (hurted);
 }                               // end check_your_resists()
 
-void splash_with_acid( char acid_strength )
+void splash_with_acid( int acid_strength )
 {
     /* affects equip only?
        assume that a message has already been sent, also that damage has
        already been done
      */
-    char splc = 0;
+    int  splc = 0;
     int  dam = 0;
 
-    const bool wearing_cloak = (you.equip[EQ_CLOAK] == -1);
+    const bool wearing_cloak = (you.equip[EQ_CLOAK] != -1);
 
-    for (splc = EQ_CLOAK; splc <= EQ_BODY_ARMOUR; splc++)
+    mpr( "You are splashed with acid!" );
+
+    for (splc = EQ_WEAPON; splc <= EQ_BODY_ARMOUR; splc++)
     {
         if (you.equip[splc] == -1)
         {
@@ -243,224 +351,285 @@ void splash_with_acid( char acid_strength )
             continue;
         }
 
+        ASSERT( you.equip[splc] != -1 );
+
         if (random2(20) <= acid_strength)
-            item_corrode( you.equip[splc] );
+            item_corrode( you.inv[ you.equip[splc] ] );
     }
 
-    if (dam)
-    {
-        mpr( "The acid burns!" );
-        ouch( dam, 0, KILLED_BY_ACID );
-    }
+    dam = check_your_resists( dam, BEAM_ACID );
+    ouch( dam, 0, KILLED_BY_ACID );
 }                               // end splash_with_acid()
 
 void weapon_acid( char acid_strength )
 {
-    char hand_thing = you.equip[EQ_WEAPON];
+    int hand_thing = get_inv_wielded();
 
-    if (hand_thing == -1)
+    // empty handed or not wielding a weapon goes to gloves...
+    if (hand_thing == -1 || you.inv[hand_thing].base_type != OBJ_WEAPONS)
         hand_thing = you.equip[EQ_GLOVES];
 
+    // ... or to bare hands if we don't have gloves
     if (hand_thing == -1)
     {
-        snprintf( info, INFO_SIZE, "Your %s burn!", your_hand(true) );
-        mpr( info );
+        mpr( "Your %s burn!", your_hand(true) );
 
-        ouch( roll_dice( 1, acid_strength ), 0, KILLED_BY_ACID );
+        int dam = check_your_resists( roll_dice(1, acid_strength), BEAM_ACID );
+        ouch( dam, 0, KILLED_BY_ACID );
     }
     else if (random2(20) <= acid_strength)
     {
-        item_corrode( hand_thing );
+        item_corrode( you.inv[hand_thing] );
     }
 }                               // end weapon_acid()
 
-void item_corrode( char itco )
+void item_corrode( item_def &item )
 {
-    int chance_corr = 0;        // no idea what its full range is {dlb}
     bool it_resists = false;    // code simplifier {dlb}
     bool suppress_msg = false;  // code simplifier {dlb}
-    int how_rusty = ((you.inv[itco].base_type == OBJ_WEAPONS)
-                                ? you.inv[itco].plus2 : you.inv[itco].plus);
 
-    // early return for "oRC and cloak/preservation {dlb}:
-    if (wearing_amulet(AMU_RESIST_CORROSION) && !one_chance_in(10))
-    {
-#if DEBUG_DIAGNOSTICS
-        mpr( "Amulet protects.", MSGCH_DIAGNOSTICS );
-#endif
-        return;
-    }
-
-    // early return for items already pretty d*** rusty {dlb}:
-    if (how_rusty < -5)
+    if (item.base_type != OBJ_WEAPONS && item.base_type != OBJ_ARMOUR)
         return;
 
-    // determine possibility of resistance by object type {dlb}:
-    switch (you.inv[itco].base_type)
+    const int how_rusty = ((item.base_type == OBJ_WEAPONS) ? -item.plus2
+                                                           : -item.plus);
+
+    const int max = (item.base_type == OBJ_ARMOUR) ? property( item, PARM_AC )
+                                                   : 5;
+    if (is_random_artefact( item  )
+        || is_unrandom_artefact( item )
+        || is_fixed_artefact( item )
+        || how_rusty >= max)
     {
-    case OBJ_ARMOUR:
-        if (is_random_artefact( you.inv[itco] ))
-        {
-            it_resists = true;
-            suppress_msg = true;
-        }
-        else if ((you.inv[itco].sub_type == ARM_CRYSTAL_PLATE_MAIL
-                    || cmp_equip_race( you.inv[itco], ISFLAG_DWARVEN ))
-                && !one_chance_in(5))
-        {
-            it_resists = true;
-            suppress_msg = false;
-        }
-        break;
-
-    case OBJ_WEAPONS:
-        if (is_fixed_artefact(you.inv[itco])
-            || is_random_artefact(you.inv[itco]))
-        {
-            it_resists = true;
-            suppress_msg = true;
-        }
-        else if (cmp_equip_race( you.inv[itco], ISFLAG_DWARVEN )
-                && !one_chance_in(5))
-        {
-            it_resists = true;
-            suppress_msg = false;
-        }
-        break;
-
-    case OBJ_MISSILES:
-        if (cmp_equip_race( you.inv[itco], ISFLAG_DWARVEN ) && !one_chance_in(5))
-        {
-            it_resists = true;
-            suppress_msg = false;
-        }
-        break;
+        it_resists = true;
+        suppress_msg = true;
     }
-
-    // determine chance of corrosion {dlb}:
-    if (!it_resists)
+    else if ((get_equip_race( item ) == ISFLAG_DWARVEN && !one_chance_in(5))
+            || (player_res_corrosion() && !one_chance_in(10))
+            || one_chance_in(5))
     {
-        chance_corr = abs( how_rusty );
-
-        // ---------------------------- but it needs to stay this way
-        //                              (as it *was* this way)
-
-        // the embedded equation may look funny, but it actually works well
-        // to generate a pretty probability ramp {6%, 18%, 34%, 58%, 98%}
-        // for values [0,4] which closely matches the original, ugly switch
-        // {dlb}
-        if (chance_corr >= 0 && chance_corr <= 4)
-        {
-            it_resists = (random2(100) <
-                            2 + (2 << (1 + chance_corr)) + (chance_corr * 8));
-        }
-        else
-            it_resists = true;  // no idea how often this occurs {dlb}
-
-        // if the checks get this far, you should hear about it {dlb}
-        suppress_msg = false;
+        it_resists = true;
     }
 
     // handle message output and item damage {dlb}:
     if (!suppress_msg)
     {
         char str_pass[ ITEMNAME_SIZE ];
-        in_name(itco, DESC_CAP_YOUR, str_pass);
-        strcpy(info, str_pass);
-        strcat(info, (it_resists) ? " resists." : " is eaten away!");
-        mpr(info);
+        item_name( item, DESC_CAP_YOUR, str_pass );
+        strcpy( info, str_pass );
+        strcat( info, (it_resists) ? " resists." : " is eaten away!" );
+
+        mpr( info );
     }
 
     if (!it_resists)
     {
-        how_rusty--;
-
-        if (you.inv[itco].base_type == OBJ_WEAPONS)
-            you.inv[itco].plus2 = how_rusty;
+        if (item.base_type == OBJ_WEAPONS)
+            item.plus2--;
         else
-            you.inv[itco].plus = how_rusty;
+            item.plus--;
 
-        you.redraw_armour_class = 1;     // for armour, rings, etc. {dlb}
-
-        if (you.equip[EQ_WEAPON] == itco)
-            you.wield_change = true;
+        if (item.slot == you.equip[EQ_WEAPON])
+            set_redraw_status( REDRAW_WIELD );
+        else
+            set_redraw_status( REDRAW_ARMOUR_CLASS );
     }
 
     return;
 }                               // end item_corrode()
 
-void scrolls_burn(char burn_strength, char target_class)
+// Helper function for the expose functions below.
+// This currently works because elements only target a single type each.
+static int get_target_class( beam_type flavour )
 {
+    int target_class = OBJ_UNASSIGNED;
 
-    unsigned char burnc;
-    unsigned char burn2;
-    unsigned char burn_no = 0;
-
-    if (wearing_amulet(AMU_CONSERVATION) && !one_chance_in(10))
+    switch (flavour)
     {
-#if DEBUG_DIAGNOSTICS
-        mpr( "Amulet conserves.", MSGCH_DIAGNOSTICS );
-#endif
-        return;
+    case BEAM_FIRE:
+    case BEAM_LAVA:
+    case BEAM_NAPALM:
+    case BEAM_HELLFIRE:
+        target_class = OBJ_SCROLLS;
+        break;
+
+    case BEAM_COLD:
+    case BEAM_FRAG:
+    case BEAM_HELLFROST:
+        target_class = OBJ_POTIONS;
+        break;
+
+    case BEAM_SPORE:
+        target_class = OBJ_FOOD;
+        break;
+
+    default:
+        break;
     }
 
-    for (burnc = 0; burnc < ENDOFPACK; burnc++)
+    return (target_class);
+}
+
+// XXX: These expose functions could use being reworked into a real system...
+// the usage and implementation is currently very hacky.
+// Handles the destruction of inventory items from the elements.
+static void expose_invent_to_element( beam_type flavour, int strength )
+{
+    int i, j;
+    int num_dest = 0;
+
+    const int target_class = get_target_class( flavour );
+    if (target_class == OBJ_UNASSIGNED)
+        return;
+
+    // Currently we test against each stack (and item in the stack)
+    // independantly at strength%... perhaps we don't want that either
+    // because it makes the system very fair and removes the protection
+    // factor of junk (which might be more desirable for game play).
+    for (i = 0; i < ENDOFPACK; i++)
     {
-        if (!you.inv[burnc].quantity)
-            continue;
-        if (you.inv[burnc].base_type != target_class)
+        if (!is_valid_item( you.inv[i] ))
             continue;
 
-        for (burn2 = 0; burn2 < you.inv[burnc].quantity; burn2++)
+        if (is_valid_item( you.inv[i] )
+            && (you.inv[i].base_type == target_class
+                || (target_class == OBJ_FOOD
+                    && you.inv[i].base_type == OBJ_CORPSES)))
         {
-            if (random2(70) < burn_strength)
+            if (player_item_conserve() && !one_chance_in(10))
+                continue;
+
+            for (j = 0; j < you.inv[i].quantity; j++)
             {
-                burn_no++;
+                if (random2(100) < strength)
+                {
+                    num_dest++;
 
-                if (burnc == you.equip[EQ_WEAPON])
-                    you.wield_change = true;
+                    if (i == you.equip[EQ_WEAPON])
+                        set_redraw_status( REDRAW_WIELD );
 
-                if (dec_inv_item_quantity( burnc, 1 ))
-                    break;
+                    if (dec_inv_item_quantity( i, 1 ))
+                        break;
+                }
             }
         }
     }
 
-    if (burn_no == 1)
+    if (num_dest > 0)
     {
-        if (target_class == OBJ_SCROLLS)
-            mpr("A scroll you are carrying catches fire!");
-        else if (target_class == OBJ_POTIONS)
-            mpr("A potion you are carrying freezes and shatters!");
-        else if (target_class == OBJ_FOOD)
-            mpr("Some of your food is covered with spores!");
+        switch (target_class)
+        {
+        case OBJ_SCROLLS:
+            snprintf( info, INFO_SIZE, "%s you are carrying %s fire!",
+                      (num_dest > 1) ? "Some of the scrolls" : "A scroll",
+                      (num_dest > 1) ? "catch" : "catches" );
+            break;
+
+        case OBJ_POTIONS:
+            snprintf( info, INFO_SIZE, "%s you are carrying %s and %s!",
+                      (num_dest > 1) ? "Some of the potions" : "A potion",
+                      (num_dest > 1) ? "freeze" : "freezes",
+                      (num_dest > 1) ? "shatter" : "shatters" );
+            break;
+
+        case OBJ_FOOD:
+            snprintf( info, INFO_SIZE, "Some of your food is covered with spores!" );
+            break;
+
+        default:
+            snprintf( info, INFO_SIZE, "%s you are carrying %s destroyed!",
+                      (num_dest > 1) ? "Some items" : "An item",
+                      (num_dest > 1) ? "were" : "was" );
+            break;
+        }
+
+        mpr( info );    // XXX: should this be in a channel?
     }
-    else if (burn_no > 1)
-    {
-        if (target_class == OBJ_SCROLLS)
-            mpr("Some of the scrolls you are carrying catch fire!");
-        else if (target_class == OBJ_POTIONS)
-            mpr("Some of the potions you are carrying freeze and shatter!");
-        else if (target_class == OBJ_FOOD)
-            mpr("Some of your food is covered with spores!");
-    }
-    /* burn_no could be 0 */
 }
 
-                            // end scrolls_burn()
+
+// Handle side-effects for exposure to element other than damage.
+// This function exists because some code calculates its own damage
+// instead of using check_resists and we want to isolate all the special
+// code they keep having to do... namely condensation shield checks,
+// you really can't expect this function to even be called for much else.
+//
+// This function now calls expose_invent_to_element if strength > 0.
+//
+// XXX: this function is far from perfect and a work in progress.
+void expose_player_to_element( beam_type flavour, int strength )
+{
+    // Note that BEAM_TELEPORT is sent here when the player
+    // blinks or teleports.
+    if (flavour == BEAM_FIRE || flavour == BEAM_LAVA
+        || flavour == BEAM_HELLFIRE || flavour == BEAM_FRAG
+        || flavour == BEAM_TELEPORT || flavour == BEAM_NAPALM
+        || flavour == BEAM_STEAM)
+    {
+        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
+        {
+            mpr( MSGCH_DURATION, "Your icy shield dissipates!" );
+            you.duration[DUR_CONDENSATION_SHIELD] = 0;
+            set_redraw_status( REDRAW_ARMOUR_CLASS );
+        }
+    }
+
+    if (strength)
+        expose_invent_to_element( flavour, strength );
+
+}
+
+
+// Handles the destruction of floor items from the elements
+void expose_floor_to_element( beam_type flavour, int x, int y )
+{
+    const int target_class = get_target_class( flavour );
+    if (target_class == OBJ_UNASSIGNED)
+        return;
+
+    int smoke = 0;
+    int shatter = 0;
+    int next = NON_ITEM;
+
+    for (int obj = igrd[x][y]; obj != NON_ITEM; obj = next)
+    {
+        next = mitm[obj].link;  // in case it's not there later
+
+        if (mitm[obj].base_type == target_class
+            || (target_class == OBJ_FOOD && mitm[obj].base_type == OBJ_CORPSES))
+        {
+            destroy_item( obj );
+            if (target_class == OBJ_SCROLLS && see_grid(x,y))
+                smoke++;
+            else if (target_class == OBJ_POTIONS && player_can_hear(x,y))
+                shatter++;
+        }
+    }
+
+    if (shatter)
+        mpr( MSGCH_SOUND, "You hear glass shatter." );
+
+    if (smoke)
+    {
+        mpr( "You see %spuff%s of smoke.",
+                (smoke > 1) ? "some " : "a ",
+                (smoke > 1) ? "s" : "" );
+    }
+}
+
+
 void lose_level(void)
 {
-    // because you.experience is unsigned long, if it's going to be -ve
+    // because you.xp is unsigned long, if it's going to be -ve
     // must die straightaway.
-    if (you.experience_level == 1)
-        ouch( -9999, 0, KILLED_BY_DRAINING );
+    if (you.xp_level == 1)
+        ouch( INSTANT_DEATH, 0, KILLED_BY_DRAINING );
 
-    you.experience = exp_needed( you.experience_level + 1 ) - 1;
-    you.experience_level--;
+    you.xp = exp_needed( you.xp_level + 1 ) - 1;
+    you.xp_level--;
 
-    snprintf( info, INFO_SIZE, "You are now a level %d %s!",
-             you.experience_level, you.class_name );
-    mpr( info, MSGCH_WARN );
+    mpr( MSGCH_WARN, "You are now a level %d %s!",
+          you.xp_level, species_name( you.species ) );
 
     // Constant value to avoid grape jelly trick... see level_change() for
     // where these HPs and MPs are given back.  -- bwr
@@ -470,10 +639,10 @@ void lose_level(void)
     dec_mp(1);
     dec_max_mp(1);
 
-    calc_hp();
-    calc_mp();
+    calc_hp_max();
+    calc_mp_max();
 
-    you.redraw_experience = 1;
+    set_redraw_status( REDRAW_EXPERIENCE );
 }                               // end lose_level()
 
 void drain_exp(void)
@@ -490,24 +659,25 @@ void drain_exp(void)
 
     if (protection >= 3 || you.is_undead)
     {
-        mpr("You fully resist.");
+        mpr( "You are unaffected." );
         return;
     }
 
-    if (you.experience == 0)
-        ouch(-9999, 0, KILLED_BY_DRAINING);
+    if (you.xp == 0)
+        ouch( INSTANT_DEATH, 0, KILLED_BY_DRAINING );
 
-    if (you.experience_level == 1)
+    if (you.xp_level == 1)
     {
-        you.experience = 0;
+        you.xp = 0;
+        you.exp_available = 0;
+        mpr("You feel like you were born yesterday.");
         return;
     }
 
-    unsigned long total_exp = exp_needed( you.experience_level + 2 )
-                                    - exp_needed( you.experience_level + 1 );
-    unsigned long exp_drained = total_exp * (10 + random2(11));
+    const unsigned long base = 25 * (exp_needed(you.xp_level + 2)
+                                      - exp_needed(you.xp_level + 1));
 
-    exp_drained /= 100;
+    unsigned long exp_drained = (base + random2(base)) / 100;
 
     if (protection > 0)
     {
@@ -518,21 +688,19 @@ void drain_exp(void)
     if (exp_drained > 0)
     {
         mpr("You feel drained.");
-        you.experience -= exp_drained;
+        you.xp -= exp_drained;
         you.exp_available -= exp_drained;
 
         if (you.exp_available < 0)
             you.exp_available = 0;
 
 #if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "You lose %ld experience points.",
-                  exp_drained );
-        mpr( info, MSGCH_DIAGNOSTICS );
+        mpr( MSGCH_DIAGNOSTICS, "exp_drain: %ld", exp_drained );
 #endif
 
-        you.redraw_experience = 1;
+        set_redraw_status( REDRAW_EXPERIENCE );
 
-        if (you.experience < exp_needed(you.experience_level + 1))
+        if (you.xp < exp_needed(you.xp_level + 1))
             lose_level();
     }
 }                               // end drain_exp()
@@ -541,35 +709,43 @@ void drain_exp(void)
 void ouch( int dam, int death_source, char death_type, const char *aux )
 {
     int d = 0;
-    int e = 0;
 
-    if (you.deaths_door && death_type != KILLED_BY_LAVA
-                                    && death_type != KILLED_BY_WATER)
+    interrupt_activity( AI_HP_LOSS );
+
+    if (you.deaths_door
+        && death_type != KILLED_BY_LAVA
+        && death_type != KILLED_BY_WATER
+        && death_type != KILLED_BY_PETRIFICATION)
     {
         return;
     }
 
+#if DEBUG_DIAGNOSTICS
     // assumed bug for high damage amounts
-    if (dam > 300)
+    if (dam > 300
+        && death_type != KILLED_BY_LAVA
+        && death_type != KILLED_BY_WATER
+        && death_type != KILLED_BY_PETRIFICATION)
     {
-        snprintf( info, INFO_SIZE,
-                  "Potential bug: Unexpectedly high damage = %d", dam );
-        mpr( info, MSGCH_DANGER );
+        mpr( MSGCH_WARN, "Potential bug: Unexpectedly high damage = %d", dam );
         return;
     }
+#endif
 
     if (you_are_delayed())
-    {
         stop_delay();
-    }
 
-    if (dam > -9000)            // that is, a "death" caused by hp loss {dlb}
+    if (dam != INSTANT_DEATH)    // that is, a "death" caused by hp loss {dlb}
     {
+        if (dam <= 0)
+            return;
+
         switch (you.religion)
         {
         case GOD_XOM:
-            if (random2(you.hp_max) > you.hp && dam > random2(you.hp)
-                                                    && one_chance_in(5))
+            if (random2(you.hp_max) > you.hp
+                && dam > random2(you.hp)
+                && one_chance_in(5))
             {
                 simple_god_message( " protects you from harm!" );
                 return;
@@ -581,10 +757,12 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         case GOD_ELYVILON:
         case GOD_OKAWARU:
         case GOD_YREDELEMNUL:
-            if (dam >= you.hp && you.duration[DUR_PRAYER]
-                                                && random2(you.piety) >= 30)
+            if (dam >= you.hp
+                && you.duration[DUR_PRAYER] > 0
+                && random2(you.piety) >= 30)
             {
                 simple_god_message( " protects you from harm!" );
+                lose_piety( 3 + random2(3) );
                 return;
             }
             break;
@@ -596,12 +774,12 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         // Even if we have low HP messages off, we'll still give a
         // big hit warning (in this case, a hit for half our HPs) -- bwr
         if (dam > 0 && you.hp_max <= dam * 2)
-            mpr( "Ouch!  That really hurt!", MSGCH_DANGER );
+            mpr( MSGCH_DANGER, "Ouch!  That really hurt!" );
 
         if (you.hp > 0 && Options.hp_warning
             && you.hp <= (you.hp_max * Options.hp_warning) / 100)
         {
-            mpr( "* * * LOW HITPOINT WARNING * * *", MSGCH_DANGER );
+            mpr( MSGCH_DANGER, "* * * LOW HITPOINT WARNING * * *" );
         }
 
         if (you.hp > 0)
@@ -618,9 +796,8 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
 #ifdef USE_OPTIONAL_WIZARD_DEATH
 
 #if DEBUG_DIAGNOSTICS
-            snprintf( info, INFO_SIZE, "Damage: %d; Hit points: %d", dam, you.hp );
-            mpr( info, MSGCH_DIAGNOSTICS );
-#endif // DEBUG_DIAGNOSTICS
+            mpr( MSGCH_DIAGNOSTICS, "Damage: %d; Hit points: %d", dam, you.hp );
+#endif
 
             if (!yesno("Die?", false))
             {
@@ -641,19 +818,12 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     //okay, so you're dead:
 
     // do points first.
-    long points = you.gold;
-    points += (you.experience * 7) / 10;
+    long points = (you.xp * 7) / 10;
 
-    //if (death_type == KILLED_BY_WINNING) points += points / 2;
-    //if (death_type == KILLED_BY_LEAVING) points += points / 10;
     // these now handled by giving player the value of their inventory
-    char temp_id[4][50];
+    char temp_id[NUM_IDTYPE][MAX_SUBTYPES];
 
-    for (d = 0; d < 4; d++)
-    {
-        for (e = 0; e < 50; e++)
-            temp_id[d][e] = 1;
-    }
+    init_id_array( temp_id, ID_KNOWN_TYPE );
 
     // CONSTRUCT SCOREFILE ENTRY
     struct scorefile_entry se;
@@ -670,7 +840,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     strncpy( se.name, you.your_name, kNameLen );
     se.name[ kNameLen - 1 ] = '\0';
 #ifdef MULTIUSER
-    se.uid = (int) getuid();
+    se.uid = static_cast<int>( getuid() );
 #else
     se.uid = 0;
 #endif
@@ -686,11 +856,13 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     // Calculate value of pack and runes when character leaves dungeon
     if (death_type == KILLED_BY_LEAVING || death_type == KILLED_BY_WINNING)
     {
+        long money = you.gold;
+
         for (d = 0; d < ENDOFPACK; d++)
         {
             if (is_valid_item( you.inv[d] ))
             {
-                points += item_value( you.inv[d], temp_id, true );
+                money += item_value( you.inv[d], temp_id, true );
 
                 if (you.inv[d].base_type == OBJ_MISCELLANY
                     && you.inv[d].sub_type == MISC_RUNE_OF_ZOT)
@@ -701,8 +873,17 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
                     se.num_runes += you.inv[d].quantity;
                     rune_array[ you.inv[d].plus ] += you.inv[d].quantity;
                 }
+                else if (you.inv[d].base_type == OBJ_ORBS
+                         && you.inv[d].special > 0) // only if set
+                {
+                    // Bonus for low total_skill_points when Orb was picked up.
+                    se.skill_bonus_level = you.inv[d].special;
+                    points += calc_skill_bonus( se.skill_bonus_level );
+                }
             }
         }
+
+        points += money * ((death_type == KILLED_BY_WINNING) ? 5 : 1);
 
         // Bonus for exploring different areas, not for collecting a
         // huge stack of demonic runes in Pandemonium (gold value
@@ -722,8 +903,8 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     // strcpy(se.race_class_name, "");
     se.race_class_name[0] = '\0';
 
-    se.lvl = you.experience_level;
-    se.best_skill = best_skill( SK_FIGHTING, NUM_SKILLS - 1, 99 );
+    se.lvl = you.xp_level;
+    se.best_skill = best_skill( SK_FIGHTING, NUM_SKILLS - 1 );
     se.best_skill_lvl = you.skills[ se.best_skill ];
     se.death_type = death_type;
 
@@ -731,7 +912,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
 
     // Set the default aux data value...
     // If aux is passed in (ie for a trap), we'll default to that.
-    if (aux == NULL)
+    if (!aux)
         se.auxkilldata[0] = '\0';
     else
     {
@@ -783,9 +964,8 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
                 }
             }
 
-            strcpy( info,
-                    monam( monster->number, monster->type, true, DESC_NOCAP_A,
-                           monster->inv[MSLOT_WEAPON] ) );
+            strcpy( info, monam( monster->number, monster->type, true,
+                                 DESC_NOCAP_A, monster->inv[MSLOT_WEAPON] ) );
 
             strncpy( se.death_source_name, info, 40 );
             se.death_source_name[39] = '\0';
@@ -793,7 +973,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     }
     else
     {
-        se.death_source = death_source;
+        se.death_source = 0;
         se.mon_num = 0;
         se.death_source_name[0] = '\0';
     }
@@ -802,7 +982,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     se.final_hp = you.hp;
     se.final_max_hp = you.hp_max;
     se.final_max_max_hp = you.hp_max + player_rotted();
-    se.str = you.strength;
+    se.str = you.str;
     se.intel = you.intel;
     se.dex = you.dex;
 
@@ -814,7 +994,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     }
 
     // main dungeon: level is simply level
-    se.dlvl = you.your_level + 1;
+    se.dlvl = you.depth + 1;
     switch (you.where_are_you)
     {
         case BRANCH_ORCISH_MINES:
@@ -830,7 +1010,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         case BRANCH_ELVEN_HALLS:
         case BRANCH_TOMB:
         case BRANCH_SWAMP:
-            se.dlvl = you.your_level - you.branch_stairs[you.where_are_you - 10];
+            se.dlvl = you.depth - you.branch_stairs[you.where_are_you - 10];
             break;
 
         case BRANCH_DIS:
@@ -840,7 +1020,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
         case BRANCH_TARTARUS:
         case BRANCH_INFERNO:
         case BRANCH_THE_PIT:
-            se.dlvl = you.your_level - 26;
+            se.dlvl = you.depth - 26;
             break;
     }
 
@@ -848,7 +1028,7 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     se.level_type = you.level_type;     // pandemonium, labyrinth, dungeon..
 
     se.birth_time = you.birth_time;     // start time of game
-    se.death_time = time( NULL );         // end time of game
+    se.death_time = time( NULL );       // end time of game
 
     if (you.real_time != -1)
         se.real_time = you.real_time + (se.death_time - you.start_time);
@@ -858,9 +1038,9 @@ void ouch( int dam, int death_source, char death_type, const char *aux )
     se.num_turns = you.num_turns;
 
 #ifdef WIZARD
-    se.wiz_mode = (you.wizard ? 1 : 0);
+    se.wiz_mode = (you.wizard ? true : false);
 #else
-    se.wiz_mode = 0;
+    se.wiz_mode = false;
 #endif
 
 #ifdef SCORE_WIZARD_CHARACTERS
@@ -900,7 +1080,7 @@ void end_game( struct scorefile_entry &se )
     {
         for (int dungeon = 0; dungeon < MAX_BRANCHES; dungeon++)
         {
-            if (tmp_file_pairs[level][dungeon])
+            if (env.level_files[level][dungeon])
             {
                 make_filename( info, you.your_name, level, dungeon,
                                false, false );
@@ -915,7 +1095,8 @@ void end_game( struct scorefile_entry &se )
 
     // create base file name
 #ifdef SAVE_DIR_PATH
-    snprintf( info, INFO_SIZE, SAVE_DIR_PATH "%s%d", you.your_name, (int) getuid());
+    snprintf( info, INFO_SIZE, SAVE_DIR_PATH "%s-%d", you.your_name,
+                 static_cast<int>( getuid() ) );
 #else
     strncpy(info, you.your_name, kFileNameLen);
     info[kFileNameLen] = '\0';
@@ -930,14 +1111,33 @@ void end_game( struct scorefile_entry &se )
 
     // last, but not least, delete player .sav file
     strcpy(del_file, info);
+
+    char st_file[300];
+    char kl_file[300];
+    char tc_file[300];
+
+    strcpy(st_file, del_file);
+    strcpy(kl_file, st_file);
+    strcpy(tc_file, st_file);
+
     strcat(del_file, ".sav");
     unlink(del_file);
+
+    // Delete record of stashes
+    strcat(st_file, ".st");
+    unlink(st_file);
+
+    strcat(kl_file, ".kil");
+    unlink(kl_file);
+
+    strcat(tc_file, ".tc");
+    unlink(tc_file);
 
     // death message
     if (dead)
     {
         mpr("You die...");      // insert player name here? {dlb}
-        viewwindow(1, false);   // don't do this for leaving/winning characters
+        viewwindow(true, false);// don't do this for leaving/winning characters
     }
     more();
 
@@ -953,7 +1153,10 @@ void end_game( struct scorefile_entry &se )
         }
     }
 
-    invent( -1, !dead );
+    // XXX: store paralysis and other effects in scorefile?
+    you.paralysis = 0;  // remove effect on evasion
+
+    show_invent( -1, !dead );
     clrscr();
 
     if (!dump_char( "morgue.txt", !dead ))

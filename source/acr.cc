@@ -55,6 +55,7 @@
 #include <stdio.h>
 
 #ifdef DOS
+#include <dos.h>
 #include <conio.h>
 #include <file.h>
 #endif
@@ -73,13 +74,16 @@
 #include <sys/stat.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "abl-show.h"
 #include "abyss.h"
 #include "chardump.h"
+#include "cloud.h"
 #include "command.h"
 #include "debug.h"
+#include "decks.h"
 #include "delay.h"
 #include "describe.h"
 #include "direct.h"
@@ -95,6 +99,7 @@
 #include "it_use2.h"
 #include "it_use3.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "lev-pand.h"
 #include "macro.h"
@@ -114,6 +119,7 @@
 #include "skills.h"
 #include "skills2.h"
 #include "spells1.h"
+#include "spells2.h"
 #include "spells3.h"
 #include "spells4.h"
 #include "spl-book.h"
@@ -122,73 +128,24 @@
 #include "stuff.h"
 #include "tags.h"
 #include "transfor.h"
+#include "travel.h"
+#include "stash.h"
 #include "view.h"
-#include "wpn-misc.h"
 
-struct crawl_environment env;
-struct player you;
-struct system_environment SysEnv;
+#ifdef WIZARD
 
-char info[ INFO_SIZE ];         // messaging queue extern'd everywhere {dlb}
+#include "shopping.h"
 
-int stealth;                    // externed in view.h     // no it is not {dlb}
-char use_colour = 1;
-
-FixedVector< char, NUM_STATUE_TYPES >  Visible_Statue;
-
-// set to true once a new game starts or an old game loads
-bool game_has_started = false;
-
-// Clockwise, around the compass from north (same order as enum RUN_DIR)
-static const struct coord_def Compass[8] =
-{
-    {  0, -1 }, {  1, -1 }, {  1,  0 }, {  1,  1 },
-    {  0,  1 }, { -1,  1 }, { -1,  0 }, { -1, -1 },
-};
-
-/*
-
-   Functions needed:
-   New:
-   int player_speed(player you);
-   hit_player(damage, flavour, then last two ouch values, env);
-
-
-   Old:
-   wield(player you);
-   show_map
-   noisy()
-   losight
-
-*/
-
-void (*viewwindow) (char, bool);
-
-/* these are all defined in view.cc: */
-extern unsigned char (*mapch) (unsigned char);
-extern unsigned char (*mapch2) (unsigned char);
-unsigned char mapchar(unsigned char ldfk);
-unsigned char mapchar2(unsigned char ldfk);
-unsigned char mapchar3(unsigned char ldfk);
-unsigned char mapchar4(unsigned char ldfk);
-
-/*
-   Function pointers are used to make switching between Linux and DOS char sets
-   possible as a runtime option (command-line -c)
-*/
-
-// these two are defined in view.cc. What does the player look like?
-// (changed for shapechanging)
-extern unsigned char your_sign;
-extern unsigned char your_colour;
+#endif
 
 // Functions in main module
 static void close_door(char move_x, char move_y);
 static void do_berserk_no_combat_penalty(void);
 static bool initialise(void);
 static void input(void);
+static void open_door( const int move_x, const int move_y );
 static void move_player(char move_x, char move_y);
-static void open_door(char move_x, char move_y);
+static void handle_player_enchantments( void );
 
 /*
    It all starts here. Some initialisations are run first, then straight to
@@ -196,16 +153,14 @@ static void open_door(char move_x, char move_y);
 */
 int main( int argc, char *argv[] )
 {
-#ifdef USE_ASCII_CHARACTERS
-    // Default to the non-ibm set when it makes sense.
-    viewwindow = &viewwindow3;
-    mapch = &mapchar3;
-    mapch2 = &mapchar4;
-#else
-    // Use the standard ibm default
-    viewwindow = &viewwindow2;
-    mapch = &mapchar;
-    mapch2 = &mapchar2;
+#ifdef DEBUG_DUMP_SKILL_TOTALS
+    // need to init a few things for this dump to work:
+    seed_rng();
+    init_playerspells();
+    init_properties();
+
+    dump_skill_totals();
+    exit(0);
 #endif
 
     // Load in the system environment variables
@@ -240,6 +195,7 @@ int main( int argc, char *argv[] )
     // now parse the args again, looking for everything else.
     parse_args( argc, argv, false );
 
+    // print hiscores and exit if requested
     if (Options.sc_entries > 0)
     {
         printf( " Best Crawlers -" EOL );
@@ -247,34 +203,12 @@ int main( int argc, char *argv[] )
         exit(0);
     }
 
-#ifdef LINUX
-    lincurses_startup();
-#endif
-
-#ifdef MAC
-    init_mac();
-#endif
-
-#ifdef WIN32CONSOLE
-    init_libw32c();
-#endif
-
-#ifdef USE_MACROS
-    // Load macros
-    macro_init();
-#endif
-
-    init_overmap();             // in overmap.cc (duh?)
-    clear_ids();                // in itemname.cc
-
     bool game_start = initialise();
 
     if (game_start || Options.always_greet)
     {
-        snprintf( info, INFO_SIZE, "Welcome, %s the %s %s.",
-                  you.your_name, species_name( you.species,you.experience_level ), you.class_name );
-
-        mpr( info );
+        mpr( "Welcome, %s the %s %s.",
+             you.your_name, species_name( you.species ), you.class_name );
 
         // Starting messages can go here as this should only happen
         // at the start of a new game -- bwr
@@ -283,7 +217,7 @@ int main( int argc, char *argv[] )
         {
             int skill_levels = 0;
             for (int i = 0; i <= NUM_SKILLS; i++)
-                skill_levels += you.skills[ i ];
+                skill_levels += you.skills[i];
 
             if (skill_levels <= 2)
             {
@@ -338,8 +272,11 @@ int main( int argc, char *argv[] )
         }
 
         // warn player about their weapon, if unsuitable
-        wield_warning(false);
+        wield_warning( false );
     }
+
+    // Make sure you.stealth_cache is calculated for the first turn
+    you.stealth_cache = player_stealth();
 
     while (true)
     {
@@ -377,10 +314,10 @@ static void handle_wizard_command( void )
 
     if (!you.wizard)
     {
-        mpr( "WARNING: ABOUT TO ENTER WIZARD MODE!", MSGCH_WARN );
+        mpr( MSGCH_WARN, "WARNING: ABOUT TO ENTER WIZARD MODE!" );
 
 #ifndef SCORE_WIZARD_MODE
-        mpr( "If you continue, your game will not be scored!", MSGCH_WARN );
+        mpr( MSGCH_WARN, "If you continue, your game will not be scored!" );
 #endif
 
         if (!yesno( "Do you really want to enter wizard mode?", false ))
@@ -390,7 +327,7 @@ static void handle_wizard_command( void )
         redraw_screen();
     }
 
-    mpr( "Enter Wizard Command: ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Enter Wizard Command: " );
     wiz_command = getch();
 
     switch (wiz_command)
@@ -405,13 +342,13 @@ static void handle_wizard_command( void )
         break;
 
     case 'x':
-        you.experience = 1 + exp_needed( 2 + you.experience_level );
+        you.xp = 1 + exp_needed( 2 + you.xp_level );
         level_change();
         break;
 
     case 's':
         you.exp_available = 20000;
-        you.redraw_experience = 1;
+        set_redraw_status( REDRAW_EXPERIENCE );
         break;
 
     case 'S':
@@ -424,27 +361,18 @@ static void handle_wizard_command( void )
 
     case '$':
         you.gold += 1000;
-        you.redraw_gold = 1;
+        set_redraw_status( REDRAW_GOLD );
         break;
 
     case 'a':
         acquirement( OBJ_RANDOM );
         break;
 
-    case 'v':
-        // this command isn't very exciting... feel free to replace
-        i = prompt_invent_item( "Value of which item?", -1 );
-        if (i == PROMPT_ABORT || !is_random_artefact( you.inv[i] ))
-        {
-            canned_msg( MSG_OK );
-            break;
-        }
-        else
-        {
-            snprintf( info, INFO_SIZE, "randart val: %d", randart_value( you.inv[i] ) );
-            mpr( info );
-        }
+#if DEBUG_DIAGNOSTICS
+    case '#':
+        dump_random_items();
         break;
+#endif
 
     case '+':
         i = prompt_invent_item( "Make an artefact out of which item?", -1 );
@@ -454,13 +382,22 @@ static void handle_wizard_command( void )
             break;
         }
 
+        if (you.inv[i].base_type != OBJ_WEAPONS
+            && you.inv[i].base_type != OBJ_ARMOUR
+            && you.inv[i].base_type != OBJ_JEWELLERY)
+        {
+            canned_msg( MSG_OK );
+            break;
+        }
+
+
         // set j == equipment slot of chosen item, remove old randart benefits
         for (j = 0; j < NUM_EQUIP; j++)
         {
             if (you.equip[j] == i)
             {
                 if (j == EQ_WEAPON)
-                    you.wield_change = true;
+                    set_redraw_status( REDRAW_WIELD );
 
                 if (is_random_artefact( you.inv[i] ))
                     unuse_randart( i );
@@ -477,6 +414,11 @@ static void handle_wizard_command( void )
 
         item_name( you.inv[i], DESC_INVENTORY_EQUIP, info );
         mpr( info );
+
+
+#if DEBUG_DIAGNOSTICS
+        mpr( MSGCH_DIAGNOSTICS, "randart val: %d", randart_value(you.inv[i]) );
+#endif
         break;
 
     case '|':
@@ -518,8 +460,7 @@ static void handle_wizard_command( void )
             banished( DNGN_ENTER_ABYSS );
         else
         {
-            grd[you.x_pos][you.y_pos] = DNGN_EXIT_ABYSS;
-            down_stairs(true, you.your_level);
+            down_stairs( DNGN_EXIT_ABYSS, you.depth, false );
             untag_followers();
         }
         break;
@@ -537,31 +478,39 @@ static void handle_wizard_command( void )
             if (monster->type == -1)
                 continue;
 
-            monster_die(monster, KILL_RESET, 0);
-
+            monster_die( monster, KILL_RESET, MHITYOU );
         }
         break;
 
     case 'h':
-        you.rotting = 0;
-        you.poison = 0;
-        you.disease = 0;
-        set_hp( abs(you.hp_max), false );
+        you.magic_contamination = 0;
+        purification();
+        set_hp( you.hp_max, false );
+        inc_mp( 50, false );
         set_hunger( 5000 + abs(you.hunger), true );
         break;
 
     case 'H':
-        you.rotting = 0;
-        you.poison = 0;
-        you.disease = 0;
-        inc_hp( 10, true );
+        you.magic_contamination = 0;
+        purification();
+        you.duration[DUR_LIQUID_FLAMES] = 0;
+        inc_hp( 50, true );
         set_hp( you.hp_max, false );
+        inc_mp( 50, true );
         set_hunger( 12000, true );
-        you.redraw_hit_points = 1;
+        set_redraw_status( REDRAW_HIT_POINTS );
         break;
 
     case 'b':
         blink();            // wizards can always blink
+        break;
+
+    case 'c':
+        mpr( MSGCH_PROMPT, "Which card effect (by number)? " );
+        get_input_line( specs, sizeof( specs ) );
+
+        if (specs[0] != '\0')
+            cards( atoi(specs), false );
         break;
 
     case '\"':
@@ -574,9 +523,23 @@ static void handle_wizard_command( void )
         level_travel(1);
         break;
 
+    case CONTROL('D'):
+        debug_destroy_item();
+        break;
+
     case 'u':
     case 'U':
         level_travel(-1);
+        break;
+
+    case '.':
+        {
+            // This is completely unsafe, but is somewhat useful for
+            // debuging those rare game hangs in level creation.
+            builder( you.depth, you.level_type );
+            clear_envmap();
+            you_teleport2( false );
+        }
         break;
 
     case '%':
@@ -584,8 +547,28 @@ static void handle_wizard_command( void )
         create_spec_object();
         break;
 
+    case 'E':
+    case 'O':
+        create_object( (wiz_command == 'E') );
+        break;
+
     case 't':
         tweak_object();
+        break;
+
+    case 'e':
+        {
+            struct dist spd;
+            struct bolt beam;
+
+            if (spell_direction( spd, beam, DIR_TARGET, TARG_ENEMY ))
+            {
+                const int mon = mgrd[beam.target_x][beam.target_y];
+
+                if (mon != NON_MONSTER)
+                    menv[mon].attitude = ATT_FRIENDLY;
+            }
+        }
         break;
 
     case 'm':
@@ -594,6 +577,39 @@ static void handle_wizard_command( void )
 
     case 'M':
         create_spec_monster_name();
+        break;
+
+    case CONTROL('M'):
+        mpr( MSGCH_DIAGNOSTICS, "Scaning monsters:" );
+        for (i = 0; i < MAX_MONSTERS; i++)
+        {
+            struct monsters *mon = &menv[i];
+
+            if (mon->type == -1)
+                continue;
+
+            mpr( MSGCH_DIAGNOSTICS,
+                 "%s (#%d): location (%d,%d)",
+                 ptr_monam( mon, DESC_PLAIN ), i, mon->x, mon->y );
+        }
+
+        mpr( MSGCH_DIAGNOSTICS, "Scaning grid:" );
+        for (i = 0; i < GXM; i++)
+        {
+            for (j = 0; j < GYM; j++)
+            {
+                const int mid = mgrd[i][j];
+
+                if (mid != NON_MONSTER)
+                {
+                    struct monsters *mon = &menv[mid];
+
+                    mpr( MSGCH_DIAGNOSTICS,
+                         "location (%d,%d): %s (#%d)",
+                         i, j, ptr_monam( mon, DESC_PLAIN ), mid );
+                }
+            }
+        }
         break;
 
     case 'r':
@@ -609,11 +625,63 @@ static void handle_wizard_command( void )
         break;
 
     case 'p':
-        grd[you.x_pos][you.y_pos] = DNGN_ENTER_PANDEMONIUM;
+        if (you.level_type != LEVEL_PANDEMONIUM)
+            grd[you.x_pos][you.y_pos] = DNGN_ENTER_PANDEMONIUM;
+        else
+            grd[you.x_pos][you.y_pos] = DNGN_TRANSIT_PANDEMONIUM;
+        break;
+
+    case 'P':
+        gain_exp( 9000000 );
+        debug_set_all_skills( 27 );
         break;
 
     case 'l':
         grd[you.x_pos][you.y_pos] = DNGN_ENTER_LABYRINTH;
+        break;
+
+    case '\\':
+        if (grd[you.x_pos][you.y_pos] == DNGN_ENTER_SHOP)
+        {
+            // replace shop underfoot
+            for (i = 0; i < MAX_SHOPS; i++)
+            {
+                if (env.shop[i].x == you.x_pos && env.shop[i].y == you.y_pos)
+                    break;
+            }
+
+            if (i < MAX_SHOPS)
+            {
+                destroy_item_stack( 0, 5 + i );
+                grd[ env.shop[i].x ][ env.shop[i].y ] = DNGN_FLOOR;
+                env.shop[i].type = SHOP_UNASSIGNED;
+            }
+        }
+        else
+        {
+            // check if there's a free shop available
+            for (i = 0; i < MAX_SHOPS; i++)
+            {
+                if (env.shop[i].type == SHOP_UNASSIGNED)
+                    break;
+            }
+        }
+
+        // if there isn't, pick one and clear it out
+        if (i == MAX_SHOPS)
+        {
+            i = random2(MAX_SHOPS);
+
+            destroy_item_stack( 0, 5 + i );
+            grd[ env.shop[i].x ][ env.shop[i].y ] = DNGN_FLOOR;
+            env.shop[i].type = SHOP_UNASSIGNED;
+        }
+
+        grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
+
+        place_spec_shop( you.depth, you.x_pos, you.y_pos, SHOP_RANDOM );
+        link_items();
+        item_check( false );
         break;
 
     case 'i':
@@ -628,7 +696,7 @@ static void handle_wizard_command( void )
                 set_ident_flags( you.inv[i], ISFLAG_IDENT_MASK );
             }
         }
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
         break;
 
     case 'I':
@@ -643,7 +711,7 @@ static void handle_wizard_command( void )
                 unset_ident_flags( you.inv[i], ISFLAG_IDENT_MASK );
             }
         }
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
         break;
 
     case 'X':
@@ -659,11 +727,30 @@ static void handle_wizard_command( void )
         break;              /* cast spell by name */
 
     case '(':
-        mpr( "Create which feature (by number)? ", MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, "Create which feature (by number)? " );
         get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] != '\0')
             grd[you.x_pos][you.y_pos] = atoi(specs);
+        break;
+
+    case ')':
+        mpr( MSGCH_PROMPT, "Create pool of which feature (by number)? " );
+        get_input_line( specs, sizeof( specs ) );
+
+        if (specs[0] != '\0')
+        {
+            const int grid = atoi(specs);
+
+            for (int gx = you.x_pos - 2; gx <= you.x_pos + 2; gx++)
+            {
+                for (int gy = you.y_pos - 2; gy <= you.y_pos + 2; gy++)
+                {
+                    if (in_bounds( gx, gy ))
+                        grd[gx][gy] = grid;
+                }
+            }
+        }
         break;
 
     case ']':
@@ -676,41 +763,47 @@ static void handle_wizard_command( void )
         break;
 
     case ':':
-        j = 0;
-        for (i = 0; i < 20; i++)
         {
-            if (you.branch_stairs[i] == 0)
-                continue;
+            const char bnch[13][20] =
+            {
+                "Orcish Mines", "Hive", "Lair", "Slime Pits", "Vaults",
+                "Crypt", "Hall of Blades", "Hall of Zot", "Ecumenical Temple",
+                "Snake Pit", "Elven Halls", "Tomb", "Swamp"
+            };
 
-            snprintf( info, INFO_SIZE, "Branch %2d is on level %2d",
-                     i, you.branch_stairs[i] + 1 );
+            j = 0;
+            for (i = 0; i < 13; i++)
+            {
+                if (you.branch_stairs[i] == 0)
+                    continue;
 
-            mpr(info);
+                mpr( "%2d: %s", you.branch_stairs[i] + 1, bnch[i] );
+            }
         }
         break;
 
     case '{':
         magic_mapping(99, 100);
+        detect_traps(100);
+        detect_items(100);
+        detect_creatures(100);
         break;
 
     case '^':
         {
-            int old_piety = you.piety;
+            const int old_piety = you.piety;
 
-            gain_piety(50);
-            snprintf( info, INFO_SIZE, "Congratulations, your piety went from %d to %d!",
-                    old_piety, you.piety);
-            mpr(info);
+            gain_piety(20);
+
+            mpr( "Congratulations, your piety went from %d to %d!",
+                 old_piety, you.piety);
         }
         break;
 
     case '=':
-        snprintf( info, INFO_SIZE,
-                  "Cost level: %d  Skill points: %d  Next cost level: %d",
-                  you.skill_cost_level, you.total_skill_points,
-                  skill_cost_needed( you.skill_cost_level + 1 ) );
-
-        mpr( info );
+        mpr( "Cost level: %d  Skill points: %ld  Next cost level: %d",
+              you.skill_cost_level, you.total_skill_points,
+              skill_cost_needed( you.skill_cost_level + 1 ) );
         break;
 
     case '_':
@@ -723,17 +816,14 @@ static void handle_wizard_command( void )
             if (mitm[i].link == NON_ITEM)
                 continue;
 
-            snprintf( info, INFO_SIZE, "item:%3d link:%3d cl:%3d ty:%3d pl:%3d pl2:%3d sp:%3ld q:%3d",
+            mpr( "item:%3d link:%3d cl:%3d ty:%3d pl:%3d pl2:%3d sp:%3ld q:%3d",
                      i, mitm[i].link,
                      mitm[i].base_type, mitm[i].sub_type,
                      mitm[i].plus, mitm[i].plus2, mitm[i].special,
                      mitm[i].quantity );
-
-            mpr(info);
         }
 
-        strcpy(info, "igrid:");
-        mpr(info);
+        mpr("igrid:");
 
         for (i = 0; i < GXM; i++)
         {
@@ -741,13 +831,11 @@ static void handle_wizard_command( void )
             {
                 if (igrd[i][j] != NON_ITEM)
                 {
-                    snprintf( info, INFO_SIZE, "%3d at (%2d,%2d), cl:%3d ty:%3d pl:%3d pl2:%3d sp:%3ld q:%3d",
+                    mpr( "%3d at (%2d,%2d), cl:%3d ty:%3d pl:%3d pl2:%3d sp:%3ld q:%3d",
                              igrd[i][j], i, j,
                              mitm[i].base_type, mitm[i].sub_type,
                              mitm[i].plus, mitm[i].plus2, mitm[i].special,
                              mitm[i].quantity );
-
-                    mpr(info);
                 }
             }
         }
@@ -759,83 +847,6 @@ static void handle_wizard_command( void )
     }
 }
 #endif
-
-// This function creates "equivalence classes" so that undiscovered
-// traps and secret doors aren't running stopping points.
-static char base_grid_type( char grid )
-{
-    // Don't stop for undiscovered traps:
-    if (grid == DNGN_UNDISCOVERED_TRAP)
-        return (DNGN_FLOOR);
-
-    // Or secret doors (which currently always look like rock walls):
-    if (grid == DNGN_SECRET_DOOR)
-        return (DNGN_ROCK_WALL);
-
-    return (grid);
-}
-
-// Set up the front facing array for detecting terrain based stops
-static void set_run_check( int index, int dir )
-{
-    you.run_check[index].dx = Compass[dir].x;
-    you.run_check[index].dy = Compass[dir].y;
-
-    const int targ_x = you.x_pos + Compass[dir].x;
-    const int targ_y = you.y_pos + Compass[dir].y;
-
-    you.run_check[index].grid = base_grid_type( grd[ targ_x ][ targ_y ] );
-}
-
-// Set up the running variables for the current run.
-static void start_running( int dir, char mode )
-{
-    if (dir == RDIR_REST)
-    {
-        you.run_x = 0;
-        you.run_y = 0;
-        you.running = mode;
-        return;
-    }
-
-    ASSERT( dir >= 0 && dir <= 7 );
-
-    you.run_x = Compass[dir].x;
-    you.run_y = Compass[dir].y;
-    you.running = mode;
-
-    // Get the compass point to the left/right of intended travel:
-    const int left  = (dir - 1 < 0) ? 7 : (dir - 1);
-    const int right = (dir + 1 > 7) ? 0 : (dir + 1);
-
-    // Record the direction and starting tile type for later reference:
-    set_run_check( 0, left );
-    set_run_check( 1, dir );
-    set_run_check( 2, right );
-}
-
-// Returns true if one of the front three grids has changed.
-static bool check_stop_running( void )
-{
-    if (env.cgrid[you.x_pos + you.run_x][you.y_pos + you.run_y] != EMPTY_CLOUD)
-        return (true);
-
-    if (mgrd[you.x_pos + you.run_x][you.y_pos + you.run_y] != NON_MONSTER)
-        return (true);
-
-    for (int i = 0; i < 3; i++)
-    {
-        const int targ_x = you.x_pos + you.run_check[i].dx;
-        const int targ_y = you.y_pos + you.run_check[i].dy;
-        const int targ_grid = base_grid_type( grd[ targ_x ][ targ_y ] );
-
-        if (you.run_check[i].grid != targ_grid)
-            return (true);
-    }
-
-    return (false);
-}
-
 
 /*
    This function handles the player's input. It's called from main(), from
@@ -857,9 +868,7 @@ static void input(void)
     bool opening = false;
 #endif
 
-    you.shield_blocks = 0;              // no blocks this round
-
-    you.time_taken = player_speed();
+    you.stepping = false;
 
 #ifdef LINUX
     update_screen();
@@ -869,25 +878,46 @@ static void input(void)
 
     textcolor(LIGHTGREY);
 
-    set_redraw_status( REDRAW_LINE_2_MASK | REDRAW_LINE_3_MASK );
+    set_redraw_status( REDRAW_STATUS );
     print_stats();
+
+    you.time_taken = player_base_time_taken();
+
+#if WIZARD
+    if (you.wizard && you.paralysis)
+    {
+        if (yesno( "End paralysis?" ))
+            you.paralysis = 0;
+    }
+#endif
 
     if (you.paralysis)
     {
-        keyin = '.';            // end of if you.paralysis == 0
+        keyin = '.';
+
+        // Which channel to use here?  Note that paralysis == 1 will
+        // result in the "able to move" message below.
+        if (you.paralysis > 1)
+            mpr( MSGCH_MULTITURN_ACTION, "You still cannot move!" );
     }
     else
     {
         handle_delay();
 
-        gotoxy(18, 9);
+        gotoxy( 18, 9 );
 
         if (you_are_delayed())
             keyin = '.';
+        else if (you.activity)
+        {
+            keyin = 128;
+            perform_activity();
+        }
         else
         {
-
-            if (you.running > 0)
+            if (you.running < 0)        // Travel and explore
+                travel(&keyin, &move_x, &move_y);
+            else if (you.running)
             {
                 keyin = 128;
 
@@ -896,17 +926,17 @@ static void input(void)
 
                 if (kbhit())
                 {
-                    you.running = 0;
+                    stop_running();
                     goto gutch;
                 }
 
-                if (you.run_x == 0 && you.run_y == 0)
+                if (is_resting())
                 {
                     you.running--;
                     keyin = '.';
                 }
             }
-            else
+            else if (!you.running)
             {
 
 #if DEBUG_DIAGNOSTICS
@@ -926,6 +956,16 @@ static void input(void)
 
             mesclr();
 
+            if (keyin == ':')
+            {
+                you.stepping = true;
+
+                if (Options.prompt_move_modifiers)
+                    mpr( MSGCH_PROMPT, "Step in which direction?" );
+
+                keyin = getch();
+            }
+
 #ifdef LINUX
             // Kludging running and opening as two character sequences
             // for Unix systems.  This is an easy way out... all the
@@ -936,16 +976,24 @@ static void input(void)
             if (keyin == '*')
             {
                 opening = true;
+
+                if (Options.prompt_move_modifiers)
+                    mpr( MSGCH_PROMPT, "Interact in which direction?" );
+
                 keyin = getch();
             }
             else if (keyin == '/')
             {
                 running = true;
+
+                if (Options.prompt_move_modifiers)
+                    mpr( MSGCH_PROMPT, "Run in which direction?" );
+
                 keyin = getch();
             }
 
             // Translate keypad codes into command enums
-            keyin = key_to_command(keyin);
+            keyin = key_to_command( keyin );
 #else
             // Old DOS keypad support
             if (keyin == 0)     // ALT also works - see ..\KEYTEST.CPP
@@ -987,14 +1035,12 @@ static void input(void)
     {
         move_x = 0;
         move_y = 0;
-        you.turn_is_over = 0;
+        you.turn_is_over = false;
     }
 
 #ifndef LINUX
   get_keyin_again:
 #endif //jmf: just stops an annoying gcc warning
-
-
 
     switch (keyin)
     {
@@ -1046,64 +1092,87 @@ static void input(void)
 
 #ifdef LINUX
         if (!running && !opening)
-            start_running( RDIR_REST, 100 );
+            start_running( RDIR_REST, RMODE_REST_DURATION );
         else
         {
             search_around();
             move_x = 0;
             move_y = 0;
-            you.turn_is_over = 1;
+            you.turn_is_over = true;
         }
 #endif
         break;
 
     case 'B': case CMD_RUN_DOWN_LEFT:
-        start_running( RDIR_DOWN_LEFT, 2 ); break;
+        start_running( RDIR_DOWN_LEFT, RMODE_START ); break;
 
     case 'J': case CMD_RUN_DOWN:
-        start_running( RDIR_DOWN, 2 ); break;
+        start_running( RDIR_DOWN, RMODE_START ); break;
 
     case 'U': case CMD_RUN_UP_RIGHT:
-        start_running( RDIR_UP_RIGHT, 2 ); break;
+        start_running( RDIR_UP_RIGHT, RMODE_START ); break;
 
     case 'K': case CMD_RUN_UP:
-        start_running( RDIR_UP, 2 ); break;
+        start_running( RDIR_UP, RMODE_START ); break;
 
     case 'Y': case CMD_RUN_UP_LEFT:
-        start_running( RDIR_UP_LEFT, 2 ); break;
+        start_running( RDIR_UP_LEFT, RMODE_START ); break;
 
     case 'H': case CMD_RUN_LEFT:
-        start_running( RDIR_LEFT, 2 ); break;
+        start_running( RDIR_LEFT, RMODE_START ); break;
 
     case 'N': case CMD_RUN_DOWN_RIGHT:
-        start_running( RDIR_DOWN_RIGHT, 2 ); break;
+        start_running( RDIR_DOWN_RIGHT, RMODE_START ); break;
 
     case 'L': case CMD_RUN_RIGHT:
-        start_running( RDIR_RIGHT, 2 ); break;
+        start_running( RDIR_RIGHT, RMODE_START ); break;
 
 #ifdef LINUX
         // taken care of via key -> command mapping
 #else
         // Old DOS keypad support
-    case '1': start_running( RDIR_DOWN_LEFT, 2 ); break;
-    case '2': start_running( RDIR_DOWN, 2 ); break;
-    case '9': start_running( RDIR_UP_RIGHT, 2 ); break;
-    case '8': start_running( RDIR_UP, 2 ); break;
-    case '7': start_running( RDIR_UP_LEFT, 2 ); break;
-    case '4': start_running( RDIR_LEFT, 2 ); break;
-    case '3': start_running( RDIR_DOWN_RIGHT, 2 ); break;
-    case '6': start_running( RDIR_RIGHT, 2 ); break;
-    case '5': start_running( RDIR_REST, 100 ); break;
+    case '1': start_running( RDIR_DOWN_LEFT, RMODE_START ); break;
+    case '2': start_running( RDIR_DOWN, RMODE_START ); break;
+    case '9': start_running( RDIR_UP_RIGHT, RMODE_START ); break;
+    case '8': start_running( RDIR_UP, RMODE_START ); break;
+    case '7': start_running( RDIR_UP_LEFT, RMODE_START ); break;
+    case '4': start_running( RDIR_LEFT, RMODE_START ); break;
+    case '3': start_running( RDIR_DOWN_RIGHT, RMODE_START ); break;
+    case '6': start_running( RDIR_RIGHT, RMODE_START ); break;
+    case '5': start_running( RDIR_REST, RMODE_REST_DURATION ); break;
 
 #endif
 
     case CONTROL('A'):
     case CMD_TOGGLE_AUTOPICKUP:
-        autopickup_on = !autopickup_on;
-        strcpy(info, "Autopickup is now ");
-        strcat(info, (autopickup_on) ? "on" : "off");
-        strcat(info, ".");
-        mpr(info);
+        you.autopickup_on = !you.autopickup_on;
+        mpr( "Autopickup is now %s.", (you.autopickup_on) ? "on" : "off" );
+        break;
+
+    case CONTROL('C'):
+    case CMD_CLEAN_MAP:
+        {
+            mpr( "Cleaning map." );
+            for (int x = X_BOUND_1; x <= X_BOUND_2; x++)
+            {
+                for (int y = Y_BOUND_1; y <= Y_BOUND_2; y++)
+                {
+                    // Don't expose new dug out areas:
+                    // Note: assumptions are being made here about how
+                    // terrain can change (eg it used to be solid, and
+                    // thus monster/item free).
+                    if (is_terrain_changed(x, y))
+                        continue;
+
+                    if (is_terrain_seen( x, y ))
+                        set_envmap_char( x, y, get_sightmap_char(grd[x][y]) );
+                    else if (is_terrain_known( x, y ))
+                        set_envmap_char( x, y, get_magicmap_char(grd[x][y]) );
+                    else
+                        set_envmap_char( x, y, 0 );
+                }
+            }
+        }
         break;
 
     case '<':
@@ -1116,7 +1185,8 @@ static void input(void)
         else if ((grd[you.x_pos][you.y_pos] < DNGN_STONE_STAIRS_UP_I
                     || grd[you.x_pos][you.y_pos] > DNGN_ROCK_STAIRS_UP)
                 && (grd[you.x_pos][you.y_pos] < DNGN_RETURN_FROM_ORCISH_MINES
-                    || grd[you.x_pos][you.y_pos] >= 150))
+                    || grd[you.x_pos][you.y_pos] >= 150)
+                && grd[you.x_pos][you.y_pos] != DNGN_EXIT_HELL)
         {
             mpr( "You can't go up here!" );
             break;
@@ -1125,6 +1195,12 @@ static void input(void)
         tag_followers();  // only those beside us right now can follow
         start_delay( DELAY_ASCENDING_STAIRS,
                      1 + (you.burden_state > BS_UNENCUMBERED) );
+
+        // stairs are harder for the big:
+        if (player_size( PSIZE_BODY ) > SIZE_LARGE)
+            you.time_taken = (you.time_taken * 3) / 2;
+
+        you.turn_is_over = true;
         break;
 
     case '>':
@@ -1145,7 +1221,13 @@ static void input(void)
         tag_followers();  // only those beside us right now can follow
         start_delay( DELAY_DESCENDING_STAIRS,
                      1 + (you.burden_state > BS_UNENCUMBERED),
-                     you.your_level );
+                     you.depth );
+
+        // stairs are harder for the big:
+        if (player_size( PSIZE_BODY ) > SIZE_LARGE)
+            you.time_taken = (you.time_taken * 3) / 2;
+
+        you.turn_is_over = true;
         break;
 
     case 'O':
@@ -1164,8 +1246,26 @@ static void input(void)
 
     case 'd':
     case CMD_DROP:
-        drop();
+        do_drop();
+#ifdef STASH_TRACKING
+        if (Options.stash_tracking >= STM_DROPPED)
+            stashes.add_stash();
+#endif
         break;
+
+#ifdef STASH_TRACKING
+    case CONTROL('S'):
+    case CMD_MARK_STASH:
+        if (Options.stash_tracking >= STM_EXPLICIT)
+            stashes.add_stash();
+        break;
+
+    case CONTROL('E'):
+    case CMD_FORGET_STASH:
+        if (Options.stash_tracking >= STM_EXPLICIT)
+            stashes.no_stash();
+        break;
+#endif
 
     case 'D':
     case CMD_BUTCHER:
@@ -1174,7 +1274,8 @@ static void input(void)
 
     case 'i':
     case CMD_DISPLAY_INVENTORY:
-        get_invent(-1);
+        show_invent(-1);
+        redraw_screen();
         break;
 
     case 'I':
@@ -1182,7 +1283,7 @@ static void input(void)
         // We'll leave this message in for a while.  Eventually, this
         // might be some special for of inventory command, or perhaps
         // actual god invocations will be split to here from abilities. -- bwr
-        mpr( "This command is now 'E'voke wielded item.", MSGCH_WARN );
+        // mpr( MSGCH_WARN, "This command is now 'E'voke wielded item." );
         break;
 
     case 'E':
@@ -1194,12 +1295,12 @@ static void input(void)
     case 'g':
     case ',':
     case CMD_PICKUP:
-        pickup();
+        do_pickup();
         break;
 
     case ';':
     case CMD_INSPECT_FLOOR:
-        item_check(';');
+        item_check( true );
         break;
 
     case 'w':
@@ -1295,7 +1396,7 @@ static void input(void)
         search_around();
         move_x = 0;
         move_y = 0;
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         break;
 
     case 'q':
@@ -1310,17 +1411,20 @@ static void input(void)
 
     case 'x':
     case CMD_LOOK_AROUND:
-        mpr("Move the cursor around to observe a square.", MSGCH_PROMPT);
-        mpr("Press '?' for a monster description.", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT, "Move the cursor around to observe a square." );
+        mpr(MSGCH_PROMPT, "Press '?' for a monster description." );
 
         struct dist lmove;
+        lmove.isValid = lmove.isTarget = lmove.isCancel = false;
         look_around( lmove, true );
+        if (lmove.isValid && lmove.isTarget && !lmove.isCancel)
+            start_travel( lmove.tx, lmove.ty );
         break;
 
     case 's':
     case CMD_SEARCH:
         search_around();
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         break;
 
     case 'Z':
@@ -1342,8 +1446,43 @@ static void input(void)
         wield_weapon(true);
         break;
 
+    case CMD_FIX_WAYPOINT:
+    case CONTROL('F'):
+        if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS
+                || you.level_type == LEVEL_PANDEMONIUM)
+        {
+            mpr("Sorry, you can't set a waypoint here.");
+            break;
+        }
+        travel_cache.add_waypoint();
+        break;
+
+    case CMD_INTERLEVEL_TRAVEL:
+    case CONTROL('G'):
+        if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS
+                || you.level_type == LEVEL_PANDEMONIUM)
+        {
+            mpr("Sorry, you can't auto-travel out of here.");
+            break;
+        }
+        start_translevel_travel();
+        redraw_screen();
+        break;
+
+    case CONTROL('O'):
+    case CMD_EXPLORE:
+        if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
+        {
+            mpr("It would help if you knew where you were, first.");
+            break;
+        }
+        // Start exploring
+        start_explore();
+        break;
+
     case 'X':
     case CMD_DISPLAY_MAP:
+    {
 #if (!DEBUG_DIAGNOSTICS)
         if (you.level_type == LEVEL_LABYRINTH || you.level_type == LEVEL_ABYSS)
         {
@@ -1351,23 +1490,17 @@ static void input(void)
             break;
         }
 #endif
-        plox[0] = 0;
-        show_map(plox);
+        bool smret = show_map( plox, true );
         redraw_screen();
+        if (smret && plox[0] > 0)
+            start_travel(plox[0], plox[1]);
         break;
-
+    }
     case '\\':
     case CMD_DISPLAY_KNOWN_OBJECTS:
         check_item_knowledge(); //nothing = check_item_knowledge();
         redraw_screen();
         break;
-
-#ifdef ALLOW_DESTROY_ITEM_COMMAND
-    case CONTROL('D'):
-    case CMD_DESTROY_ITEM:
-        cmd_destroy_item();
-        break;
-#endif
 
     case CONTROL('P'):
     case CMD_REPLAY_MESSAGES:
@@ -1390,8 +1523,8 @@ static void input(void)
     case CONTROL('Z'):
     case CMD_SUSPEND_GAME:
         // CTRL-Z suspend behaviour is implemented here,
-        // because we want to have CTRL-Y available...
-        // and unfortuantely they tend to be stuck together.
+        // because we want to have CTRL-Y available,
+        // and they tend to be stuck together.
         clrscr();
         lincurses_shutdown();
         kill(0, SIGTSTP);
@@ -1408,23 +1541,23 @@ static void input(void)
 
     case 'C':
     case CMD_EXPERIENCE_CHECK:
-        snprintf( info, INFO_SIZE, "You are a level %d %s %s.", you.experience_level,
-                species_name(you.species,you.experience_level), you.class_name);
-        mpr(info);
+        mpr( "You are a level %d %s %s.",
+              you.xp_level, species_name( you.species ), you.class_name );
 
-        if (you.experience_level < 27)
+        if (you.xp_level < 27)
         {
-            int xp_needed = (exp_needed(you.experience_level+2) - you.experience) + 1;
-            snprintf( info, INFO_SIZE, "Level %d requires %ld experience (%d point%s to go!)",
-                    you.experience_level + 1,
-                    exp_needed(you.experience_level + 2) + 1,
+            int xp_needed = (exp_needed(you.xp_level+2) - you.xp) + 1;
+            mpr("Level %d requires %ld experience (%d point%s to go!)",
+                    you.xp_level + 1,
+                    exp_needed(you.xp_level + 2) + 1,
                     xp_needed,
-                    (xp_needed > 1) ? "s" : "");
-            mpr(info);
+                    (xp_needed > 1) ? "s" : "" );
         }
         else
         {
             mpr( "I'm sorry, level 27 is as high as you can go." );
+
+            // XXX; add some more special level 27 messages?
             mpr( "With the way you've been playing, I'm surprised you got this far." );
         }
 
@@ -1435,11 +1568,15 @@ static void input(void)
 
             make_time_string( curr, buff, sizeof(buff) );
 
-            snprintf( info, INFO_SIZE, "Play time: %s (%ld turns)",
-                      buff, you.num_turns );
-
-            mpr( info );
+            mpr( "Play time: %s (%ld turns)", buff, you.num_turns );
         }
+
+#if DEBUG_DIAGNOSTICS
+        // too annoying for regular diagnostics
+
+        mpr( MSGCH_DIAGNOSTICS, "Stealth: %d; MR: %d; Elapsed Time: %.0f",
+              you.stealth_cache, player_res_magic(), you.elapsed_time );
+#endif
         break;
 
 
@@ -1466,10 +1603,9 @@ static void input(void)
         strncpy(name_your, you.your_name, kNameLen);
         name_your[kNameLen] = '\0';
         if (dump_char( name_your, false ))
-            strcpy(info, "Char dumped successfully.");
+            mpr("Char dumped successfully.");
         else
-            strcat(info, "Char dump unsuccessful! Sorry about that.");
-        mpr(info);
+            mpr("Char dump unsuccessful! Sorry about that.");
         break;
 
 #ifdef USE_MACROS
@@ -1500,9 +1636,8 @@ static void input(void)
         return;
 
 #ifdef WIZARD
-    case CONTROL('W'):
-    case CMD_WIZARD:
     case '&':
+    case CMD_WIZARD:
         handle_wizard_command();
         break;
 #endif
@@ -1518,7 +1653,7 @@ static void input(void)
         quit_game();
         break;
 
-    case 'V':
+    case CONTROL('V'):
     case CMD_GET_VERSION:
         version();
         break;
@@ -1530,784 +1665,78 @@ static void input(void)
     case CMD_NO_CMD:
         mpr("Unknown command.");
         break;
-
     }
+
+#ifdef STASH_TRACKING
+    if (Options.stash_tracking)
+    {
+        stashes.update_visible_stashes( (Options.stash_tracking == STM_ALL)
+                                            ? StashTracker::ST_AGGRESSIVE
+                                            : StashTracker::ST_PASSIVE );
+    }
+#endif
 
 #ifdef LINUX
     // New Unix keypad stuff
     if (running)
     {
-        int dir = -1;
+        const run_dir_type  dir = convert_to_compass( move_x, move_y );
 
-        // XXX: ugly hack to interface this with the new running code. -- bwr
-        for (int i = 0; i < 8; i++)
+        if (dir != RDIR_NONDIR)
         {
-            if (Compass[i].x == move_x && Compass[i].y == move_y)
-            {
-                dir = i;
-                break;
-            }
-        }
-
-        if (dir != -1)
-        {
-            start_running( dir, 2 );
+            start_running( dir, RMODE_START );
             move_x = 0;
             move_y = 0;
         }
     }
     else if (opening)
     {
-        open_door(move_x, move_y);
+        open_door( move_x, move_y );
         move_x = 0;
         move_y = 0;
     }
 #endif
 
-    if (move_x != 0 || move_y != 0)
-        move_player(move_x, move_y);
+    if (move_x || move_y)
+        move_player( move_x, move_y );
     else if (you.turn_is_over)      // we did something other than move/attack
         do_berserk_no_combat_penalty();
 
-    if (!you.turn_is_over)
+    if (!you.turn_is_over)              // did a no time cost command
     {
-        viewwindow(1, false);
+        viewwindow( true, false );
         return;
     }
+
+    ASSERT( you.time_taken >= 0 );
 
     if (you.num_turns != -1)
         you.num_turns++;
 
-    //if (random2(10) < you.skills [SK_TRAPS_DOORS] + 2) search_around();
+    you.time_taken = adjust_time_for_speed( you.time_taken,
+                                            player_net_speed_effect() );
 
-    stealth = check_stealth();
+    you.shield_blocks = 0;                  // no blocks yet this round
+    you.stealth_cache = player_stealth();
 
-#if 0
-    // too annoying for regular diagnostics
-    snprintf( info, INFO_SIZE, "stealth: %d", stealth );
-    mpr( info, MSGCH_DIAGNOSTICS );
-#endif
+    handle_player_enchantments();
 
-    if (you.special_wield != SPWLD_NONE)
-        special_wielded();
-
-    if (one_chance_in(10))
-    {
-        // this is instantaneous
-        if (player_teleport() > 0 && one_chance_in(100 / player_teleport()))
-            you_teleport2( true );
-        else if (you.level_type == LEVEL_ABYSS && one_chance_in(30))
-            you_teleport2( false, true ); // to new area of the Abyss
-    }
-
-    if (env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
-        in_a_cloud();
-
-    if (you.duration[DUR_REPEL_UNDEAD] > 1)
-        you.duration[DUR_REPEL_UNDEAD]--;
-
-    if (you.duration[DUR_REPEL_UNDEAD] == 4)
-    {
-        mpr( "Your holy aura is starting to fade.", MSGCH_DURATION );
-        you.duration[DUR_REPEL_UNDEAD] -= random2(3);
-    }
-
-    if (you.duration[DUR_REPEL_UNDEAD] == 1)
-    {
-        mpr( "Your holy aura fades away.", MSGCH_DURATION );
-        you.duration[DUR_REPEL_UNDEAD] = 0;
-    }
-
-    // paradox: it both lasts longer & does more damage overall if you're
-    //          moving slower.
-    // rationalisation: I guess it gets rubbed off/falls off/etc if you
-    //          move around more.
-    if (you.duration[DUR_LIQUID_FLAMES] > 0)
-        you.duration[DUR_LIQUID_FLAMES]--;
-
-    if (you.duration[DUR_LIQUID_FLAMES] != 0)
-    {
-        const int res_fire = player_res_fire();
-
-        mpr( "You are covered in liquid flames!", MSGCH_WARN );
-        scrolls_burn(8, OBJ_SCROLLS);
-
-        if (res_fire > 0)
-        {
-            ouch( (((random2avg(9, 2) + 1) * you.time_taken) /
-                    (1 + (res_fire * res_fire))) / 10, 0, KILLED_BY_BURNING );
-        }
-
-        if (res_fire <= 0)
-        {
-            ouch(((random2avg(9, 2) + 1) * you.time_taken) / 10, 0,
-                                                KILLED_BY_BURNING);
-        }
-
-        if (res_fire < 0)
-        {
-            ouch(((random2avg(9, 2) + 1) * you.time_taken) / 10, 0,
-                                                KILLED_BY_BURNING);
-        }
-
-        if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
-        {
-            mpr("Your icy shield dissipates!", MSGCH_DURATION);
-            you.duration[DUR_CONDENSATION_SHIELD] = 0;
-            you.redraw_armour_class = 1;
-        }
-    }
-
-    if (you.duration[DUR_ICY_ARMOUR] > 1)
-    {
-        you.duration[DUR_ICY_ARMOUR]--;
-        //scrolls_burn(4, OBJ_POTIONS);
-    }
-    else if (you.duration[DUR_ICY_ARMOUR] == 1)
-    {
-        mpr("Your icy armour evaporates.", MSGCH_DURATION);
-        you.redraw_armour_class = 1;     // is this needed? 2apr2000 {dlb}
-        you.duration[DUR_ICY_ARMOUR] = 0;
-    }
-
-    if (you.duration[DUR_REPEL_MISSILES] > 1)
-    {
-        you.duration[DUR_REPEL_MISSILES]--;
-        if (you.duration[DUR_REPEL_MISSILES] == 6)
-        {
-            mpr("Your repel missiles spell is about to expire...", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_REPEL_MISSILES]--;
-        }
-    }
-    else if (you.duration[DUR_REPEL_MISSILES] == 1)
-    {
-        mpr("You feel less protected from missiles.", MSGCH_DURATION);
-        you.duration[DUR_REPEL_MISSILES] = 0;
-    }
-
-    if (you.duration[DUR_DEFLECT_MISSILES] > 1)
-    {
-        you.duration[DUR_DEFLECT_MISSILES]--;
-        if (you.duration[DUR_DEFLECT_MISSILES] == 6)
-        {
-            mpr("Your deflect missiles spell is about to expire...", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_DEFLECT_MISSILES]--;
-        }
-    }
-    else if (you.duration[DUR_DEFLECT_MISSILES] == 1)
-    {
-        mpr("You feel less protected from missiles.", MSGCH_DURATION);
-        you.duration[DUR_DEFLECT_MISSILES] = 0;
-    }
-
-    if (you.duration[DUR_REGENERATION] > 1)
-    {
-        you.duration[DUR_REGENERATION]--;
-
-        if (you.duration[DUR_REGENERATION] == 6)
-        {
-            mpr("Your skin is crawling a little less now.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_REGENERATION]--;
-        }
-    }
-    else if (you.duration[DUR_REGENERATION] == 1)
-    {
-        mpr("Your skin stops crawling.", MSGCH_DURATION);
-        you.duration[DUR_REGENERATION] = 0;
-    }
-
-    if (you.duration[DUR_PRAYER] > 1)
-        you.duration[DUR_PRAYER]--;
-    else if (you.duration[DUR_PRAYER] == 1)
-    {
-        god_speaks(you.religion, "Your prayer is over.");
-        you.duration[DUR_PRAYER] = 0;
-    }
-
-
-    //jmf: more flexible weapon branding code
-    if (you.duration[DUR_WEAPON_BRAND] > 1)
-        you.duration[DUR_WEAPON_BRAND]--;
-    else if (you.duration[DUR_WEAPON_BRAND] == 1)
-    {
-        const int wpn = you.equip[EQ_WEAPON];
-        const int temp_effect = get_weapon_brand( you.inv[wpn] );
-
-        you.duration[DUR_WEAPON_BRAND] = 0;
-
-        char str_pass[ITEMNAME_SIZE];
-
-        set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_NORMAL );
-        in_name(wpn, DESC_CAP_YOUR, str_pass);
-        strncpy(info, str_pass, INFO_SIZE);
-
-        switch (temp_effect)
-        {
-        case SPWPN_VORPAL:
-            if (damage_type(you.inv[you.equip[EQ_WEAPON]].base_type,
-                     you.inv[you.equip[EQ_WEAPON]].sub_type) != DVORP_CRUSHING)
-            {
-                strcat(info, " seems blunter.");
-            }
-            else
-            {
-                //jmf: for Maxwell's Silver Hammer
-                strcat(info, " feels lighter.");
-            }
-            break;
-
-        case SPWPN_FLAMING:
-            strcat(info, " goes out.");
-            break;
-        case SPWPN_FREEZING:
-            strcat(info, " stops glowing.");
-            break;
-        case SPWPN_VENOM:
-            strcat(info, " stops dripping with poison.");
-            break;
-        case SPWPN_DRAINING:
-            strcat(info, " stops crackling.");
-            break;
-        case SPWPN_DISTORTION:
-            strcat( info, " seems straighter." );
-            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
-            break;
-        default:
-            strcat(info, " seems inexplicably less special.");
-            break;
-        }
-
-        //you.attribute[ATTR_WEAPON_BRAND] = 0;
-        mpr(info, MSGCH_DURATION);
-        you.wield_change = true;
-    }
-
-    if (you.duration[DUR_BREATH_WEAPON] > 1)
-        you.duration[DUR_BREATH_WEAPON]--;
-    else if (you.duration[DUR_BREATH_WEAPON] == 1)
-    {
-        mpr("You have got your breath back.", MSGCH_RECOVERY);
-        you.duration[DUR_BREATH_WEAPON] = 0;
-    }
-
-    if (you.duration[DUR_TRANSFORMATION] > 1)
-    {
-        you.duration[DUR_TRANSFORMATION]--;
-
-        if (you.duration[DUR_TRANSFORMATION] == 10)
-        {
-            mpr("Your transformation is almost over.", MSGCH_DURATION);
-            you.duration[DUR_TRANSFORMATION] -= random2(3);
-        }
-    }
-    else if (you.duration[DUR_TRANSFORMATION] == 1)
-    {
-        untransform();
-        you.duration[DUR_BREATH_WEAPON] = 0;
-    }
-
-    if (you.duration[DUR_SWIFTNESS] > 1)
-    {
-        you.duration[DUR_SWIFTNESS]--;
-        if (you.duration[DUR_SWIFTNESS] == 6)
-        {
-            mpr("You start to feel a little slower.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_SWIFTNESS]--;
-        }
-    }
-    else if (you.duration[DUR_SWIFTNESS] == 1)
-    {
-        mpr("You feel sluggish.", MSGCH_DURATION);
-        you.duration[DUR_SWIFTNESS] = 0;
-    }
-
-    if (you.duration[DUR_INSULATION] > 1)
-    {
-        you.duration[DUR_INSULATION]--;
-        if (you.duration[DUR_INSULATION] == 6)
-        {
-            mpr("You start to feel a little less insulated.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_INSULATION]--;
-        }
-    }
-    else if (you.duration[DUR_INSULATION] == 1)
-    {
-        mpr("You feel conductive.", MSGCH_DURATION);
-        you.duration[DUR_INSULATION] = 0;
-    }
-
-    if (you.duration[DUR_STONEMAIL] > 1)
-    {
-        you.duration[DUR_STONEMAIL]--;
-        if (you.duration[DUR_STONEMAIL] == 6)
-        {
-            mpr("Your scaley stone armour is starting to flake away.", MSGCH_DURATION);
-            you.redraw_armour_class = 1;
-            if (coinflip())
-                you.duration[DUR_STONEMAIL]--;
-        }
-    }
-    else if (you.duration[DUR_STONEMAIL] == 1)
-    {
-        mpr("Your scaley stone armour disappears.", MSGCH_DURATION);
-        you.duration[DUR_STONEMAIL] = 0;
-        you.redraw_armour_class = 1;
-        burden_change();
-    }
-
-    if (you.duration[DUR_FORESCRY] > 1) //jmf: added
-        you.duration[DUR_FORESCRY]--;
-    else if (you.duration[DUR_FORESCRY] == 1)
-    {
-        mpr("You feel firmly rooted in the present.", MSGCH_DURATION);
-        you.duration[DUR_FORESCRY] = 0;
-        you.redraw_evasion = 1;
-    }
-
-    if (you.duration[DUR_SEE_INVISIBLE] > 1)    //jmf: added
-        you.duration[DUR_SEE_INVISIBLE]--;
-    else if (you.duration[DUR_SEE_INVISIBLE] == 1)
-    {
-        you.duration[DUR_SEE_INVISIBLE] = 0;
-
-        if (!player_see_invis())
-            mpr("Your eyesight blurs momentarily.", MSGCH_DURATION);
-    }
-
-    if (you.duration[DUR_SILENCE] > 0)  //jmf: cute message handled elsewhere
-        you.duration[DUR_SILENCE]--;
-
-    if (you.duration[DUR_CONDENSATION_SHIELD] > 1)
-    {
-        you.duration[DUR_CONDENSATION_SHIELD]--;
-
-        scrolls_burn( 1, OBJ_POTIONS );
-
-        if (player_res_cold() < 0)
-        {
-            mpr( "You feel very cold." );
-            ouch( 2 + random2avg(13, 2), 0, KILLED_BY_FREEZING );
-        }
-    }
-    else if (you.duration[DUR_CONDENSATION_SHIELD] == 1)
-    {
-        you.duration[DUR_CONDENSATION_SHIELD] = 0;
-        mpr("Your icy shield evaporates.", MSGCH_DURATION);
-        you.redraw_armour_class = 1;
-    }
-
-    if (you.duration[DUR_STONESKIN] > 1)
-        you.duration[DUR_STONESKIN]--;
-    else if (you.duration[DUR_STONESKIN] == 1)
-    {
-        mpr("Your skin feels tender.", MSGCH_DURATION);
-        you.redraw_armour_class = 1;
-        you.duration[DUR_STONESKIN] = 0;
-    }
-
-    if (you.duration[DUR_GLAMOUR] > 1)  //jmf: actually GLAMOUR_RELOAD, like
-        you.duration[DUR_GLAMOUR]--;    //     the breath weapon delay
-    else if (you.duration[DUR_GLAMOUR] == 1)
-    {
-        you.duration[DUR_GLAMOUR] = 0;
-        //FIXME: cute message or not?
-    }
-
-    if (you.duration[DUR_TELEPORT] > 1)
-        you.duration[DUR_TELEPORT]--;
-    else if (you.duration[DUR_TELEPORT] == 1)
-    {
-        // only to a new area of the abyss sometimes (for abyss teleports)
-        you_teleport2( true, one_chance_in(5) );
-        you.duration[DUR_TELEPORT] = 0;
-    }
-
-    if (you.duration[DUR_CONTROL_TELEPORT] > 1)
-    {
-        you.duration[DUR_CONTROL_TELEPORT]--;
-
-        if (you.duration[DUR_CONTROL_TELEPORT] == 6)
-        {
-            mpr("You start to feel a little uncertain.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_CONTROL_TELEPORT]--;
-        }
-    }
-    else if (you.duration[DUR_CONTROL_TELEPORT] == 1)
-    {
-        mpr("You feel uncertain.", MSGCH_DURATION);
-        you.duration[DUR_CONTROL_TELEPORT] = 0;
-        you.attribute[ATTR_CONTROL_TELEPORT]--;
-    }
-
-    if (you.duration[DUR_RESIST_POISON] > 1)
-    {
-        you.duration[DUR_RESIST_POISON]--;
-        if (you.duration[DUR_RESIST_POISON] == 6)
-        {
-            mpr("Your poison resistance is about to expire.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_RESIST_POISON]--;
-        }
-    }
-    else if (you.duration[DUR_RESIST_POISON] == 1)
-    {
-        mpr("Your poison resistance expires.", MSGCH_DURATION);
-        you.duration[DUR_RESIST_POISON] = 0;
-    }
-
-    if (you.duration[DUR_DEATH_CHANNEL] > 1)
-    {
-        you.duration[DUR_DEATH_CHANNEL]--;
-        if (you.duration[DUR_DEATH_CHANNEL] == 6)
-        {
-            mpr("Your unholy channel is weakening.", MSGCH_DURATION);
-            if (coinflip())
-                you.duration[DUR_DEATH_CHANNEL]--;
-        }
-    }
-    else if (you.duration[DUR_DEATH_CHANNEL] == 1)
-    {
-        mpr("Your unholy channel expires.", MSGCH_DURATION);    // Death channel wore off
-        you.duration[DUR_DEATH_CHANNEL] = 0;
-    }
-
-    if (you.duration[DUR_SHUGGOTH_SEED_RELOAD] > 0)     //jmf: added
-        you.duration[DUR_SHUGGOTH_SEED_RELOAD]--;
-
-    if (you.duration[DUR_INFECTED_SHUGGOTH_SEED] > 1)
-        you.duration[DUR_INFECTED_SHUGGOTH_SEED]--;
-    else if (you.duration[DUR_INFECTED_SHUGGOTH_SEED] == 1)
-    {
-        //jmf: use you.max_hp instead? or would that be too evil?
-        you.duration[DUR_INFECTED_SHUGGOTH_SEED] = 0;
-        mpr("A horrible thing bursts from your chest!", MSGCH_WARN);
-        ouch(1 + you.hp / 2, 0, KILLED_BY_SHUGGOTH);
-        make_shuggoth(you.x_pos, you.y_pos, 1 + you.hp / 2);
-    }
-
-    if (you.invis > 1)
-    {
-        you.invis--;
-
-        if (you.invis == 6)
-        {
-            mpr("You flicker for a moment.", MSGCH_DURATION);
-            if (coinflip())
-                you.invis--;
-        }
-    }
-    else if (you.invis == 1)
-    {
-        mpr("You flicker back into view.", MSGCH_DURATION);
-        you.invis = 0;
-    }
-
-    if (you.conf > 0)
-        reduce_confuse_player(1);
-
-    if (you.paralysis > 1)
-        you.paralysis--;
-    else if (you.paralysis == 1)
-    {
-        mpr("You can move again.", MSGCH_DURATION);
-        you.paralysis = 0;
-    }
-
-    if (you.exhausted > 1)
-        you.exhausted--;
-    else if (you.exhausted == 1)
-    {
-        mpr("You feel less fatigued.", MSGCH_DURATION);
-        you.exhausted = 0;
-    }
-
-    dec_slow_player();
-    dec_haste_player();
-
-    if (you.might > 1)
-        you.might--;
-    else if (you.might == 1)
-    {
-        mpr("You feel a little less mighty now.", MSGCH_DURATION);
-        you.might = 0;
-        modify_stat(STAT_STRENGTH, -5, true);
-    }
-
-    if (you.berserker > 1)
-        you.berserker--;
-    else if (you.berserker == 1)
-    {
-        mpr( "You are no longer berserk.", MSGCH_DURATION );
-        you.berserker = 0;
-
-        //jmf: guilty for berserking /after/ berserk
-        naughty( NAUGHTY_STIMULANTS, 6 + random2(6) );
-
-        //
-        // Sometimes berserk leaves us physically drained
-        //
-
-        // chance of passing out:
-        //     - mutation gives a large plus in order to try and
-        //       avoid the mutation being a "death sentence" to
-        //       certain characters.
-        //     - knowing the spell gives an advantage just
-        //       so that people who have invested 3 spell levels
-        //       are better off than the casual potion drinker...
-        //       this should make it a bit more interesting for
-        //       Crusaders again.
-        //     - similarly for the amulet
-        int chance = 10 + you.mutation[MUT_BERSERK] * 25
-                        + (wearing_amulet( AMU_RAGE ) ? 10 : 0)
-                        + (player_has_spell( SPELL_BERSERKER_RAGE ) ? 5 : 0);
-
-        // Note the beauty of Trog!  They get an extra save that's at
-        // the very least 20% and goes up to 100%.
-        if (you.berserk_penalty == NO_BERSERK_PENALTY
-            || (you.religion == GOD_TROG && you.piety > random2(150))
-            || !one_chance_in( chance ))
-        {
-            mpr("You are exhausted.");
-        }
-        else
-        {
-            mpr("You pass out from exhaustion.", MSGCH_WARN);
-            you.paralysis += roll_dice( 1, 4 );
-        }
-
-        // this resets from an actual penalty or from NO_BERSERK_PENALTY
-        you.berserk_penalty = 0;
-
-        int dur = 12 + roll_dice( 2, 12 );
-        you.exhausted += dur;
-        slow_player( dur );
-
-        make_hungry(700, true);
-
-        if (you.hunger < 50)
-            you.hunger = 50;
-
-        calc_hp();
-    }
-
-    if (you.confusing_touch > 1)
-        you.confusing_touch--;
-    else if (you.confusing_touch == 1)
-    {
-        snprintf( info, INFO_SIZE, "Your %s stop glowing.", your_hand(true) );
-        mpr( info, MSGCH_DURATION );
-        you.confusing_touch = 0;
-    }
-
-    if (you.sure_blade > 1)
-        you.sure_blade--;
-    else if (you.sure_blade == 1)
-    {
-        mpr("The bond with your blade fades away.", MSGCH_DURATION);
-        you.sure_blade = 0;
-    }
-
-    if (you.levitation > 1)
-    {
-        if (you.species != SP_KENKU || you.experience_level < 15)
-            you.levitation--;
-
-        if (player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION ))
-            you.levitation = 2;
-
-        if (you.levitation == 10)
-        {
-            mpr("You are starting to lose your buoyancy!", MSGCH_DURATION);
-            you.levitation -= random2(6);
-
-            if (you.duration[DUR_CONTROLLED_FLIGHT] > 0)
-                you.duration[DUR_CONTROLLED_FLIGHT] = you.levitation;
-        }
-    }
-    else if (you.levitation == 1)
-    {
-        mpr("You float gracefully downwards.", MSGCH_DURATION);
-        you.levitation = 0;
-        burden_change();
-        you.duration[DUR_CONTROLLED_FLIGHT] = 0;
-
-        if (grd[you.x_pos][you.y_pos] == DNGN_LAVA
-            || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER
-            || grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER)
-        {
-            if (you.species == SP_MERFOLK
-                && grd[you.x_pos][you.y_pos] != DNGN_LAVA)
-            {
-                mpr("You dive into the water and return to your normal form.");
-                merfolk_start_swimming();
-            }
-
-            if (grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
-                fall_into_a_pool(true, grd[you.x_pos][you.y_pos]);
-        }
-    }
-
-    if (you.rotting > 0)
-    {
-        // XXX: Mummies have an ability (albeit an expensive one) that
-        // can fix rotted HPs now... it's probably impossible for them
-        // to even start rotting right now, but that could be changed. -- bwr
-        if (you.species == SP_MUMMY)
-            you.rotting = 0;
-        else if (random2(20) <= (you.rotting - 1))
-        {
-            mpr("You feel your flesh rotting away.", MSGCH_WARN);
-            ouch(1, 0, KILLED_BY_ROTTING);
-            rot_hp(1);
-            you.rotting--;
-        }
-    }
-
-    // ghoul rotting is special, but will deduct from you.rotting
-    // if it happens to be positive - because this is placed after
-    // the "normal" rotting check, rotting attacks can be somewhat
-    // more painful on ghouls - reversing order would make rotting
-    // attacks somewhat less painful, but that seems wrong-headed {dlb}:
-    if (you.species == SP_GHOUL)
-    {
-        if (one_chance_in(400))
-        {
-            mpr("You feel your flesh rotting away.", MSGCH_WARN);
-            ouch(1, 0, KILLED_BY_ROTTING);
-            rot_hp(1);
-
-            if (you.rotting > 0)
-                you.rotting--;
-        }
-    }
-
-    dec_disease_player();
-
-    if (you.poison > 0)
-    {
-        if (random2(5) <= (you.poison - 1))
-        {
-            if (you.poison > 10 && random2(you.poison) >= 8)
-            {
-                ouch(random2(10) + 5, 0, KILLED_BY_POISON);
-                mpr("You feel extremely sick.", MSGCH_DANGER);
-            }
-            else if (you.poison > 5 && coinflip())
-            {
-                ouch((coinflip()? 3 : 2), 0, KILLED_BY_POISON);
-                mpr("You feel very sick.", MSGCH_WARN);
-            }
-            else
-            {
-                // the poison running through your veins.");
-                ouch(1, 0, KILLED_BY_POISON);
-                mpr("You feel sick.");
-            }
-
-            if ((you.hp == 1 && one_chance_in(3)) || one_chance_in(8))
-                reduce_poison_player(1);
-        }
-    }
-
-    if (you.deaths_door)
-    {
-        if (you.hp > allowed_deaths_door_hp())
-        {
-            mpr("Your life is in your own hands once again.", MSGCH_DURATION);
-            you.paralysis += 5 + random2(5);
-            confuse_player( 10 + random2(10) );
-            you.hp_max--;
-            deflate_hp(you.hp_max, false);
-            you.deaths_door = 0;
-        }
-        else
-            you.deaths_door--;
-
-        if (you.deaths_door == 10)
-        {
-            mpr("Your time is quickly running out!", MSGCH_DURATION);
-            you.deaths_door -= random2(6);
-        }
-        if (you.deaths_door == 1)
-        {
-            mpr("Your life is in your own hands again!", MSGCH_DURATION);
-            more();
-        }
-    }
-
-    const int food_use = player_hunger_rate();
-
-    if (food_use > 0 && you.hunger >= 40)
-        make_hungry( food_use, true );
-
-    // XXX: using an int tmp to fix the fact that hit_points_regeneration
-    // is only an unsigned char and is thus likely to overflow. -- bwr
-    int tmp = static_cast< int >( you.hit_points_regeneration );
-
-    if (you.hp < you.hp_max && !you.disease && !you.deaths_door)
-        tmp += player_regen();
-
-    while (tmp >= 100)
-    {
-        if (you.hp >= you.hp_max - 1
-            && you.running && you.run_x == 0 && you.run_y == 0)
-        {
-            you.running = 0;
-        }
-
-        inc_hp(1, false);
-        tmp -= 100;
-    }
-
-    ASSERT( tmp >= 0 && tmp < 100 );
-    you.hit_points_regeneration = static_cast< unsigned char >( tmp );
-
-    // XXX: Doing the same as the above, although overflow isn't an
-    // issue with magic point regeneration, yet. -- bwr
-    tmp = static_cast< int >( you.magic_points_regeneration );
-
-    if (you.magic_points < you.max_magic_points)
-        tmp += 7 + you.max_magic_points / 2;
-
-    while (tmp >= 100)
-    {
-        if (you.magic_points >= you.max_magic_points - 1
-            && you.running && you.run_x == 0 && you.run_y == 0)
-        {
-            you.running = 0;
-        }
-
-        inc_mp(1, false);
-        tmp -= 100;
-    }
-
-    ASSERT( tmp >= 0 && tmp < 100 );
-    you.magic_points_regeneration = static_cast< unsigned char >( tmp );
-
-    viewwindow(1, true);
+    viewwindow( true, true );
 
     handle_monsters();
 
-    ASSERT(you.time_taken >= 0);
     // make sure we don't overflow
-    ASSERT(DBL_MAX - you.elapsed_time > you.time_taken);
+    ASSERT( DBL_MAX - you.elapsed_time > you.time_taken );
 
     you.elapsed_time += you.time_taken;
 
-    if (you.synch_time <= you.time_taken)
-    {
-        handle_time(200 + (you.time_taken - you.synch_time));
-        you.synch_time = 200;
-    }
+    // handle the long effect "synch" time counter
+    if (you.synch_time > you.time_taken)
+        you.synch_time -= you.time_taken;
     else
     {
-        you.synch_time -= you.time_taken;
+        handle_time( static_cast<unsigned int>(200 + (you.time_taken - you.synch_time)) );
+        you.synch_time = 200;
     }
 
     manage_clouds();
@@ -2318,82 +1747,81 @@ static void input(void)
     // There used to be signs of intent to have statues as some sort
     // of more complex state machine... I'm boiling them down to bare
     // basics for now.  -- bwr
-    if (Visible_Statue[ STATUE_SILVER ])
+    if (you.visible_statue[ STATUE_SILVER ])
     {
+        interrupt_activity( AI_STATUE );
+
         if ((!you.invis && one_chance_in(3)) || one_chance_in(5))
         {
             char wc[30];
 
             weird_colours( random2(256), wc );
-            snprintf(info, INFO_SIZE, "The silver statue's eyes glow %s.", wc);
-            mpr( info, MSGCH_WARN );
+            mpr( MSGCH_WARN, "The silver statue's eyes glow %s.", wc );
 
-            create_monster( summon_any_demon((coinflip() ? DEMON_COMMON
-                                                         : DEMON_LESSER)),
-                                     ENCH_ABJ_V, BEH_HOSTILE,
-                                     you.x_pos, you.y_pos,
-                                     MHITYOU, 250 );
+            const int demon = rand_demon((coinflip() ? DEMON_COMMON
+
+                                                           : DEMON_LESSER));
+            create_monster( demon, BEH_HOSTILE, 5 );
         }
 
-        Visible_Statue[ STATUE_SILVER ] = 0;
+        you.visible_statue[ STATUE_SILVER ] = 0;
     }
 
-    if (Visible_Statue[ STATUE_ORANGE_CRYSTAL ])
+    if (you.visible_statue[ STATUE_ORANGE_CRYSTAL ])
     {
+        interrupt_activity( AI_STATUE );
+
         if ((!you.invis && coinflip()) || one_chance_in(4))
         {
-            mpr("A hostile presence attacks your mind!", MSGCH_WARN);
+            mpr( MSGCH_WARN,"A hostile presence attacks your mind!" );
 
             miscast_effect( SPTYP_DIVINATION, random2(15), random2(150), 100,
                             "an orange crystal statue" );
         }
 
-        Visible_Statue[ STATUE_ORANGE_CRYSTAL ] = 0;
+        you.visible_statue[ STATUE_ORANGE_CRYSTAL ] = 0;
     }
 
     // food death check:
-    if (you.is_undead != US_UNDEAD && you.hunger <= 500)
+    if (you.is_undead != US_UNDEAD && you.hunger <= HUNGER_PARALYSIS_LEVEL)
     {
         if (!you.paralysis && one_chance_in(40))
         {
-            mpr("You lose consciousness!", MSGCH_FOOD);
-            you.paralysis += 5 + random2(8);
-
-            if (you.paralysis > 13)
-                you.paralysis = 13;
+            mpr(MSGCH_FOOD,"You lose consciousness!" );
+            paralyse_player( 5 + random2(8), true );
         }
 
-        if (you.hunger <= 100)
+        if (you.hunger <= HUNGER_STARVATION_DEATH)
         {
-            mpr( "You have starved to death.", MSGCH_FOOD );
-            ouch( -9999, 0, KILLED_BY_STARVATION );
+            mpr( MSGCH_FOOD, "You have starved to death." );
+            ouch( INSTANT_DEATH, 0, KILLED_BY_STARVATION );
         }
     }
 
     //jmf: added silence messages
-    its_quiet = silenced(you.x_pos, you.y_pos);
+    its_quiet = silenced( you.x_pos, you.y_pos );
 
     if (you.attribute[ATTR_WAS_SILENCED] != its_quiet)
     {
         if (its_quiet)
         {
             if (random2(30))
-                mpr("You are enveloped in profound silence.", MSGCH_WARN);
+                mpr(MSGCH_WARN,"You are enveloped in profound silence." );
             else
-                mpr("The dungeon seems quiet ... too quiet!", MSGCH_WARN);
+                mpr(MSGCH_WARN,"The dungeon seems quiet ... too quiet!" );
         }
         else
         {
-            mpr("Your hearing returns.", MSGCH_RECOVERY);
+            mpr(MSGCH_RECOVERY,"Your hearing returns." );
         }
 
         you.attribute[ATTR_WAS_SILENCED] = its_quiet;
     }
 
-    viewwindow(1, false);
+    viewwindow( true, false );
 
-    if (you.paralysis > 0 && any_messages())
-        more();
+    // if (you.paralysis && any_messages())
+    //     more();
 
     // place normal dungeon monsters,  but not in player LOS
     if (you.level_type == LEVEL_DUNGEON
@@ -2407,8 +1835,16 @@ static void input(void)
         if (you.char_direction == DIR_ASCENDING)
             prox = (one_chance_in(10) ? PROX_CLOSE_TO_PLAYER : PROX_ANYWHERE);
 
-        mons_place( WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
-                    50, 50, LEVEL_DUNGEON, prox );
+        int succ = 0;
+
+        if (one_chance_in(40))
+            succ = place_unique_monsters( true, prox );
+
+        if (!succ)
+        {
+            mons_place( WANDERING_MONSTER, BEH_HOSTILE, MHITNOT, false,
+                        50, 50, LEVEL_DUNGEON, prox );
+        }
     }
 
     // place Abyss monsters.
@@ -2426,12 +1862,41 @@ static void input(void)
     return;
 }
 
+// Currently assumes the player is toggling the door by hand in the messages.
+static void toggle_door( int x, int y )
+{
+    ASSERT( grd[x][y] == DNGN_OPEN_DOOR || grd[x][y] == DNGN_CLOSED_DOOR );
+
+    const char *const verb = (grd[x][y] == DNGN_OPEN_DOOR) ? "close" : "open";
+
+    // const int skill = you.dex * (1 + (2 * you.skills[SK_TRAPS_DOORS] + you.skills[SK_STEALTH] + 1) / 2);
+    const int skill = (you.dex * (1 + skill_bump(SK_TRAPS_DOORS) + skill_bump(SK_STEALTH))) / 2;
+
+#if DEBUG_DIAGNOSTICS
+    mpr( MSGCH_DIAGNOSTICS, "Door skill (rolled against 5): %d", skill );
+#endif
+
+    if (random2( skill ) < 5)
+    {
+        snprintf( info, INFO_SIZE, "As you %s the door, it creaks loudly!", verb );
+        noisy( SL_CREAK, x, y, info );
+    }
+    else
+    {
+        mpr( "You %s%s the door.",
+              player_is_levitating() ? "reach down and " : "", verb );
+    }
+
+    grd[x][y] = (grd[x][y] == DNGN_OPEN_DOOR) ? DNGN_CLOSED_DOOR
+                                              : DNGN_OPEN_DOOR;
+}
+
 /*
    Opens doors and handles some aspects of untrapping. If either move_x or
    move_y are non-zero,  the pair carries a specific direction for the door
    to be opened (eg if you type ctrl - dir).
  */
-static void open_door(char move_x, char move_y)
+static void open_door( const int move_x, const int move_y )
 {
     struct dist door_move;
     int dx, dy;             // door x, door y
@@ -2441,16 +1906,29 @@ static void open_door(char move_x, char move_y)
 
     if (move_x || move_y)
     {
-        // convenience
         dx = you.x_pos + move_x;
         dy = you.y_pos + move_y;
-
         const int mon = mgrd[dx][dy];
 
-        if (mon != NON_MONSTER && !mons_has_ench( &menv[mon], ENCH_SUBMERGED ))
+        // used for reaching checks
+        const int rx = dx + move_x;
+        const int ry = dy + move_y;
+        const int rmon = mgrd[rx][ry];
+
+        if (Options.easy_reach
+            && player_sound_mind_and_body()
+            && player_damage_brand() == SPWPN_REACHING
+            && (rmon != NON_MONSTER && player_monster_visible( &menv[rmon] ))
+            && (mon == NON_MONSTER || !player_monster_visible( &menv[mon] )))
         {
-            you_attack(mgrd[dx][dy], true);
-            you.turn_is_over = 1;
+            reaching_weapon_attack( rx, ry );
+            you.turn_is_over = true;
+            return;
+        }
+        else if (mon != NON_MONSTER && !mons_is_submerged( &menv[mon] ))
+        {
+            you_attack( mon, true );
+            you.turn_is_over = true;
 
             if (you.berserk_penalty != NO_BERSERK_PENALTY)
                 you.berserk_penalty = 0;
@@ -2460,20 +1938,19 @@ static void open_door(char move_x, char move_y)
 
         if (grd[dx][dy] >= DNGN_TRAP_MECHANICAL && grd[dx][dy] <= DNGN_TRAP_III)
         {
-            if (env.cgrid[dx][dy] != EMPTY_CLOUD)
+            if (is_cloud( dx, dy ))
             {
                 mpr("You can't get to that trap right now.");
                 return;
             }
 
-            disarm_trap(door_move);
+            disarm_trap( door_move );
             return;
         }
-
     }
     else
     {
-        mpr("Which direction?", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT,"Which direction?" );
         direction( door_move, DIR_DIR );
         if (!door_move.isValid)
             return;
@@ -2485,27 +1962,21 @@ static void open_door(char move_x, char move_y)
 
     if (grd[dx][dy] == DNGN_CLOSED_DOOR)
     {
-        int skill = you.dex + (you.skills[SK_TRAPS_DOORS] + you.skills[SK_STEALTH]) / 2;
-
-        if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
-        {
-            mpr( "As you open the door, it creaks loudly!" );
-            noisy( 10, you.x_pos, you.y_pos );
-        }
-        else
-        {
-            mpr( player_is_levitating() ? "You reach down and open the door."
-                                        : "You open the door." );
-        }
-
-        grd[dx][dy] = DNGN_OPEN_DOOR;
-        you.turn_is_over = 1;
+        toggle_door( dx, dy );
+        you.turn_is_over = true;
     }
     else
     {
         mpr("You swing at nothing.");
-        make_hungry(3, true);
-        you.turn_is_over = 1;
+
+        // Food cost since we have to assume the player is trying to swat
+        // an invisible monster without moving (we can't know the player's
+        // motives or assumptions).  This does have an added benefit of
+        // providing the player with a way to increase hunger if they
+        // want to eat something (although it does mean that one should
+        // us '.' while waiting for an oppenent to close. -- bwr
+        make_hungry( 3, true );
+        you.turn_is_over = true;
     }
 }                               // end open_door()
 
@@ -2522,7 +1993,7 @@ static void close_door(char door_x, char door_y)
 
     if (!(door_x || door_y))
     {
-        mpr("Which direction?", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT,"Which direction?" );
         direction( door_move, DIR_DIR );
         if (!door_move.isValid)
             return;
@@ -2542,7 +2013,7 @@ static void close_door(char door_x, char door_y)
     {
         if (mgrd[dx][dy] != NON_MONSTER)
         {
-            // Need to make sure that turn_is_over = 1 if creature is invisible
+            // Need to make sure that turn_is_over if creature is invisible
             mpr("There's a creature in the doorway!");
             door_move.dx = 0;
             door_move.dy = 0;
@@ -2557,27 +2028,14 @@ static void close_door(char door_x, char door_y)
             return;
         }
 
-        int skill = you.dex + (you.skills[SK_TRAPS_DOORS] + you.skills[SK_STEALTH]) / 2;
-
-        if (one_chance_in(skill) && !silenced(you.x_pos, you.y_pos))
-        {
-            mpr("As you close the door, it creaks loudly!");
-            noisy( 10, you.x_pos, you.y_pos );
-        }
-        else
-        {
-            mpr( player_is_levitating() ? "You reach down and close the door."
-                                        : "You close the door." );
-        }
-
-        grd[dx][dy] = DNGN_CLOSED_DOOR;
-        you.turn_is_over = 1;
+        toggle_door( dx, dy );
+        you.turn_is_over = true;
     }
     else
     {
         mpr("There isn't anything that you can close there!");
     }
-}                               // end open_door()
+}                               // end close_door()
 
 
 // initialise whole lot of stuff...
@@ -2585,57 +2043,52 @@ static void close_door(char door_x, char door_y)
 static bool initialise(void)
 {
     bool ret;
-
-    int i = 0, j = 0;           // counter variables {dlb}
-
-    your_sign = '@';
-    your_colour = LIGHTGREY;
-
-    // system initialisation stuff:
-    textbackground(0);
+    int  i = 0, j = 0;
 
 #ifdef DOS
     directvideo = 1;
+#endif
+
+#ifdef LINUX
+    lincurses_startup();
+#endif
+
+#ifdef MAC
+    init_mac();
+#endif
+
+#ifdef WIN32CONSOLE
+    init_libw32c();
 #endif
 
 #ifdef USE_EMX
     init_emx();
 #endif
 
-    srandom(time(NULL));
-    srand(time(NULL));
-    cf_setseed();               // required for stuff::coinflip()
+#ifdef USE_MACROS
+    // Load macros
+    macro_init();
+#endif
 
-    mons_init(mcolour);          // this needs to be way up top {dlb}
+    seed_rng();                 // init and seed RNGs
+
+    init_overmap();             // in overmap.cc (duh?)
+    clear_ids();                // in itemname.cc
+    init_feature_table();       // must be after char set and table are done
+
+    init_properties();          // this needs to be way up top too -- bwr
+    init_monsters();            // this needs to be way up top {dlb}
     init_playerspells();        // this needs to be way up top {dlb}
+    init_mutations();           // this needs to be way up top too -- bwr
 
     clrscr();
 
     // init item array:
     for (i = 1; i < MAX_ITEMS; i++)
-        init_item( i );
+        init_item( mitm[i] );
 
-    // empty messaging string
-    strcpy(info, "");
-
-    for (i = 0; i < MAX_MONSTERS; i++)
-    {
-        menv[i].type = -1;
-        menv[i].speed_increment = 10;
-        menv[i].flags = 0;
-        menv[i].behaviour = BEH_SLEEP;
-
-        menv[i].foe = NON_MONSTER;
-        menv[i].attitude = ATT_HOSTILE;
-
-        for (j = 0; j < NUM_MON_ENCHANTS; j++)
-            menv[i].enchantment[j] = ENCH_NONE;
-
-        for (j = 0; j < NUM_MONSTER_SLOTS; j++)
-            menv[i].inv[j] = NON_ITEM;
-
-        menv[i].number = 0;
-    }
+    info[0] = '\0';             // empty messaging string
+    clear_envmap();
 
     for (i = 0; i < GXM; i++)
     {
@@ -2643,18 +2096,23 @@ static bool initialise(void)
         {
             igrd[i][j] = NON_ITEM;
             mgrd[i][j] = NON_MONSTER;
-            env.map[i][j] = 0;
         }
     }
 
-    for (i = 0; i < 50; i++)
-    {
+    for (i = 0; i < MAX_UNIQ_MONS; i++)
         you.unique_creatures[i] = 0;
+
+    for (i = 0; i < MAX_UNIQ_ITEMS; i++)
         you.unique_items[i] = UNIQ_NOT_EXISTS;
-    }
 
     for (i = 0; i < NUM_STATUE_TYPES; i++)
-        Visible_Statue[i] = 0;
+        you.visible_statue[i] = 0;
+
+    you.symbol = '@';
+    you.colour = LIGHTGREY;
+    you.autopickup_on = true;
+
+    textbackground( BLACK );
 
     // initialize tag system before we try loading anything!
     tag_init();
@@ -2666,41 +2124,41 @@ static bool initialise(void)
     if (!newc)
         restore_game();
 
-    game_has_started = true;
+    Game_Has_Started = true;
 
-    calc_hp();
-    calc_mp();
+    calc_hp_max();
+    calc_mp_max();
 
-    load( 82, (newc ? LOAD_START_GAME : LOAD_RESTART_GAME), false, 0,
-          you.where_are_you );
+    load( DNGN_STONE_STAIRS_DOWN_I, (newc ? LOAD_START_GAME
+                                          : LOAD_RESTART_GAME),
+          false, 0, you.where_are_you );
 
 #if DEBUG_DIAGNOSTICS
     // Debug compiles display a lot of "hidden" information, so we auto-wiz
     you.wizard = true;
 #endif
 
-    init_properties();
     burden_change();
-    make_hungry(0,true);
+    make_hungry( 0, true );
 
-    you.redraw_strength = 1;
-    you.redraw_intelligence = 1;
-    you.redraw_dexterity = 1;
-    you.redraw_armour_class = 1;
-    you.redraw_evasion = 1;
-    you.redraw_experience = 1;
-    you.redraw_gold = 1;
-    you.wield_change = true;
+    set_redraw_status( REDRAW_STRENGTH );
+    set_redraw_status( REDRAW_INTELLIGENCE );
+    set_redraw_status( REDRAW_DEXTERITY );
+    set_redraw_status( REDRAW_ARMOUR_CLASS );
+    set_redraw_status( REDRAW_EVASION );
+    set_redraw_status( REDRAW_EXPERIENCE );
+    set_redraw_status( REDRAW_GOLD );
+    set_redraw_status( REDRAW_WIELD );
 
     you.start_time = time( NULL );      // start timer on session
 
     draw_border();
-    new_level();
+    enter_new_level();
 
     // set vision radius to player's current vision
     setLOSRadius( you.current_vision );
-    viewwindow(1, false);   // This just puts the view up for the first turn.
-    item();
+    viewwindow( true, false ); // This just puts the view up for the first turn.
+    item_grid();
 
     return (ret);
 }
@@ -2732,29 +2190,17 @@ static void do_berserk_no_combat_penalty(void)
         switch (you.berserk_penalty)
         {
         case 2:
-            mpr("You feel a strong urge to attack something.", MSGCH_DURATION);
+            mpr(MSGCH_DURATION,"You feel a strong urge to attack something." );
             break;
         case 4:
-            mpr("You feel your anger subside.", MSGCH_DURATION);
+            mpr(MSGCH_DURATION,"You feel your anger subside." );
             break;
         case 6:
-            mpr("Your blood rage is quickly leaving you.", MSGCH_DURATION);
+            mpr(MSGCH_DURATION,"Your blood rage is quickly leaving you." );
             break;
         }
 
-        // I do these three separately, because the might and
-        // haste counters can be different.
-        you.berserker -= you.berserk_penalty;
-        if (you.berserker < 1)
-            you.berserker = 1;
-
-        you.might -= you.berserk_penalty;
-        if (you.might < 1)
-            you.might = 1;
-
-        you.haste -= you.berserk_penalty;
-        if (you.haste < 1)
-            you.haste = 1;
+        dec_berserk( you.berserk_penalty );
     }
     return;
 }                               // end do_berserk_no_combat_penalty()
@@ -2762,13 +2208,11 @@ static void do_berserk_no_combat_penalty(void)
 
 // Called when the player moves by walking/running. Also calls
 // attack function and trap function etc when necessary.
-static void move_player(char move_x, char move_y)
+static void move_player( char move_x, char move_y )
 {
     bool attacking = false;
     bool moving = true;         // used to prevent eventual movement (swap)
-
-    int i;
-    bool trap_known;
+    bool swap = false;
 
     if (you.conf)
     {
@@ -2778,245 +2222,109 @@ static void move_player(char move_x, char move_y)
             move_y = random2(3) - 1;
         }
 
-        const int new_targ_x = you.x_pos + move_x;
-        const int new_targ_y = you.y_pos + move_y;
-        const unsigned char new_targ_grid = grd[ new_targ_x ][ new_targ_y ];
-
-        if (new_targ_grid < MINMOVE)
+        if (!in_bounds( you.x_pos + move_x, you.y_pos + move_y )
+            || grid_is_solid( grd[you.x_pos + move_x][you.y_pos + move_y] ))
         {
-            you.turn_is_over = 1;
+            you.turn_is_over = true;
             mpr("Ouch!");
-            return;
-        }
-
-        if (new_targ_grid == DNGN_LAVA
-            && you.duration[DUR_CONDENSATION_SHIELD] > 0)
-        {
-            mpr("Your icy shield dissipates!", MSGCH_DURATION);
-            you.duration[DUR_CONDENSATION_SHIELD] = 0;
-            you.redraw_armour_class = 1;
-        }
-
-        if ((new_targ_grid == DNGN_LAVA
-                || new_targ_grid == DNGN_DEEP_WATER
-                || new_targ_grid == DNGN_SHALLOW_WATER)
-             && !player_is_levitating())
-        {
-            if (you.species == SP_MERFOLK && new_targ_grid != DNGN_LAVA)
-            {
-                mpr("You stumble into the water and return to your normal form.");
-                merfolk_start_swimming();
-            }
-
-            if (new_targ_grid != DNGN_SHALLOW_WATER)
-                fall_into_a_pool( false, new_targ_grid );
-
-            you.turn_is_over = 1;
-            do_berserk_no_combat_penalty();
             return;
         }
     }                           // end of if you.conf
 
-    if (you.running > 0 && you.running != 2 && check_stop_running())
+    // We only check for stopping if we're not just starting the run...
+    // this guarantees us that the run command generates at least one
+    // square of movement.
+    if (you.running == RMODE_CONTINUE && check_stop_running())
     {
-        you.running = 0;
+        stop_running();
         move_x = 0;
         move_y = 0;
-        you.turn_is_over = 0;
+        you.turn_is_over = false;
         return;
     }
 
     const int targ_x = you.x_pos + move_x;
     const int targ_y = you.y_pos + move_y;
-    const unsigned char old_grid   =  grd[ you.x_pos ][ you.y_pos ];
+
     const unsigned char targ_grid  =  grd[ targ_x ][ targ_y ];
     const unsigned char targ_monst = mgrd[ targ_x ][ targ_y ];
+    const bool          targ_solid = grid_is_solid( targ_grid );
 
-    if (targ_monst != NON_MONSTER)
+    if (targ_monst != NON_MONSTER && !mons_is_submerged( &menv[targ_monst] ))
     {
         struct monsters *mon = &menv[targ_monst];
 
-        if (mons_has_ench( mon, ENCH_SUBMERGED ))
-            goto break_out;
-
-        // you can swap places with a friendly monster if you
-        // can see it and you're not confused
-        if (mons_friendly( mon ) && player_monster_visible( mon ) && !you.conf)
+        if (mons_friendly( mon )
+            && ((player_monster_visible( mon )
+                    && player_sound_mind_and_body())
+                || (mons_player_visible( mon )
+                    && mons_sound_mind_and_body( mon ))))
         {
-            if (!swap_places( mon ))
-                moving = false;
-
-            goto break_out;
-        }
-
-        you_attack( targ_monst, true );
-        you.turn_is_over = 1;
-
-        // we don't want to create a penalty if there isn't
-        // supposed to be one
-        if (you.berserk_penalty != NO_BERSERK_PENALTY)
-            you.berserk_penalty = 0;
-
-        attacking = true;
-    }
-
-  break_out:
-    if (targ_grid == DNGN_LAVA && you.duration[DUR_CONDENSATION_SHIELD] > 0)
-    {
-        mpr("Your icy shield dissipates!", MSGCH_DURATION);
-        you.duration[DUR_CONDENSATION_SHIELD] = 0;
-        you.redraw_armour_class = 1;
-    }
-
-    // Handle dangerous tiles
-    if ((targ_grid == DNGN_LAVA
-            || targ_grid == DNGN_DEEP_WATER
-            || targ_grid == DNGN_SHALLOW_WATER)
-        && !attacking && !player_is_levitating() && moving)
-    {
-        // Merfold automatically enter deep water... every other case
-        // we ask for confirmation.
-        if (you.species == SP_MERFOLK && targ_grid != DNGN_LAVA)
-        {
-            // Only mention diving if we just entering the water.
-            if (!player_in_water())
-            {
-                mpr("You dive into the water and return to your normal form.");
-                merfolk_start_swimming();
-            }
-        }
-        else if (targ_grid != DNGN_SHALLOW_WATER)
-        {
-            bool enter = yesno("Do you really want to step there?", false);
-
-            if (enter)
-            {
-                fall_into_a_pool( false, targ_grid );
-                you.turn_is_over = 1;
-                do_berserk_no_combat_penalty();
-                return;
-            }
+            if (swap_places( mon ))
+                swap = true;
             else
-            {
-                canned_msg(MSG_OK);
-                return;
-            }
+                moving = false;
+        }
+        else // attack!
+        {
+            you_attack( targ_monst, true );
+            you.turn_is_over = true;
+
+            // we don't want to create a penalty if there isn't
+            // supposed to be one
+            if (you.berserk_penalty != NO_BERSERK_PENALTY)
+                you.berserk_penalty = 0;
+
+            attacking = true;
         }
     }
 
-    if (!attacking && targ_grid >= MINMOVE && moving)
+    if (!attacking && !targ_solid && moving)
     {
-        if (targ_grid == DNGN_UNDISCOVERED_TRAP
-                && random2(you.skills[SK_TRAPS_DOORS] + 1) > 3)
-        {
-            strcpy(info, "Wait a moment, ");
-            strcat(info, you.your_name);
-            strcat(info, "! Do you really want to step there?");
-            mpr(info, MSGCH_WARN);
-            more();
-            you.turn_is_over = 0;
-
-            i = trap_at_xy( targ_x, targ_y );
-            if (i != -1)
-                grd[ targ_x ][ targ_y ] = trap_category(env.trap[i].type);
-            return;
-        }
-
-        you.x_pos += move_x;
-        you.y_pos += move_y;
-
-        if (targ_grid == DNGN_SHALLOW_WATER && !player_is_levitating())
-        {
-            if (you.species != SP_MERFOLK)
-            {
-                if (one_chance_in(3) && !silenced(you.x_pos, you.y_pos))
-                {
-                    mpr("Splash!");
-                    noisy( 10, you.x_pos, you.y_pos );
-                }
-
-                you.time_taken *= 13 + random2(8);
-                you.time_taken /= 10;
-
-                if (old_grid != DNGN_SHALLOW_WATER)
-                {
-                    mpr( "You enter the shallow water. "
-                         "Moving in this stuff is going to be slow." );
-
-                    if (you.invis)
-                        mpr( "And don't expect to remain undetected." );
-                }
-            }
-            else if (old_grid != DNGN_SHALLOW_WATER
-                    && old_grid != DNGN_DEEP_WATER)
-            {
-                mpr("You return to your normal form as you enter the water.");
-                merfolk_start_swimming();
-            }
-        }
-
-        move_x = 0;
-        move_y = 0;
-
         you.time_taken *= player_movement_speed();
         you.time_taken /= 10;
 
-        you.turn_is_over = 1;
-        item_check(0);
+        move_player_to_grid( you.x_pos + move_x, you.y_pos + move_y,
+                             true, false, swap );
 
-        if (targ_grid >= DNGN_TRAP_MECHANICAL
-                                && targ_grid <= DNGN_UNDISCOVERED_TRAP)
+        // Returning the random trap scans as a way to get more use from the
+        // skill and acute mutations.
+        if (you.mutation[MUT_ACUTE_VISION] >= 2
+            || (!you.mutation[MUT_BLURRY_VISION]
+                && random2(100) < stat_mult(you.intel, skill_bump(SK_TRAPS_DOORS))))
         {
-            if (targ_grid == DNGN_UNDISCOVERED_TRAP)
-            {
-                i = trap_at_xy(you.x_pos, you.y_pos);
-                if (i != -1)
-                    grd[ you.x_pos ][ you.y_pos ] = trap_category(env.trap[i].type);
-                trap_known = false;
-            }
-            else
-            {
-                trap_known = true;
-            }
+            search_around();
+        }
 
-            i = trap_at_xy( you.x_pos, you.y_pos );
-            if (i != -1)
-            {
-                if (player_is_levitating()
-                    && trap_category(env.trap[i].type) == DNGN_TRAP_MECHANICAL)
-                {
-                    goto out_of_traps;      // can fly over mechanical traps
-                }
-
-                handle_traps(env.trap[i].type, i, trap_known);
-            }
-        }                       // end of if another grd == trap
-    }
-
-  out_of_traps:
-    // BCR - Easy doors single move
-    if (targ_grid == DNGN_CLOSED_DOOR && Options.easy_open)
-        open_door(move_x, move_y);
-    else if (targ_grid <= MINMOVE)
-    {
-        you.running = 0;
         move_x = 0;
         move_y = 0;
-        you.turn_is_over = 0;
+
+        you.turn_is_over = true;
+        item_check( false );
     }
 
-    if (you.running == 2)
-        you.running = 1;
+    if (targ_grid == DNGN_CLOSED_DOOR && Options.easy_open)
+        open_door( move_x, move_y );
+    else if (targ_solid)
+    {
+        stop_running();
+        move_x = 0;
+        move_y = 0;
+        you.turn_is_over = false;
+    }
 
+    if (you.running == RMODE_START)
+        you.running = RMODE_CONTINUE;
+
+    // shift abyss when we get far enough off center
     if (you.level_type == LEVEL_ABYSS
-            && (you.x_pos <= 15 || you.x_pos >= (GXM - 16)
-                    || you.y_pos <= 15 || you.y_pos >= (GYM - 16)))
+        && (you.x_pos < X_ABYSS_1 || you.x_pos > X_ABYSS_2
+            || you.y_pos < Y_ABYSS_1 || you.y_pos > Y_ABYSS_2))
     {
         area_shift();
         you.pet_target = MHITNOT;
 
 #if DEBUG_DIAGNOSTICS
-        mpr( "Shifting.", MSGCH_DIAGNOSTICS );
         int igly = 0;
         int ig2 = 0;
 
@@ -3026,8 +2334,7 @@ static void move_player(char move_x, char move_y)
                 ig2++;
         }
 
-        snprintf( info, INFO_SIZE, "Number of items present: %d", ig2 );
-        mpr( info, MSGCH_DIAGNOSTICS );
+        mpr( MSGCH_DIAGNOSTICS, "Number of items present: %d", ig2 );
 
         ig2 = 0;
         for (igly = 0; igly < MAX_MONSTERS; igly++)
@@ -3036,16 +2343,740 @@ static void move_player(char move_x, char move_y)
                 ig2++;
         }
 
-        snprintf( info, INFO_SIZE, "Number of monsters present: %d", ig2 );
-        mpr( info, MSGCH_DIAGNOSTICS );
-
-        snprintf( info, INFO_SIZE, "Number of clouds present: %d", env.cloud_no );
-        mpr( info, MSGCH_DIAGNOSTICS );
+        mpr( MSGCH_DIAGNOSTICS, "Number of monsters present: %d", ig2 );
+        mpr( MSGCH_DIAGNOSTICS, "Number of clouds present: %d", env.cloud_no );
 #endif
     }
 
     if (!attacking)
-    {
         do_berserk_no_combat_penalty();
-    }
+
+    return;
 }                               // end move_player()
+
+static void handle_player_enchantments( void )
+{
+    if (you.special_wield != SPWLD_NONE)
+        special_wielded();
+
+    const int jumpiness = player_teleport(); // teleportitis
+
+    if (jumpiness && random2(1000) < jumpiness)
+        you_teleport2( true );
+    else if (you.level_type == LEVEL_ABYSS && one_chance_in(300))
+        you_teleport2( false, true ); // to new area of the Abyss
+
+    if (is_cloud( you.x_pos, you.y_pos ))
+        in_a_cloud();
+
+    if (you.duration[DUR_REPEL_UNDEAD] > 1)
+        you.duration[DUR_REPEL_UNDEAD]--;
+
+    if (you.duration[DUR_REPEL_UNDEAD] == 4)
+    {
+        mpr( MSGCH_DURATION, "Your holy aura is starting to fade." );
+        you.duration[DUR_REPEL_UNDEAD] -= random2(3);
+    }
+    else if (you.duration[DUR_REPEL_UNDEAD] == 1)
+    {
+        mpr( MSGCH_DURATION, "Your holy aura fades away." );
+        you.duration[DUR_REPEL_UNDEAD] = 0;
+    }
+
+    // paradox: it both lasts longer & does more damage overall if you're
+    //          moving slower.
+    // rationalisation: I guess it gets rubbed off/falls off/etc if you
+    //          move around more.
+    if (you.duration[DUR_LIQUID_FLAMES] > 0)
+        you.duration[DUR_LIQUID_FLAMES]--;
+
+    if (you.duration[DUR_LIQUID_FLAMES] != 0)
+    {
+        mpr( MSGCH_WARN, "You are covered in liquid flames!" );
+        expose_player_to_element( BEAM_NAPALM, 12 );
+
+        int dam = roll_dice(2,5) * you.time_taken;
+
+        dam = (check_your_resists( dam, BEAM_NAPALM ) + 5) / 10;
+        ouch( dam, 0, KILLED_BY_BURNING );
+    }
+
+    if (you.duration[DUR_ICY_ARMOUR] > 1)
+    {
+        you.duration[DUR_ICY_ARMOUR]--;
+        //expose_player_to_element( BEAM_COLD, 6 );
+    }
+    else if (you.duration[DUR_ICY_ARMOUR] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your icy armour evaporates." );
+        set_redraw_status( REDRAW_ARMOUR_CLASS );     // is this needed? 2apr2000 {dlb}
+        you.duration[DUR_ICY_ARMOUR] = 0;
+    }
+
+    if (you.duration[DUR_REPEL_MISSILES] > 1)
+    {
+        you.duration[DUR_REPEL_MISSILES]--;
+        if (you.duration[DUR_REPEL_MISSILES] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your repel missiles spell is about to expire..." );
+            if (coinflip())
+                you.duration[DUR_REPEL_MISSILES]--;
+        }
+    }
+    else if (you.duration[DUR_REPEL_MISSILES] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel less protected from missiles." );
+        you.duration[DUR_REPEL_MISSILES] = 0;
+    }
+
+    if (you.duration[DUR_DEFLECT_MISSILES] > 1)
+    {
+        you.duration[DUR_DEFLECT_MISSILES]--;
+        if (you.duration[DUR_DEFLECT_MISSILES] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your deflect missiles spell is about to expire..." );
+            if (coinflip())
+                you.duration[DUR_DEFLECT_MISSILES]--;
+        }
+    }
+    else if (you.duration[DUR_DEFLECT_MISSILES] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel less protected from missiles." );
+        you.duration[DUR_DEFLECT_MISSILES] = 0;
+    }
+
+    // regeneration - if starving regernation goes down.
+    if (you.hunger < HUNGER_STARVING && you.duration[DUR_REGENERATION] > 0)
+        you.duration[DUR_REGENERATION] = 1;
+
+    if (you.duration[DUR_REGENERATION] > 1)
+    {
+        you.duration[DUR_REGENERATION]--;
+
+        if (you.duration[DUR_REGENERATION] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your skin is crawling a little less now." );
+            if (coinflip())
+                you.duration[DUR_REGENERATION]--;
+        }
+    }
+    else if (you.duration[DUR_REGENERATION] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your skin stops crawling." );
+        you.duration[DUR_REGENERATION] = 0;
+    }
+
+    if (you.duration[DUR_PRAYER] > 1)
+        you.duration[DUR_PRAYER]--;
+    else if (you.duration[DUR_PRAYER] == 1)
+    {
+        god_speaks(you.religion, "Your prayer is over.");
+        you.duration[DUR_PRAYER] = 0;
+    }
+
+
+    //jmf: more flexible weapon branding code
+    if (you.duration[DUR_WEAPON_BRAND] > 1)
+        you.duration[DUR_WEAPON_BRAND]--;
+    else if (you.duration[DUR_WEAPON_BRAND] == 1)
+    {
+        // Note: it's not important if the weapon is no longer wieldable
+        // here, only that the durational effect is ending and we still
+        // should have the weapon at least "in hand".
+        const int wpn = get_inv_in_hand();
+        ASSERT( wpn != -1 );
+
+        const int temp_effect = get_weapon_brand( you.inv[wpn] );
+
+        you.duration[DUR_WEAPON_BRAND] = 0;
+
+        char str_pass[ITEMNAME_SIZE];
+
+        set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_NORMAL );
+        in_name( wpn, DESC_CAP_YOUR, str_pass );
+        strncpy( info, str_pass, INFO_SIZE );
+
+        switch (temp_effect)
+        {
+        case SPWPN_VORPAL:
+            // XXX: Note that these messages are highly dependant on the
+            // fact that there are two different temporary vorpalise spells
+            // which work on completely different sets of weapons.  Tukima's
+            // Vorpal Blade works on vorpal weapons described as "slicing",
+            // and Maxwell's Silver Hammer works on any weapon that does
+            // bludgeoning damage (which includes weapons like the
+            // "piercing" spiked flails).
+            if (get_vorpal_type( you.inv[wpn] ) == DVORP_SLICING)
+                strcat(info, " seems blunter.");        // Tukima's
+            else
+                strcat(info, " feels lighter.");        // Maxwell's
+            break;
+
+        case SPWPN_FLAMING:
+        case SPWPN_FREEZING:
+            if (is_range_weapon(you.inv[wpn]) || temp_effect == SPWPN_FREEZING)
+                strcat(info, " stops glowing.");
+            else
+                strcat(info, " goes out.");
+            break;
+        case SPWPN_VENOM:
+            strcat(info, " stops dripping with poison.");
+            break;
+        case SPWPN_DRAINING:
+            strcat(info, " stops crackling.");
+            break;
+        case SPWPN_DISTORTION:
+            strcat( info, " seems straighter." );
+            miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
+            break;
+        default:
+            strcat(info, " seems inexplicably less special.");
+            break;
+        }
+
+        //you.attribute[ATTR_WEAPON_BRAND] = 0;
+        mpr( MSGCH_DURATION, info );
+        set_redraw_status( REDRAW_WIELD );
+    }
+
+    if (you.duration[DUR_BREATH_WEAPON] > 1)
+        you.duration[DUR_BREATH_WEAPON]--;
+    else if (you.duration[DUR_BREATH_WEAPON] == 1)
+    {
+        mpr(MSGCH_RECOVERY,"You have got your breath back." );
+        you.duration[DUR_BREATH_WEAPON] = 0;
+    }
+
+    if (you.duration[DUR_TRANSFORMATION] > 1)
+    {
+        you.duration[DUR_TRANSFORMATION]--;
+
+        if (you.duration[DUR_TRANSFORMATION] == 10)
+        {
+            mpr(MSGCH_DURATION,"Your transformation is almost over." );
+            you.duration[DUR_TRANSFORMATION] -= random2(3);
+        }
+    }
+    else if (you.duration[DUR_TRANSFORMATION] == 1)
+    {
+        untransform();
+        // XXX: surely this cannot be the correct thing to do... some people
+        // have breath weapons without transformation.
+        // you.duration[DUR_BREATH_WEAPON] = 0;
+    }
+
+    if (you.duration[DUR_SWIFTNESS] > 1)
+    {
+        you.duration[DUR_SWIFTNESS]--;
+        if (you.duration[DUR_SWIFTNESS] == 6)
+        {
+            mpr(MSGCH_DURATION,"You start to feel a little slower." );
+            if (coinflip())
+                you.duration[DUR_SWIFTNESS]--;
+        }
+    }
+    else if (you.duration[DUR_SWIFTNESS] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel sluggish." );
+        you.duration[DUR_SWIFTNESS] = 0;
+    }
+
+    if (you.duration[DUR_INSULATION] > 1)
+    {
+        you.duration[DUR_INSULATION]--;
+        if (you.duration[DUR_INSULATION] == 6)
+        {
+            mpr(MSGCH_DURATION,"You start to feel a little less insulated." );
+            if (coinflip())
+                you.duration[DUR_INSULATION]--;
+        }
+    }
+    else if (you.duration[DUR_INSULATION] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel conductive." );
+        you.duration[DUR_INSULATION] = 0;
+    }
+
+    if (you.duration[DUR_STONEMAIL] > 1)
+    {
+        you.duration[DUR_STONEMAIL]--;
+        if (you.duration[DUR_STONEMAIL] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your scaley stone armour is starting to flake away." );
+            set_redraw_status( REDRAW_ARMOUR_CLASS );
+            if (coinflip())
+                you.duration[DUR_STONEMAIL]--;
+        }
+    }
+    else if (you.duration[DUR_STONEMAIL] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your scaley stone armour disappears." );
+        you.duration[DUR_STONEMAIL] = 0;
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
+        burden_change();
+    }
+
+    if (you.duration[DUR_FORESCRY] > 1) //jmf: added
+        you.duration[DUR_FORESCRY]--;
+    else if (you.duration[DUR_FORESCRY] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel firmly rooted in the present." );
+        you.duration[DUR_FORESCRY] = 0;
+        set_redraw_status( REDRAW_EVASION );
+    }
+
+    if (you.duration[DUR_SEE_INVISIBLE] > 1)    //jmf: added
+        you.duration[DUR_SEE_INVISIBLE]--;
+    else if (you.duration[DUR_SEE_INVISIBLE] == 1)
+    {
+        you.duration[DUR_SEE_INVISIBLE] = 0;
+
+        if (!player_see_invis())
+            mpr(MSGCH_DURATION,"Your eyesight blurs momentarily." );
+    }
+
+    if (you.duration[DUR_SILENCE] > 0)  //jmf: cute message handled elsewhere
+        you.duration[DUR_SILENCE]--;
+
+    if (you.duration[DUR_CONDENSATION_SHIELD] > 1)
+    {
+        you.duration[DUR_CONDENSATION_SHIELD]--;
+
+        if (player_res_cold() <= 0)
+        {
+            mpr( "You feel cold." );
+            int dam = roll_dice(2,5) * you.time_taken;
+
+            dam = (check_your_resists( dam, BEAM_COLD ) + 5) / 10;
+            ouch( dam, 0, KILLED_BY_FREEZING );
+        }
+    }
+    else if (you.duration[DUR_CONDENSATION_SHIELD] == 1)
+    {
+        you.duration[DUR_CONDENSATION_SHIELD] = 0;
+        mpr(MSGCH_DURATION,"Your icy shield evaporates." );
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
+    }
+
+    if (you.duration[DUR_STONESKIN] > 1)
+        you.duration[DUR_STONESKIN]--;
+    else if (you.duration[DUR_STONESKIN] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your skin feels tender." );
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
+        you.duration[DUR_STONESKIN] = 0;
+    }
+
+    if (you.duration[DUR_TELEPORT] > 1)
+        you.duration[DUR_TELEPORT]--;
+    else if (you.duration[DUR_TELEPORT] == 1)
+    {
+        // only to a new area of the abyss sometimes (for abyss teleports)
+        you_teleport2( true, one_chance_in(5) );
+        you.duration[DUR_TELEPORT] = 0;
+    }
+
+    if (you.duration[DUR_CONTROL_TELEPORT] > 1)
+    {
+        you.duration[DUR_CONTROL_TELEPORT]--;
+
+        if (you.duration[DUR_CONTROL_TELEPORT] == 6)
+        {
+            mpr(MSGCH_DURATION,"You start to feel a little uncertain." );
+            if (coinflip())
+                you.duration[DUR_CONTROL_TELEPORT]--;
+        }
+    }
+    else if (you.duration[DUR_CONTROL_TELEPORT] == 1)
+    {
+        mpr(MSGCH_DURATION,"You feel uncertain." );
+        you.duration[DUR_CONTROL_TELEPORT] = 0;
+    }
+
+    if (you.duration[DUR_RESIST_POISON] > 1)
+    {
+        you.duration[DUR_RESIST_POISON]--;
+        if (you.duration[DUR_RESIST_POISON] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your poison resistance is about to expire." );
+            if (coinflip())
+                you.duration[DUR_RESIST_POISON]--;
+        }
+    }
+    else if (you.duration[DUR_RESIST_POISON] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your poison resistance expires." );
+        you.duration[DUR_RESIST_POISON] = 0;
+    }
+
+    if (you.duration[DUR_DEATH_CHANNEL] > 1)
+    {
+        you.duration[DUR_DEATH_CHANNEL]--;
+        if (you.duration[DUR_DEATH_CHANNEL] == 6)
+        {
+            mpr(MSGCH_DURATION,"Your unholy channel is weakening." );
+            if (coinflip())
+                you.duration[DUR_DEATH_CHANNEL]--;
+        }
+    }
+    else if (you.duration[DUR_DEATH_CHANNEL] == 1)
+    {
+        mpr(MSGCH_DURATION,"Your unholy channel expires." );    // Death channel woreoff
+        you.duration[DUR_DEATH_CHANNEL] = 0;
+    }
+
+    // XXX: still needs work
+    if (you.duration[DUR_CUT] > 1)
+    {
+        if (one_chance_in(3))
+        {
+            const int dam = roll_dice( 1, 3 + you.duration[DUR_CUT] / 5 );
+
+            mpr( "Your wounds bleed!" );
+            ouch( dam, 0, KILLED_BY_BLEEDING );
+
+            if (one_chance_in(3))
+                you.duration[DUR_CUT]--;
+        }
+    }
+    else if (you.duration[DUR_CUT] == 1)
+    {
+        mpr( "Your wounds stop bleeding." );
+        you.duration[DUR_CUT] = 0;
+    }
+
+    if (you.invis > 1)
+    {
+        you.invis--;
+
+        if (you.invis == 6)
+        {
+            mpr(MSGCH_DURATION,"You flicker for a moment." );
+            if (coinflip())
+                you.invis--;
+        }
+    }
+    else if (you.invis == 1)
+    {
+        mpr(MSGCH_DURATION,"You flicker back into view." );
+        you.invis = 0;
+    }
+
+    if (you.duration[DUR_STUN] > 0)
+    {
+        you.duration[DUR_STUN]--;
+
+        if (you.duration[DUR_STUN] == 0)
+            mpr( "You are no longer stunned." );
+    }
+
+    if (you.conf > 0)
+        reduce_confuse_player(1);
+
+    if (you.paralysis > 1)
+        you.paralysis--;
+    else if (you.paralysis == 1)
+    {
+        mpr(MSGCH_DURATION,"You can move again." );
+        you.paralysis = 0;
+    }
+
+    if (you.exhausted > 1)
+        you.exhausted--;
+    else if (you.exhausted == 1)
+    {
+        mpr( MSGCH_DURATION,"You feel less fatigued."  );
+        you.exhausted = 0;
+    }
+
+    dec_slow_player();
+    dec_haste_player();
+
+    // Might and berserk are now combined here so that there's only one
+    // subtraction to strength (prevents stat loss bug).  Because of this,
+    // the berserk going-down code is here and not in dec_berserk (which
+    // redirects to here).
+    if (you.might || you.berserker)
+    {
+        if (you.might > 0)
+        {
+            you.might--;
+
+            // strength reduction handled below
+            if (!you.might && !you.berserker)
+                mpr(MSGCH_DURATION,"You feel a little less mighty now." );
+        }
+
+        if (you.berserker > 1)
+            dec_berserk(1);
+        else if (you.berserker == 1)
+        {
+            mpr( MSGCH_DURATION, "You are no longer berserk." );
+            you.berserker = 0;
+
+            set_redraw_status( REDRAW_STRENGTH );    // always redraw
+
+            //jmf: guilty for berserking /after/ berserk
+            did_god_conduct( DID_STIMULANTS, 6 + random2(6) );
+
+            // Sometimes berserk leaves us physically drained
+            //
+            // chance of passing out:
+            //     - mutation gives a large plus in order to try and
+            //       avoid the mutation being a "death sentence" to
+            //       certain characters.
+            //     - knowing the spell gives an advantage just
+            //       so that people who have invested 3 spell levels
+            //       are better off than the casual potion drinker...
+            //       this should make it a bit more interesting for
+            //       Crusaders again.
+            //     - similarly for the amulet
+            int chance = 10 + you.mutation[MUT_BERSERK] * 25
+                            + (player_equip( EQ_AMULET, AMU_RAGE ) ? 10 : 0)
+                            + (player_has_spell( SPELL_BERSERKER_RAGE ) ? 10 : 0);
+
+            // Note the beauty of Trog!  They get an extra save that's at
+            // the very least 20% and goes up to 100%.
+            if (you.berserk_penalty == NO_BERSERK_PENALTY
+                || (you.religion == GOD_TROG && you.piety > random2(150))
+                || !one_chance_in( chance ))
+            {
+                mpr("You are exhausted.");
+            }
+            else
+            {
+                mpr( MSGCH_WARN,"You pass out from exhaustion."  );
+                paralyse_player( roll_dice(2, 2), true );
+            }
+
+            // this resets from an actual penalty or from NO_BERSERK_PENALTY
+            you.berserk_penalty = 0;
+
+            fatigue_player( 12 + roll_dice( 2, 12 ) );
+            make_hungry( 800, false );
+
+            if (you.hunger < HUNGER_STARVATION_DEATH + 50)
+                you.hunger = HUNGER_STARVATION_DEATH + 50;
+
+            calc_hp_max();
+        }
+
+        if (!you.might && !you.berserker)
+            modify_stat( STAT_STRENGTH, -5, true );
+    }
+
+    if (you.confusing_touch > 1)
+        you.confusing_touch--;
+    else if (you.confusing_touch == 1)
+    {
+        mpr( MSGCH_DURATION, "Your %s stop glowing.", your_hand(true) );
+        you.confusing_touch = 0;
+    }
+
+    if (you.sure_blade > 1)
+        you.sure_blade--;
+    else if (you.sure_blade == 1)
+    {
+        mpr(MSGCH_DURATION,"The bond with your blade fades away." );
+        you.sure_blade = 0;
+        set_redraw_status( REDRAW_WIELD );
+    }
+
+    if (you.levitation > 1)
+    {
+        if (you.species != SP_KENKU || you.xp_level < 15)
+            you.levitation--;
+
+        if (player_equip_ego_type( EQ_BOOTS, SPARM_LEVITATION ))
+            you.levitation = 2;
+
+        if (you.levitation == 10)
+        {
+            mpr(MSGCH_DURATION,"You are starting to lose your buoyancy!" );
+            you.levitation -= random2(6);
+
+            if (you.duration[DUR_CONTROLLED_FLIGHT] > 0)
+                you.duration[DUR_CONTROLLED_FLIGHT] = you.levitation;
+        }
+    }
+    else if (you.levitation == 1)
+    {
+        mpr(MSGCH_DURATION,"You float gracefully downwards." );
+        you.levitation = 0;
+        burden_change();
+        you.duration[DUR_CONTROLLED_FLIGHT] = 0;
+
+        // re-enter the terrain:
+        move_player_to_grid( you.x_pos, you.y_pos, false, true, true );
+    }
+
+    const int rot_chance = 150 * you.rotting + 10 * (you.species == SP_GHOUL);
+
+    if (random2(3000) < rot_chance)
+    {
+        const int amount = 1 + div_rand_round( you.hp_max, 50 );
+
+        mpr( MSGCH_WARN, "You feel your flesh rotting away." ); ouch( amount,
+                0, KILLED_BY_ROTTING ); rot_hp( amount );
+
+        if (you.rotting > 0)
+            you.rotting--;
+    }
+
+    dec_disease_player();
+
+    if (you.poison > 0)
+    {
+        // Trying out Gavin's multi-level poison resistance ideas.
+        // Question: Does this make swapping in and out a ring a cheap
+        // way to dodge poisoning?  Is it too twinky?
+        // XXX: better define these levels or go back to a simple one level?
+        if (random2(5) < you.poison)
+        {
+            const int res = player_res_poison();
+            int poison = 0;
+
+            // get poison level
+            if (you.poison > 10 && random2( you.poison ) >= 8)
+                poison = 3;
+            else if (you.poison > 5 && random2( you.poison ) >= 3)
+                poison = 2;
+            else
+                poison = 1;
+
+            // apply resistance to level
+            if (res >= 3 || res <= 0)
+                poison -= res;
+            else // 1 or 2 levels
+                poison -= random2( res + 1 );
+
+            // apply level to player
+
+            // Like before: 3 -> 5 + random2(10), but this gives
+            // values in case player susceptibility is ever used
+            // (ie 4 -> 8 + random2(16), 5 -> 13 + random2(26), ...)
+            //
+            // Now merging that back to handle levels 1 and 2 since
+            // it was pretty close and it makes the progression more
+            // consistant (although the lower levels are now slightly
+            // stronger).
+            //
+            // Reduced random part by 1... 1st level poison is now the
+            // same as it used to be (level two is still a bit harsher)
+            const int mag = (poison * poison + 1) / 2;
+
+            mpr( (poison >= 3) ? MSGCH_WARN : MSGCH_PLAIN,
+                    "You feel %ssick.", (poison >= 3) ? "extremely " :
+                                        (poison == 2) ? "very "
+                                                      : "" );
+
+            ouch( mag + random2( 2 * mag - 1 ), 0, KILLED_BY_POISON );
+
+            // reduce poison counter
+            if ((you.hp == 1 && one_chance_in(3)) || one_chance_in(8))
+                reduce_poison_player(1);
+        }
+    }
+
+    if (you.deaths_door)
+    {
+        if (you.hp > allowed_deaths_door_hp())
+        {
+            mpr(MSGCH_DURATION,"Your life is in your own hands once again." );
+            paralyse_player( 5 + random2(5) );
+            confuse_player( 10 + random2(10) );
+            dec_max_hp( coinflip() ? 3 : 2 );
+            you.deaths_door = 0;
+        }
+        else
+            you.deaths_door--;
+
+        if (you.deaths_door == 10)
+        {
+            mpr( MSGCH_DURATION,"Your time is quickly running out!"  );
+            you.deaths_door -= random2(6);
+        }
+
+        if (you.deaths_door == 1)
+        {
+            mpr( MSGCH_DURATION,"Your life is in your own hands again!"  );
+            more();
+        }
+    }
+
+    const int food_use = player_hunger_rate();
+
+    if (food_use > 0 && you.hunger > HUNGER_STARVATION_DEATH)
+        make_hungry( food_use, true );
+
+    // XXX: using an int tmp to fix the fact that hit_points_regeneration
+    // is only an unsigned char and is thus likely to overflow. -- bwr
+    int tmp = static_cast< int >( you.hit_points_regeneration );
+
+    if (you.hp < you.hp_max && !you.disease && !you.deaths_door)
+        tmp += player_regen();
+
+    while (tmp >= 100)
+    {
+        if (you.hp >= you.hp_max - 1 && is_resting())
+            stop_running();
+
+        inc_hp(1, false);
+        tmp -= 100;
+    }
+
+    ASSERT( tmp >= 0 && tmp < 100 );
+    you.hit_points_regeneration = static_cast< unsigned char >( tmp );
+
+    // XXX: Doing the same as the above, although overflow isn't an
+    // issue with magic point regeneration, yet. -- bwr
+    tmp = static_cast< int >( you.magic_points_regeneration );
+
+    if (you.magic_points < you.max_magic_points)
+        tmp += player_magic_regen();
+
+    while (tmp >= 100)
+    {
+        if (you.magic_points >= you.max_magic_points - 1 && is_resting())
+            stop_running();
+
+        inc_mp(1, false);
+        tmp -= 100;
+    }
+
+    ASSERT( tmp >= 0 && tmp < 100 );
+    you.magic_points_regeneration = static_cast< unsigned char >( tmp );
+
+    const int rod = get_inv_hand_tool();
+
+    if (rod != -1
+        && item_is_rod( you.inv[rod] )
+        && you.inv[rod].plus < you.inv[rod].plus2
+        && enough_mp( 1, true ))
+    {
+        const int charge = you.inv[rod].plus / ROD_CHARGE_MULT;
+
+        int rate = ((charge + 1) * ROD_CHARGE_MULT) / 10;
+
+        rate *= (10 + skill_bump( SK_EVOCATIONS ));
+        rate = div_rand_round( rate, 100 );
+
+        if (rate < 5)
+            rate = 5;
+        else if (rate > ROD_CHARGE_MULT / 2)
+            rate = ROD_CHARGE_MULT / 2;
+
+        if (you.inv[rod].plus / ROD_CHARGE_MULT
+            != (you.inv[rod].plus + rate) / ROD_CHARGE_MULT)
+        {
+            dec_mp(1);
+            if (item_ident( you.inv[rod], ISFLAG_KNOW_PLUSES ))
+                set_redraw_status( REDRAW_WIELD );
+        }
+
+        you.inv[rod].plus += rate;
+
+        if (you.inv[rod].plus == you.inv[rod].plus2 && is_resting())
+            stop_running();
+    }
+}

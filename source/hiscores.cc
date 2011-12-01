@@ -31,6 +31,7 @@
 #include <ctype.h>
 
 #include "AppHdr.h"
+#include "globals.h"
 #include "externs.h"
 
 #include "hiscores.h"
@@ -80,6 +81,22 @@ static void hs_search_where(char *inbuf, struct scorefile_entry &se);
 static bool lock_file_handle( FILE *handle, int type );
 static bool unlock_file_handle( FILE *handle );
 #endif // USE_FILE_LOCKING
+
+// XXX: this needs tuning... in fact the whole score thing could probably use
+// some work... changes have probably made old scores fairly // incomparable
+// already, and the system really shouldn't be awarding the boring accumulation
+// of 9 million XP (the cap for points should probably be much lower on that).
+//
+// This goes a ways towards rewarding quick play (although maybe we were better
+// leaving it as "win with lowest score"?).  However, note that demonspawn with
+// the gate to pandemonium ability can easily do both (accumulate a good bonus
+// here, then rack up max XP)... other characters lose access to Pandemonium
+// which makes this a lot harder (they still have the Abyss, though).  So the
+// closing of the gates might also need to be looked at.
+long calc_skill_bonus( long skill_points )
+{
+    return ((skill_points < 80000) ? 50 * (80000 - skill_points) : 0);
+}
 
 void hiscores_new_entry( struct scorefile_entry &ne )
 {
@@ -263,10 +280,10 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
 
     se.name[10]='\0';
     sprintf( buf, "%8ld %-10s %s-%02d%s", se.points, se.name,
-             scratch, se.lvl, (se.wiz_mode == 1) ? "W" : "" );
+             scratch, se.lvl, ((se.wiz_mode) ? "W" : "") );
 
     // get monster type & number, if applicable
-    int mon_type = se.death_source;
+    int mon_class = se.death_source;
     int mon_number = se.mon_num;
 
     // remember -- we have 36 characters (not including initial space):
@@ -280,7 +297,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         if (se.death_source_name[0] != '\0')
             strcat( buf, se.death_source_name );
         else
-            strcat( buf, monam( mon_number, mon_type, true, DESC_PLAIN ) );
+            strcat( buf, monam( mon_number, mon_class, true, DESC_PLAIN ) );
 
         break;
 
@@ -315,7 +332,7 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         if (se.death_source_name[0] != '\0')
             strcat( buf, se.death_source_name );
         else
-            strcat( buf, monam( mon_number, mon_type, true, DESC_PLAIN ) );
+            strcat( buf, monam( mon_number, mon_class, true, DESC_PLAIN ) );
         break;
 
 /*
@@ -435,8 +452,12 @@ void hiscores_format_single(char *buf, struct scorefile_entry &se)
         strcat( buf, " turned to stone" );
         break;
 
-    case KILLED_BY_SHUGGOTH:
-        strcat( buf, " eviscerated by a hatching shuggoth" );
+    case KILLED_BY_MELTING:
+        strcat( buf, " melted into a puddle" );
+        break;
+
+    case KILLED_BY_BLEEDING:
+        strcat( buf, " bled to death" );
         break;
 
     case KILLED_BY_SOMETHING:
@@ -555,7 +576,8 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
     if (verbose)
     {
         strncpy( scratch, skill_title( se.best_skill, se.best_skill_lvl,
-                                       se.race, se.str, se.dex, se.god ),
+                                       se.race, se.str, se.dex,
+                                       se.god, se.piety, se.penance ),
                  INFO_SIZE );
 
         snprintf( buf, HIGHSCORE_SIZE, "%8ld %s the %s (level %d",
@@ -565,7 +587,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
     else
     {
         snprintf( buf, HIGHSCORE_SIZE, "%8ld %s the %s %s (level %d",
-                  se.points, se.name, species_name(se.race, se.lvl),
+                  se.points, se.name, species_name( se.race, se.lvl ),
                   get_class_name(se.cls), se.lvl );
     }
 
@@ -601,7 +623,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
             strncat( buf, scratch, HIGHSCORE_SIZE );
         }
 
-        strncat( buf, "." , HIGHSCORE_SIZE );
+        strncat( buf, ".", HIGHSCORE_SIZE );
         hiscore_newline( buf, line_count );
 
         if (se.race != SP_DEMIGOD && se.god != -1)
@@ -636,7 +658,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
     }
 
     // get monster type & number, if applicable
-    int mon_type = se.death_source;
+    int mon_class = se.death_source;
     int mon_number = se.mon_num;
 
     bool needs_beam_cause_line = false;
@@ -656,7 +678,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
 
                     (se.death_source_name[0] != '\0')
                             ? se.death_source_name
-                            : monam( mon_number, mon_type, true, DESC_PLAIN ) );
+                            : monam( mon_number, mon_class, true, DESC_PLAIN ) );
 
         strncat( buf, scratch, HIGHSCORE_SIZE );
 
@@ -706,7 +728,7 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
             if (se.death_source_name[0] != '\0')
                 strcat(buf, se.death_source_name);
             else
-                strcat(buf, monam( mon_number, mon_type, true, DESC_PLAIN ));
+                strcat(buf, monam( mon_number, mon_class, true, DESC_PLAIN ));
 
             if (se.auxkilldata[0] != '\0')
                 needs_beam_cause_line = true;
@@ -830,9 +852,12 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
         strcat( buf, "Turned to stone" );
         break;
 
-    case KILLED_BY_SHUGGOTH:
-        strcat( buf, "Eviscerated by a hatching shuggoth" );
-        needs_damage = true;
+    case KILLED_BY_MELTING:
+        strcat( buf, "Melted into a puddle" );
+        break;
+
+    case KILLED_BY_BLEEDING:
+        strcat( buf, "Bled to death" );
         break;
 
     case KILLED_BY_SOMETHING:
@@ -865,6 +890,12 @@ int hiscores_format_single_long( char *buf, struct scorefile_entry &se,
             strncat( buf, scratch, HIGHSCORE_SIZE );
             needs_damage = false;
             done_damage = true;
+        }
+        else if (se.death_type == KILLED_BY_WINNING && se.skill_bonus_level > 0)
+        {
+            const long bonus = calc_skill_bonus( se.skill_bonus_level );
+            snprintf( scratch, INFO_SIZE, " (%ld skill bonus)", bonus );
+            strncat( buf, scratch, HIGHSCORE_SIZE );
         }
 
         if ((se.death_type == KILLED_BY_LEAVING
@@ -1237,7 +1268,7 @@ static void hs_init( struct scorefile_entry &dest )
     dest.god = -1;
     dest.piety = -1;
     dest.penance = -1;
-    dest.wiz_mode = 0;
+    dest.wiz_mode = false;
     dest.birth_time = 0;
     dest.death_time = 0;
     dest.real_time = -1;
@@ -1290,7 +1321,7 @@ void hs_copy(struct scorefile_entry &dest, struct scorefile_entry &src)
 
 bool hs_read( FILE *scores, struct scorefile_entry &dest )
 {
-    char inbuf[200];
+    char inbuf[1000];
     int c = EOF;
 
     hs_init( dest );
@@ -1508,7 +1539,7 @@ static void hs_write( FILE *scores, struct scorefile_entry &se )
              se.dlvl, se.level_type, se.branch,
              se.final_hp, se.final_max_hp, se.final_max_max_hp, se.damage,
              se.str, se.intel, se.dex,
-             se.god, se.piety, se.penance, se.wiz_mode );
+             se.god, se.piety, se.penance, (se.wiz_mode) ? 1 : 0 );
 
     make_date_string( se.birth_time, buff );
     fprintf( scores, ":%s", buff );
@@ -1579,9 +1610,9 @@ static void hs_parse_string(char *inbuf, struct scorefile_entry &se)
     // 4a. get wizard mode
     hs_parse_generic_1(inbuf, scratch, ",");
     if (strstr(scratch, "Wiz") != NULL)
-        se.wiz_mode = 1;
+        se.wiz_mode = true;
     else
-        se.wiz_mode = 0;
+        se.wiz_mode = false;
 
     // 5. get death type
     inbuf++;    // skip comma
@@ -1712,9 +1743,8 @@ static void hs_search_death(char *inbuf, struct scorefile_entry &se)
         se.death_type = KILLED_BY_TSO_SMITING;
     else if (strstr(inbuf, "turned to stone") != NULL)
         se.death_type = KILLED_BY_PETRIFICATION;
-    else if (strstr(inbuf, "eviscerated by a hatching") != NULL)
-        se.death_type = KILLED_BY_SHUGGOTH;
-
+    else if (strstr(inbuf, "melted into a puddle") != NULL)
+        se.death_type = KILLED_BY_MELTING;
     // whew!
 
     // now, if we're still KILLED_BY_MONSTER,  make sure that there is

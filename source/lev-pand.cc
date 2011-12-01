@@ -11,6 +11,7 @@
 #include "AppHdr.h"
 #include "lev-pand.h"
 
+#include "globals.h"
 #include "externs.h"
 
 #include "monplace.h"
@@ -27,7 +28,7 @@ void init_pandemonium(void)
         monster = &menv[pc];
 
         // Looks for unique demons and sets appropriate lists of demons.
-        // NB - also sets the level colours.
+        // Note: [8] gives rock colour, [9] gives floor colour
         if (monster->type == MONS_MNOLEG)
         {
             env.mons_alloc[0] = MONS_ABOMINATION_SMALL;
@@ -117,7 +118,7 @@ void init_pandemonium(void)
             env.mons_alloc[pc] = MONS_RED_DEVIL;
 
         if (one_chance_in(30))
-            env.mons_alloc[pc] = MONS_IMP;
+            env.mons_alloc[pc] = rand_imp();
 
         if (one_chance_in(20))
             env.mons_alloc[pc] = MONS_DEMONIC_CRAWLER + random2(5);

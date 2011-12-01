@@ -42,6 +42,7 @@
 #include "defines.h"
 
 #include "enum.h"
+#include "globals.h"
 #include "externs.h"
 
 
@@ -52,6 +53,7 @@ static struct termios def_term;
 static struct termios game_term;
 
 #elif defined(USE_TCHARS_IOCTL)
+
 #include <sys/ttold.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -73,12 +75,11 @@ static struct ltchars game_term;
     #include CURSES_INCLUDE_FILE
 #endif
 
-// Character set variable
-int character_set = CHARACTER_SET;
+static int Character_Set = 0;
 
 // Globals holding current text/backg. colors
-short FG_COL = WHITE;
-short BG_COL = BLACK;
+static short FG_COL = WHITE;
+static short BG_COL = BLACK;
 
 // a lookup table to convert keypresses to command enums
 static int key_to_command_table[KEY_MAX];
@@ -107,60 +108,40 @@ static short translate_colour( short col )
 {
     switch (col)
     {
-    case BLACK:
-        return COLOR_BLACK;
-        break;
-    case BLUE:
-        return COLOR_BLUE;
-        break;
-    case GREEN:
-        return COLOR_GREEN;
-        break;
-    case CYAN:
-        return COLOR_CYAN;
-        break;
-    case RED:
-        return COLOR_RED;
-        break;
-    case MAGENTA:
-        return COLOR_MAGENTA;
-        break;
-    case BROWN:
-        return COLOR_YELLOW;
-        break;
-    case LIGHTGREY:
-        return COLOR_WHITE;
-        break;
-    case DARKGREY:
-        return COLOR_BLACK + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case LIGHTBLUE:
-        return COLOR_BLUE + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case LIGHTGREEN:
-        return COLOR_GREEN + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case LIGHTCYAN:
-        return COLOR_CYAN + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case LIGHTRED:
-        return COLOR_RED + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case LIGHTMAGENTA:
-        return COLOR_MAGENTA + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case YELLOW:
-        return COLOR_YELLOW + COLFLAG_CURSES_BRIGHTEN;
-        break;
-    case WHITE:
-        return COLOR_WHITE + COLFLAG_CURSES_BRIGHTEN;
-        break;
+    case BLACK:         return (COLOR_BLACK);
+    case BLUE:          return (COLOR_BLUE);
+    case GREEN:         return (COLOR_GREEN);
+    case CYAN:          return (COLOR_CYAN);
+    case RED:           return (COLOR_RED);
+    case MAGENTA:       return (COLOR_MAGENTA);
+    case BROWN:         return (COLOR_YELLOW);
+    case LIGHTGREY:     return (COLOR_WHITE);
+
+    // adding a flag to these to mark that we need to use highlights
+    case DARKGREY:      return (COLOR_BLACK   | COLFLAG_CURSES_BRIGHTEN);
+    case LIGHTBLUE:     return (COLOR_BLUE    | COLFLAG_CURSES_BRIGHTEN);
+    case LIGHTGREEN:    return (COLOR_GREEN   | COLFLAG_CURSES_BRIGHTEN);
+    case LIGHTCYAN:     return (COLOR_CYAN    | COLFLAG_CURSES_BRIGHTEN);
+    case LIGHTRED:      return (COLOR_RED     | COLFLAG_CURSES_BRIGHTEN);
+    case LIGHTMAGENTA:  return (COLOR_MAGENTA | COLFLAG_CURSES_BRIGHTEN);
+    case YELLOW:        return (COLOR_YELLOW  | COLFLAG_CURSES_BRIGHTEN);
+    case WHITE:         return (COLOR_WHITE   | COLFLAG_CURSES_BRIGHTEN);
     default:
-        return COLOR_GREEN;
-        break;                  //mainly for debugging
+        break;
     }
+
+    return (COLOR_GREEN);
 }
 
+void set_altcharset( bool alt_on )
+{
+    Character_Set = ((alt_on) ? A_ALTCHARSET : 0);
+}
+
+bool get_altcharset( void )
+{
+    return (Character_Set != 0);
+}
 
 static void setup_colour_pairs( void )
 {
@@ -184,35 +165,81 @@ static void setup_colour_pairs( void )
 
 static void termio_init()
 {
-    tcgetattr(0, &def_term);
-    memcpy(&game_term, &def_term, sizeof(struct termios));
-
-    def_term.c_cc[VINTR] = (char) 3;        // ctrl-C
-    game_term.c_cc[VINTR] = (char) 3;       // ctrl-C
+    tcgetattr( 0, &def_term );
+    memcpy( &game_term, &def_term, sizeof(struct termios) );
 
     // Lets recover some control sequences
-    game_term.c_cc[VSTART] = (char) -1;     // ctrl-Q
-    game_term.c_cc[VSTOP] = (char) -1;      // ctrl-S
-    game_term.c_cc[VSUSP] = (char) -1;      // ctrl-Y
-#ifdef VDSUSP
-    game_term.c_cc[VDSUSP] = (char) -1;     // ctrl-Y
+#ifdef VERASE
+    game_term.c_cc[VERASE] = static_cast<char>( -1 );     // ctrl-H
 #endif
 
-    tcsetattr(0, TCSAFLUSH, &game_term);
+#ifdef VKILL
+    game_term.c_cc[VKILL] = static_cast<char>( -1 );      // ctrl-U
+#endif
+
+#ifdef VINTR
+    game_term.c_cc[VINTR] = static_cast<char>( -1 );      // ctrl-C
+#endif
+
+#ifdef VSTART
+    game_term.c_cc[VSTART] = static_cast<char>( -1 );     // ctrl-Q
+#endif
+
+#ifdef VSTOP
+    game_term.c_cc[VSTOP] = static_cast<char>( -1 );      // ctrl-S
+#endif
+
+#ifdef VSUSP
+    game_term.c_cc[VSUSP] = static_cast<char>( -1 );      // ctrl-Z
+#endif
+
+#ifdef VQUIT
+    game_term.c_cc[VQUIT] = static_cast<char>( -1 );      // ctrl-backslash
+#endif
+
+#ifdef VDSUSP
+    game_term.c_cc[VDSUSP] = static_cast<char>( -1 );     // ctrl-Y
+#endif
+
+    tcsetattr( 0, TCSAFLUSH, &game_term );
 }
 
 #elif defined(USE_TCHARS_IOCTL)
 
 static void termio_init()
 {
-    ioctl(0, TIOCGLTC, &def_term);
-    memcpy(&game_term, &def_term, sizeof(struct ltchars));
+    ioctl( 0, TIOCGLTC, &def_term );
+    memcpy( &game_term, &def_term, sizeof(struct ltchars) );
 
-    game_term.t_suspc = game_term.t_dsuspc = -1;
-    ioctl(0, TIOCSLTC, &game_term);
+    game_term.t_suspc = -1;
+    game_term.t_dsuspc = -1;
+    ioctl( 0, TIOCSLTC, &game_term );
 }
 
 #endif
+
+static inline void register_key( int key, int command )
+{
+    key_to_command_table[key] = command;
+}
+
+int getch_ck()
+{
+    int c = getch();
+
+    switch (c)
+    {
+    case KEY_HOME:  return (CK_HOME);
+    case KEY_PPAGE: return (CK_PGUP);
+    case KEY_END:   return (CK_END);
+    case KEY_NPAGE: return (CK_PGDN);
+    case KEY_UP:    return (CK_UP);
+    case KEY_DOWN:  return (CK_DOWN);
+    case KEY_LEFT:  return (CK_LEFT);
+    case KEY_RIGHT: return (CK_RIGHT);
+    default:        return (c);
+    }
+}
 
 void init_key_to_command()
 {
@@ -225,165 +252,158 @@ void init_key_to_command()
     }
 
     // lower case
-    key_to_command_table['a'] = CMD_USE_ABILITY;
-    key_to_command_table['b'] = CMD_MOVE_DOWN_LEFT;
-    key_to_command_table['c'] = CMD_CLOSE_DOOR;
-    key_to_command_table['d'] = CMD_DROP;
-    key_to_command_table['e'] = CMD_EAT;
-    key_to_command_table['f'] = CMD_FIRE;
-    key_to_command_table['g'] = CMD_PICKUP;
-    key_to_command_table['h'] = CMD_MOVE_LEFT;
-    key_to_command_table['i'] = CMD_DISPLAY_INVENTORY;
-    key_to_command_table['j'] = CMD_MOVE_DOWN;
-    key_to_command_table['k'] = CMD_MOVE_UP;
-    key_to_command_table['l'] = CMD_MOVE_RIGHT;
-    key_to_command_table['m'] = CMD_DISPLAY_SKILLS;
-    key_to_command_table['n'] = CMD_MOVE_DOWN_RIGHT;
-    key_to_command_table['o'] = CMD_OPEN_DOOR;
-    key_to_command_table['p'] = CMD_PRAY;
-    key_to_command_table['q'] = CMD_QUAFF;
-    key_to_command_table['r'] = CMD_READ;
-    key_to_command_table['s'] = CMD_SEARCH;
-    key_to_command_table['t'] = CMD_THROW;
-    key_to_command_table['u'] = CMD_MOVE_UP_RIGHT;
-    key_to_command_table['v'] = CMD_EXAMINE_OBJECT;
-    key_to_command_table['w'] = CMD_WIELD_WEAPON;
-    key_to_command_table['x'] = CMD_LOOK_AROUND;
-    key_to_command_table['y'] = CMD_MOVE_UP_LEFT;
-    key_to_command_table['z'] = CMD_ZAP_WAND;
+    register_key( 'a', CMD_USE_ABILITY );
+    register_key( 'b', CMD_MOVE_DOWN_LEFT );
+    register_key( 'c', CMD_CLOSE_DOOR );
+    register_key( 'd', CMD_DROP );
+    register_key( 'e', CMD_EAT );
+    register_key( 'f', CMD_FIRE );
+    register_key( 'g', CMD_PICKUP );
+    register_key( 'h', CMD_MOVE_LEFT );
+    register_key( 'i', CMD_DISPLAY_INVENTORY );
+    register_key( 'j', CMD_MOVE_DOWN );
+    register_key( 'k', CMD_MOVE_UP );
+    register_key( 'l', CMD_MOVE_RIGHT );
+    register_key( 'm', CMD_DISPLAY_SKILLS );
+    register_key( 'n', CMD_MOVE_DOWN_RIGHT );
+    register_key( 'o', CMD_OPEN_DOOR );
+    register_key( 'p', CMD_PRAY );
+    register_key( 'q', CMD_QUAFF );
+    register_key( 'r', CMD_READ );
+    register_key( 's', CMD_SEARCH );
+    register_key( 't', CMD_THROW );
+    register_key( 'u', CMD_MOVE_UP_RIGHT );
+    register_key( 'v', CMD_EXAMINE_OBJECT );
+    register_key( 'w', CMD_WIELD_WEAPON );
+    register_key( 'x', CMD_LOOK_AROUND );
+    register_key( 'y', CMD_MOVE_UP_LEFT );
+    register_key( 'z', CMD_ZAP_WAND );
 
     // upper case
-    key_to_command_table['A'] = CMD_DISPLAY_MUTATIONS;
-    key_to_command_table['B'] = CMD_RUN_DOWN_LEFT;
-    key_to_command_table['C'] = CMD_EXPERIENCE_CHECK;
-    key_to_command_table['D'] = CMD_BUTCHER;
-    key_to_command_table['E'] = CMD_EVOKE;
-    key_to_command_table['F'] = CMD_NO_CMD;
-    key_to_command_table['G'] = CMD_NO_CMD;
-    key_to_command_table['H'] = CMD_RUN_LEFT;
-    key_to_command_table['I'] = CMD_OBSOLETE_INVOKE;
-    key_to_command_table['J'] = CMD_RUN_DOWN;
-    key_to_command_table['K'] = CMD_RUN_UP;
-    key_to_command_table['L'] = CMD_RUN_RIGHT;
-    key_to_command_table['M'] = CMD_MEMORISE_SPELL;
-    key_to_command_table['N'] = CMD_RUN_DOWN_RIGHT;
-    key_to_command_table['O'] = CMD_DISPLAY_OVERMAP;
-    key_to_command_table['P'] = CMD_WEAR_JEWELLERY;
-    key_to_command_table['Q'] = CMD_QUIT;
-    key_to_command_table['R'] = CMD_REMOVE_JEWELLERY;
-    key_to_command_table['S'] = CMD_SAVE_GAME;
-    key_to_command_table['T'] = CMD_REMOVE_ARMOUR;
-    key_to_command_table['U'] = CMD_RUN_UP_RIGHT;
-    key_to_command_table['V'] = CMD_GET_VERSION;
-    key_to_command_table['W'] = CMD_WEAR_ARMOUR;
-    key_to_command_table['X'] = CMD_DISPLAY_MAP;
-    key_to_command_table['Y'] = CMD_RUN_UP_LEFT;
-    key_to_command_table['Z'] = CMD_CAST_SPELL;
+    register_key( 'A', CMD_DISPLAY_MUTATIONS );
+    register_key( 'B', CMD_RUN_DOWN_LEFT );
+    register_key( 'C', CMD_EXPERIENCE_CHECK );
+    register_key( 'D', CMD_BUTCHER );
+    register_key( 'E', CMD_EVOKE );
+    register_key( 'F', CMD_NO_CMD );
+    register_key( 'G', CMD_NO_CMD );
+    register_key( 'H', CMD_RUN_LEFT );
+    register_key( 'I', CMD_OBSOLETE_INVOKE );
+    register_key( 'J', CMD_RUN_DOWN );
+    register_key( 'K', CMD_RUN_UP );
+    register_key( 'L', CMD_RUN_RIGHT );
+    register_key( 'M', CMD_MEMORISE_SPELL );
+    register_key( 'N', CMD_RUN_DOWN_RIGHT );
+    register_key( 'O', CMD_DISPLAY_OVERMAP );
+    register_key( 'P', CMD_WEAR_JEWELLERY );
+    register_key( 'Q', CMD_QUIT );
+    register_key( 'R', CMD_REMOVE_JEWELLERY );
+    register_key( 'S', CMD_SAVE_GAME );
+    register_key( 'T', CMD_REMOVE_ARMOUR );
+    register_key( 'U', CMD_RUN_UP_RIGHT );
+    register_key( 'V', CMD_NO_CMD );
+    register_key( 'W', CMD_WEAR_ARMOUR );
+    register_key( 'X', CMD_DISPLAY_MAP );
+    register_key( 'Y', CMD_RUN_UP_LEFT );
+    register_key( 'Z', CMD_CAST_SPELL );
 
     // control
-    key_to_command_table[ CONTROL('A') ] = CMD_TOGGLE_AUTOPICKUP;
-    key_to_command_table[ CONTROL('B') ] = CMD_OPEN_DOOR_DOWN_LEFT;
-    key_to_command_table[ CONTROL('C') ] = CMD_NO_CMD;
-
-#ifdef ALLOW_DESTROY_ITEM_COMMAND
-    key_to_command_table[ CONTROL('D') ] = CMD_DESTROY_ITEM;
-#else
-    key_to_command_table[ CONTROL('D') ] = CMD_NO_CMD;
-#endif
-
-    key_to_command_table[ CONTROL('E') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('F') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('G') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('H') ] = CMD_OPEN_DOOR_LEFT;
-    key_to_command_table[ CONTROL('I') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('J') ] = CMD_OPEN_DOOR_DOWN;
-    key_to_command_table[ CONTROL('K') ] = CMD_OPEN_DOOR_UP;
-    key_to_command_table[ CONTROL('L') ] = CMD_OPEN_DOOR_RIGHT;
-    key_to_command_table[ CONTROL('M') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('N') ] = CMD_OPEN_DOOR_DOWN_RIGHT;
-    key_to_command_table[ CONTROL('O') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('P') ] = CMD_REPLAY_MESSAGES;
-    key_to_command_table[ CONTROL('Q') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('R') ] = CMD_REDRAW_SCREEN;
-    key_to_command_table[ CONTROL('S') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('T') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('U') ] = CMD_OPEN_DOOR_UP_LEFT;
-    key_to_command_table[ CONTROL('V') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('W') ] = CMD_NO_CMD;
-    key_to_command_table[ CONTROL('X') ] = CMD_SAVE_GAME_NOW;
-    key_to_command_table[ CONTROL('Y') ] = CMD_OPEN_DOOR_UP_RIGHT;
-    key_to_command_table[ CONTROL('Z') ] = CMD_SUSPEND_GAME;
+    register_key( CONTROL('A'), CMD_TOGGLE_AUTOPICKUP );
+    register_key( CONTROL('B'), CMD_OPEN_DOOR_DOWN_LEFT );
+    register_key( CONTROL('C'), CMD_CLEAN_MAP );
+    register_key( CONTROL('D'), CMD_NO_CMD );
+    register_key( CONTROL('E'), CMD_FORGET_STASH );
+    register_key( CONTROL('F'), CMD_FIX_WAYPOINT );
+    register_key( CONTROL('G'), CMD_INTERLEVEL_TRAVEL );
+    register_key( CONTROL('H'), CMD_OPEN_DOOR_LEFT );
+    register_key( CONTROL('I'), CMD_NO_CMD );
+    register_key( CONTROL('J'), CMD_OPEN_DOOR_DOWN );
+    register_key( CONTROL('K'), CMD_OPEN_DOOR_UP );
+    register_key( CONTROL('L'), CMD_OPEN_DOOR_RIGHT );
+    register_key( CONTROL('M'), CMD_NO_CMD );
+    register_key( CONTROL('N'), CMD_OPEN_DOOR_DOWN_RIGHT );
+    register_key( CONTROL('O'), CMD_EXPLORE );
+    register_key( CONTROL('P'), CMD_REPLAY_MESSAGES );
+    register_key( CONTROL('Q'), CMD_NO_CMD );
+    register_key( CONTROL('R'), CMD_REDRAW_SCREEN );
+    register_key( CONTROL('S'), CMD_MARK_STASH );
+    register_key( CONTROL('T'), CMD_NO_CMD );
+    register_key( CONTROL('U'), CMD_OPEN_DOOR_UP_LEFT );
+    register_key( CONTROL('V'), CMD_GET_VERSION );
+    register_key( CONTROL('W'), CMD_NO_CMD );
+    register_key( CONTROL('X'), CMD_SAVE_GAME_NOW );
+    register_key( CONTROL('Y'), CMD_OPEN_DOOR_UP_RIGHT );
+    register_key( CONTROL('Z'), CMD_SUSPEND_GAME );
 
     // other printables
-    key_to_command_table['.'] = CMD_MOVE_NOWHERE;
-    key_to_command_table['<'] = CMD_GO_UPSTAIRS;
-    key_to_command_table['>'] = CMD_GO_DOWNSTAIRS;
-    key_to_command_table['@'] = CMD_DISPLAY_CHARACTER_STATUS;
-    key_to_command_table[','] = CMD_PICKUP;
-    key_to_command_table[';'] = CMD_INSPECT_FLOOR;
-    key_to_command_table['!'] = CMD_SHOUT;
-    key_to_command_table['^'] = CMD_DISPLAY_RELIGION;
-    key_to_command_table['#'] = CMD_CHARACTER_DUMP;
-    key_to_command_table['='] = CMD_ADJUST_INVENTORY;
-    key_to_command_table['?'] = CMD_DISPLAY_COMMANDS;
-    key_to_command_table['`'] = CMD_MACRO_ADD;
-    key_to_command_table['~'] = CMD_MACRO_SAVE;
-    key_to_command_table['&'] = CMD_WIZARD;
-    key_to_command_table['"'] = CMD_LIST_JEWELLERY;
+    register_key( '.', CMD_MOVE_NOWHERE );
+    register_key( '<', CMD_GO_UPSTAIRS );
+    register_key( '>', CMD_GO_DOWNSTAIRS );
+    register_key( '@', CMD_DISPLAY_CHARACTER_STATUS );
+    register_key( ',', CMD_PICKUP );
+    register_key( ';', CMD_INSPECT_FLOOR );
+    register_key( '!', CMD_SHOUT );
+    register_key( '^', CMD_DISPLAY_RELIGION );
+    register_key( '#', CMD_CHARACTER_DUMP );
+    register_key( '=', CMD_ADJUST_INVENTORY );
+    register_key( '?', CMD_DISPLAY_COMMANDS );
+    register_key( '`', CMD_MACRO_ADD );
+    register_key( '~', CMD_MACRO_SAVE );
+    register_key( '&', CMD_WIZARD );
+    register_key( '"', CMD_LIST_JEWELLERY );
 
 
     // I'm making this both, because I'm tried of changing it
     // back to '[' (the character that represents armour on the map) -- bwr
-    key_to_command_table['['] = CMD_LIST_ARMOUR;
-    key_to_command_table[']'] = CMD_LIST_ARMOUR;
+    register_key( '[', CMD_LIST_ARMOUR );
+    register_key( ']', CMD_LIST_ARMOUR );
 
     // This one also ended up backwards this time, so it's also going on
     // both now -- should be ')'... the same character that's used to
     // represent weapons.
-    key_to_command_table[')'] = CMD_LIST_WEAPONS;
-    key_to_command_table['('] = CMD_LIST_WEAPONS;
+    register_key( ')', CMD_LIST_WEAPONS );
+    register_key( '(', CMD_LIST_WEAPONS );
 
-    key_to_command_table['\\'] = CMD_DISPLAY_KNOWN_OBJECTS;
-    key_to_command_table['\''] = CMD_WEAPON_SWAP;
+    register_key( '\\', CMD_DISPLAY_KNOWN_OBJECTS );
+    register_key( '\'', CMD_WEAPON_SWAP );
 
     // digits
-    key_to_command_table['1'] = CMD_MOVE_DOWN_LEFT;
-    key_to_command_table['2'] = CMD_MOVE_DOWN;
-    key_to_command_table['3'] = CMD_MOVE_DOWN_RIGHT;
-    key_to_command_table['4'] = CMD_MOVE_LEFT;
-    key_to_command_table['5'] = CMD_REST;
-    key_to_command_table['6'] = CMD_MOVE_RIGHT;
-    key_to_command_table['7'] = CMD_MOVE_UP_LEFT;
-    key_to_command_table['8'] = CMD_MOVE_UP;
-    key_to_command_table['9'] = CMD_MOVE_UP_RIGHT;
+    register_key( '1', CMD_MOVE_DOWN_LEFT );
+    register_key( '2', CMD_MOVE_DOWN );
+    register_key( '3', CMD_MOVE_DOWN_RIGHT );
+    register_key( '4', CMD_MOVE_LEFT );
+    register_key( '5', CMD_REST );
+    register_key( '6', CMD_MOVE_RIGHT );
+    register_key( '7', CMD_MOVE_UP_LEFT );
+    register_key( '8', CMD_MOVE_UP );
+    register_key( '9', CMD_MOVE_UP_RIGHT );
 
     // keypad
-    key_to_command_table[KEY_A1] = CMD_MOVE_UP_LEFT;
-    key_to_command_table[KEY_A3] = CMD_MOVE_UP_RIGHT;
-    key_to_command_table[KEY_C1] = CMD_MOVE_DOWN_LEFT;
-    key_to_command_table[KEY_C3] = CMD_MOVE_DOWN_RIGHT;
+    register_key( KEY_A1, CMD_MOVE_UP_LEFT );
+    register_key( KEY_A3, CMD_MOVE_UP_RIGHT );
+    register_key( KEY_C1, CMD_MOVE_DOWN_LEFT );
+    register_key( KEY_C3, CMD_MOVE_DOWN_RIGHT );
 
-    key_to_command_table[KEY_HOME] = CMD_MOVE_UP_LEFT;
-    key_to_command_table[KEY_PPAGE] = CMD_MOVE_UP_RIGHT;
-    key_to_command_table[KEY_END] = CMD_MOVE_DOWN_LEFT;
-    key_to_command_table[KEY_NPAGE] = CMD_MOVE_DOWN_RIGHT;
+    register_key( KEY_HOME, CMD_MOVE_UP_LEFT );
+    register_key( KEY_PPAGE, CMD_MOVE_UP_RIGHT );
+    register_key( KEY_END, CMD_MOVE_DOWN_LEFT );
+    register_key( KEY_NPAGE, CMD_MOVE_DOWN_RIGHT );
 
-    key_to_command_table[KEY_B2] = CMD_REST;
+    register_key( KEY_B2, CMD_REST );
 
-    key_to_command_table[KEY_UP] = CMD_MOVE_UP;
-    key_to_command_table[KEY_DOWN] = CMD_MOVE_DOWN;
-    key_to_command_table[KEY_LEFT] = CMD_MOVE_LEFT;
-    key_to_command_table[KEY_RIGHT] = CMD_MOVE_RIGHT;
-
+    register_key( KEY_UP, CMD_MOVE_UP );
+    register_key( KEY_DOWN, CMD_MOVE_DOWN );
+    register_key( KEY_LEFT, CMD_MOVE_LEFT );
+    register_key( KEY_RIGHT, CMD_MOVE_RIGHT );
 
     // other odd things
     // key_to_command_table[ 263 ] = CMD_OPEN_DOOR_LEFT;   // backspace
 
     // these are invalid keys, but to help kludge running
     // pass them through unmolested
-    key_to_command_table[128] = 128;
-    key_to_command_table['*'] = '*';
-    key_to_command_table['/'] = '/';
+    register_key( 128, 128 );
+    register_key( '*', '*' );
+    register_key( '/', '/' );
 }
 
 int key_to_command(int keyin)
@@ -393,39 +413,40 @@ int key_to_command(int keyin)
 
 void lincurses_startup( void )
 {
-#if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
-    termio_init();
-#endif
-
-#ifdef USE_UNIX_SIGNALS
-#ifdef SIGQUIT
-    signal(SIGQUIT, SIG_IGN);
-#endif
-
-#ifdef SIGINT
-    signal(SIGINT, SIG_IGN);
-#endif
-#endif
-
-    //savetty();
-
     initscr();
     cbreak();
     noecho();
 
     nonl();
     intrflush(stdscr, FALSE);
-    //cbreak();
 
     meta(stdscr, TRUE);
     start_color();
     setup_colour_pairs();
+    set_altcharset( false );
 
     init_key_to_command();
 
+#if defined(USE_POSIX_TERMIOS) || defined(USE_TCHARS_IOCTL)
+    termio_init();
+#endif
+
+#ifdef USE_UNIX_SIGNALS
+#ifdef SIGQUIT
+    signal( SIGQUIT, SIG_IGN );
+#endif
+
+#ifdef SIGINT
+    signal( SIGINT, SIG_IGN );
+#endif
+#endif
+
 #ifndef SOLARIS
-    // These can cause some display problems under Solaris
-    scrollok(stdscr, TRUE);
+    // Remove this if need be -- it's caused nothing but trouble anyways.
+    keypad( stdscr, TRUE );
+
+    // This can cause some display problems under Solaris
+    scrollok( stdscr, TRUE );
 #endif
 }
 
@@ -433,20 +454,22 @@ void lincurses_startup( void )
 void lincurses_shutdown()
 {
 #if defined(USE_POSIX_TERMIOS)
-    tcsetattr(0, TCSAFLUSH, &def_term);
+    tcsetattr( 0, TCSAFLUSH, &def_term );
 #elif defined(USE_TCHARS_IOCTL)
-    ioctl(0, TIOCSLTC, &def_term);
+    ioctl( 0, TIOCSLTC, &def_term );
 #endif
 
 #ifdef USE_UNIX_SIGNALS
 #ifdef SIGQUIT
-    signal(SIGQUIT, SIG_DFL);
+    signal( SIGQUIT, SIG_DFL );
 #endif
 
 #ifdef SIGINT
-    signal(SIGINT, SIG_DFL);
+    signal( SIGINT, SIG_DFL );
 #endif
 #endif
+
+    set_altcharset( false );
 
     // resetty();
     endwin();
@@ -462,8 +485,9 @@ int itoa(int value, char *strptr, int radix)
 
     if (radix == 10)
     {
-        sprintf(strptr, "%i", value);
+        sprintf( strptr, "%i", value );
     }
+
     if (radix == 2)             /* int to "binary string" */
     {
         while (bitmask)
@@ -485,16 +509,17 @@ int itoa(int value, char *strptr, int radix)
         }
 
         if (!startflag)         /* Special case if value == 0 */
-            sprintf((strptr + ctr++), "0");
+            sprintf( (strptr + ctr++), "0" );
 
-        strptr[ctr] = (char) NULL;
+        strptr[ctr] = '\0';
     }
+
     return (OK);                /* Me? Fail? Nah. */
 }
 
 
 // Convert string to lowercase.
-char *strlwr(char *str)
+char *strlwr( char *str )
 {
     unsigned int i;
 
@@ -505,28 +530,30 @@ char *strlwr(char *str)
 }
 
 
-int cprintf(const char *format,...)
+int cprintf( const char *format, ... )
 {
     int i;
     char buffer[2048];          // One full screen if no control seq...
 
     va_list argp;
 
-    va_start(argp, format);
-    vsprintf(buffer, format, argp);
-    va_end(argp);
-    i = addstr(buffer);
+    va_start( argp, format );
+    vsprintf( buffer, format, argp );
+    va_end( argp );
+
+    i = addstr( buffer );
     refresh();
+
     return (i);
 }
 
 
-int putch(unsigned char chr)
+int putch( unsigned char chr )
 {
     if (chr == 0)
         chr = ' ';
 
-    return (addch(chr));
+    return (addch( chr ));
 }
 
 
@@ -535,13 +562,14 @@ char getche()
     char chr;
 
     chr = getch();
-    addch(chr);
+    addch( chr );
     refresh();
+
     return (chr);
 }
 
 
-int window(int x1, int y1, int x2, int y2)
+int window( int x1, int y1, int x2, int y2 )
 {
     x1 = y1 = x2 = y2 = 0;      /* Do something to them.. makes gcc happy :) */
     return (refresh());
@@ -595,24 +623,24 @@ int clrscr()
 }
 
 
-void _setcursortype(int curstype)
+void _setcursortype( int curstype )
 {
     curs_set(curstype);
 }
 
 
-void textcolor(int col)
+void textcolor( int col )
 {
     short fg, bg;
 
     FG_COL = col & 0x00ff;
+
     fg = translate_colour( macro_colour( FG_COL ) );
     bg = translate_colour( (BG_COL == BLACK) ? Options.background : BG_COL );
 
     // calculate which curses flags we need...
     unsigned int flags = 0;
 
-#ifdef USE_COLOUR_OPTS
     if ((col & COLFLAG_FRIENDLY_MONSTER)
         && Options.friend_brand != CHATTR_NORMAL)
     {
@@ -627,7 +655,6 @@ void textcolor(int col)
             fg = COLOR_WHITE;
         }
     }
-#endif
 
     // curses typically uses A_BOLD to give bright foreground colour,
     // but various termcaps may disagree
@@ -646,7 +673,7 @@ void textcolor(int col)
     // figure out which colour pair we want
     const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
 
-    attrset( COLOR_PAIR(pair) | flags | character_set );
+    attrset( COLOR_PAIR(pair) | flags | Character_Set );
 }
 
 
@@ -660,7 +687,6 @@ void textbackground(int col)
 
     unsigned int flags = 0;
 
-#ifdef USE_COLOUR_OPTS
     if ((col & COLFLAG_FRIENDLY_MONSTER)
         && Options.friend_brand != CHATTR_NORMAL)
     {
@@ -675,7 +701,6 @@ void textbackground(int col)
             fg = COLOR_WHITE;
         }
     }
-#endif
 
     // curses typically uses A_BOLD to give bright foreground colour,
     // but various termcaps may disagree
@@ -694,39 +719,34 @@ void textbackground(int col)
     // figure out which colour pair we want
     const int pair = (fg == 0 && bg == 0) ? 63 : (bg * 8 + fg);
 
-    attrset( COLOR_PAIR(pair) | flags | character_set );
+    attrset( COLOR_PAIR(pair) | flags | Character_Set );
 }
-
 
 int gotoxy(int x, int y)
 {
-    return (move(y - 1, x - 1));
+    return (move( y - 1, x - 1 ));
 }
-
 
 int wherex()
 {
     int x, y;
 
-    getyx(stdscr, y, x);
+    getyx( stdscr, y, x );
     return (x + 1);
 }
-
 
 int wherey()
 {
     int x, y;
 
-    getyx(stdscr, y, x);
+    getyx( stdscr, y, x );
     return (y + 1);
 }
 
-
 int stricmp( const char *str1, const char *str2 )
 {
-    return (strcmp(str1, str2));
+    return (strcmp( str1, str2 ));
 }
-
 
 void delay( unsigned long time )
 {

@@ -15,11 +15,11 @@
 
 // Synch with ANSI definitions.
 #if DEBUG && defined(NDEBUG)
-#error DEBUG and NDEBUG are out of sync!
+#error DEBUG and NDEBUG are out of sync! (both on)
 #endif
 
 #if !DEBUG && !defined(NDEBUG)
-#error DEBUG and NDEBUG are out of sync!
+#error DEBUG and NDEBUG are out of sync! (both off)
 #endif
 
 // Synch with MSL definitions.
@@ -64,84 +64,34 @@ inline void __DUMMY_TRACE__(...)
 #endif
 
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void cast_spec_spell(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void cast_spec_spell_name(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void create_spec_monster(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void create_spec_monster_name(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ( this does not seem to be used at all ... {dlb} )
- * *********************************************************************** */
 void create_spec_object(void);
+void create_object( bool make_good );
 void tweak_object(void);
 
-// last updated 12say2001 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void debug_add_skills(void);
 void debug_set_skills(void);
-void debug_set_all_skills(void);
+void debug_set_all_skills( int amount = -1 );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void debug_add_skills(void);
-
-// last updated 17sep2001 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 bool debug_add_mutation(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: direct - food - items
- * *********************************************************************** */
 void error_message_to_player(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void level_travel( int delta );
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - direct
- * *********************************************************************** */
 void stethoscope(int mwh);
 
 void debug_item_scan( void );
 void debug_get_religion( void );
 void debug_change_species( void );
+
+void debug_destroy_item( void );
+
+void dump_skill_totals( void );
 
 #endif

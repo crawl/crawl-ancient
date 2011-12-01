@@ -22,8 +22,6 @@
 #define NO_UNRANDARTS 14
 #endif // USE_NEW_UNRANDS
 
-#define RA_PROPERTIES 30
-
 // Reserving the upper bits for later expansion/versioning.
 #define RANDART_SEED_MASK  0x00ffffff
 
@@ -34,6 +32,8 @@ bool is_fixed_artefact( const item_def &item );
 
 int  get_unique_item_status( int base_type, int type );
 void set_unique_item_status( int base_type, int type, int status );
+
+appearance_type item_appearance( const item_def &item );
 
 /* ***********************************************************************
  * called from: itemname
@@ -48,6 +48,8 @@ const char *randart_name( const item_def &item );
 /* ***********************************************************************
  * called from: itemname
  * *********************************************************************** */
+int randart_suggested_colour( const item_def &item );
+int randart_ring_material( const item_def &item );
 const char *randart_ring_name( const item_def &item );
 
 /* ***********************************************************************
@@ -68,13 +70,9 @@ int find_okay_unrandart(unsigned char aclass, unsigned char atype = OBJ_RANDOM);
 
 
 /* ***********************************************************************
- * called from: describe - fight - it_use2 - item_use - player
+ * called from: tags
  * *********************************************************************** */
-void randart_wpn_properties( const item_def &item,
-                             FixedVector< char, RA_PROPERTIES > &proprt );
-
-int randart_wpn_property( const item_def &item, char prop );
-
+void old_randart_properties( item_def &item );
 
 /* ***********************************************************************
  * called from: dungeon
@@ -83,6 +81,8 @@ bool make_item_fixed_artefact( item_def &item, bool in_abyss, int which = 0 );
 
 bool make_item_randart( item_def &item );
 bool make_item_unrandart( item_def &item, int unrand_index );
+
+bool unmake_item_randart( item_def &item );
 
 
 /* ***********************************************************************

@@ -19,31 +19,31 @@ bool backlight_monsters(int x, int y, int pow, int garbage);
 int make_a_normal_cloud(int x, int y, int pow, int ctype);
 int disperse_monsters(int x, int y, int pow, int message);
 
-void cast_bend(int pow);
 void cast_condensation_shield(int pow);
 void cast_detect_secret_doors(int pow);
 void cast_discharge(int pow);
-void cast_evaporate(int pow);
-void cast_fulsome_distillation(int powc);
+int  cast_evaporate(int pow);
+int  cast_fulsome_distillation(int powc);
 void cast_forescry(int pow);
-void cast_fragmentation(int powc);
-void cast_twist(int powc);
-void cast_far_strike(int powc);
+int  cast_fragmentation(int powc);
+int  cast_twist( int powc, struct bolt &beam  );
 void cast_swap(int powc);
-void cast_apportation(int powc);
+int  cast_apportation(int powc);
 void cast_glamour(int pow);
 void cast_ignite_poison(int pow);
 void cast_intoxicate(int pow);
 void cast_mass_sleep(int pow);
 void cast_passwall(int pow);
 void cast_rotting(int pow);
-void cast_sandblast(int powc);
+void cast_sandblast( int powc, struct bolt &beam );
 void cast_see_invisible(int pow);
 
-void cast_shatter(int pow);
-void cast_silence(int pow);
+void cast_shatter( int pow );
+void cast_silence( int pow );
+int  cast_quiet( int pow, const struct bolt &beam );
+
 void cast_sticks_to_snakes(int pow);
-void cast_summon_butterflies(int pow);
+bool cast_summon_butterflies(int pow);
 void cast_summon_dragon(int pow);
 void cast_conjure_ball_lightning(int pow);
 void cast_summon_large_mammal(int pow);
@@ -52,10 +52,6 @@ void cast_dispersal(int pow);
 void cast_snake_charm(int pow);
 void cast_stoneskin(int pow);
 
-void cast_shuggoth_seed(int powc);
-void make_shuggoth(int x, int y, int hp);
-
-void cast_semi_controlled_blink(int pow);
-
+int distort_being( int mid, int killer, bool apply_damage = false );
 
 #endif

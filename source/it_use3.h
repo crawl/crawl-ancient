@@ -12,33 +12,13 @@
 #ifndef IT_USE3_H
 #define IT_USE3_H
 
+void skill_manual( int manual );
+void tome_of_power( int tome );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: item_use
- * *********************************************************************** */
-void skill_manual(char sc_read_2);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: item_use - spl-book
- * *********************************************************************** */
-void tome_of_power(char sc_read_2);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 bool evoke_wielded(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void special_wielded(void);
 
+bool reaching_weapon_attack( const int x = -1, const int y = -1 );
 
 #endif

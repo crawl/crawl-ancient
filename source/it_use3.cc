@@ -15,7 +15,9 @@
 #include "it_use3.h"
 
 #include <string.h>
+#include <stdio.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "beam.h"
@@ -27,9 +29,11 @@
 #include "items.h"
 #include "it_use2.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
+#include "mon-util.h"
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
@@ -42,7 +46,6 @@
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
-#include "wpn-misc.h"
 
 static bool ball_of_energy(void);
 static bool ball_of_fixation(void);
@@ -53,7 +56,13 @@ static bool efreet_flask(void);
 
 void special_wielded(void)
 {
-    const int wpn = you.equip[EQ_WEAPON];
+    const int wpn = get_inv_hand_tool(); // must be at least a tool for effects
+
+    if (wpn == -1)
+        return;
+
+    const bool wielded = player_weapon_wielded(); // some require wielding
+
     const int old_plus = you.inv[wpn].plus;
     const int old_plus2 = you.inv[wpn].plus2;
     const char old_colour = you.inv[wpn].colour;
@@ -102,7 +111,7 @@ void special_wielded(void)
                      (temp_rand == 29) ? "speaks gibberish." :
                      (temp_rand == 30) ? "raves incoherently."
                                        : "yells in some weird language.");
-            mpr(info);
+            mpr( MSGCH_SOUND, info );
         }
         break;
 
@@ -110,31 +119,34 @@ void special_wielded(void)
         makes_noise = false;
 
         if (one_chance_in(30))
-            curse_an_item(0, 0);
+            curse_random_item( false );
         break;
 
     case SPWLD_VARIABLE:
         makes_noise = false;
 
-        do_uncurse_item( you.inv[wpn] );
+        if (wielded)
+        {
+            do_uncurse_item( you.inv[wpn] );
 
-        if (random2(5) < 2)     // 40% chance {dlb}
-            you.inv[wpn].plus  += (coinflip() ? +1 : -1);
+            if (random2(5) < 2)     // 40% chance {dlb}
+                you.inv[wpn].plus  += (coinflip() ? +1 : -1);
 
-        if (random2(5) < 2)     // 40% chance {dlb}
-            you.inv[wpn].plus2 += (coinflip() ? +1 : -1);
+            if (random2(5) < 2)     // 40% chance {dlb}
+                you.inv[wpn].plus2 += (coinflip() ? +1 : -1);
 
-        if (you.inv[wpn].plus < -4)
-            you.inv[wpn].plus = -4;
-        else if (you.inv[wpn].plus > 16)
-            you.inv[wpn].plus = 16;
+            if (you.inv[wpn].plus < -4)
+                you.inv[wpn].plus = -4;
+            else if (you.inv[wpn].plus > 16)
+                you.inv[wpn].plus = 16;
 
-        if (you.inv[wpn].plus2 < -4)
-            you.inv[wpn].plus2 = -4;
-        else if (you.inv[wpn].plus2 > 16)
-            you.inv[wpn].plus2 = 16;
+            if (you.inv[wpn].plus2 < -4)
+                you.inv[wpn].plus2 = -4;
+            else if (you.inv[wpn].plus2 > 16)
+                you.inv[wpn].plus2 = 16;
 
-        you.inv[wpn].colour = random_colour();
+            you.inv[wpn].colour = element_colour( EC_RANDOM );
+        }
         break;
 
     case SPWLD_TORMENT:
@@ -143,7 +155,7 @@ void special_wielded(void)
         if (one_chance_in(200))
         {
             torment( you.x_pos, you.y_pos );
-            naughty( NAUGHTY_UNHOLY, 1 );
+            did_god_conduct( DID_NECROMANCY, 1 );
         }
         break;
 
@@ -152,16 +164,19 @@ void special_wielded(void)
 
         if (one_chance_in(5))
         {
-            animate_dead( 1 + random2(3), BEH_HOSTILE, MHITYOU, 1 );
-            naughty( NAUGHTY_NECROMANCY, 1 );
+            animate_dead( 100, you.x_pos, you.y_pos, BEH_HOSTILE, MHITYOU, 1 );
+            did_god_conduct( DID_NECROMANCY, 1 );
         }
         break;
 
     case SPWLD_POWER:
         makes_noise = false;
 
-        you.inv[wpn].plus = stepdown_value( -4 + (you.hp / 5), 4, 4, 4, 20 );
-        you.inv[wpn].plus2 = you.inv[wpn].plus;
+        if (wielded)
+        {
+            you.inv[wpn].plus = stepdown_value(-4 + (you.hp / 5), 4, 4, 4, 20);
+            you.inv[wpn].plus2 = you.inv[wpn].plus;
+        }
         break;
 
     case SPWLD_OLGREB:
@@ -169,15 +184,21 @@ void special_wielded(void)
 
         // Giving Olgreb's staff a little lift since staves of poison have
         // been made better. -- bwr
-        you.inv[wpn].plus = you.skills[SK_POISON_MAGIC] / 3;
-        you.inv[wpn].plus2 = you.inv[wpn].plus;
+        if (wielded)
+        {
+            you.inv[wpn].plus = you.skills[SK_POISON_MAGIC] / 3;
+            you.inv[wpn].plus2 = you.inv[wpn].plus;
+        }
         break;
 
     case SPWLD_WUCAD_MU:
         makes_noise = false;
 
-        you.inv[wpn].plus  = ((you.intel > 25) ? 22 : you.intel - 3);
-        you.inv[wpn].plus2 = ((you.intel > 25) ? 13 : you.intel / 2);
+        if (wielded)
+        {
+            you.inv[wpn].plus  = ((you.intel > 25) ? 22 : you.intel - 3);
+            you.inv[wpn].plus2 = ((you.intel > 25) ? 13 : you.intel / 2);
+        }
         break;
 
     case SPWLD_SHADOW:
@@ -185,12 +206,11 @@ void special_wielded(void)
 
         if (random2(8) <= player_spec_death())
         {
-            naughty( NAUGHTY_NECROMANCY, 1 );
-            create_monster( MONS_SHADOW, ENCH_ABJ_II, BEH_FRIENDLY,
-                            you.x_pos, you.y_pos, you.pet_target, 250 );
+            did_god_conduct( DID_NECROMANCY, 1 );
+            create_monster( MONS_SHADOW, BEH_FRIENDLY, 2 );
         }
 
-        show_green = DARKGREY;
+        you.flash_colour = DARKGREY;
         break;
 
     case SPWLD_HUM:
@@ -199,9 +219,9 @@ void special_wielded(void)
             in_name(wpn, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " lets out a weird humming sound.");
-            mpr(info);
+            mpr(MSGCH_SOUND,info );
         }
-        break;                  // to noisy() call at foot 2apr2000 {dlb}
+        break;
 
     case SPWLD_CHIME:
         if (makes_noise)
@@ -209,18 +229,18 @@ void special_wielded(void)
             in_name(wpn, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
             strcat(info, " chimes like a gong.");
-            mpr(info);
+            mpr(MSGCH_SOUND,info );
         }
         break;
 
     case SPWLD_BECKON:
         if (makes_noise)
-            mpr("You hear a voice call your name.");
+            mpr(MSGCH_SOUND,"You hear a voice call your name." );
         break;
 
     case SPWLD_SHOUT:
         if (makes_noise)
-            mpr("You hear a shout.");
+            mpr(MSGCH_SOUND,"You hear a shout." );
         break;
 
     //case SPWLD_PRUNE:
@@ -229,94 +249,119 @@ void special_wielded(void)
     }
 
     if (makes_noise)
-        noisy( 25, you.x_pos, you.y_pos );
+        noisy( SL_NOISY_WEAPON, you.x_pos, you.y_pos );
 
     if (old_plus != you.inv[wpn].plus
         || old_plus2 != you.inv[wpn].plus2
         || old_colour != you.inv[wpn].colour)
     {
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
     }
 
     return;
 }                               // end special_wielded()
 
-static void reaching_weapon_attack(void)
+bool reaching_weapon_attack( const int x, const int y )
 {
+    const int wpn = get_inv_wielded();
+    ASSERT( wpn != -1 );  // reaching always from wielded weapon
+
     struct dist beam;
-    int x_distance, y_distance;
-    int x_middle, y_middle;
-    int skill;
+    int targ_mon = NON_MONSTER;
 
-    mpr("Attack whom?", MSGCH_PROMPT);
+    if (!enough_mp( 1, false ))
+        return (false);
 
-    direction( beam, DIR_TARGET, TARG_ENEMY );
-    if (!beam.isValid)
-        return;
-
-    if (beam.isMe)
+    if (x == -1)  // called with default arguments (-1,-1)
     {
-        canned_msg(MSG_UNTHINKING_ACT);
-        return;
-    }
+        mpr( MSGCH_PROMPT, "Attack whom?" );
 
-    x_distance = abs(beam.tx - you.x_pos);
-    y_distance = abs(beam.ty - you.y_pos);
+        direction( beam, DIR_TARGET, TARG_ENEMY );
+        if (!beam.isValid)
+            return (false);
 
-    if (x_distance > 2 || y_distance > 2)
-        mpr("Your weapon cannot reach that far!");
-    else if (mgrd[beam.tx][beam.ty] == NON_MONSTER)
-    {
-        mpr("You attack empty space.");
+        if (beam.isMe)
+        {
+            canned_msg( MSG_UNTHINKING_ACT );
+            return (false);
+        }
     }
     else
     {
+        beam.tx = x;
+        beam.ty = y;
+    }
+
+    const int x_dist = abs( beam.tx - you.x_pos );
+    const int y_dist = abs( beam.ty - you.y_pos );
+
+    targ_mon = mgrd[beam.tx][beam.ty];
+
+    if (x_dist > 2 || y_dist > 2)
+        mpr( "Your weapon cannot reach that far!" );
+    else if (x_dist < 2 && y_dist < 2)
+        mpr( "That's not a reach!" );
+    else
+    {
+        ASSERT( x_dist >= 0 && x_dist <= 2 );
+        ASSERT( y_dist >= 0 && y_dist <= 2 );
+        ASSERT( x_dist == 2 || y_dist == 2 );
+
+        mpr( "You reach to attack!" );
+
         /* BCR - Added a check for monsters in the way.  Only checks cardinal
          *       directions.  Knight moves are ignored.  Assume the weapon
          *       slips between the squares.
          */
 
-        // if we're attacking more than a space away
-        if ((x_distance > 1) || (y_distance > 1))
+        if (x_dist != 1 && y_dist != 1)
         {
+            // not a knight move attack (see above)
+            ASSERT( x_dist == 0 || x_dist == 2 );
+            ASSERT( y_dist == 0 || y_dist == 2 );
 
-#define MAX(x,y) (((x) > (y)) ? (x) : (y))
-            x_middle = MAX(beam.tx, you.x_pos) - (x_distance / 2);
-            y_middle = MAX(beam.ty, you.y_pos) - (y_distance / 2);
-#undef MAX
+            const int mid_x = MAXIMUM( beam.tx, you.x_pos ) - (x_dist / 2);
+            const int mid_y = MAXIMUM( beam.ty, you.y_pos ) - (y_dist / 2);
 
-            // if either the x or the y is the same, we should check for
-            // a monster:
-            if (((beam.tx == you.x_pos) || (beam.ty == you.y_pos))
-                    && (mgrd[x_middle][y_middle] != NON_MONSTER))
+            const int mid_mon = mgrd[mid_x][mid_y];
+
+            if (mid_mon != NON_MONSTER)
             {
-                skill = weapon_skill( you.inv[you.equip[EQ_WEAPON]].base_type,
-                                      you.inv[you.equip[EQ_WEAPON]].sub_type );
+                const int sk = weapon_skill( you.inv[wpn] );
+                const int vis = player_monster_visible( &menv[mid_mon] );
 
-                if ((5 + (3 * skill)) > random2(100))
+                int to_miss = ((you.skills[sk] + 3) * you.dex) / (vis ? 5 : 20);
+
+                // Lower evasion monsters are easier to predict and
+                // thus easier to avoid.  We add some since attacking
+                // around a monster is more difficult.
+                if (!test_hit( to_miss, menv[mid_mon].evasion + 10 ))
                 {
-                    mpr("You reach to attack!");
-                    you_attack(mgrd[beam.tx][beam.ty], false);
+                    mpr( "%s gets in the way!",
+                          (vis ? ptr_monam( &menv[mid_mon], DESC_CAP_THE )
+                               : "Something") );
+
+                    targ_mon = mid_mon;
                 }
-                else
-                {
-                    mpr("You could not reach far enough!");
-                    you_attack(mgrd[x_middle][y_middle], false);
-                }
-            }
-            else
-            {
-                mpr("You reach to attack!");
-                you_attack(mgrd[beam.tx][beam.ty], false);
             }
         }
+
+        // XXX: pass to-hit penalty to you_attack() based on mid_mon?
+        if (targ_mon == NON_MONSTER)
+            mpr( "You attack empty space." );
         else
-        {
-            you_attack(mgrd[beam.tx][beam.ty], false);
-        }
+            you_attack( targ_mon, false );
+
+        dec_mp(1);
+        make_hungry( 50 + 3 * (targ_mon == NON_MONSTER), false );
+
+        if (one_chance_in(5))
+            exercise( SK_EVOCATIONS, 1 );
+
+        return (true);
     }
 
-    return;
+    return (false);
 }                               // end reaching_weapon_attack()
 
 // returns true if item successfully evoked.
@@ -327,41 +372,46 @@ bool evoke_wielded( void )
     int count_x, count_y;
     int temp_rand = 0;      // for probability determination {dlb}
     int power = 0;
+    int mon;
 
     int pract = 0;
     bool did_work = false;  // used for default "nothing happens" message
 
     char str_pass[ ITEMNAME_SIZE ];
 
-    int wield = you.equip[EQ_WEAPON];
+    int tool = get_inv_hand_tool();
 
     if (you.berserker)
     {
         canned_msg( MSG_TOO_BERSERK );
         return (false);
     }
-    else if (wield == -1)
+    else if (you.conf)
+    {
+        canned_msg( MSG_TOO_CONFUSED );
+        return (false);
+    }
+    else if (tool == -1)
     {
         mpr("You aren't wielding anything!");
         return (false);
     }
 
-    switch (you.inv[wield].base_type)
+    switch (you.inv[tool].base_type)
     {
     case OBJ_WEAPONS:
-        if (get_weapon_brand( you.inv[wield] ) == SPWPN_REACHING
-            && enough_mp(1, false))
+        if (get_weapon_brand( you.inv[tool] ) == SPWPN_REACHING)
         {
-            // needed a cost to prevent evocation training abuse -- bwr
-            dec_mp(1);
-            make_hungry( 50, false );
-            reaching_weapon_attack();
-            pract = (one_chance_in(5) ? 1 : 0);
-            did_work = true;
+            if (player_weapon_wielded())
+            {
+                reaching_weapon_attack();   // handles costs
+                did_work = true;            // messages already handled
+                pract = 0;                  // practise already handled
+            }
         }
-        else if (is_fixed_artefact( you.inv[wield] ))
+        else if (is_fixed_artefact( you.inv[tool] ))
         {
-            switch (you.inv[wield].special)
+            switch (you.inv[tool].special)
             {
             case SPWPN_STAFF_OF_DISPATER:
                 if (you.deaths_door || !enough_hp(11, true)
@@ -371,22 +421,24 @@ bool evoke_wielded( void )
                 }
 
                 mpr("You feel the staff feeding on your energy!");
-
-                dec_hp( 5 + random2avg(19, 2), false );
-                dec_mp( 2 + random2avg(5, 2) );
-                make_hungry( 100, false );
-
                 power = you.skills[SK_EVOCATIONS] * 8;
-                your_spells( SPELL_HELLFIRE, power, false );
-                pract = (coinflip() ? 2 : 1);
-                did_work = true;
+
+                if (your_spells( SPELL_HELLFIRE, power, false ))
+                {
+                    did_work = true;
+                    pract = (coinflip() ? 2 : 1);
+
+                    dec_hp( 3 + roll_dice(2,10), false );
+                    dec_mp( 2 + roll_dice(2,4) );
+                    make_hungry( 100, false );
+                }
                 break;
 
             // let me count the number of ways spell_casted is
             // used here ... one .. two .. three ... >CRUNCH<
             // three licks to get to the center of a ... {dlb}
             case SPWPN_SCEPTRE_OF_ASMODEUS:
-                spell_casted = random2(21);
+                spell_casted = random2(21);  // use one, random number
 
                 if (spell_casted == 0)
                     break;
@@ -397,15 +449,12 @@ bool evoke_wielded( void )
                 if (spell_casted < 2)   // summon devils, maybe a Fiend
                 {
 
+                    // use two, type of demon to summon
                     spell_casted = (one_chance_in(4) ? MONS_FIEND
                                                  : MONS_HELLION + random2(10));
 
-                    bool good_summon = (create_monster( spell_casted,
-                                            ENCH_ABJ_VI, BEH_HOSTILE,
-                                            you.x_pos, you.y_pos,
-                                            MHITYOU, 250) != -1);
 
-                    if (good_summon)
+                    if (create_monster( spell_casted, BEH_HOSTILE, 6 ) != -1)
                     {
                         if (spell_casted == MONS_FIEND)
                             mpr("\"Your arrogance condemns you, mortal!\"");
@@ -419,6 +468,7 @@ bool evoke_wielded( void )
 
                 temp_rand = random2(240);
 
+                // use three, conjuration cast
                 if (temp_rand > 125)
                     spell_casted = SPELL_BOLT_OF_FIRE;      // 114 in 240
                 else if (temp_rand > 68)
@@ -429,8 +479,9 @@ bool evoke_wielded( void )
                     spell_casted = SPELL_HELLFIRE;          //  12 in 240
 
                 power = you.skills[SK_EVOCATIONS] * 8;
-                your_spells( spell_casted, power, false );
-                did_work = true;
+
+                if (your_spells( spell_casted, power, false ))
+                    did_work = true;
                 break;
 
             case SPWPN_STAFF_OF_OLGREB:
@@ -447,6 +498,7 @@ bool evoke_wielded( void )
 
                 power = 10 + you.skills[SK_EVOCATIONS] * 8;
 
+                // this cannot be aborted, and will not fail:
                 your_spells( SPELL_OLGREBS_TOXIC_RADIANCE, power, false );
 
                 if (you.skills[SK_EVOCATIONS] >= random2(10))
@@ -481,13 +533,19 @@ bool evoke_wielded( void )
         break;
 
     case OBJ_STAVES:
-        if (item_is_rod( you.inv[wield] ))
+        if (item_is_rod( you.inv[tool] ))
         {
-            pract = staff_spell( wield );
+            pract = staff_spell( tool );
             did_work = true;  // staff_spell() will handle messages
         }
-        else if (you.inv[wield].sub_type == STAFF_CHANNELING)
+        else if (you.inv[tool].sub_type == STAFF_CHANNELING)
         {
+            /* if (item_cursed( you.inv[tool] ))
+            {
+                mpr("You feel drained.");
+                dec_mp( 3 + random2(6) );
+            }
+            else */
             if (you.magic_points < you.max_magic_points
                 && you.skills[SK_EVOCATIONS] >= random2(30))
             {
@@ -497,21 +555,19 @@ bool evoke_wielded( void )
                 pract = (one_chance_in(5) ? 1 : 0);
                 did_work = true;
 
-                if (item_not_ident( you.inv[you.equip[EQ_WEAPON]],
-                                    ISFLAG_KNOW_TYPE ))
+                if (!item_ident( you.inv[tool], ISFLAG_KNOW_TYPE ))
                 {
-                    set_ident_flags( you.inv[you.equip[EQ_WEAPON]],
-                                     ISFLAG_KNOW_TYPE );
+                    set_ident_flags( you.inv[tool], ISFLAG_KNOW_TYPE );
 
-                    strcpy( info, "You are wielding " );
-                    in_name( you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass );
+                    strcpy( info, "You are evoking " );
+                    in_name( tool, DESC_NOCAP_A, str_pass );
                     strcat( info, str_pass );
                     strcat( info, "." );
 
                     mpr( info );
                     more();
 
-                    you.wield_change = true;
+                    set_redraw_status( REDRAW_WIELD );
                 }
             }
         }
@@ -519,7 +575,7 @@ bool evoke_wielded( void )
 
     case OBJ_MISCELLANY:
         did_work = true; // easier to do it this way for misc items
-        switch (you.inv[wield].sub_type)
+        switch (you.inv[tool].sub_type)
         {
         case MISC_BOTTLED_EFREET:
             if (efreet_flask())
@@ -532,50 +588,81 @@ bool evoke_wielded( void )
             break;
 
         case MISC_AIR_ELEMENTAL_FAN:
-            if (you.skills[SK_EVOCATIONS] <= random2(30))
-                canned_msg(MSG_NOTHING_HAPPENS);
-            else
+            if (you.skills[SK_EVOCATIONS] < random2(30))
+                canned_msg( MSG_NOTHING_HAPPENS );
+            else if (enough_mp( 8, false ))
             {
-                summon_elemental(100, MONS_AIR_ELEMENTAL, 4);
-                pract = (one_chance_in(5) ? 1 : 0);
+                mon = summon_elemental( 100, MONS_AIR_ELEMENTAL, 4, true );
+
+                if (mon > -2)  // not abort
+                {
+                    dec_mp(8);
+                    pract = 1;
+
+                    if (mon >= 0 && menv[mon].attitude == ATT_HOSTILE)
+                        mons_add_ench( &menv[mon], ENCH_CHARM );
+                }
             }
             break;
 
         case MISC_LAMP_OF_FIRE:
-            if (you.skills[SK_EVOCATIONS] <= random2(30))
-                canned_msg(MSG_NOTHING_HAPPENS);
-            else
+            if (you.skills[SK_EVOCATIONS] < random2(30))
+                canned_msg( MSG_NOTHING_HAPPENS );
+            else if (enough_mp( 8, false ))
             {
-                summon_elemental(100, MONS_FIRE_ELEMENTAL, 4);
-                pract = (one_chance_in(5) ? 1 : 0);
+                mon = summon_elemental( 100, MONS_FIRE_ELEMENTAL, 4, true );
+
+                if (mon > -2)  // not abort
+                {
+                    dec_mp(8);
+                    pract = 1;
+
+                    if (mon >= 0 && menv[mon].attitude == ATT_HOSTILE)
+                        mons_add_ench( &menv[mon], ENCH_CHARM );
+                }
             }
             break;
 
         case MISC_STONE_OF_EARTH_ELEMENTALS:
-            if (you.skills[SK_EVOCATIONS] <= random2(30))
+            if (you.skills[SK_EVOCATIONS] < random2(30))
                 canned_msg(MSG_NOTHING_HAPPENS);
-            else
+            else if (enough_mp( 8, false ))
             {
-                summon_elemental(100, MONS_EARTH_ELEMENTAL, 4);
-                pract = (one_chance_in(5) ? 1 : 0);
+                mon = summon_elemental( 100, MONS_EARTH_ELEMENTAL, 4, true );
+
+                if (mon > -2)  // not abort
+                {
+                    dec_mp(8);
+                    pract = 1;
+
+                    if (mon >= 0 && menv[mon].attitude == ATT_HOSTILE)
+                        mons_add_ench( &menv[mon], ENCH_CHARM );
+                }
             }
             break;
 
         case MISC_HORN_OF_GERYON:
-            // Note: This assumes that the Vestibule has not been changed.
             if (player_in_branch( BRANCH_VESTIBULE_OF_HELL ))
             {
                 mpr("You produce a weird and mournful sound.");
 
-                for (count_x = 0; count_x < GXM; count_x++)
+                for (count_x = you.x_pos - SL_HORN;
+                     count_x < you.x_pos + SL_HORN;
+                     count_x++)
                 {
-                    for (count_y = 0; count_y < GYM; count_y++)
+                    for (count_y = you.y_pos - SL_HORN;
+                         count_y < you.y_pos + SL_HORN;
+                         count_y++)
                     {
+                        if (!in_bounds( count_x, count_y ))
+                            continue;
+
                         if (grd[count_x][count_y] == DNGN_STONE_ARCH)
                         {
                             opened_gates++;
 
-                            // this may generate faulty [][] values {dlb}
+                            // Note: This assumes that the Vestibule has
+                            // not been changed.
                             switch (grd[count_x + 2][count_y])
                             {
                             case DNGN_FLOOR:
@@ -584,13 +671,18 @@ bool evoke_wielded( void )
                             case DNGN_LAVA:
                                 grd[count_x][count_y] = DNGN_ENTER_GEHENNA;
                                 break;
-                            case DNGN_ROCK_WALL:
+                            case DNGN_STONE_WALL:
                                 grd[count_x][count_y] = DNGN_ENTER_TARTARUS;
                                 break;
                             case DNGN_DEEP_WATER:
                                 grd[count_x][count_y] = DNGN_ENTER_COCYTUS;
                                 break;
+                            default:
+                                grd[count_x][count_y] = DNGN_ENTER_ABYSS;
+                                break;
                             }
+
+                            set_terrain_changed( count_x, count_y );
                         }
                     }
                 }
@@ -605,8 +697,7 @@ bool evoke_wielded( void )
             {
                 mpr("You produce a hideous howling noise!");
                 pract = (one_chance_in(3) ? 1 : 0);
-                create_monster( MONS_BEAST, ENCH_ABJ_IV, BEH_HOSTILE,
-                                you.x_pos, you.y_pos, MHITYOU, 250 );
+                create_monster( MONS_BEAST, BEH_HOSTILE, 4 );
             }
             break;
 
@@ -653,8 +744,7 @@ bool evoke_wielded( void )
         case MISC_PORTABLE_ALTAR_OF_NEMELEX:
             if (player_in_branch( BRANCH_ECUMENICAL_TEMPLE ))
             {
-                mpr( "Don't you think this level already has more than "
-                     "enough altars?" );
+                mpr( "Don't you think this level already has more than enough altars?" );
             }
             else if (grd[you.x_pos][you.y_pos] != DNGN_FLOOR)
                 mpr("You need a clear area to place this item.");
@@ -662,7 +752,20 @@ bool evoke_wielded( void )
             {
                 mpr("You unfold the altar and place it on the floor.");
                 grd[you.x_pos][you.y_pos] = DNGN_ALTAR_NEMELEX_XOBEH;
+                you.nemelex_altar_index = you.equip[EQ_WEAPON];
                 dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
+            }
+            break;
+
+        case MISC_ROD_OF_STRIKING:
+            if (enough_mp( 1, false ))
+            {
+                dec_mp(1);
+                make_hungry( 10, false );
+
+                power = 3 * skill_bump( SK_EVOCATIONS );
+                if (your_spells( SPELL_STRIKING, power, false ))
+                    pract = 1;
             }
             break;
 
@@ -677,26 +780,27 @@ bool evoke_wielded( void )
     }
 
     if (!did_work)
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     else if (pract > 0)
         exercise( SK_EVOCATIONS, pract );
 
-    you.turn_is_over = 1;
+    you.turn_is_over = true;
 
     return (did_work);
 }                               // end evoke_wielded()
 
 static bool efreet_flask(void)
 {
-    const int behaviour = ((you.skills[SK_EVOCATIONS] > random2(20))
+    const int flask = get_inv_hand_tool();
+    ASSERT( flask != -1 );
+
+    const beh_type behaviour = ((you.skills[SK_EVOCATIONS] > random2(20))
                                 ? BEH_FRIENDLY : BEH_HOSTILE);
 
     mpr("You open the flask...");
+    dec_inv_item_quantity( flask, 1 );
 
-    dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
-
-    if (create_monster( MONS_EFREET, ENCH_ABJ_V, behaviour,
-                        you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+    if (create_monster( MONS_EFREET, behaviour, 5 ) != -1)
     {
         mpr( "...and a huge efreet comes out." );
 
@@ -733,14 +837,15 @@ static bool ball_of_seeing(void)
     }
     else if (use < 15
              || you.level_type == LEVEL_LABYRINTH
-             || you.level_type == LEVEL_ABYSS || coinflip())
+             || you.level_type == LEVEL_ABYSS)
     {
         mpr("You see nothing.");
     }
     else
     {
         mpr("You see a map of your surroundings!");
-        magic_mapping( 15, 50 + random2( you.skills[SK_EVOCATIONS] ) );
+        magic_mapping( 15 + you.skills[SK_EVOCATIONS],
+                       45 + 2 * you.skills[SK_EVOCATIONS] );
         ret = true;
     }
 
@@ -757,7 +862,7 @@ static bool disc_of_storms(void)
     const int fail_rate = (30 - you.skills[SK_EVOCATIONS]);
     bool ret = false;
 
-    if (player_res_electricity() || (random2(100) < fail_rate))
+    if (player_res_electricity() > 0 || (random2(100) < fail_rate))
         canned_msg(MSG_NOTHING_HAPPENS);
     else if (random2(100) < fail_rate)
         mpr("The disc glows for a moment, then fades.");
@@ -793,8 +898,10 @@ static bool disc_of_storms(void)
     return (ret);
 }                               // end disc_of_storms()
 
-void tome_of_power(char sc_read_2)
+void tome_of_power( int tome )
 {
+    ASSERT( tome != -1 );
+
     int temp_rand = 0;          // probability determination {dlb}
 
     int powc = 5 + you.skills[SK_EVOCATIONS]
@@ -811,12 +918,12 @@ void tome_of_power(char sc_read_2)
     strcat( info, "." );
     mpr( info );
 
-    you.turn_is_over = 1;
+    you.turn_is_over = true;
 
     if (!yesno("Read it?"))
         return;
 
-    set_ident_flags( you.inv[sc_read_2], ISFLAG_IDENT_MASK );
+    set_ident_flags( you.inv[tome], ISFLAG_IDENT_MASK );
 
     if (you.mutation[MUT_BLURRY_VISION] > 0
         && random2(4) < you.mutation[MUT_BLURRY_VISION])
@@ -830,7 +937,7 @@ void tome_of_power(char sc_read_2)
 
     temp_rand = random2(50) + random2( you.skills[SK_EVOCATIONS] / 3 );
 
-    switch (random2(50))
+    switch (temp_rand)
     {
     case 0:
     case 3:
@@ -840,19 +947,19 @@ void tome_of_power(char sc_read_2)
     case 8:
     case 9:
         mpr("A cloud of weird smoke pours from the book's pages!");
-        big_cloud( CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 20,
+        big_cloud( CLOUD_GREY_SMOKE + random2(3), you.x_pos, you.y_pos, 15,
                                                           10 + random2(8) );
         return;
     case 1:
     case 14:
         mpr("A cloud of choking fumes pours from the book's pages!");
-        big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 20, 7 + random2(5));
+        big_cloud(CLOUD_POISON, you.x_pos, you.y_pos, 15, 7 + random2(5));
         return;
 
     case 2:
     case 13:
         mpr("A cloud of freezing gas pours from the book's pages!");
-        big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 20, 8 + random2(5));
+        big_cloud(CLOUD_COLD, you.x_pos, you.y_pos, 15, 8 + random2(5));
         return;
 
     case 5:
@@ -861,31 +968,30 @@ void tome_of_power(char sc_read_2)
         if (one_chance_in(5))
         {
             mpr("The book disappears in a mighty explosion!");
-            dec_inv_item_quantity( sc_read_2, 1 );
+            dec_inv_item_quantity( tome, 1 );
         }
 
         beam.type = SYM_BURST;
         beam.damage = dice_def( 3, 15 );
-        // unsure about this    // BEAM_EXPLOSION instead? [dlb]
         beam.flavour = BEAM_FIRE;
+        beam.is_explosion = true;
         beam.target_x = you.x_pos;
         beam.target_y = you.y_pos;
-        strcpy( beam.beam_name, "fiery explosion" );
+        strcpy( beam.name, "fiery explosion" );
         beam.colour = RED;
         // your explosion, (not someone else's explosion)
-        beam.beam_source = NON_MONSTER;
+        beam.beam_source = MHITYOU;
         beam.thrower = KILL_YOU;
         beam.aux_source = "an exploding Tome of Power";
         beam.ex_size = 2;
-        beam.isTracer = false;
+        beam.is_tracer = false;
 
         explosion(beam);
         return;
 
 
     case 10:
-        if (create_monster( MONS_ABOMINATION_SMALL, ENCH_ABJ_VI, BEH_HOSTILE,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( MONS_ABOMINATION_SMALL, BEH_HOSTILE, 6 ) != -1)
         {
             mpr("A horrible Thing appears!");
             mpr("It doesn't look too friendly.");
@@ -893,7 +999,7 @@ void tome_of_power(char sc_read_2)
         return;
     }
 
-    viewwindow(1, false);
+    viewwindow(true, false);
 
     temp_rand = random2(23) + random2( you.skills[SK_EVOCATIONS] / 3 );
 
@@ -917,38 +1023,35 @@ void tome_of_power(char sc_read_2)
                     (temp_rand >  0) ? SPELL_THROW_FROST
                                      : SPELL_MAGIC_DART);
 
-    your_spells( spell_casted, powc, false );
+    if (your_spells( spell_casted, powc, false ))
+        exercise( SK_EVOCATIONS, 2 );
 }                               // end tome_of_power()
 
-void skill_manual(char sc_read_2)
+void skill_manual( int manual )
 {
-    char skname[30];
+    ASSERT( manual != -1 );
 
-    set_ident_flags( you.inv[sc_read_2], ISFLAG_IDENT_MASK );
+    char skname[80];
 
-    strcpy(skname, skill_name(you.inv[sc_read_2].plus));
+    set_ident_flags( you.inv[manual], ISFLAG_IDENT_MASK );
 
-    strcpy(info, "This is a manual of ");
-    strcat(info, skname);
-    strcat(info, "!");
-    mpr(info);
+    strncpy( skname, skill_name( you.inv[manual].plus ), sizeof(skname) );
 
-    you.turn_is_over = 1;
+    mpr( "This is a manual of %s!", skname );
+
+    you.turn_is_over = true;
 
     if (!yesno("Read it?"))
         return;
 
-    strcpy(info, "You read about ");
-    strcat(info, strlwr(skname));
-    strcat(info, ".");
-    mpr(info);
+    mpr( "You read about %s.", strlwr(skname) );
 
-    exercise( you.inv[sc_read_2].plus, 500 );
+    exercise( you.inv[manual].plus, 500 );
 
     if (one_chance_in(10))
     {
         mpr("The book crumbles into dust.");
-        dec_inv_item_quantity( sc_read_2, 1 );
+        dec_inv_item_quantity( manual, 1 );
     }
     else
     {
@@ -958,6 +1061,9 @@ void skill_manual(char sc_read_2)
 
 static bool box_of_beasts(void)
 {
+    const int box = get_inv_hand_tool();
+    ASSERT( box != -1 );
+
     int beasty = MONS_PROGRAM_BUG;      // error trapping {dlb}
     int temp_rand = 0;          // probability determination {dlb}
 
@@ -981,11 +1087,10 @@ static bool box_of_beasts(void)
                   (temp_rand == 9) ? MONS_BROWN_SNAKE
                                    : MONS_GIANT_LIZARD);
 
-        int beh = (one_chance_in(you.skills[SK_EVOCATIONS] + 5) ? BEH_HOSTILE
-                                                                : BEH_FRIENDLY);
+        beh_type beh = (one_chance_in(you.skills[SK_EVOCATIONS] + 5) ? BEH_HOSTILE
+                                                                     : BEH_FRIENDLY);
 
-        if (create_monster( beasty, ENCH_ABJ_II + random2(4), beh,
-                            you.x_pos, you.y_pos, MHITYOU, 250 ) != -1)
+        if (create_monster( beasty, beh, 2 + random2(4) ) != -1)
         {
             mpr("...and something leaps out!");
             ret = true;
@@ -998,7 +1103,7 @@ static bool box_of_beasts(void)
         else
         {
             mpr("...but the box appears empty.");
-            you.inv[you.equip[EQ_WEAPON]].sub_type = MISC_EMPTY_EBONY_CASKET;
+            you.inv[box].sub_type = MISC_EMPTY_EBONY_CASKET;
         }
     }
 
@@ -1035,7 +1140,7 @@ static bool ball_of_energy(void)
         proportional = you.magic_points * 100;
         proportional /= you.max_magic_points;
 
-        if (random2avg(77 - you.skills[SK_EVOCATIONS] * 2, 4) > proportional
+        if (roll_zdice( 2, 39 - skill_bump(SK_EVOCATIONS) ) > proportional
             || one_chance_in(25))
         {
             mpr( "You feel your power drain away!" );

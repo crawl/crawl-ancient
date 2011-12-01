@@ -41,6 +41,7 @@
 #include <stdio.h>      // for snprintf
 #include <ctype.h>      // for tolower
 
+#include "globals.h"
 #include "externs.h"
 
 // for trim_string:
@@ -50,7 +51,7 @@ typedef std::deque<int> keyseq;
 typedef std::deque<int> keybuf;
 typedef std::map<keyseq,keyseq> macromap;
 
-static macromap Keymaps;
+static macromap Keymaps[KC_CONTEXT_COUNT];
 static macromap Macros;
 
 static keybuf Buffer;
@@ -88,18 +89,20 @@ static keyseq parse_keyseq( std::string s )
         switch (state)
         {
         case 0: // Normal state
-            if (c == '\\') {
+            if (c == '\\')
                 state = 1;
-            } else {
+            else
                 v.push_back(c);
-            }
             break;
 
         case 1: // Last char is a '\'
-            if (c == '\\') {
+            if (c == '\\')
+            {
                 state = 0;
                 v.push_back(c);
-            } else if (c == '{') {
+            }
+            else if (c == '{')
+            {
                 state = 2;
                 num = 0;
             }
@@ -107,10 +110,13 @@ static keyseq parse_keyseq( std::string s )
             break;
 
         case 2: // Inside \{}
-            if (c == '}') {
+            if (c == '}')
+            {
                 v.push_back(num);
                 state = 0;
-            } else if (c >= '0' && c <= '9') {
+            }
+            else if (c >= '0' && c <= '9')
+            {
                 num = num * 10 + c - '0';
             }
             // XXX Error handling
@@ -131,36 +137,37 @@ static std::string vtostr( keyseq v )
 
     for (keyseq::iterator i = v.begin(); i != v.end(); i++)
     {
-        if (*i < 32 || *i > 127) {
-            char buff[10];
+        if (*i < 32 || *i > 127)
+        {
+                char buff[10];
 
-            snprintf( buff, sizeof(buff), "\\{%d}", *i );
-            s += std::string( buff );
+                snprintf( buff, sizeof(buff), "\\{%d}", *i );
+                s += std::string( buff );
 
-            // Removing the stringstream code because its highly
-            // non-portable.  For starters, people and compilers
-            // are supposed to be using the <sstream> implementation
-            // (with the ostringstream class) not the old <strstream>
-            // version, but <sstream> is not as available as it should be.
-            //
-            // The strstream implementation isn't very standard
-            // either:  some compilers require the "ends" marker,
-            // others don't (and potentially fatal errors can
-            // happen if you don't have it correct for the system...
-            // ie its hard to make portable).  It also isn't a very
-            // good implementation to begin with.
-            //
-            // Everyone should have snprintf()... we supply a version
-            // in libutil.cc to make sure of that! -- bwr
-            //
-            // std::ostrstream ss;
+                // Removing the stringstream code because its highly
+                // non-portable.  For starters, people and compilers
+                // are supposed to be using the <sstream> implementation
+                // (with the ostringstream class) not the old <strstream>
+                // version, but <sstream> is not as available as it should be.
+                //
+                // The strstream implementation isn't very standard
+                // either:  some compilers require the "ends" marker,
+                // others don't (and potentially fatal errors can
+                // happen if you don't have it correct for the system...
+                // ie its hard to make portable).  It also isn't a very
+                // good implementation to begin with.
+                //
+                // Everyone should have snprintf()... we supply a version
+                // in libutil.cc to make sure of that! -- bwr
+                //
+                // std::ostrstream ss;
             // ss << "\\{" << *i << "}" << ends;
             // s += ss.str();
-        } else if (*i == '\\') {
-            s += "\\\\";
-        } else {
-            s += *i;
         }
+        else if (*i == '\\')
+            s += "\\\\";
+        else
+            s += *i;
     }
 
     return (s);
@@ -206,7 +213,8 @@ static void macro_buf_add( int key )
  * Adds keypresses from a sequence into the internal keybuffer. Does some
  * O(N^2) analysis to the sequence to replace macros.
  */
-static void macro_buf_add_long( keyseq actions )
+static void macro_buf_add_long( keyseq actions,
+                                macromap &keymap = Keymaps[KC_DEFAULT] )
 {
     keyseq tmp;
 
@@ -225,13 +233,13 @@ static void macro_buf_add_long( keyseq actions )
 
         while (tmp.size() > 0)
         {
-            keyseq result = Keymaps[tmp];
+            keyseq result = keymap[tmp];
 
             // Found a macro. Add the expansion (action) of the
             // macro into the buffer.
             if (result.size() > 0) {
-                macro_buf_add( result );
-                break;
+            macro_buf_add( result );
+            break;
             }
 
             // Didn't find a macro. Remove a key from the end
@@ -239,13 +247,16 @@ static void macro_buf_add_long( keyseq actions )
             tmp.pop_back();
         }
 
-        if (tmp.size() == 0) {
+        if (tmp.size() == 0)
+        {
             // Didn't find a macro. Add the first keypress of the sequence
             // into the buffer, remove it from the sequence, and try again.
             macro_buf_add( actions.front() );
             actions.pop_front();
 
-        } else {
+        }
+        else
+        {
             // Found a macro, which has already been added above. Now just
             // remove the macroed keys from the sequence.
             for (unsigned int i = 0; i < tmp.size(); i++)
@@ -299,6 +310,20 @@ static int macro_buf_get( void )
     return (key);
 }
 
+static void write_map(std::ofstream &f, const macromap &mp, const char *key)
+{
+    for (macromap::const_iterator i = mp.begin(); i != mp.end(); i++)
+    {
+        // Need this check, since empty values are added into the
+        // macro struct for all used keyboard commands.
+        if (i->second.size())
+        {
+            f << key  << vtostr((*i).first) << std::endl
+              << "A:" << vtostr((*i).second) << std::endl << std::endl;
+        }
+    }
+}
+
 /*
  * Saves macros into the macrofile, overwriting the old one.
  */
@@ -310,29 +335,18 @@ void macro_save( void )
     f << "# WARNING: This file is entirely auto-generated." << std::endl
       << std::endl << "# Key Mappings:" << std::endl;
 
-    for (macromap::iterator i = Keymaps.begin(); i != Keymaps.end(); i++)
+    for (int mc = KC_DEFAULT; mc < KC_CONTEXT_COUNT; ++mc)
     {
-        // Need this check, since empty values are added into the
-        // macro struct for all used keyboard commands.
-        if ((*i).second.size() > 0)
-        {
-            f << "K:" << vtostr((*i).first) << std::endl
-              << "A:" << vtostr((*i).second) << std::endl << std::endl;
-        }
+        char keybuf[30] = "K:";
+
+        if (mc)
+            snprintf( keybuf, sizeof keybuf, "K%d:", mc );
+
+        write_map( f, Keymaps[mc], keybuf );
     }
 
     f << "# Command Macros:" << std::endl;
-
-    for (macromap::iterator i = Macros.begin(); i != Macros.end(); i++)
-    {
-        // Need this check, since empty values are added into the
-        // macro struct for all used keyboard commands.
-        if ((*i).second.size() > 0)
-        {
-            f << "M:" << vtostr((*i).first) << std::endl
-              << "A:" << vtostr((*i).second) << std::endl << std::endl;
-        }
-    }
+    write_map( f, Macros, "M:" );
 
     f.close();
 }
@@ -350,7 +364,8 @@ static keyseq getch_mul( void )
 
     // The a == 0 test is legacy code that I don't dare to remove. I
     // have a vague recollection of it being a kludge for conio support.
-    while ((kbhit() || a == 0)) {
+    while ((kbhit() || a == 0))
+    {
         keys.push_back( a = getch() );
     }
 
@@ -363,6 +378,11 @@ static keyseq getch_mul( void )
  */
 int getchm( void )
 {
+    return getchm( KC_DEFAULT );
+}
+
+int getchm(KeymapContext mc)
+{
     int a;
 
     // Got data from buffer.
@@ -372,7 +392,7 @@ int getchm( void )
     // Read some keys...
     keyseq keys = getch_mul();
     // ... and add them into the buffer
-    macro_buf_add_long( keys );
+    macro_buf_add_long( keys, Keymaps[mc] );
 
     return (macro_buf_get());
 }
@@ -411,15 +431,32 @@ void macro_add_query( void )
 {
     unsigned char input;
     bool keymap = false;
+    KeymapContext keymc = KC_DEFAULT;
 
-    mpr( "Command (m)acro or (k)eymap? ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT,
+            "Command (m)acro or keymap [(k) default, (x) level-map or "
+            "(t)argeting]? " );
+
     input = getch();
     if (input == 0)
         input = getch();
 
     input = tolower( input );
     if (input == 'k')
+    {
         keymap = true;
+        keymc  = KC_DEFAULT;
+    }
+    else if (input == 'x')
+    {
+        keymap = true;
+        keymc  = KC_LEVELMAP;
+    }
+    else if (input == 't')
+    {
+        keymap = true;
+        keymc  = KC_TARGETING;
+    }
     else if (input == 'm')
         keymap = false;
     else
@@ -429,23 +466,23 @@ void macro_add_query( void )
     }
 
     // reference to the appropriate mapping
-    macromap &mapref = (keymap ? Keymaps : Macros);
+    macromap &mapref = (keymap ? Keymaps[keymc] : Macros);
 
-    snprintf( info, INFO_SIZE, "Input %s trigger key: ",
-              (keymap ? "keymap" : "macro") );
+    mpr( MSGCH_PROMPT, "Input %s%s trigger key: ",
+            (keymap) ? ((keymc == KC_DEFAULT)  ? "default " :
+                        (keymc == KC_LEVELMAP) ? "level-map "
+                                               : "targeting ")
+                     : "",
+            (keymap ? "keymap" : "macro") );
 
-    mpr( info, MSGCH_PROMPT );
     keyseq key = getch_mul();
 
     cprintf( "%s" EOL, (vtostr( key )).c_str() ); // echo key to screen
 
     if (mapref[key].size() > 0)
     {
-        snprintf( info, INFO_SIZE, "Current Action: %s",
-                  (vtostr( mapref[key] )).c_str() );
-
-        mpr( info, MSGCH_WARN );
-        mpr( "Do you wish to (r)edefine, (c)lear, or (a)bort?", MSGCH_PROMPT );
+        mpr( MSGCH_WARN, "Current Action: %s", (vtostr( mapref[key] )).c_str() );
+        mpr( MSGCH_PROMPT, "Do you wish to (r)edefine, (c)lear, or (a)bort?" );
 
         input = getch();
         if (input == 0)
@@ -465,7 +502,7 @@ void macro_add_query( void )
         }
     }
 
-    mpr( "Input Macro Action: ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Input Macro Action: " );
 
     // Using getch_mul() here isn't very useful...  We'd like the
     // flexibility to define multicharacter macros without having
@@ -495,6 +532,7 @@ int macro_init( void )
     std::ifstream f;
     keyseq key, action;
     bool keymap = false;
+    KeymapContext keymc = KC_DEFAULT;
 
     f.open( get_macro_file().c_str() );
 
@@ -502,20 +540,34 @@ int macro_init( void )
     {
         trim_string(s);  // remove white space from ends
 
-        if (s[0] == '#') {
+        if (s[0] == '#')
+        {
             continue;                   // skip comments
-
-        } else if (s.substr(0, 2) == "K:") {
+        }
+        else if (s.substr(0, 2) == "K:")
+        {
             key = parse_keyseq(s.substr(2));
             keymap = true;
-
-        } else if (s.substr(0, 2) == "M:") {
+            keymc  = KC_DEFAULT;
+        }
+        else if (s.length() >= 3 && s[0] == 'K' && s[2] == ':')
+        {
+            keymc  = KeymapContext( KC_DEFAULT + s[1] - '0' );
+            if (keymc >= KC_DEFAULT && keymc < KC_CONTEXT_COUNT)
+            {
+                key    = parse_keyseq(s.substr(3));
+                keymap = true;
+            }
+        }
+        else if (s.substr(0, 2) == "M:")
+        {
             key = parse_keyseq(s.substr(2));
             keymap = false;
-
-        } else if (s.substr(0, 2) == "A:") {
+        }
+        else if (s.substr(0, 2) == "A:")
+        {
             action = parse_keyseq(s.substr(2));
-            macro_add( (keymap ? Keymaps : Macros), key, action );
+            macro_add( (keymap ? Keymaps[keymc] : Macros), key, action );
         }
     }
 

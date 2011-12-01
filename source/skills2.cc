@@ -26,14 +26,22 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 #include "fight.h"
+#include "itemprop.h"
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
+#include "skills.h"
 #include "stuff.h"
-#include "wpn-misc.h"
+#include "transfor.h"
 #include "view.h"
+
+// This controls the resolution of percentage to next skill level.
+// This should be evenly divisible by 100 (1,2,4,5,10,20,25,50,100).
+// For the traditional resolution use 10.
+#define SKILL_DISPLAY_RESOLUTION        5
 
 /* jmf: some references for words I used below:
  Peltast http://www.geocities.com/Athens/Aegean/9659/shields_main.htm
@@ -45,7 +53,12 @@
 // the character's race will be listed on the next line.  Its only really
 // intended for cases where things might be really awkward without it. -- bwr
 
-const char *skills[50][6] = {
+#define TITLE_2ND_LEVEL     8
+#define TITLE_3RD_LEVEL    15
+#define TITLE_4TH_LEVEL    21
+#define TITLE_5TH_LEVEL    27
+
+const char *skills[MAX_SKILLS][6] = {
     {"Fighting", "Skirmisher", "Grunt", "Veteran", "Warrior", "Slayer"},      // 0
     {"Short Blades", "Stabber", "Cutter", "Knifefighter", "Eviscerator", "Blademaster"},
     {"Long Blades", "Slasher", "Slicer", "Fencer", "Swordfighter", "Swordmaster"},
@@ -59,7 +72,7 @@ const char *skills[50][6] = {
     {"Bows", "Shooter", "Yeoman", "Archer", "Merry %s", "Merry %s"},
     {"Crossbows", "Shooter", "Sharpshooter", "Archer", "%s Ballista", "%s Ballista"},     // 10
     {"Darts", "Dart Thrower", "Hurler", "Hurler, First Class", "%s Darts Champion", "Universal Darts Champion"},
-    {"Throwing", "Chucker", "Thrower", "Deadly Accurate", "Hawkeye", "Sniper"},
+    {"Ranged Combat", "Chucker", "Thrower", "Deadly Accurate", "Hawkeye", "Sniper"},
 
     {"Armour", "Covered", "Protected", "Tortoise", "Impregnable", "Invulnerable"},
     {"Dodging", "Ducker", "Dodger", "Nimble", "Spry", "Acrobat"},
@@ -134,7 +147,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_BOWS
      100,                       // SK_CROSSBOWS
      100,                       // SK_DARTS
-     100,                       // SK_THROWING
+     100,                       // SK_RANGED_COMBAT
      100,                       // SK_ARMOUR
      100,                       // SK_DODGING
      100,                       // SK_STEALTH
@@ -169,15 +182,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      80,                        // SK_SHORT_BLADES
      80,                        // SK_LONG_SWORDS
      110,                       // SK_UNUSED_1
-     120,                       // SK_AXES
-     130,                       // SK_MACES_FLAILS
+     130,                       // SK_AXES
+     110,                       // SK_MACES_FLAILS
      130,                       // SK_POLEARMS
      100,                       // SK_STAVES
      120,                       // SK_SLINGS
      60,                        // SK_BOWS
      100,                       // SK_CROSSBOWS
      90,                        // SK_DARTS
-     80,                        // SK_THROWING
+     80,                        // SK_RANGED_COMBAT
      120,                       // SK_ARMOUR
      80,                        // SK_DODGING
      80,                        // SK_STEALTH
@@ -212,15 +225,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      70,                        // SK_SHORT_BLADES
      70,                        // SK_LONG_SWORDS
      115,                       // SK_UNUSED_1
-     130,                       // SK_AXES
-     150,                       // SK_MACES_FLAILS
+     140,                       // SK_AXES
+     120,                       // SK_MACES_FLAILS
      150,                       // SK_POLEARMS
      100,                       // SK_STAVES
      140,                       // SK_SLINGS
      60,                        // SK_BOWS
      100,                       // SK_CROSSBOWS
      90,                        // SK_DARTS
-     80,                        // SK_THROWING
+     80,                        // SK_RANGED_COMBAT
      110,                       // SK_ARMOUR
      90,                        // SK_DODGING
      90,                        // SK_STEALTH
@@ -255,15 +268,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      90,                        // SK_SHORT_BLADES
      95,                        // SK_LONG_SWORDS
      120,                       // SK_UNUSED_1
-     140,                       // SK_AXES
-     160,                       // SK_MACES_FLAILS
+     150,                       // SK_AXES
+     130,                       // SK_MACES_FLAILS
      160,                       // SK_POLEARMS
      100,                       // SK_STAVES
      130,                       // SK_SLINGS
      70,                        // SK_BOWS
      100,                       // SK_CROSSBOWS
      90,                        // SK_DARTS
-     80,                        // SK_THROWING
+     80,                        // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      75,                        // SK_DODGING
      70,                        // SK_STEALTH
@@ -298,15 +311,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_SHORT_BLADES
      105,                       // SK_LONG_SWORDS
      120,                       // SK_UNUSED_1
-     150,                       // SK_AXES
-     165,                       // SK_MACES_FLAILS
+     165,                       // SK_AXES
+     150,                       // SK_MACES_FLAILS
      165,                       // SK_POLEARMS
      100,                       // SK_STAVES
      135,                       // SK_SLINGS
      74,                        // SK_BOWS
      75,                        // SK_CROSSBOWS
      75,                        // SK_DARTS
-     80,                        // SK_THROWING
+     80,                        // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      70,                        // SK_DODGING
      65,                        // SK_STEALTH
@@ -341,15 +354,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      110,                       // SK_SHORT_BLADES
      110,                       // SK_LONG_SWORDS
      110,                       // SK_UNUSED_1
-     130,                       // SK_AXES
-     140,                       // SK_MACES_FLAILS
-     140,                       // SK_POLEARMS
+     140,                       // SK_AXES
+     100,                       // SK_MACES_FLAILS
+     100,                       // SK_POLEARMS
      100,                       // SK_STAVES
      100,                       // SK_SLINGS
      100,                       // SK_BOWS
      100,                       // SK_CROSSBOWS
      100,                       // SK_DARTS
-     70,                        // SK_THROWING
+     70,                        // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      70,                        // SK_DODGING
      75,                        // SK_STEALTH
@@ -362,19 +375,19 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
-     70,                        // SK_SPELLCASTING
+     90,                        // SK_SPELLCASTING
      130,                       // SK_CONJURATIONS
      130,                       // SK_ENCHANTMENTS
      90,                        // SK_SUMMONINGS
      90,                        // SK_NECROMANCY
      100,                       // SK_TRANSLOCATIONS
-     60,                        // SK_TRANSMIGRATION
+     70,                        // SK_TRANSMIGRATION
      130,                       // SK_DIVINATIONS
-     80,                        // SK_FIRE_MAGIC
-     80,                        // SK_ICE_MAGIC
-     80,                        // SK_AIR_MAGIC
+     100,                       // SK_FIRE_MAGIC
+     100,                       // SK_ICE_MAGIC
+     120,                       // SK_AIR_MAGIC
      80,                        // SK_EARTH_MAGIC
-     80,                        // SK_POISON_MAGIC
+     90,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
      110,                       // SK_EVOCATIONS
      },
@@ -383,16 +396,16 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      70,                        // SK_FIGHTING
      80,                        // SK_SHORT_BLADES
      80,                        // SK_LONG_SWORDS
-     90,                        // SK_UNUSED_1
+     100,                       // SK_UNUSED_1
      60,                        // SK_AXES
-     70,                        // SK_MACES_FLAILS
+     100,                       // SK_MACES_FLAILS
      110,                       // SK_POLEARMS
      130,                       // SK_STAVES
      130,                       // SK_SLINGS
      150,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      70,                        // SK_ARMOUR
      120,                       // SK_DODGING
      150,                       // SK_STEALTH
@@ -428,14 +441,14 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      90,                        // SK_LONG_SWORDS
      100,                       // SK_UNUSED_1
      70,                        // SK_AXES
-     70,                        // SK_MACES_FLAILS
+     100,                       // SK_MACES_FLAILS
      110,                       // SK_POLEARMS
      120,                       // SK_STAVES
      125,                       // SK_SLINGS
      140,                       // SK_BOWS
      100,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     115,                       // SK_THROWING
+     115,                       // SK_RANGED_COMBAT
      60,                        // SK_ARMOUR
      110,                       // SK_DODGING
      140,                       // SK_STEALTH
@@ -470,15 +483,15 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      60,                        // SK_SHORT_BLADES
      100,                       // SK_LONG_SWORDS
      130,                       // SK_UNUSED_1
-     120,                       // SK_AXES
-     150,                       // SK_MACES_FLAILS
+     140,                       // SK_AXES
+     140,                       // SK_MACES_FLAILS
      160,                       // SK_POLEARMS
      130,                       // SK_STAVES
      50,                        // SK_SLINGS
      70,                        // SK_BOWS
      90,                        // SK_CROSSBOWS
      50,                        // SK_DARTS
-     60,                        // SK_THROWING
+     60,                        // SK_RANGED_COMBAT
      150,                       // SK_ARMOUR
      70,                        // SK_DODGING
      60,                        // SK_STEALTH
@@ -512,8 +525,8 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      70,                        // SK_FIGHTING
      100,                       // SK_SHORT_BLADES
      80,                        // SK_LONG_SWORDS
-     70,                        // SK_UNUSED_1
-     70,                        // SK_AXES
+     80,                        // SK_UNUSED_1
+     80,                        // SK_AXES
      80,                        // SK_MACES_FLAILS
      80,                        // SK_POLEARMS
      110,                       // SK_STAVES
@@ -521,7 +534,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      130,                       // SK_DARTS
-     130,                       // SK_THROWING
+     130,                       // SK_RANGED_COMBAT
      90,                        // SK_ARMOUR
      140,                       // SK_DODGING
      150,                       // SK_STEALTH
@@ -556,7 +569,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      60,                        // SK_SHORT_BLADES
      100,                       // SK_LONG_SWORDS
      120,                       // SK_UNUSED_1
-     110,                       // SK_AXES
+     120,                       // SK_AXES
      140,                       // SK_MACES_FLAILS
      150,                       // SK_POLEARMS
      110,                       // SK_STAVES
@@ -564,7 +577,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      80,                        // SK_BOWS
      90,                        // SK_CROSSBOWS
      50,                        // SK_DARTS
-     60,                        // SK_THROWING
+     60,                        // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      70,                        // SK_DODGING
      60,                        // SK_STEALTH
@@ -607,7 +620,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      140,                       // SK_BOWS
      140,                       // SK_CROSSBOWS
      140,                       // SK_DARTS
-     140,                       // SK_THROWING
+     140,                       // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      140,                       // SK_DODGING
      140,                       // SK_STEALTH
@@ -650,10 +663,10 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      150,                       // SK_ARMOUR
      150,                       // SK_DODGING
-     40,                        // SK_STEALTH
+     80,                        // SK_STEALTH
      100,                       // SK_STABBING
      140,                       // SK_SHIELDS
      100,                       // SK_TRAPS_DOORS
@@ -675,7 +688,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_ICE_MAGIC
      100,                       // SK_AIR_MAGIC
      100,                       // SK_EARTH_MAGIC
-     60,                        // SK_POISON_MAGIC
+     80,                        // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
      100,                       // SK_EVOCATIONS
      },
@@ -683,9 +696,9 @@ const int spec_skills[ NUM_SPECIES ][40] = {
     {                           // SP_GNOME (14)
      100,                       // SK_FIGHTING
      75,                        // SK_SHORT_BLADES
-     100,                       // SK_LONG_SWORDS
+     110,                       // SK_LONG_SWORDS
      130,                       // SK_UNUSED_1
-     100,                       // SK_AXES
+     110,                       // SK_AXES
      130,                       // SK_MACES_FLAILS
      140,                       // SK_POLEARMS
      130,                       // SK_STAVES
@@ -693,7 +706,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_BOWS
      90,                        // SK_CROSSBOWS
      60,                        // SK_DARTS
-     100,                       // SK_THROWING
+     100,                       // SK_RANGED_COMBAT
      150,                       // SK_ARMOUR
      70,                        // SK_DODGING
      70,                        // SK_STEALTH
@@ -727,16 +740,16 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_FIGHTING
      140,                       // SK_SHORT_BLADES
      120,                       // SK_LONG_SWORDS
-     110,                       // SK_UNUSED_1
-     100,                       // SK_AXES
-     100,                       // SK_MACES_FLAILS
-     110,                       // SK_POLEARMS
+     120,                       // SK_UNUSED_1
+     120,                       // SK_AXES
+      90,                       // SK_MACES_FLAILS
+     120,                       // SK_POLEARMS
      120,                       // SK_STAVES
      150,                       // SK_SLINGS
      150,                       // SK_BOWS
      180,                       // SK_CROSSBOWS
      150,                       // SK_DARTS
-     100,                       // SK_THROWING
+     130,                       // SK_RANGED_COMBAT
      140,                       // SK_ARMOUR
      150,                       // SK_DODGING
      200,                       // SK_STEALTH
@@ -779,14 +792,14 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      180,                       // SK_BOWS
      180,                       // SK_CROSSBOWS
      180,                       // SK_DARTS
-     130,                       // SK_THROWING
+     130,                       // SK_RANGED_COMBAT
      150,                       // SK_ARMOUR
      130,                       // SK_DODGING
      250,                       // SK_STEALTH
      150,                       // SK_STABBING
      150,                       // SK_SHIELDS
      200,                       // SK_TRAPS_DOORS
-     100,                       // SK_UNARMED_COMBAT
+     130,                       // SK_UNARMED_COMBAT
      100,                       // undefined
      100,                       // undefined
      100,                       // undefined
@@ -803,7 +816,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      160,                       // SK_FIRE_MAGIC
      160,                       // SK_ICE_MAGIC
      200,                       // SK_AIR_MAGIC
-     120,                       // SK_EARTH_MAGIC
+     130,                       // SK_EARTH_MAGIC
      160,                       // SK_POISON_MAGIC
      150,                       // SK_INVOCATIONS
      180,                       // SK_EVOCATIONS
@@ -811,10 +824,10 @@ const int spec_skills[ NUM_SPECIES ][40] = {
 
     {                           // SP_OGRE_MAGE (17)
      100,                       // SK_FIGHTING
-     110,                       // SK_SHORT_BLADES
-     100,                       // SK_LONG_SWORDS
-     100,                       // SK_UNUSED_1
-     100,                       // SK_AXES
+     140,                       // SK_SHORT_BLADES
+     120,                       // SK_LONG_SWORDS
+     120,                       // SK_UNUSED_1
+     120,                       // SK_AXES
      100,                       // SK_MACES_FLAILS
      100,                       // SK_POLEARMS
      100,                       // SK_STAVES
@@ -822,7 +835,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      150,                       // SK_BOWS
      150,                       // SK_CROSSBOWS
      150,                       // SK_DARTS
-     150,                       // SK_THROWING
+     150,                       // SK_RANGED_COMBAT
      170,                       // SK_ARMOUR
      130,                       // SK_DODGING
      100,                       // SK_STEALTH
@@ -849,7 +862,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_EARTH_MAGIC
      100,                       // SK_POISON_MAGIC
      100,                       // SK_INVOCATIONS
-     100,                        // SK_EVOCATIONS
+     100,                       // SK_EVOCATIONS
      },
 
     {                           // SP_RED_DRACONIAN (18)
@@ -865,7 +878,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -908,7 +921,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -951,7 +964,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -994,7 +1007,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1037,7 +1050,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1080,7 +1093,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1123,7 +1136,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1166,10 +1179,10 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
-     120,                       // SK_DODGING
-     120,                       // SK_STEALTH
+     80,                        // SK_DODGING
+     100,                       // SK_STEALTH
      100,                       // SK_STABBING
      100,                       // SK_SHIELDS
      100,                       // SK_TRAPS_DOORS
@@ -1209,10 +1222,10 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
-     120,                       // SK_DODGING
-     120,                       // SK_STEALTH
+     80,                        // SK_DODGING
+     100,                       // SK_STEALTH
      100,                       // SK_STABBING
      100,                       // SK_SHIELDS
      100,                       // SK_TRAPS_DOORS
@@ -1252,7 +1265,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1295,7 +1308,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1325,7 +1338,9 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_EVOCATIONS
      },
 
-    {                           // SP_UNK2_DRACONIAN (29)
+    // This table is currently used for draconians who do not have
+    // colour (aka the Brown draconians), be careful before removing.
+    {                           // SP_BASE_DRACONIAN (29)
      90,                        // SK_FIGHTING
      100,                       // SK_SHORT_BLADES
      100,                       // SK_LONG_SWORDS
@@ -1338,7 +1353,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      120,                       // SK_BOWS
      120,                       // SK_CROSSBOWS
      120,                       // SK_DARTS
-     120,                       // SK_THROWING
+     120,                       // SK_RANGED_COMBAT
      200,                       // SK_ARMOUR
      120,                       // SK_DODGING
      120,                       // SK_STEALTH
@@ -1381,7 +1396,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      60,                        // SK_BOWS
      85,                        // SK_CROSSBOWS
      80,                        // SK_DARTS
-     60,                        // SK_THROWING
+     60,                        // SK_RANGED_COMBAT
      180,                       // SK_ARMOUR
      170,                       // SK_DODGING
      200,                       // SK_STEALTH
@@ -1424,7 +1439,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      110,                       // SK_BOWS
      110,                       // SK_CROSSBOWS
      110,                       // SK_DARTS
-     110,                       // SK_THROWING
+     110,                       // SK_RANGED_COMBAT
      110,                       // SK_ARMOUR
      110,                       // SK_DODGING
      110,                       // SK_STEALTH
@@ -1459,7 +1474,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      90,                        // SK_SHORT_BLADES
      140,                       // SK_LONG_SWORDS
      160,                       // SK_UNUSED_1
-     150,                       // SK_AXES
+     160,                       // SK_AXES
      160,                       // SK_MACES_FLAILS
      180,                       // SK_POLEARMS
      150,                       // SK_STAVES
@@ -1467,7 +1482,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      70,                        // SK_BOWS
      100,                       // SK_CROSSBOWS
      70,                        // SK_DARTS
-     90,                        // SK_THROWING
+     90,                        // SK_RANGED_COMBAT
      170,                       // SK_ARMOUR
      50,                        // SK_DODGING
      50,                        // SK_STEALTH
@@ -1510,7 +1525,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      90,                        // SK_BOWS
      90,                        // SK_CROSSBOWS
      90,                        // SK_DARTS
-     90,                        // SK_THROWING
+     90,                        // SK_RANGED_COMBAT
      80,                        // SK_ARMOUR
      80,                        // SK_DODGING
      130,                       // SK_STEALTH
@@ -1553,7 +1568,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      110,                       // SK_BOWS
      110,                       // SK_CROSSBOWS
      110,                       // SK_DARTS
-     110,                       // SK_THROWING
+     110,                       // SK_RANGED_COMBAT
      110,                       // SK_ARMOUR
      110,                       // SK_DODGING
      110,                       // SK_STEALTH
@@ -1584,46 +1599,46 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      },
 
     {                           // SP_GHOUL (35)
-     80,                        // SK_FIGHTING
-     110,                       // SK_SHORT_BLADES
-     110,                       // SK_LONG_SWORDS
-     110,                       // SK_UNUSED_1
-     110,                       // SK_AXES
-     110,                       // SK_MACES_FLAILS
-     110,                       // SK_POLEARMS
-     110,                       // SK_STAVES
-     130,                       // SK_SLINGS
-     130,                       // SK_BOWS
-     130,                       // SK_CROSSBOWS
-     130,                       // SK_DARTS
-     130,                       // SK_THROWING
-     110,                       // SK_ARMOUR
-     110,                       // SK_DODGING
-     80,                        // SK_STEALTH
-     100,                       // SK_STABBING
-     110,                       // SK_SHIELDS
-     120,                       // SK_TRAPS_DOORS
-     80,                        // SK_UNARMED_COMBAT
-     100,                       // undefined
-     100,                       // undefined
-     100,                       // undefined
-     100,                       // undefined
-     100,                       // undefined
-     120,                       // SK_SPELLCASTING
-     130,                       // SK_CONJURATIONS
-     130,                       // SK_ENCHANTMENTS
-     120,                       // SK_SUMMONINGS
-     100,                       // SK_NECROMANCY
-     120,                       // SK_TRANSLOCATIONS
-     120,                       // SK_TRANSMIGRATION
-     120,                       // SK_DIVINATIONS
-     150,                       // SK_FIRE_MAGIC
-     90,                        // SK_ICE_MAGIC
-     150,                       // SK_AIR_MAGIC
-     90,                        // SK_EARTH_MAGIC
-     100,                       // SK_POISON_MAGIC
-     110,                       // SK_INVOCATIONS
-     130,                       // SK_EVOCATIONS
+     130,                       // SK_FIGHTING
+     130,                       // SK_SHORT_BLADES
+     130,                       // SK_LONG_SWORDS
+     130,                       // SK_UNUSED_1
+     130,                       // SK_AXES
+     130,                       // SK_MACES_FLAILS
+     130,                       // SK_POLEARMS
+     130,                       // SK_STAVES
+     150,                       // SK_SLINGS
+     150,                       // SK_BOWS
+     150,                       // SK_CROSSBOWS
+     150,                       // SK_DARTS
+     150,                       // SK_RANGED_COMBAT
+     130,                       // SK_ARMOUR
+     130,                       // SK_DODGING
+     120,                       // SK_STEALTH
+     130,                       // SK_STABBING
+     130,                       // SK_SHIELDS
+     130,                       // SK_TRAPS_DOORS
+     130,                       // SK_UNARMED_COMBAT
+     120,                       // undefined
+     120,                       // undefined
+     120,                       // undefined
+     120,                       // undefined
+     120,                       // undefined
+     170,                       // SK_SPELLCASTING
+     150,                       // SK_CONJURATIONS
+     150,                       // SK_ENCHANTMENTS
+     140,                       // SK_SUMMONINGS
+     120,                       // SK_NECROMANCY
+     140,                       // SK_TRANSLOCATIONS
+     140,                       // SK_TRANSMIGRATION
+     140,                       // SK_DIVINATIONS
+     170,                       // SK_FIRE_MAGIC
+     140,                       // SK_ICE_MAGIC
+     170,                       // SK_AIR_MAGIC
+     140,                       // SK_EARTH_MAGIC
+     120,                       // SK_POISON_MAGIC
+     130,                       // SK_INVOCATIONS
+     170,                       // SK_EVOCATIONS
      },
 
     {                           // SP_KENKU (36)
@@ -1639,7 +1654,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      80,                        // SK_BOWS
      80,                        // SK_CROSSBOWS
      90,                        // SK_DARTS
-     90,                        // SK_THROWING
+     90,                        // SK_RANGED_COMBAT
      90,                        // SK_ARMOUR
      90,                        // SK_DODGING
      100,                       // SK_STEALTH
@@ -1672,17 +1687,17 @@ const int spec_skills[ NUM_SPECIES ][40] = {
     {                           // SP_MERFOLK (37)
      80,                        // SK_FIGHTING
      70,                        // SK_SHORT_BLADES
-     90,                        // SK_LONG_SWORDS
+     100,                       // SK_LONG_SWORDS
      100,                       // SK_UNUSED_1
-     140,                       // SK_AXES
+     150,                       // SK_AXES
      150,                       // SK_MACES_FLAILS
-     50,                        // SK_POLEARMS
+     60,                        // SK_POLEARMS
      130,                       // SK_STAVES
      150,                       // SK_SLINGS
      140,                       // SK_BOWS
      140,                       // SK_CROSSBOWS
      100,                       // SK_DARTS
-     100,                       // SK_THROWING
+     100,                       // SK_RANGED_COMBAT
      160,                       // SK_ARMOUR
      60,                        // SK_DODGING
      90,                        // SK_STEALTH
@@ -1712,6 +1727,49 @@ const int spec_skills[ NUM_SPECIES ][40] = {
      100,                       // SK_EVOCATIONS
      },
 
+    {                           // SP_GIANT (38)
+     130,                       // SK_FIGHTING
+     200,                       // SK_SHORT_BLADES
+     150,                       // SK_LONG_SWORDS
+     200,                       // SK_UNUSED_1
+     150,                       // SK_AXES
+     120,                       // SK_MACES_FLAILS
+     130,                       // SK_POLEARMS
+     150,                       // SK_STAVES
+     200,                       // SK_SLINGS
+     200,                       // SK_BOWS
+     200,                       // SK_CROSSBOWS
+     200,                       // SK_DARTS
+     130,                       // SK_RANGED_COMBAT
+     180,                       // SK_ARMOUR
+     150,                       // SK_DODGING
+     200,                       // SK_STEALTH
+     200,                       // SK_STABBING
+     160,                       // SK_SHIELDS
+     200,                       // SK_TRAPS_DOORS
+     120,                       // SK_UNARMED_COMBAT
+     100,                       // undefined
+     100,                       // undefined
+     100,                       // undefined
+     100,                       // undefined
+     100,                       // undefined
+     200,                       // SK_SPELLCASTING
+     180,                       // SK_CONJURATIONS
+     180,                       // SK_ENCHANTMENTS
+     200,                       // SK_SUMMONINGS
+     200,                       // SK_NECROMANCY
+     200,                       // SK_TRANSLOCATIONS
+     200,                       // SK_TRANSMIGRATION
+     200,                       // SK_DIVINATIONS
+     170,                       // SK_FIRE_MAGIC
+     170,                       // SK_ICE_MAGIC
+     170,                       // SK_AIR_MAGIC
+     170,                       // SK_EARTH_MAGIC
+     200,                       // SK_POISON_MAGIC
+     150,                       // SK_INVOCATIONS
+     180,                       // SK_EVOCATIONS
+     },
+
 
 
 /* ******************************************************
@@ -1730,7 +1788,7 @@ const int spec_skills[ NUM_SPECIES ][40] = {
         120,               // SK_BOWS
         120,               // SK_CROSSBOWS
         120,               // SK_DARTS
-        120,               // SK_THROWING
+        120,               // SK_RANGED_COMBAT
         200,               // SK_ARMOUR
         120,               // SK_DODGING
         120,               // SK_STEALTH
@@ -1785,11 +1843,31 @@ JOB_PALADIN:
 
 ************************************************************* */
 
+static skill_type Skill_Order[] =
+{
+    SK_FIGHTING, SK_SHORT_BLADES, SK_LONG_SWORDS, SK_AXES, SK_MACES_FLAILS,
+    SK_POLEARMS, SK_STAVES, SK_UNARMED_COMBAT,
+    SK_BLANK_LINE,
+
+    SK_RANGED_COMBAT, SK_DARTS, SK_SLINGS, SK_BOWS, SK_CROSSBOWS,
+    SK_BLANK_LINE,
+
+    SK_ARMOUR, SK_SHIELDS, SK_DODGING, SK_STABBING, SK_STEALTH, SK_TRAPS_DOORS,
+    SK_COLUMN_BREAK,
+
+    SK_SPELLCASTING, SK_CONJURATIONS, SK_ENCHANTMENTS, SK_SUMMONINGS,
+    SK_NECROMANCY, SK_TRANSLOCATIONS, SK_TRANSMIGRATION, SK_DIVINATIONS,
+    SK_FIRE_MAGIC, SK_ICE_MAGIC, SK_AIR_MAGIC, SK_EARTH_MAGIC, SK_POISON_MAGIC,
+    SK_BLANK_LINE,
+
+    SK_INVOCATIONS, SK_EVOCATIONS,
+};
+
+static int Skill_Order_Size = sizeof(Skill_Order) / sizeof(skill_type);
+
 void show_skills(void)
 {
-    int i;
-    int x;
-    char lcount;
+    int num_skills;
 
     const int num_lines = get_number_of_lines();
 
@@ -1802,8 +1880,8 @@ void show_skills(void)
 
     clrscr();
 
-  reprint_stuff:
-    lcount = 'a';
+reprint_stuff:
+    num_skills = 0;
 
     gotoxy(1, 1);
     textcolor(LIGHTGREY);
@@ -1816,85 +1894,112 @@ void show_skills(void)
             you.exp_available );
 #endif
 
+    skill_type  toggle_index[ NUM_SKILLS ];
+
     char scrln = 3, scrcol = 1;
 
     // Don't want the help line to appear too far down a big window.
     int bottom_line = ((num_lines > 30) ? 30 : num_lines);
 
-    for (x = 0; x < NUM_SKILLS; x++)
+    bool last_line_blank = true;
+
+    for (int x = 0; x < Skill_Order_Size; x++)
     {
-        /* spells in second column */
-        if ((x == SK_SPELLCASTING && scrcol != 40) || scrln > bottom_line - 3)
+        // Detect blank lines (and convert column break to one
+        // if we're already in the second column).
+        if (!last_line_blank
+            && ((Skill_Order[x] == SK_COLUMN_BREAK && scrcol == 41)
+                || Skill_Order[x] == SK_BLANK_LINE))
         {
-            scrln = 3;
-            scrcol = 40;
+            if (scrln > 3)      // never on the first row
+            {
+                scrln++;
+                last_line_blank = true;
+            }
         }
 
-        gotoxy(scrcol, scrln);
+        // Do Column break (must come after line break).
+        if ((Skill_Order[x] == SK_COLUMN_BREAK && scrcol == 1)
+            || scrln > bottom_line - 2)
+        {
+            scrln = 3;
+            scrcol = 41;
+        }
 
-#if DEBUG_DIAGNOSTICS
-        // In diagnostic mode we show skills at 0, but only real skills
-        if (x != SK_UNUSED_1 && (x <= SK_UNARMED_COMBAT || x >= SK_SPELLCASTING))
-#else
-        if (you.skills[x] > 0)
+        if (Skill_Order[x] == SK_COLUMN_BREAK
+            || Skill_Order[x] == SK_BLANK_LINE)
+        {
+            continue;
+        }
+
+        const skill_type sk = Skill_Order[x];
+
+#if (!DEBUG_DIAGNOSTICS)
+        // In diagnostic mode we show skills at 0
+        if (you.skills[sk] > 0)
 #endif
         {
-            if (you.practise_skill[x] == 0 || you.skills[x] == 0)
+            last_line_blank = false;
+            gotoxy( scrcol, scrln );
+
+            if (you.practise_skill[sk] == 0 || you.skills[sk] == 0)
                 textcolor(DARKGREY);
             else
                 textcolor(LIGHTGREY);
 
-            if (you.skills[x] == 27)
+            if (you.skills[sk] >= 27)
+            {
                 textcolor(YELLOW);
-
-#if DEBUG_DIAGNOSTICS
-            if (you.skills[x] == 0)
                 putch(' ');
+            }
             else
             {
-                putch(lcount);
-                if (lcount == 'z')
-                    lcount = 'A';
+#if DEBUG_DIAGNOSTICS
+                if (you.skills[sk] == 0)
+                    putch(' ');
                 else
-                    lcount++;
-            }
+                {
+                    toggle_index[num_skills] = sk;
+                    putch( index_to_letter(num_skills) );
+                    num_skills++;
+                }
 #else
-            putch(lcount);
-            if (lcount == 'z')
-                lcount = 'A';
-            else
-                lcount++;
+                toggle_index[num_skills] = sk;
+                putch( index_to_letter(num_skills) );
+                num_skills++;
 #endif
+            }
 
             cprintf( " %c %-14s Skill %2d",
-                     (you.skills[x] == 0)         ? ' ' :
-                     (you.practise_skill[x] == 0) ? '-' : '+',
-                     skills[x][0], you.skills[x] );
+                     (you.skills[sk] == 0 || you.skills[sk] >= 27) ? ' ' :
+                     (you.practise_skill[sk] == 0)                 ? '-' : '+',
+                     skills[sk][0], you.skills[sk] );
 
             textcolor(BLUE);
 
 #if DEBUG_DIAGNOSTICS
-            cprintf( " %5d", you.skill_points[x] );
+            cprintf( " %5d", you.skill_points[sk] );
 #endif
 
-            if (you.skills[x] < 27)
+            if (you.skills[sk] < 27)
             {
-                const int needed = skill_exp_needed(you.skills[x] + 2);
-                const int prev_needed = skill_exp_needed(you.skills[x] + 1);
-                const int spec_abil = species_skills(x, you.species);
+                const int spec = species_skills( sk, you.species );
+                const int next = skill_exp_needed( you.skills[sk] + 2 ) * spec;
+                const int prev = skill_exp_needed( you.skills[sk] + 1 ) * spec;
 
-                cprintf( " (%d)",
-                     (((needed * spec_abil) / 100 - you.skill_points[x]) * 10) /
-                           (((needed - prev_needed) * spec_abil) / 100) );
+                int pcent = SKILL_DISPLAY_RESOLUTION *
+                                ((100 / SKILL_DISPLAY_RESOLUTION) *
+                         (100 * you.skill_points[sk] - prev) / (next - prev));
+
+                if (Options.old_skill_countdown)
+                    pcent = (95 - pcent) / 10;
+                else if (Options.skill_countdown)
+                    pcent = 100 - pcent;
+
+                cprintf( Options.old_skill_countdown ? " (%d)" : " (%2d%%)",
+                         pcent );
             }
 
-            scrln++;
-        }
-
-        /* Extra CR between classes of weapons and such things */
-        if (x == SK_STAVES || x == SK_THROWING || x == SK_TRAPS_DOORS
-            || x == SK_UNARMED_COMBAT || x == SK_POISON_MAGIC)
-        {
             scrln++;
         }
     }
@@ -1915,23 +2020,12 @@ void show_skills(void)
         if ((get_thing >= 'a' && get_thing <= 'z')
             || (get_thing >= 'A' && get_thing <= 'Z'))
         {
-            lcount = 'a';       // toggle skill practise
+            const int index = letter_to_index( get_thing );
 
-            for (i = 0; i < 50; i++)
+            if (index < num_skills)
             {
-                if (you.skills[i] == 0)
-                    continue;
-
-                if (get_thing == lcount)
-                {
-                    you.practise_skill[i] = (you.practise_skill[i]) ? 0 : 1;
-                    break;
-                }
-
-                if (lcount == 'z')
-                    lcount = 'A';
-                else
-                    lcount++;
+                const skill_type sk = toggle_index[index];
+                you.practise_skill[sk] = !you.practise_skill[sk];
             }
 
             goto reprint_stuff;
@@ -1945,33 +2039,39 @@ void show_skills(void)
 }
 
 
-const char *skill_name(unsigned char which_skill)
+const char *skill_name( int which_skill )
 {
     return (skills[which_skill][0]);
 }                               // end skill_name()
 
 
-const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
-                         int species, int str, int dex, int god )
+const char *skill_title( int skill, int skill_lev,
+                         // these used be ghosts/hiscores:
+                         int species, int str, int dex,
+                         int god, int piety, int penance )
 {
     unsigned char skill_rank;
     const char *tempstr = NULL;
 
     static char title_buff[80];
 
+    UNUSED( piety );
+
     // paranoia
-    if (best_skill == SK_UNUSED_1
-        || (best_skill > SK_UNARMED_COMBAT && best_skill < SK_SPELLCASTING)
-        || best_skill >= NUM_SKILLS)
+    if (skill == SK_UNUSED_1
+        || (skill > SK_UNARMED_COMBAT && skill < SK_SPELLCASTING)
+        || skill >= NUM_SKILLS)
     {
         return ("Adventurer");
     }
 
+    // This function is also used for ghosts so we pass in all these,
+    // but default to the current player.
     if (species == -1)
         species = you.species;
 
     if (str == -1)
-        str = you.strength;
+        str = you.str;
 
     if (dex == -1)
         dex = you.dex;
@@ -1979,36 +2079,38 @@ const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
     if (god == -1)
         god = you.religion;
 
+    if (penance == -1)
+        penance = player_under_penance();
+
     // translate skill level into skill ranking {dlb}:
     // increment rank by one to "skip" skill name in array {dlb}:
-    skill_rank = ((skill_lev <= 7)  ? 1 :
-                  (skill_lev <= 14) ? 2 :
-                  (skill_lev <= 20) ? 3 :
-                  (skill_lev <= 26) ? 4
-                   /* level 27 */   : 5);
+    skill_rank = ((skill_lev < TITLE_2ND_LEVEL) ? 1 :
+                  (skill_lev < TITLE_3RD_LEVEL) ? 2 :
+                  (skill_lev < TITLE_4TH_LEVEL) ? 3 :
+                  (skill_lev < TITLE_5TH_LEVEL) ? 4
+                                                : 5);
 
-    if (best_skill < NUM_SKILLS)
+    if (skill < NUM_SKILLS)
     {
-        // Note that ghosts default to (dex == str) and god == no_god, due
-        // to a current lack of that information... the god case is probably
-        // suitable for most cases (TSO/Zin/Ely at the very least). -- bwr
-        switch (best_skill)
+        switch (skill)
         {
         case SK_UNARMED_COMBAT:
             tempstr = (dex >= str) ? martial_arts_titles[skill_rank]
-                                   : skills[best_skill][skill_rank];
+                                   : skills[skill][skill_rank];
 
             break;
 
         case SK_INVOCATIONS:
             if (god == GOD_NO_GOD)
                 tempstr = "Godless";
+            else if (penance)
+                tempstr = "Fallen";
             else
-                tempstr = skills[best_skill][skill_rank];
+                tempstr = skills[skill][skill_rank];
             break;
 
         default:
-            tempstr = skills[best_skill][skill_rank];
+            tempstr = skills[skill][skill_rank];
             break;
         }
     }
@@ -2018,11 +2120,12 @@ const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
 
     if (species_found)
     {
-        // need species name
+        // need species name    // XXX: use transformations here?
         snprintf( title_buff, sizeof(title_buff), tempstr,
-                  species_name(species, 0, true,
-                                (ptr == tempstr && best_skill != SK_NECROMANCY)) );
-                  // The above code only capitalises start-of-string racenames
+                  species_name( species, 0, true,
+                                (ptr == tempstr && skill != SK_NECROMANCY) ) );
+
+        // The above code only capitalises start-of-string racenames
         tempstr = title_buff;
     }
 
@@ -2031,17 +2134,16 @@ const char *skill_title( unsigned char best_skill, unsigned char skill_lev,
 
 const char *player_title( void )
 {
-    const unsigned char best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1), 99 );
+    const int best = best_skill( SK_FIGHTING, (NUM_SKILLS - 1) );
 
     return (skill_title( best, you.skills[ best ] ));
 }                               // end player_title()
 
-unsigned char best_skill( unsigned char min_skill, unsigned char max_skill,
-                          unsigned char excl_skill )
+int best_skill( int min_skill, int max_skill, int excl_skill )
 {
-    unsigned char ret = SK_FIGHTING;
-    unsigned int best_skill_level = 0;
-    unsigned int best_position = 1000;
+    int ret = SK_FIGHTING;
+    int best_skill_level = 0;
+    int best_position = 1000;
 
     for (int i = min_skill; i <= max_skill; i++)    // careful!!!
     {
@@ -2081,7 +2183,7 @@ unsigned char best_skill( unsigned char min_skill, unsigned char max_skill,
 // is judged to be the best skill (thus, nicknames are sticky)...
 // other skills will have to attain the next level higher to be
 // considered a better skill (thus, the first skill to reach level 27
-// becomes the characters final nickname).
+// becomes the character's final nickname).
 //
 // As for other uses of best_skill:  this method is still appropriate
 // in that there is no additional advantage anywhere else in the game
@@ -2125,13 +2227,15 @@ void init_skill_order( void )
     }
 }
 
-int calc_hp(void)
+int calc_hp_max( int new_hp_value )
 {
     int hitp;
 
     hitp = (you.base_hp - 5000) + (you.base_hp2 - 5000);
-    hitp += (you.experience_level * you.skills[SK_FIGHTING]) / 5;
 
+    hitp += ((you.xp_level + 3) * skill_bump( SK_FIGHTING )) / 7;
+
+    // XXX: too many multiplications!  1000+ HPs are possible
     // being berserk makes you resistant to damage. I don't know why.
     if (you.berserker)
     {
@@ -2140,21 +2244,7 @@ int calc_hp(void)
     }
 
     // some transformations give you extra hp
-    switch (you.attribute[ATTR_TRANSFORMATION])
-    {
-    case TRAN_STATUE:
-        hitp *= 15;
-        hitp /= 10;
-        break;
-    case TRAN_ICE_BEAST:
-        hitp *= 12;
-        hitp /= 10;
-        break;
-    case TRAN_DRAGON:
-        hitp *= 16;
-        hitp /= 10;
-        break;
-    }
+    hitp = (hitp * transform_hp_factor()) / 10;
 
     // frail and robust mutations
     hitp *= (10 + you.mutation[MUT_ROBUST] - you.mutation[MUT_FRAIL]);
@@ -2162,34 +2252,36 @@ int calc_hp(void)
 
     you.hp_max = hitp;
 
-    deflate_hp( you.hp_max, false );
+    if (new_hp_value != -1)
+        you.hp = new_hp_value;
+
+    if (you.hp > you.hp_max)
+        you.hp = you.hp_max;
+
+    set_redraw_status( REDRAW_HIT_POINTS );
 
     return (hitp);
-}                               // end calc_hp()
+}                               // end calc_hp_max()
 
 
-int calc_mp(void)
+int calc_mp_max( int new_mp_value )
 {
-    int enp;
-
     // base_magic_points2 accounts for species and magic potions
-    enp = (you.base_magic_points2 - 5000);
+    int enp = (you.base_magic_points2 - 5000);
 
-    int spell_extra = (you.experience_level * you.skills[SK_SPELLCASTING]) / 4;
-    int invoc_extra = (you.experience_level * you.skills[SK_INVOCATIONS]) / 6;
-    int evoc_extra  = (you.experience_level * you.skills[SK_EVOCATIONS]) / 6;
+    // calculate bonuses for skill
+    const int spell_extra = (you.xp_level * you.skills[SK_SPELLCASTING]) / 5;
+    const int invoc_extra = (you.xp_level * you.skills[SK_INVOCATIONS]) / 7;
 
-    if (spell_extra > invoc_extra && spell_extra > evoc_extra)
+    // apply only the largest bonus
+    if (spell_extra > invoc_extra)
         enp += spell_extra;
-    else if (invoc_extra > evoc_extra)
-        enp += invoc_extra;
     else
-        enp += evoc_extra;
+        enp += invoc_extra;
 
-    you.max_magic_points = stepdown_value( enp, 9, 18, 45, 100 );
-
-    // this is our "rotted" base (applied after scaling):
-    you.max_magic_points += (you.base_magic_points - 5000);
+    // This curve is more friendly for the early game (no curve until 12)
+    // was you.max_magic_points = stepdown_value( enp, 9, 18, 45, -1 );
+    you.max_magic_points = stepdown_value( enp, 12, 12, 48, -1 );
 
     // Yes, we really do want this duplication... this is so the stepdown
     // doesn't truncate before we apply the rotted base.  We're doing this
@@ -2197,69 +2289,100 @@ int calc_mp(void)
     if (you.max_magic_points > 50)
         you.max_magic_points = 50;
 
+    // this is our "rotted" base (applied after scaling):
+    you.max_magic_points += (you.base_magic_points - 5000);
+
     // now applied after scaling so that power items are more useful -- bwr
     you.max_magic_points += player_magical_power();
 
+    // reduce if power item takes us past normal max of 50
     if (you.max_magic_points > 50)
         you.max_magic_points = 50 + ((you.max_magic_points - 50) / 2);
 
+    // don't allow negative
     if (you.max_magic_points < 0)
         you.max_magic_points = 0;
+
+    // now set and limit magic points if required
+    if (new_mp_value != -1)
+        you.magic_points = new_mp_value;
 
     if (you.magic_points > you.max_magic_points)
         you.magic_points = you.max_magic_points;
 
-    you.redraw_magic_points = 1;
+    set_redraw_status( REDRAW_MAGIC_POINTS );
 
     return (you.max_magic_points);
-}                               // end calc_mp()
+}                               // end calc_mp_max()
 
-
-unsigned int skill_exp_needed(int lev)
+unsigned int skill_exp_needed( int lev )
 {
+    int ret = 0;
+
     lev--;
+
     switch (lev)
     {
     case 0:
-        return 0;               // old:   0
+        break;
     case 1:
-        return 200;             // old:  20
+        ret = 200;             // old:  20
+        break;
     case 2:
-        return 300;             // old:  30
+        ret = 300;             // old:  30
+        break;
     case 3:
-        return 500;             // old:  50
+        ret = 500;             // old:  50
+        break;
     case 4:
-        return 750;             // old:  75
+        ret = 750;             // old:  75
+        break;
     case 5:
-        return 1050;            // old: 105
+        ret = 1050;            // old: 105
+        break;
     case 6:
-        return 1350;            // old: 145
+        ret = 1350;            // old: 145
+        break;
     case 7:
-        return 1700;            // old: 200
+        ret = 1700;            // old: 200
+        break;
     case 8:
-        return 2100;            // old: 275
+        ret = 2100;            // old: 275
+        break;
     case 9:
-        return 2550;            // old: 355
+        ret = 2550;            // old: 355
+        break;
     case 10:
-        return 3150;            // old: 440
+        ret = 3150;            // old: 440
+        break;
     case 11:
-        return 3750;            // old: 560
+        ret = 3750;            // old: 560
+        break;
     case 12:
-        return 4400;            // old: 680
+        ret = 4400;            // old: 680
+        break;
     case 13:
-        return 5250;            // old: 850
+        ret = 5250;            // old: 850
+        break;
     default:
-        return 6200 + 1800 * (lev - 14);
         // old: 1100 + 300 * (lev - 14)
         // older: 1200 * (lev - 11) + ((lev - 11) * (lev - 11));// * (lev - 11))
+        ret = 6200 + 1800 * (lev - 14);
+        break;
     }
 
-    return 0;
+    return (ret) ;
 }
 
-
-int species_skills(char skill, char species)
+int species_skills( int skill, int species )
 {
+    if (species == SP_UNKNOWN)
+        species = you.species;
+
+    // Up until getting their colour, all draconians advance the same. -- bwr
+    if (you.max_xp_level < 7 && player_genus( GENPC_DRACONIAN ))
+        species = SP_BASE_DRACONIAN;
+
     // Spellcasting is more expensive, invocations and evocations are cheaper
     if (skill == SK_SPELLCASTING)
         return (spec_skills[species - 1][skill] * 130) / 100;
@@ -2269,97 +2392,17 @@ int species_skills(char skill, char species)
         return (spec_skills[species - 1][skill]);
 }                               // end species_skills()
 
-// new: inform player if they need more throwing skill (GDL)
-void wield_warning(bool newWeapon)
+// Function to convert from base draconian tmeplate to regular template
+// upon draconian first reaching level 7.
+void recalc_drac_skill_points( void )
 {
-    // hold weapon name
-    char wepstr[ITEMNAME_SIZE];
-    char wepstr2[ITEMNAME_SIZE];
-
-    // early out - no weapon
-    if (you.equip[EQ_WEAPON] == -1)
-         return;
-
-    if (newWeapon)
-        strcpy(wepstr, "this ");
-    else
-        strcpy(wepstr, "your ");
-
-    int wepType  = you.inv[you.equip[EQ_WEAPON]].sub_type;
-
-    // early out - don't warn for non-weapons
-    if (you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_WEAPONS)
-        return;
-
-    // put the standard wep name in.
-    standard_name_weap(wepType, wepstr2);
-    strcat(wepstr, wepstr2);
-
-    // only warn about str/dex for non-launcher weapons
-    if (!launches_things(wepType))
+    for (int i = 0; i < NUM_SKILLS; i++)
     {
-#ifdef USE_NEW_COMBAT_STATS
-        const int stat_bonus = effective_stat_bonus();
-
-        if (stat_bonus <= -4)
-        {
-            if (you.strength < you.dex)
-            {
-                if (you.strength < 11)
-                    snprintf( info, INFO_SIZE, "You have %strouble swinging %s.",
-                        (you.strength < 7)?"":"a little ", wepstr);
-                else
-                    snprintf( info, INFO_SIZE, "You'd be more effective with "
-                        "%s if you were stronger.", wepstr);
-            }
-            else
-            {
-                if (you.dex < 11)
-                {
-                    snprintf( info, INFO_SIZE, "Wielding %s is %s awkward.",
-                              wepstr, (you.dex < 7) ? "fairly" : "a little" );
-                }
-                else
-                {
-                    snprintf( info, INFO_SIZE, "You'd be more effective with "
-                        "%s if you were nimbler.", wepstr );
-                }
-            }
-
-            mpr( info, MSGCH_WARN );
-        }
-#endif
-        return;
+        // convert ratio with round:
+        you.skill_points[i] *= spec_skills[ you.species - 1 ][i];
+        you.skill_points[i] += spec_skills[ SP_BASE_DRACONIAN - 1 ][i] / 2;
+        you.skill_points[i] /= spec_skills[ SP_BASE_DRACONIAN - 1 ][i];
     }
 
-    // must be a launcher
-    int effSkill = you.skills[SK_THROWING] * 2 + 1;
-    int shoot_skill = 0;
-
-    switch (wepType)
-    {
-        case WPN_SLING:
-            shoot_skill = you.skills[SK_SLINGS];
-            break;
-        case WPN_BOW:
-            shoot_skill = you.skills[SK_BOWS];
-            break;
-        case WPN_CROSSBOW:
-        case WPN_HAND_CROSSBOW:
-            shoot_skill = you.skills[SK_CROSSBOWS];
-            break;
-        case WPN_BLOWGUN:
-            shoot_skill = you.skills[SK_DARTS];
-            break;
-        default:
-            shoot_skill = 0;
-            break;
-    }
-
-    if (shoot_skill > effSkill)
-    {
-        strcpy( info, "Your low throwing skill limits the effectiveness of ");
-        strcat( info, wepstr );
-        mpr( info, MSGCH_WARN );
-    }
+    calc_total_skill_points();
 }

@@ -33,6 +33,8 @@ int wherex(void);
 int wherey(void);
 void putch(char c);
 int getch(void);
+int getch_ck(void);
+int key_to_command(int);
 int getche(void);
 int kbhit(void);
 void delay(int ms);

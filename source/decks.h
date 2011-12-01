@@ -11,12 +11,7 @@
 #ifndef DECKS_H
 #define DECKS_H
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: it_use_3 - religion
- * *********************************************************************** */
-void deck_of_cards(unsigned char which_deck);
-
+void deck_of_cards( int which_deck );
+void cards( int which_card, bool punish );
 
 #endif

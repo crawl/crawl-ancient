@@ -17,17 +17,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #ifdef DOS
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "debug.h"
 #include "delay.h"
+#include "food.h"
 #include "invent.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "it_use3.h"
 #include "player.h"
@@ -119,10 +123,10 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_ABJURATION_I,
      SPELL_RECALL,
-     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_SHADOW_CREATURES,
      SPELL_SUMMON_WRAITHS,
      SPELL_SUMMON_HORRIBLE_THINGS,
+     SPELL_SUMMON_DRAGON,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
@@ -144,8 +148,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_CONDENSATION_SHIELD,
      SPELL_BOLT_OF_COLD,
      SPELL_OZOCUBUS_REFRIGERATION,
-     SPELL_MASS_SLEEP,
      SPELL_SIMULACRUM,
+     SPELL_MASS_SLEEP,
      SPELL_NO_SPELL,
      },
 
@@ -206,9 +210,9 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 15 - Book of Death
     {0,
+     SPELL_LETHAL_INFUSION,
      SPELL_CORPSE_ROT,
      SPELL_BONE_SHARDS,
-     SPELL_LETHAL_INFUSION,
      SPELL_AGONY,
      SPELL_BOLT_OF_DRAINING,
      SPELL_NO_SPELL,
@@ -220,7 +224,7 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_CONFUSING_TOUCH,
      SPELL_SLOW,
      SPELL_CONFUSE,
-     SPELL_PARALYZE,
+     SPELL_PETRIFY,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -282,16 +286,16 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 22 - Book of Healing
+    // 22 - Book of Abjuration
     {0,
-     SPELL_CURE_POISON_I,
-     SPELL_LESSER_HEALING,
-     SPELL_GREATER_HEALING,
-     SPELL_PURIFICATION,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
-     SPELL_NO_SPELL,
+     SPELL_REPEL_MISSILES,
+     SPELL_ABJURATION_I,
+     SPELL_CONDENSATION_SHIELD,
+     SPELL_RESIST_POISON,
+     SPELL_INSULATION,
+     SPELL_CAUSE_FEAR,
+     SPELL_DEFLECT_MISSILES,
+     SPELL_DISPERSAL,
      },
     // 23 - Book of Necromancy
     {0,
@@ -331,18 +335,13 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_BACKLIGHT,
      SPELL_REPEL_MISSILES,
      SPELL_SLEEP,
-#ifdef USE_SILENCE_CODE
-     SPELL_SILENCE,
-#endif
+     SPELL_QUIET,
      SPELL_CONFUSE,
      SPELL_ENSLAVEMENT,
      SPELL_INVISIBILITY,
-#ifndef USE_SILENCE_CODE
-     SPELL_NO_SPELL,
-#endif
      SPELL_NO_SPELL,
      },
-    // 27 - Book of Demonology  -- Vehumet special
+    // 27 - Book of Demonology
     {0,
      SPELL_ABJURATION_I,
      SPELL_RECALL,
@@ -382,36 +381,31 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
 
     // 29 - Book of the Sky
     {0,
-#ifdef USE_SILENCE_CODE
-     SPELL_SILENCE,
-#endif
+     SPELL_QUIET,
      SPELL_SUMMON_ELEMENTAL,
      SPELL_INSULATION,
      SPELL_AIRSTRIKE,
      SPELL_FLY,
      SPELL_DEFLECT_MISSILES,
      SPELL_LIGHTNING_BOLT,
-     SPELL_CONJURE_BALL_LIGHTNING,
-#ifndef USE_SILENCE_CODE
-     SPELL_NO_SPELL,
-#endif
+     SPELL_SILENCE,
      },
 
     // 30 - Book of Divinations
     {0,
      SPELL_DETECT_SECRET_DOORS,
-     SPELL_DETECT_CREATURES,
      SPELL_DETECT_ITEMS,
      SPELL_DETECT_CURSE,
      SPELL_SEE_INVISIBLE,
+     SPELL_DETECT_CREATURES,
      SPELL_FORESCRY,
      SPELL_IDENTIFY,
      SPELL_NO_SPELL,
      },
     // 31 - Book of the Warp
     {0,
-     SPELL_CONTROLLED_BLINK,
      SPELL_BANISHMENT,
+     SPELL_CONTROLLED_BLINK,
      SPELL_DISPERSAL,
      SPELL_PORTAL,
      SPELL_NO_SPELL,
@@ -434,7 +428,7 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_ISKENDERUNS_MYSTIC_BLAST,
      SPELL_POISON_ARROW,
-     SPELL_ORB_OF_ELECTROCUTION,        // XXX: chain lightning?
+     SPELL_CHAIN_LIGHTNING,
      SPELL_LEHUDIBS_CRYSTAL_SPEAR,
      SPELL_ICE_STORM,
      SPELL_FIRE_STORM,
@@ -445,8 +439,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_SUBLIMATION_OF_BLOOD,
      SPELL_ANIMATE_DEAD,
-     SPELL_TWISTED_RESURRECTION,
      SPELL_BORGNJORS_REVIVIFICATION,
+     SPELL_TWISTED_RESURRECTION,
      SPELL_SIMULACRUM,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -479,8 +473,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_FRAGMENTATION,
      SPELL_POLYMORPH_OTHER,
-     SPELL_ALTER_SELF,
      SPELL_CIGOTUVIS_DEGENERATION,
+     SPELL_ALTER_SELF,
      // SPELL_IGNITE_POISON,    // moved to Fire which was a bit slim -- bwr
      SPELL_SHATTER,
      // SPELL_AIR_WALK,
@@ -503,8 +497,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_SANDBLAST,
      SPELL_STONESKIN,
-     SPELL_PASSWALL,
      SPELL_STONE_ARROW,
+     SPELL_PETRIFY,
      SPELL_SUMMON_ELEMENTAL,
      SPELL_FRAGMENTATION,
      SPELL_NO_SPELL,
@@ -514,8 +508,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     // 40 - Book of Earth
     {0,
      SPELL_MAXWELLS_SILVER_HAMMER,
-     SPELL_MAGIC_MAPPING,
      SPELL_DIG,
+     SPELL_MAGIC_MAPPING,
      SPELL_STATUE_FORM,
      SPELL_BOLT_OF_IRON,
      SPELL_TOMB_OF_DOROKLOHE,
@@ -537,8 +531,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_DETECT_CREATURES,
      SPELL_SUMMON_ELEMENTAL,
-     SPELL_MAGIC_MAPPING,
      SPELL_TELEPORT_SELF,
+     SPELL_MAGIC_MAPPING,
      SPELL_FIREBALL,
      SPELL_IDENTIFY,
      SPELL_HASTE,
@@ -571,9 +565,9 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_SUMMON_BUTTERFLIES,
      SPELL_APPORTATION,
-     SPELL_PROJECTED_NOISE,
      SPELL_BLINK,
      SPELL_LEVITATION,
+     SPELL_PROJECTED_NOISE,
      SPELL_INTOXICATE,
      SPELL_NO_SPELL,  //jmf: SPELL_ERINGYAS_SURPRISING_BOUQUET, when finished
      SPELL_NO_SPELL,
@@ -583,8 +577,8 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_SUMMON_SMALL_MAMMAL,
      SPELL_STICKS_TO_SNAKES,
-     SPELL_DETECT_CREATURES,
      SPELL_SUMMON_LARGE_MAMMAL,
+     SPELL_DETECT_CREATURES,
      SPELL_TAME_BEASTS,
      SPELL_DRAGON_FORM,
      SPELL_NO_SPELL,
@@ -595,10 +589,10 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_STING,
      SPELL_SURE_BLADE,
+     SPELL_SLEEP,
      SPELL_PROJECTED_NOISE,
-     SPELL_MEPHITIC_CLOUD,
+     SPELL_QUIET,
      SPELL_POISON_WEAPON,
-     SPELL_PARALYZE,
      SPELL_INVISIBILITY,
      SPELL_NO_SPELL,
      },
@@ -627,7 +621,7 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      },
 
-    // 50 - Staff of Smiting //jmf: totally obsolete --- no longer looks here.
+    // 50 - Staff of Smiting
     {0,
      SPELL_SMITING,
      SPELL_NO_SPELL,
@@ -642,9 +636,9 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
     {0,
      SPELL_ABJURATION_I,
      SPELL_RECALL,
+     SPELL_SUMMON_LARGE_MAMMAL,
      SPELL_SUMMON_ELEMENTAL,
      SPELL_SWARM,
-     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -695,10 +689,10 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      },
     // 56 - Staff of Warding
     {0,
+     SPELL_REPEL_MISSILES,
      SPELL_ABJURATION_I,
      SPELL_CONDENSATION_SHIELD,
      SPELL_CAUSE_FEAR,
-     SPELL_DEFLECT_MISSILES,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -726,9 +720,9 @@ static int spellbook_template_array[NUMBER_SPELLBOOKS][SPELLBOOK_SIZE] =
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      },
-    // 59 - Staff of Striking -- unused like Smiting
+    // 59 - Staff of Striking -- unused
     {0,
-     SPELL_STRIKING,
+     SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
      SPELL_NO_SPELL,
@@ -755,11 +749,15 @@ static void spellbook_template( int sbook_type,
     }
 }                               // end spellbook_template()
 
-int which_spell_in_book(int sbook_type, int spl)
+// Returns SPELL_NO_SPELL if spl out of range or on empty book slot.
+int which_spell_in_book( int sbook_type, int spl )
 {
-    FixedVector < int, SPELLBOOK_SIZE > wsib_pass;      // was 10 {dlb}
+    if (spl < 0 || spl > SPELLBOOK_SIZE - 1)
+        return (SPELL_NO_SPELL);
 
-    spellbook_template(sbook_type, wsib_pass);
+    FixedVector< int, SPELLBOOK_SIZE > wsib_pass;
+
+    spellbook_template( sbook_type, wsib_pass );
 
     return (wsib_pass[ spl + 1 ]);
 }                               // end which_spell_in_book()
@@ -798,12 +796,14 @@ static unsigned char spellbook_contents( item_def &book, int action )
     spellbook_template( type, spell_types );
 
     clrscr();
-    textcolor(LIGHTGREY);
 
     char str_pass[ ITEMNAME_SIZE ];
     item_name( book, DESC_CAP_THE, str_pass );
+
+    textcolor( book.colour );
     cprintf( str_pass );
 
+    textcolor(LIGHTGREY);
     cprintf( EOL EOL " Spells                             Type                      Level" EOL );
 
     for (j = 1; j < SPELLBOOK_SIZE; j++)
@@ -819,14 +819,18 @@ static unsigned char spellbook_contents( item_def &book, int action )
             knowsSpell = (you.spells[i] == spell_types[j]);
         }
 
-        const int level_diff = spell_difficulty( spell_types[j] );
+        const int level_diff = spell_level( spell_types[j] );
         const int levels_req = spell_levels_required( spell_types[j] );
 
         int colour = DARKGREY;
         if (action == RBOOK_USE_STAFF)
         {
-            if (you.experience_level >= level_diff
-                && you.magic_points >= level_diff)
+            const int rod = get_inv_hand_tool();
+
+            ASSERT( rod != -1 );
+
+            if (you.xp_level >= level_diff
+                && you.inv[rod].plus >= level_diff)
             {
                 colour = LIGHTGREY;
             }
@@ -835,7 +839,7 @@ static unsigned char spellbook_contents( item_def &book, int action )
         {
             if (knowsSpell)
                 colour = LIGHTGREY;
-            else if (you.experience_level >= level_diff
+            else if (you.xp_level >= level_diff
                         && spell_levels >= levels_req
                         && spell_skills)
             {
@@ -899,7 +903,7 @@ static unsigned char spellbook_contents( item_def &book, int action )
         cprintf( "Select a spell to cast." EOL );
         break;
 
-    case RBOOK_MEMORIZE:
+    case RBOOK_MEMORISE:
         cprintf( "Select a spell to memorise (%d level%s available)." EOL,
                  spell_levels, (spell_levels == 1) ? "" : "s" );
         break;
@@ -926,7 +930,8 @@ static unsigned char spellbook_contents( item_def &book, int action )
 }
 
 //jmf: was in shopping.cc
-char book_rarity(unsigned char which_book)
+// This is compared against rolled item_level (it's also used for $$$ value)
+int book_rarity( unsigned char which_book )
 {
     switch (which_book)
     {
@@ -934,7 +939,6 @@ char book_rarity(unsigned char which_book)
     case BOOK_MINOR_MAGIC_II:
     case BOOK_MINOR_MAGIC_III:
     case BOOK_SURVEYANCES:
-    case BOOK_HINDERANCE:
     case BOOK_CANTRIPS: //jmf: added 04jan2000
         return 1;
 
@@ -942,11 +946,12 @@ char book_rarity(unsigned char which_book)
     case BOOK_CHARMS:
         return 2;
 
+    case BOOK_CALLINGS:
     case BOOK_CONJURATIONS_I:
     case BOOK_CONJURATIONS_II:
-    case BOOK_PRACTICAL_MAGIC:
+    case BOOK_HINDERANCE:
     case BOOK_NECROMANCY:
-    case BOOK_CALLINGS:
+    case BOOK_PRACTICAL_MAGIC:
     case BOOK_WIZARDRY:
         return 3;
 
@@ -965,7 +970,6 @@ char book_rarity(unsigned char which_book)
     case BOOK_POWER:
         return 6;
 
-    case BOOK_ENCHANTMENTS:
     case BOOK_PARTY_TRICKS:     //jmf: added 04jan2000
         return 7;
 
@@ -973,12 +977,13 @@ char book_rarity(unsigned char which_book)
     case BOOK_DIVINATIONS:
         return 8;
 
+    case BOOK_ABJURATION:
+    case BOOK_CONTROL:
+    case BOOK_EARTH:
+    case BOOK_ENVENOMATIONS:
     case BOOK_FIRE:
     case BOOK_ICE:
     case BOOK_SKY:
-    case BOOK_EARTH:
-    case BOOK_UNLIFE:
-    case BOOK_CONTROL:
     case BOOK_SPATIAL_TRANSLOCATIONS:
         return 10;
 
@@ -987,10 +992,11 @@ char book_rarity(unsigned char which_book)
         return 11;
 
     case BOOK_MUTATIONS:
-    case BOOK_BEASTS:           //jmf: added 23mar2000
+    case BOOK_BEASTS:
         return 12;
 
-    case BOOK_ENVENOMATIONS:
+    case BOOK_ENCHANTMENTS:
+    case BOOK_UNLIFE:
     case BOOK_WARP:
         return 15;
 
@@ -1000,34 +1006,19 @@ char book_rarity(unsigned char which_book)
     case BOOK_SUMMONINGS:
         return 18;
 
+    case BOOK_MANUAL:        // rarity only used for calculating $$$
+        return 20;
+
     case BOOK_ANNIHILATIONS: // Vehumet special
     case BOOK_DEMONOLOGY:    // Vehumet special
     case BOOK_NECRONOMICON:  // Kikubaaqudgha special
-    case BOOK_MANUAL:
-        return 20;
-
-    case BOOK_DESTRUCTION:
+    case BOOK_DESTRUCTION:   // rarity only used for calculating $$$
         return 30;
 
-    case BOOK_HEALING:
-        return 100;
-
     default:
-        return 1;
+        return 5;
     }
 }                               // end book_rarity()
-
-bool is_valid_spell_in_book( unsigned int splbook, int spell )
-{
-    FixedVector< int, SPELLBOOK_SIZE >  spells;
-
-    spellbook_template( you.inv[ splbook ].sub_type, spells );
-
-    if (spells[ spell ] != SPELL_NO_SPELL)
-        return true;
-
-    return false;
-}                               // end is_valid_spell_in_book()
 
 static bool which_spellbook( int &book, int &spell )
 {
@@ -1045,10 +1036,8 @@ static bool which_spellbook( int &book, int &spell )
         return (false);
     }
 
-    snprintf( info, INFO_SIZE, "You can memorise %d more level%s of spells.",
-             avail_levels, (avail_levels > 1) ? "s" : "" );
-
-    mpr( info );
+    mpr( "You can memorise %d more level%s of spells.",
+         avail_levels, (avail_levels > 1) ? "s" : "" );
 
     book = prompt_invent_item( "Memorise from which spellbook?", OBJ_BOOKS );
     if (book == PROMPT_ABORT)
@@ -1070,13 +1059,13 @@ static bool which_spellbook( int &book, int &spell )
         return (false);
     }
 
-    spell = read_book( you.inv[book], RBOOK_MEMORIZE );
+    spell = read_book( you.inv[book], RBOOK_MEMORISE );
     clrscr();
 
     return (true);
 }                               // end which_spellbook()
 
-// Returns false if the player cannot read/memorize from the book,
+// Returns false if the player cannot read/memorise from the book,
 // and true otherwise. -- bwr
 static bool player_can_read_spellbook( const item_def &book )
 {
@@ -1143,7 +1132,7 @@ unsigned char read_book( item_def &book, int action )
 
     // reading spell descriptions doesn't take time:
     if (action != RBOOK_READ_SPELL)
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
 
     set_ident_flags( book, ISFLAG_KNOW_TYPE );
 
@@ -1173,7 +1162,7 @@ bool undead_cannot_memorise(unsigned char spell, unsigned char being)
         case SPELL_SYMBOL_OF_TORMENT:
         case SPELL_TAME_BEASTS:
         case SPELL_BERSERKER_RAGE:
-            return true;
+            return (true);
         }
         break;
 
@@ -1200,21 +1189,20 @@ bool undead_cannot_memorise(unsigned char spell, unsigned char being)
         case SPELL_SYMBOL_OF_TORMENT:
         case SPELL_TAME_BEASTS:
         case SPELL_BERSERKER_RAGE:
-            return true;
+            return (true);
         }
         break;
     }
 
-    return false;
+    return (false);
 }                               // end undead_cannot_memorise()
 
 bool learn_spell(void)
 {
     int chance = 0;
     int levels_needed = 0;
-    unsigned char keyin;
     int book, spell;
-    int index;
+    int specspell;
 
     int i;
     int j = 0;
@@ -1234,7 +1222,7 @@ bool learn_spell(void)
     if (!which_spellbook( book, spell ))
         return (false);
 
-    if (spell < 'A' || (spell > 'Z' && spell < 'a') || spell > 'z')
+    if (!isalpha( spell ))
     {
       whatt:
         redraw_screen();
@@ -1242,35 +1230,30 @@ bool learn_spell(void)
         return (false);
     }
 
-    index = letter_to_index( spell );
-
-    if (index > SPELLBOOK_SIZE)
-        goto whatt;
-
-    if (!is_valid_spell_in_book( book, index ))
-        goto whatt;
-
-    unsigned int specspell = which_spell_in_book(you.inv[book].sub_type,index);
+    spell = letter_to_index( spell );
+    specspell = which_spell_in_book( you.inv[book].sub_type, spell );
 
     if (specspell == SPELL_NO_SPELL)
         goto whatt;
 
     // You can always memorise selective amnesia:
-    if (you.spell_no == 21 && specspell != SPELL_SELECTIVE_AMNESIA)
+    if (you.spell_no >= MAX_LEARNT_SPELLS
+        && specspell != SPELL_SELECTIVE_AMNESIA)
     {
         redraw_screen();
         mpr("Your head is already too full of spells!");
         return (false);
     }
 
-    if (you.is_undead && spell_typematch(specspell, SPTYP_HOLY))
+    // this shouldn't happen:
+    if (you.is_undead && spell_typematch( specspell, SPTYP_HOLY ))
     {
         redraw_screen();
         mpr("You cannot use this type of magic!");
         return (false);
     }
 
-    if (undead_cannot_memorise(specspell, you.is_undead))
+    if (undead_cannot_memorise( specspell, you.is_undead ))
     {
         redraw_screen();
         mpr("You cannot use this spell.");
@@ -1283,7 +1266,7 @@ bool learn_spell(void)
         {
             redraw_screen();
             mpr("You already know that spell!");
-            you.turn_is_over = 1;
+            you.turn_is_over = true;
             return (false);
         }
     }
@@ -1294,21 +1277,21 @@ bool learn_spell(void)
     {
         redraw_screen();
         mpr("You can't memorise that many levels of magic yet!");
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         return (false);
     }
 
-    if (you.experience_level < spell_difficulty(specspell))
+    if (you.xp_level < spell_level( specspell ))
     {
         redraw_screen();
         mpr("You're too inexperienced to learn that spell!");
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         return (false);
     }
 
     redraw_screen();
 
-    chance = spell_fail(specspell);
+    chance = spell_memorise_fail( specspell );
 
     strcpy(info, "This spell is ");
 
@@ -1336,117 +1319,67 @@ bool learn_spell(void)
                  (temp_rand == 2) ? "learn" :
                  (temp_rand == 3) ? "absorb"
                                   : "");
-
     strcat(info, ".");
-
     mpr(info);
 
-    strcpy(info, "Memorise ");
-    strcat(info, spell_title(specspell));
-    strcat(info, "?");
-    mpr(info);
+#if DEBUG_DIAGNOSTICS
+    mpr( MSGCH_DIAGNOSTICS, "difficulty = %d", chance );
+#endif
 
-    for (;;)
+
+    snprintf( info, INFO_SIZE, "Memorise %s?", spell_title( specspell ) );
+
+    if (!yesno( info ))
     {
-        keyin = getch();
-
-        if (keyin == 'n' || keyin == 'N')
-        {
-            redraw_screen();
-            return (false);
-        }
-
-        if (keyin == 'y' || keyin == 'Y')
-            break;
+        canned_msg( MSG_OK );
+        return (false);
     }
 
     mesclr( true );
 
-    if (you.mutation[MUT_BLURRY_VISION] > 0
-                && random2(4) < you.mutation[MUT_BLURRY_VISION])
-    {
-        mpr("The writing blurs into unreadable gibberish.");
-        you.turn_is_over = 1;
-        return (false);
-    }
+    int delay = spell_level( specspell ) - 1;
 
-    if (random2(40) + random2(40) + random2(40) < chance)
-    {
-        redraw_screen();
-        mpr("You fail to memorise the spell.");
-        you.turn_is_over = 1;
+    if (delay < 0)
+        delay = 0;
 
-        if (you.inv[ book ].sub_type == BOOK_NECRONOMICON)
-        {
-            mpr("The pages of the Necronomicon glow with a dark malevolence...");
-            miscast_effect( SPTYP_NECROMANCY, 8, random2avg(88, 3), 100,
-                            "reading the Necronomicon" );
-        }
-        else if (you.inv[ book ].sub_type == BOOK_DEMONOLOGY)
-        {
-            mpr("This book does not appreciate being disturbed by one of your ineptitude!");
-            miscast_effect( SPTYP_SUMMONING, 7, random2avg(88, 3), 100,
-                            "reading the book of Demonology" );
-        }
-        else if (you.inv[ book ].sub_type == BOOK_ANNIHILATIONS)
-        {
-            mpr("This book does not appreciate being disturbed by one of your ineptitude!");
-            miscast_effect( SPTYP_CONJURATION, 8, random2avg(88, 3), 100,
-                            "reading the book of Annihilations" );
-        }
+    start_delay( DELAY_MEMORISE, delay, specspell, you.inv[book].sub_type );
 
-#if WIZARD
-        if (!you.wizard)
-            return (false);
-        else if (!yesno("Memorize anyway?"))
-            return (false);
-#else
-        return (false);
-#endif
-    }
-
-    start_delay( DELAY_MEMORIZE, spell_difficulty( specspell ), specspell );
-
-    you.turn_is_over = 1;
-    redraw_screen();
-
-    naughty( NAUGHTY_SPELLCASTING, 2 + random2(5) );
-
+    you.turn_is_over = true;
     return (true);
 }                               // end which_spell()
 
 int staff_spell( int staff )
 {
     int spell;
-    unsigned char specspell;
-    int mana, diff;
+    int mana, diff, energy, food;
+    int specspell;
     FixedVector< int, SPELLBOOK_SIZE >  spell_list;
 
     // converting sub_type into book index type
     const int type = you.inv[staff].sub_type + 40;
 
-    // Spell staves are mostly for the benefit of non-spellcasters, so we're
-    // not going to involve INT or Spellcasting skills for power. -- bwr
-    const int powc = 5 + you.skills[SK_EVOCATIONS]
-                       + roll_dice( 2, you.skills[SK_EVOCATIONS] );
+    // Spell staves are mostly for the benefit of non-spellcasters, thus
+    // a very small int factor.
+    const int powc = 5 + div_rand_round( you.intel, 4 )
+                        + you.skills[ SK_EVOCATIONS ]
+                        + roll_dice( 2, you.skills[ SK_EVOCATIONS ] );
 
-    if (you.inv[staff].sub_type < STAFF_SMITING
-        || you.inv[staff].sub_type >= STAFF_AIR)
+    if (item_is_staff( you.inv[staff] ))
     {
         //mpr("That staff has no spells in it.");
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
         return (0);
     }
 
-    if (item_not_ident( you.inv[staff], ISFLAG_KNOW_TYPE ))
+    if (!item_ident( you.inv[staff], ISFLAG_KNOW_TYPE ))
     {
         set_ident_flags( you.inv[staff], ISFLAG_KNOW_TYPE );
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
     }
 
     spellbook_template( type, spell_list );
 
-    unsigned char num_spells;
+    int num_spells;
     for (num_spells = 0; num_spells < SPELLBOOK_SIZE - 1; num_spells++)
     {
         if (spell_list[ num_spells + 1 ] == SPELL_NO_SPELL)
@@ -1455,70 +1388,83 @@ int staff_spell( int staff )
 
     if (num_spells == 0)
     {
-        canned_msg(MSG_NOTHING_HAPPENS);  // shouldn't happen
+        canned_msg( MSG_NOTHING_HAPPENS );  // shouldn't happen
         return (0);
     }
-    else if (num_spells == 1)
+
+    if (item_cursed( you.inv[staff] ))
+    {
+        miscast_effect( SPTYP_CONJURATION, 9, 90, 100, "evoking a cursed rod" );
+        return (0);
+    }
+
+    if (num_spells == 1)
         spell = 'a';  // automatically selected if its the only option
     else
     {
-        snprintf( info, INFO_SIZE,
-                  "Evoke which spell from the rod ([a-%c] spell [?*] list)? ",
-                  'a' + num_spells - 1 );
+        mpr( MSGCH_PROMPT,
+              "Evoke which spell from the rod ([a-%c] spell [?*] list)? ",
+              index_to_letter(num_spells - 1) );
 
-        mpr( info, MSGCH_PROMPT );
         spell = get_ch();
 
         if (spell == '?' || spell == '*')
             spell = read_book( you.inv[staff], RBOOK_USE_STAFF );
     }
 
-    if (spell < 'A' || (spell > 'Z' && spell < 'a') || spell > 'z')
-    {
+    if (!isalpha( spell ))
         goto whattt;
-    }
 
     spell = letter_to_index( spell );
-
-    if (spell > SPELLBOOK_SIZE)
-        goto whattt;
-
-    if (!is_valid_spell_in_book( staff, spell ))
-        goto whattt;
-
-    specspell = which_spell_in_book( type,  spell );
+    specspell = which_spell_in_book( type, spell );
 
     if (specspell == SPELL_NO_SPELL)
         goto whattt;
 
-    mana = spell_mana( specspell );
-    diff = spell_difficulty( specspell );
+    mana = spell_mana( specspell ) * ROD_CHARGE_MULT;
+    diff = spell_level( specspell );
+    food = spell_hunger( specspell );
 
-    if (you.magic_points < mana || you.experience_level < diff)
+    if (you.is_undead != US_UNDEAD
+        && (you.hunger_state < HS_HUNGRY || you.hunger <= food))
     {
-        mpr("Your brain hurts!");
-        confuse_player( 2 + random2(4) );
-        you.turn_is_over = 1;
+        mpr("You don't have the energy to cast that spell.");
         return (0);
     }
 
-    // Exercising the spell skills doesn't make very much sense given
-    // that spell staves are largely intended to supply spells to
-    // non-spellcasters, and they don't use spell skills to determine
-    // power in the same way that spellcasting does. -- bwr
-    //
-    // exercise_spell(specspell, true, true);
+    if (you.xp_level < diff || you.inv[staff].plus < mana)
+    {
+        mpr("Your brain hurts!");
+        confuse_player( 2 + random2(4) );
+        you.turn_is_over = true;
+        return (0);
+    }
 
-    your_spells(specspell, powc, false);
+    if (!your_spells( specspell, powc, false ))  // spell aborted
+        return (0);
 
-    dec_mp(spell_mana(specspell));
+    // dec_mp( mana );
+    you.inv[staff].plus -= mana;
 
-    you.turn_is_over = 1;
+    // supporting energy
+    energy = player_energy();
+    if (energy <= 0 && you.is_undead != US_UNDEAD)
+    {
+        food -= 10 * you.skills[SK_EVOCATIONS];
+        if (food < diff * 5)
+            food = diff * 5;
 
-    return (roll_dice( 1, 1 + spell_difficulty(specspell) / 2 ));
+        make_hungry( food, true );
+    }
+
+    if (item_ident( you.inv[staff], ISFLAG_KNOW_PLUSES ))
+        set_redraw_status( REDRAW_WIELD );
+
+    you.turn_is_over = true;
+
+    return (roll_dice( 1, 1 + spell_level( specspell ) / 2 ));
 
   whattt:
     mpr("What?");
-
     return (0);
 }                               // end staff_spell()

@@ -15,26 +15,14 @@
 #include <string>
 
 std::string & trim_string( std::string &str );
+std::string & tolower_string( std::string &str );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
+short str_to_colour( const std::string &str );
+
 void read_init_file(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void get_system_environment(void);
 
-
-// last updated 16feb2001 {gdl}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 bool parse_args(int argc, char **argv, bool rc_only);
-
 
 #endif

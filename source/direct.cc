@@ -25,11 +25,14 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
+#include "cloud.h"
 #include "debug.h"
 #include "describe.h"
 #include "itemname.h"
+#include "misc.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "player.h"
@@ -44,25 +47,30 @@
 
 // x and y offsets in the following order:
 // SW, S, SE, W, E, NW, N, NE
-static const char xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-static const char ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
-static const char dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
+static const char Xcomp[9] = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
+static const char Ycomp[9] = { 1, 1, 1, 0, 0, 0, -1, -1, -1 };
+static const char Dirchars[19] = { "b1j2n3h4.5l6y7k8u9" };
 static const char DOSidiocy[10] = { "OPQKSMGHI" };
-static const char *aim_prompt = "Aim (move cursor or -/+/=, change mode with CTRL-F, select with . or >)";
+static const char *Aim_Prompt = "Aim (move cursor or -/+/=, change mode with @, select with . or >)";
 
 static void describe_cell(int mx, int my);
-static char mons_find( unsigned char xps, unsigned char yps,
-                       FixedVector<char, 2> &mfp, char direction,
-                       int mode = TARG_ANY );
+
+static bool find_object( int x, int y, int mode );
+static bool find_monster( int x, int y, int mode );
+
+static char find_square( unsigned char xps, unsigned char yps,
+                         FixedVector<char, 2> &mfp, char direction,
+                         bool (*targ)(int, int, int),
+                         int mode = TARG_ANY );
 
 //---------------------------------------------------------------
 //
 // direction
 //
 // input: restricts : DIR_NONE      accepts keypad dir or targetting
-//                    DIR_TARGET    must use targetting.
+//                    DIR_TARGET    must use targetting, looking for monster
 //                    DIR_DIR       must use keypad direction
-//
+//                    DIR_GRID      must use targetting, looking for grid point
 //
 // outputs: dist structure:
 //
@@ -85,11 +93,12 @@ static char mons_find( unsigned char xps, unsigned char yps,
 //
 // targetting mode is handled by look_around()
 //---------------------------------------------------------------
-void direction( struct dist &moves, int restrict, int mode )
+void direction( struct dist &moves, int restriction, int in_mode )
 {
     bool dirChosen = false;
     bool targChosen = false;
     int dir = 0;
+    int mode = in_mode;
 
     // init
     moves.isValid       = false;
@@ -98,16 +107,17 @@ void direction( struct dist &moves, int restrict, int mode )
     moves.isCancel      = false;
     moves.dx = moves.dy = 0;
     moves.tx = moves.ty = 0;
+    moves.dir = false;
 
     // XXX.  this is ALWAYS in relation to the player. But a bit of a hack
     // nonetheless!  --GDL
     gotoxy( 18, 9 );
 
-    int keyin = getch();
+    int keyin = getchm( KC_TARGETING );
 
     if (keyin == 0)             // DOS idiocy (emulated by win32 console)
     {
-        keyin = getch();        // grrr.
+        keyin = getchm( KC_TARGETING );        // grrr.
         if (keyin == '*')
         {
             targChosen = true;
@@ -115,81 +125,85 @@ void direction( struct dist &moves, int restrict, int mode )
         }
         else
         {
-            if (strchr(DOSidiocy, keyin) == NULL)
+            if (strchr( DOSidiocy, keyin ) == NULL)
                 return;
+
             dirChosen = true;
-            dir = (int)(strchr(DOSidiocy, keyin) - DOSidiocy);
+            dir = static_cast<int>(strchr( DOSidiocy, keyin ) - DOSidiocy);
         }
     }
     else
     {
-        if (strchr( dirchars, keyin ) != NULL)
+        if (strchr( Dirchars, keyin ) != NULL)
         {
             dirChosen = true;
-            dir = (int)(strchr(dirchars, keyin) - dirchars) / 2;
+            dir = static_cast<int>(strchr( Dirchars, keyin ) - Dirchars) / 2;
         }
         else
         {
             switch (keyin)
             {
-                case CONTROL('F'):
-                    mode = (mode + 1) % TARG_NUM_MODES;
+            case CONTROL('F'):
+            case '@':
+                if (mode == TARG_ANY)
+                    mode = in_mode;
+                else
+                    mode = TARG_ANY;
 
-                    snprintf( info, INFO_SIZE, "Targeting mode is now: %s",
-                              (mode == TARG_ANY)   ? "any" :
-                              (mode == TARG_ENEMY) ? "enemies"
-                                                   : "friends" );
+                mpr( "Targeting mode is now: %s",
+                      (mode == TARG_ANY)   ? "any" :
+                      (mode == TARG_ENEMY) ? "enemies"
+                                           : "friends" );
 
-                    mpr( info );
+                targChosen = true;
+                dir = 0;
+                break;
 
-                    targChosen = true;
-                    dir = 0;
-                    break;
+            case '-':
+                targChosen = true;
+                dir = -1;
+                break;
 
-                case '-':
-                    targChosen = true;
-                    dir = -1;
-                    break;
+            case '*':
+                targChosen = true;
+                dir = 0;
+                break;
 
-                case '*':
-                    targChosen = true;
-                    dir = 0;
-                    break;
+            case '+':
+            case '=':
+                targChosen = true;
+                dir = 1;
+                break;
 
-                case '+':
-                case '=':
-                    targChosen = true;
-                    dir = 1;
-                    break;
+            case 't':
+            case 'p':
+                targChosen = true;
+                dir = 2;
+                break;
 
-                case 't':
-                case 'p':
-                    targChosen = true;
-                    dir = 2;
-                    break;
+            case ESCAPE:
+                moves.isCancel = true;
+                return;
 
-                case ESCAPE:
-                    moves.isCancel = true;
-                    return;
-
-                default:
-                    break;
+            default:
+                break;
             }
         }
     }
 
     // at this point, we know exactly the input - validate
-    if (!(targChosen || dirChosen) || (targChosen && restrict == DIR_DIR))
+    if ((!targChosen && !dirChosen)
+        || (targChosen && restriction == DIR_DIR))
     {
         mpr("What an unusual direction.");
         return;
     }
 
     // special case: they typed a dir key, but they're in target-only mode
-    if (dirChosen && restrict == DIR_TARGET)
+    if (dirChosen && (restriction == DIR_TARGET || restriction == DIR_GRID))
     {
-        mpr(aim_prompt);
-        look_around( moves, false, dir, mode );
+        mpr( Aim_Prompt );
+        look_around( moves, false, dir, mode, in_mode );
         return;
     }
 
@@ -197,9 +211,10 @@ void direction( struct dist &moves, int restrict, int mode )
     {
         if (dir < 2)
         {
-            mpr(aim_prompt);
+            mpr( Aim_Prompt );
             moves.prev_target = dir;
-            look_around( moves, false, -1, mode );
+            look_around( moves, false, -1, mode, in_mode );
+
             if (moves.prev_target != -1)      // -1 means they pressed 'p'
                 return;
         }
@@ -215,10 +230,7 @@ void direction( struct dist &moves, int restrict, int mode )
         struct monsters *montarget = &menv[you.prev_targ];
 
         if (!mons_near(montarget) || !player_monster_visible( montarget ))
-        {
             mpr("You can't see that creature any more.");
-            return;
-        }
         else
         {
             moves.isValid = true;
@@ -226,40 +238,48 @@ void direction( struct dist &moves, int restrict, int mode )
             moves.tx = montarget->x;
             moves.ty = montarget->y;
         }
-        return;
     }
-
-    // at this point, we have a direction, and direction is allowed.
-    moves.isValid = true;
-    moves.isTarget = false;
-    moves.dx = xcomp[dir];
-    moves.dy = ycomp[dir];
-    if (xcomp[dir] == 0 && ycomp[dir] == 0)
-        moves.isMe = true;
-
-    // now the tricky bit - extend the target x,y out to map edge.
-    int mx, my;
-    mx = my = 0;
-
-    if (moves.dx > 0)
-        mx = (GXM  - 1) - you.x_pos;
-    if (moves.dx < 0)
-        mx = you.x_pos;
-
-    if (moves.dy > 0)
-        my = (GYM - 1) - you.y_pos;
-    if (moves.dy < 0)
-        my = you.y_pos;
-
-    if (!(mx == 0 || my == 0))
+    else
     {
-        if (mx < my)
-            my = mx;
-        else
-            mx = my;
+        ASSERT( dirChosen );
+
+        // at this point, we have a direction, and direction is allowed.
+        moves.isValid = true;
+        moves.isTarget = false;
+        moves.dx = Xcomp[dir];
+        moves.dy = Ycomp[dir];
+
+        if (Xcomp[dir] == 0 && Ycomp[dir] == 0)
+            moves.isMe = true;
+
+        // now the tricky bit - extend the target x,y out to map edge.
+        int mx, my;
+        mx = my = 0;
+
+        if (moves.dx > 0)
+            mx = (GXM - 1) - you.x_pos;
+
+        if (moves.dx < 0)
+            mx = you.x_pos;
+
+        if (moves.dy > 0)
+            my = (GYM - 1) - you.y_pos;
+
+        if (moves.dy < 0)
+            my = you.y_pos;
+
+        if (mx && my)
+        {
+            if (mx < my)
+                my = mx;
+            else
+                mx = my;
+        }
+
+        moves.tx = you.x_pos + moves.dx * mx;
+        moves.ty = you.y_pos + moves.dy * my;
+        moves.dir = true;
     }
-    moves.tx = you.x_pos + moves.dx * mx;
-    moves.ty = you.y_pos + moves.dy * my;
 }
 
 //---------------------------------------------------------------
@@ -286,7 +306,8 @@ void direction( struct dist &moves, int restrict, int mode )
 //
 //---------------------------------------------------------------
 
-void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
+void look_around( struct dist &moves, bool justLooking, int first_move,
+                  int in_mode, int toggle_mode )
 {
     int keyin = 0;
     bool dirChosen = false;
@@ -297,20 +318,24 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
     int newcx, newcy;
     int mx, my;         // actual map x,y (scratch)
     int mid;            // monster id (scratch)
-    FixedVector < char, 2 > monsfind_pos;
+    int mode = in_mode;
 
-    monsfind_pos[0] = you.x_pos;
-    monsfind_pos[1] = you.y_pos;
+    FixedVector < char, 2 > monsfind_pos;
+    FixedVector < char, 2 > objfind_pos;
+
+    monsfind_pos[0] = objfind_pos[0] = you.x_pos;
+    monsfind_pos[1] = objfind_pos[1] = you.y_pos;
 
     message_current_target();
 
     // setup initial keystroke
     if (first_move >= 0)
-        keyin = (int)'1' + first_move;
+        keyin = static_cast<int>('1') + first_move;
     if (moves.prev_target == -1)
         keyin = '-';
     if (moves.prev_target == 1)
         keyin = '+';
+
     // reset
     moves.prev_target = 0;
 
@@ -323,115 +348,138 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
         newcy = cy;
 
         // move cursor to current position
-        gotoxy(cx+1, cy);
+        gotoxy( cx + 1, cy );
 
         if (keyin == 0)
-            keyin = getch();
+            keyin = getchm(KC_TARGETING);
 
         // DOS idiocy
         if (keyin == 0)
         {
             // get the extended key
-            keyin = getch();
+            keyin = getchm(KC_TARGETING);
 
             // look for CR - change to '5' to indicate selection
             if (keyin == 13)
                 keyin = 'S';
 
-            if (strchr(DOSidiocy, keyin) == NULL)
+            if (strchr( DOSidiocy, keyin ) == NULL)
                 break;
+
             dirChosen = true;
-            dir = (int)(strchr(DOSidiocy, keyin) - DOSidiocy);
+            dir = static_cast<int>(strchr( DOSidiocy, keyin ) - DOSidiocy);
         }
         else
         {
-            if (strchr(dirchars, keyin) != NULL)
+            if (strchr( Dirchars, keyin ) != NULL)
             {
                 dirChosen = true;
-                dir = (int)(strchr(dirchars, keyin) - dirchars) / 2;
+                dir = static_cast<int>(strchr( Dirchars, keyin ) - Dirchars) / 2;
             }
             else
             {
                 // handle non-directional keys
                 switch (keyin)
                 {
-                    case CONTROL('F'):
-                        mode = (mode + 1) % TARG_NUM_MODES;
+                case CONTROL('F'):
+                case '@':
+                    if (mode == TARG_ANY)
+                        mode = toggle_mode;
+                    else
+                        mode = TARG_ANY;
 
-                        snprintf( info, INFO_SIZE, "Targeting mode is now: %s",
-                                  (mode == TARG_ANY)   ? "any" :
-                                  (mode == TARG_ENEMY) ? "enemies"
-                                                       : "friends" );
+                    mpr( "Targeting mode is now: %s",
+                          (mode == TARG_ANY)   ? "any" :
+                          (mode == TARG_ENEMY) ? "enemies"
+                                               : "friends" );
+                    targChosen = true;
+                    break;
 
-                        mpr( info );
-                        targChosen = true;
-                        break;
+                case ';':
+                case '/':
+                case '\'':
+                case '*':
+                    {
+                        int obj_dir = ((keyin == ';') || (keyin == '/') ? -1 : 1);
 
-                    case '-':
-                        if (mons_find( cx, cy, monsfind_pos, -1, mode ) == 0)
+                        if (!find_square( cx, cy, objfind_pos, obj_dir,
+                                          find_object, 0 ))
+                        {
                             flush_input_buffer( FLUSH_ON_FAILURE );
+                        }
+                        else
+                        {
+                            newcx = objfind_pos[0];
+                            newcy = objfind_pos[1];
+                        }
+
+                        targChosen = true;
+                    }
+                    break;
+
+                case '-':
+                case '+':
+                case '=':
+                    {
+                        int mon_dir = ((keyin == '-') ? -1 : 1);
+
+                        if (!find_square( cx, cy, monsfind_pos, mon_dir,
+                                          find_monster, mode ))
+                        {
+                            flush_input_buffer( FLUSH_ON_FAILURE );
+                        }
                         else
                         {
                             newcx = monsfind_pos[0];
                             newcy = monsfind_pos[1];
                         }
+
                         targChosen = true;
+                    }
+                    break;
+
+                case 't':
+                case 'p':
+                    moves.prev_target = -1;
+                    break;
+
+                case '?':
+                    targChosen = true;
+                    mx = you.x_pos + cx - 17;
+                    my = you.y_pos + cy - 9;
+                    mid = mgrd[mx][my];
+
+                    if (mid == NON_MONSTER)
                         break;
-
-                    case '+':
-                    case '=':
-                        if (mons_find( cx, cy, monsfind_pos, 1, mode ) == 0)
-                            flush_input_buffer( FLUSH_ON_FAILURE );
-                        else
-                        {
-                            newcx = monsfind_pos[0];
-                            newcy = monsfind_pos[1];
-                        }
-                        targChosen = true;
-                        break;
-
-                    case 't':
-                    case 'p':
-                        moves.prev_target = -1;
-                        break;
-
-                    case '?':
-                        targChosen = true;
-                        mx = you.x_pos + cx - 17;
-                        my = you.y_pos + cy - 9;
-                        mid = mgrd[mx][my];
-
-                        if (mid == NON_MONSTER)
-                            break;
 
 #if (!DEBUG_DIAGNOSTICS)
-                        if (!player_monster_visible( &menv[mid] ))
-                            break;
+                    if (!player_monster_visible( &menv[mid] ))
+                        break;
 #endif
 
-                        describe_monsters( menv[ mid ].type, mid );
-                        redraw_screen();
-                        mesclr( true );
-                        // describe the cell again.
-                        describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
-                        break;
+                    describe_monsters( menv[ mid ].type, mid );
+                    redraw_screen();
+                    mesclr( true );
+                    // describe the cell again.
+                    describe_cell( you.x_pos + cx - 17, you.y_pos + cy - 9 );
+                    break;
 
-                    case '\r':
-                    case '\n':
-                    case '>':
-                    case ' ':
-                    case '.':
-                        dirChosen = true;
-                        dir = 4;
-                        break;
+                case '\r':
+                case '\n':
+                case '>':
+                case '.':
+                    dirChosen = true;
+                    dir = 4;
+                    break;
 
-                    case ESCAPE:
-                        moves.isCancel = true;
-                        mesclr( true );
-                        return;
+                case ' ':
+                case ESCAPE:
+                    moves.isCancel = true;
+                    mesclr( true );
+                    return;
 
-                    default:
-                        break;
+                default:
+                    break;
                 }
             }
         }
@@ -480,8 +528,8 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
         // check for MOVE
         if (dirChosen)
         {
-            newcx = cx + xcomp[dir];
-            newcy = cy + ycomp[dir];
+            newcx = cx + Xcomp[dir];
+            newcy = cy + Ycomp[dir];
         }
 
         // bounds check for newcx, newcy
@@ -498,29 +546,62 @@ void look_around(struct dist &moves, bool justLooking, int first_move, int mode)
         cx = newcx;
         cy = newcy;
         mesclr( true );
+
+        // RULE: cannot target what you cannot see
         if (env.show[cx - 8][cy] == 0 && !(cx == 17 && cy == 9))
         {
             mpr("You can't see that place.");
             continue;
         }
-        describe_cell(you.x_pos + cx - 17, you.y_pos + cy - 9);
+
+        describe_cell( you.x_pos + cx - 17, you.y_pos + cy - 9 );
     } // end WHILE
 
     mesclr( true );
 }                               // end look_around()
 
+static bool find_monster( int x, int y, int mode )
+{
+    const int targ_mon = mgrd[ x ][ y ];
+    const int tx = x + 9 - you.x_pos;
+    const int ty = y + 9 - you.y_pos;
+
+    return (targ_mon != NON_MONSTER
+        && env.show[tx][ty] != 0
+        && player_monster_visible( &(menv[targ_mon]) )
+        && (!mons_appears_harmless( menv[targ_mon].type )
+            || (mode == TARG_ANY && !mons_is_mimic( menv[targ_mon].type )))
+        && (mode == TARG_ANY
+            || (mode == TARG_FRIEND && mons_friendly( &menv[targ_mon] ))
+            || (mode == TARG_ENEMY && !mons_friendly( &menv[targ_mon] ))));
+}
+
+static bool find_object( int x, int y, int mode )
+{
+    UNUSED( mode );
+
+    const int item = igrd[x][y];
+    const int tx = x + 9 - you.x_pos;
+    const int ty = y + 9 - you.y_pos;
+
+    return (item != NON_ITEM && env.show[tx][ty] != 0);
+}
+
 //---------------------------------------------------------------
 //
-// mons_find
+// find_square
 //
-// Finds the next monster (moving in a spiral outwards from the
-// player, so closer monsters are chosen first; starts to player's
-// left) and puts its coordinates in mfp. Returns 1 if it found
-// a monster, zero otherwise. If direction is -1, goes backwards.
+// Finds the next monster/object/whatever (moving in a spiral
+// outwards from the player, so closer targets are chosen first;
+// starts to player's left) and puts its coordinates in mfp.
+// Returns 1 if it found something, zero otherwise. If direction
+// is -1, goes backwards.
 //
 //---------------------------------------------------------------
-static char mons_find( unsigned char xps, unsigned char yps,
-                       FixedVector<char, 2> &mfp, char direction, int mode )
+static char find_square( unsigned char xps, unsigned char yps,
+                         FixedVector<char, 2> &mfp, char direction,
+                         bool (*find_targ)( int x, int y, int mode ),
+                         int mode )
 {
     unsigned char temp_xps = xps;
     unsigned char temp_yps = yps;
@@ -656,18 +737,8 @@ static char mons_find( unsigned char xps, unsigned char yps,
         if (targ_x < 0 || targ_x >= GXM || targ_y < 0 || targ_y >= GYM)
             continue;
 
-        const int targ_mon = mgrd[ targ_x ][ targ_y ];
-
-        if (targ_mon != NON_MONSTER
-            && env.show[temp_xps - 8][temp_yps] != 0
-            && player_monster_visible( &(menv[targ_mon]) )
-            && !mons_is_mimic( menv[targ_mon].type )
-            && (mode == TARG_ANY
-                || (mode == TARG_FRIEND && mons_friendly( &menv[targ_mon] ))
-                || (mode == TARG_ENEMY && !mons_friendly( &menv[targ_mon] ))))
+        if (find_targ( targ_x, targ_y, mode ))
         {
-            //mpr("Found something!");
-            //more();
             mfp[0] = temp_xps;
             mfp[1] = temp_yps;
             return (1);
@@ -677,7 +748,7 @@ static char mons_find( unsigned char xps, unsigned char yps,
     return (0);
 }
 
-static void describe_cell(int mx, int my)
+static void describe_cell( int mx, int my )
 {
     int   trf;            // used for trap type??
     char  str_pass[ ITEMNAME_SIZE ];
@@ -687,35 +758,57 @@ static void describe_cell(int mx, int my)
     {
         int i = mgrd[mx][my];
 
-        if (grd[mx][my] == DNGN_SHALLOW_WATER)
+        if (!player_monster_visible(&menv[i]))
         {
-            if (!player_monster_visible(&menv[i]) && !mons_flies(&menv[i]))
+            if (grd[mx][my] == DNGN_SHALLOW_WATER && !mons_flies(&menv[i]))
             {
-                mpr("There is a strange disturbance in the water here.");
+                mpr( "There is a %sdisturbance in the water here.",
+                      size_description( mons_size(menv[i].type, PSIZE_BODY) ) );
+            }
+            else if (is_cloud( mx, my ))
+            {
+                mpr( "There is a %sdisturbance in the cloud here.",
+                      size_description( mons_size(menv[i].type, PSIZE_BODY) ) );
             }
         }
 
 #if DEBUG_DIAGNOSTICS
         if (!player_monster_visible( &menv[i] ))
-            mpr( "There is a non-visible monster here.", MSGCH_DIAGNOSTICS );
+            mpr( MSGCH_DIAGNOSTICS, "There is a non-visible monster here." );
 #else
         if (!player_monster_visible( &menv[i] ))
             goto look_clouds;
 #endif
 
+        mimic_item = mons_is_mimic( menv[i].type );
+
+        const bool petrified = mons_has_ench( &(menv[i]), ENCH_PETRIFY );
+
+        if (petrified)
+        {
+            mpr( MSGCH_MONSTER_TARGET, menv[i].colour, "A statue of %s.",
+                 ptr_monam( &(menv[i]), DESC_NOCAP_A, true ) );
+        }
+        else
+        {
+            strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A, true ));
+            strcat(info, ".");
+
+            if (mimic_item)
+                mpr( MSGCH_FLOOR_ITEMS, menv[i].colour, info );
+            else
+                mpr( MSGCH_MONSTER_TARGET, menv[i].colour, info );
+        }
+
         const int mon_wep = menv[i].inv[MSLOT_WEAPON];
         const int mon_arm = menv[i].inv[MSLOT_ARMOUR];
-
-        strcpy(info, ptr_monam( &(menv[i]), DESC_CAP_A ));
-        strcat(info, ".");
-        mpr(info);
+        const int mon_shd = mons_shield( &menv[i] );
 
         if (menv[i].type != MONS_DANCING_WEAPON && mon_wep != NON_ITEM)
         {
-            snprintf( info, INFO_SIZE, "%s is wielding ", mons_pronoun( menv[i].type,
-                                                           PRONOUN_CAP ));
-            it_name(mon_wep, DESC_NOCAP_A, str_pass);
-            strcat(info, str_pass);
+            snprintf( info, INFO_SIZE, "%s is wielding %s",
+                      mons_pronoun( menv[i].type, PRONOUN_CAP ),
+                      it_name( mon_wep, DESC_NOCAP_A, str_pass ) );
 
             // 2-headed ogres can wield 2 weapons
             if ((menv[i].type == MONS_TWO_HEADED_OGRE
@@ -723,9 +816,9 @@ static void describe_cell(int mx, int my)
                 && menv[i].inv[MSLOT_MISSILE] != NON_ITEM)
             {
                 strcat( info, " and " );
-                it_name(menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass);
-                strcat(info, str_pass);
-                strcat(info, ".");
+                it_name( menv[i].inv[MSLOT_MISSILE], DESC_NOCAP_A, str_pass );
+                strcat( info, str_pass );
+                strcat( info, "." );
 
                 mpr(info);
             }
@@ -739,103 +832,97 @@ static void describe_cell(int mx, int my)
         if (mon_arm != NON_ITEM)
         {
             it_name( mon_arm, DESC_PLAIN, str_pass );
-            snprintf( info, INFO_SIZE, "%s is wearing %s.",
-                      mons_pronoun( menv[i].type, PRONOUN_CAP ),
-                      str_pass );
 
-            mpr( info );
+            mpr( "%s is wearing %s.",
+                  mons_pronoun( menv[i].type, PRONOUN_CAP ),
+                  str_pass );
         }
 
+        if (mon_shd != NON_ITEM)
+        {
+            it_name( mon_shd, DESC_NOCAP_A, str_pass );
+
+            mpr( "%s has %s on %s arm.",
+                  mons_pronoun( menv[i].type, PRONOUN_CAP ), str_pass,
+                  mons_pronoun( menv[i].type, PRONOUN_NOCAP_POSSESSIVE ) );
+        }
 
         if (menv[i].type == MONS_HYDRA)
         {
-            snprintf( info, INFO_SIZE, "It has %d heads.", menv[i].number );
-            mpr( info );
+            mpr( "It has %d head%s.", menv[i].number,
+                    (menv[i].number > 1? "s" : "") );
         }
 
-        print_wounds(&menv[i]);
-
-
-        if (mons_is_mimic( menv[i].type ))
-            mimic_item = true;
-        else if (!mons_flag(menv[i].type, M_NO_EXP_GAIN))
+        if (!petrified)
         {
-            if (menv[i].behaviour == BEH_SLEEP)
+            print_wounds( &menv[i] );
+
+            if (!mimic_item && !mons_class_flag(menv[i].type, M_NO_EXP_GAIN))
             {
-                strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
-                strcat(info, " doesn't appear to have noticed you.");
-                mpr(info);
-            }
-            // wandering hostile with no target in LOS
-            else if (menv[i].behaviour == BEH_WANDER && !mons_friendly(&menv[i])
-                    && menv[i].foe == MHITNOT)
-            {
-                // special case: batty monsters get set to BEH_WANDER as
-                // part of their special behaviour.
-                if (!testbits(menv[i].flags, MF_BATTY))
+                if (menv[i].behaviour == BEH_SLEEP)
                 {
+                    strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
+                    strcat(info, " doesn't appear to have noticed you.");
+                    mpr(info);
+                }
+                else if (menv[i].behaviour == BEH_WANDER
+                        && mons_is_batty( &menv[i] )
+                        && !mons_friendly( &menv[i] )
+                        && menv[i].foe == MHITNOT)
+                {
+                    // wandering hostile with no target in LOS
                     strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
                     strcat(info, " doesn't appear to be interested in you.");
                     mpr(info);
                 }
             }
-        }
 
-        if (menv[i].attitude == ATT_FRIENDLY)
-        {
-            strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
-            strcat(info, " is friendly.");
-            mpr(info);
-        }
-
-        for (int p = 0; p < NUM_MON_ENCHANTS; p++)
-        {
-            strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
-            switch (menv[i].enchantment[p])
+            if (menv[i].attitude == ATT_FRIENDLY)
             {
-            case ENCH_YOUR_ROT_I:
-            case ENCH_YOUR_ROT_II:
-            case ENCH_YOUR_ROT_III:
-            case ENCH_YOUR_ROT_IV:
-                strcat(info, " is rotting away."); //jmf: "covered in sores"?
-                break;
-            case ENCH_BACKLIGHT_I:
-            case ENCH_BACKLIGHT_II:
-            case ENCH_BACKLIGHT_III:
-            case ENCH_BACKLIGHT_IV:
-                strcat(info, " is softly glowing.");
-                break;
-            case ENCH_SLOW:
-                strcat(info, " is moving slowly.");
-                break;
-            case ENCH_HASTE:
-                strcat(info, " is moving very quickly.");
-                break;
-            case ENCH_CONFUSION:
-                strcat(info, " appears to be bewildered and confused.");
-                break;
-            case ENCH_INVIS:
-                strcat(info, " is slightly transparent.");
-                break;
-            case ENCH_CHARM:
-                strcat(info, " is in your thrall.");
-                break;
-            case ENCH_YOUR_STICKY_FLAME_I:
-            case ENCH_YOUR_STICKY_FLAME_II:
-            case ENCH_YOUR_STICKY_FLAME_III:
-            case ENCH_YOUR_STICKY_FLAME_IV:
-            case ENCH_STICKY_FLAME_I:
-            case ENCH_STICKY_FLAME_II:
-            case ENCH_STICKY_FLAME_III:
-            case ENCH_STICKY_FLAME_IV:
-                strcat(info, " is covered in liquid flames.");
-                break;
-            default:
-                info[0] = '\0';
-                break;
-            } // end switch
-            if (info[0])
+                strcpy(info, mons_pronoun(menv[i].type, PRONOUN_CAP));
+                strcat(info, " is friendly.");
                 mpr(info);
+            }
+
+            for (int p = 0; p < NUM_MON_ENCHANTS; p++)
+            {
+                strcpy( info, mons_pronoun( menv[i].type, PRONOUN_CAP ) );
+
+                switch (menv[i].ench[p].type)
+                {
+                case ENCH_ROT:
+                    // jmf: "covered in sores"?
+                    strcat(info, " is rotting away.");
+                    break;
+                case ENCH_BACKLIGHT:
+                    strcat(info, " is softly glowing.");
+                    break;
+                case ENCH_SLOW:
+                    strcat(info, " is moving slowly.");
+                    break;
+                case ENCH_HASTE:
+                    strcat(info, " is moving quickly.");
+                    break;
+                case ENCH_CONFUSION:
+                    strcat(info, " appears to be bewildered and confused.");
+                    break;
+                case ENCH_INVIS:
+                    strcat(info, " is slightly transparent.");
+                    break;
+                case ENCH_CHARM:
+                    strcat(info, " is in your thrall.");
+                    break;
+                case ENCH_STICKY_FLAME:
+                    strcat(info, " is covered in liquid flames.");
+                    break;
+                default:
+                    info[0] = '\0';
+                    break;
+                } // end switch
+
+                if (info[0])
+                    mpr(info);
+            }
         }
 
 #if DEBUG_DIAGNOSTICS
@@ -847,34 +934,32 @@ static void describe_cell(int mx, int my)
   // removing warning
   look_clouds:
 #endif
-    if (env.cgrid[mx][my] != EMPTY_CLOUD)
+    if (is_cloud( mx, my ))
     {
-        const char cloud_inspected = env.cgrid[mx][my];
-
-        const char cloud_type = env.cloud[ cloud_inspected ].type;
+        const char cloud = get_cloud_type( mx, my );
 
         strcpy(info, "There is a cloud of ");
         strcat(info,
-            (cloud_type == CLOUD_FIRE
-              || cloud_type == CLOUD_FIRE_MON) ? "flame" :
-            (cloud_type == CLOUD_STINK
-              || cloud_type == CLOUD_STINK_MON) ? "noxious fumes" :
-            (cloud_type == CLOUD_COLD
-              || cloud_type == CLOUD_COLD_MON) ? "freezing vapour" :
-            (cloud_type == CLOUD_POISON
-              || cloud_type == CLOUD_POISON_MON) ? "poison gases" :
-            (cloud_type == CLOUD_GREY_SMOKE
-              || cloud_type == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
-            (cloud_type == CLOUD_BLUE_SMOKE
-              || cloud_type == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
-            (cloud_type == CLOUD_PURP_SMOKE
-              || cloud_type == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
-            (cloud_type == CLOUD_STEAM
-              || cloud_type == CLOUD_STEAM_MON) ? "steam" :
-            (cloud_type == CLOUD_MIASMA
-              || cloud_type == CLOUD_MIASMA_MON) ? "foul pestilence" :
-            (cloud_type == CLOUD_BLACK_SMOKE
-              || cloud_type == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
+            (cloud == CLOUD_FIRE
+              || cloud == CLOUD_FIRE_MON) ? "flame" :
+            (cloud == CLOUD_STINK
+              || cloud == CLOUD_STINK_MON) ? "noxious fumes" :
+            (cloud == CLOUD_COLD
+              || cloud == CLOUD_COLD_MON) ? "freezing vapour" :
+            (cloud == CLOUD_POISON
+              || cloud == CLOUD_POISON_MON) ? "poison gases" :
+            (cloud == CLOUD_GREY_SMOKE
+              || cloud == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
+            (cloud == CLOUD_BLUE_SMOKE
+              || cloud == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
+            (cloud == CLOUD_PURP_SMOKE
+              || cloud == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
+            (cloud == CLOUD_STEAM
+              || cloud == CLOUD_STEAM_MON) ? "steam" :
+            (cloud == CLOUD_MIASMA
+              || cloud == CLOUD_MIASMA_MON) ? "foul pestilence" :
+            (cloud == CLOUD_BLACK_SMOKE
+              || cloud == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
                                                       : "buggy goodness");
         strcat(info, " here.");
         mpr(info);
@@ -884,22 +969,20 @@ static void describe_cell(int mx, int my)
 
     if (targ_item != NON_ITEM)
     {
-        // If a mimic is on this square, we pretend its the first item -- bwr
+        // If a mimic is on this square, we pretend it's the first item -- bwr
         if (mimic_item)
             mpr("There is something else lying underneath.");
         else
         {
-            if (mitm[ targ_item ].base_type == OBJ_GOLD)
+            if (mitm[targ_item].base_type == OBJ_GOLD)
             {
-                mpr( "A pile of gold coins." );
+                mpr( MSGCH_FLOOR_ITEMS, YELLOW, "A pile of gold coins." );
             }
             else
             {
-                strcpy(info, "You see ");
-                it_name( targ_item, DESC_NOCAP_A, str_pass);
-                strcat(info, str_pass);
-                strcat(info, " here.");
-                mpr(info);
+                mpr( MSGCH_FLOOR_ITEMS, mitm[targ_item].colour,
+                     "You see %s here.",
+                     it_name( targ_item, DESC_NOCAP_A, str_pass) );
             }
 
             if (mitm[ targ_item ].link != NON_ITEM)
@@ -907,18 +990,33 @@ static void describe_cell(int mx, int my)
         }
     }
 
-    switch (grd[mx][my])
+    unsigned char targ_grid = grd[mx][my];
+
+    if (targ_grid == DNGN_SECRET_DOOR)
+    {
+#if DEBUG_DIAGNOSTICS
+        mpr( MSGCH_DIAGNOSTICS, "A secret door." );
+#endif
+        targ_grid = grid_secret_door_appearance( mx, my );
+    }
+
+    switch (targ_grid)
     {
     case DNGN_STONE_WALL:
         mpr("A stone wall.");
         break;
-    case DNGN_ROCK_WALL:
+
     case DNGN_SECRET_DOOR:
+        // shouldn't happen
+        break;
+
+    case DNGN_ROCK_WALL:
         if (you.level_type == LEVEL_PANDEMONIUM)
             mpr("A wall of the weird stuff which makes up Pandemonium.");
         else
             mpr("A rock wall.");
         break;
+
     case DNGN_PERMAROCK_WALL:
         mpr("An unnaturally hard rock wall.");
         break;
@@ -978,29 +1076,22 @@ static void describe_cell(int mx, int my)
     case DNGN_STONE_STAIRS_UP_III:
         mpr("A stone staircase leading up.");
         break;
+    case DNGN_EXIT_HELL:
+        mpr("A gateway back to the Vestibule.");
+        break;
     case DNGN_ENTER_HELL:
         mpr("A gateway to hell.");
-        break;
-    case DNGN_BRANCH_STAIRS:
-        mpr("A staircase to a branch level.");
         break;
     case DNGN_TRAP_MECHANICAL:
     case DNGN_TRAP_MAGICAL:
     case DNGN_TRAP_III:
-        for (trf = 0; trf < MAX_TRAPS; trf++)
-        {
-            if (env.trap[trf].x == mx
-                && env.trap[trf].y == my)
-            {
-                break;
-            }
+        trf = trap_at_xy( mx, my );
 
-            if (trf == MAX_TRAPS - 1)
-            {
-                mpr("Error - couldn't find that trap.");
-                error_message_to_player();
-                break;
-            }
+        if (trf == -1)
+        {
+            mpr("Error - couldn't find that trap.");
+            error_message_to_player();
+            break;
         }
 
         switch (env.trap[trf].type)

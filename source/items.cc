@@ -27,6 +27,7 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "beam.h"
@@ -38,6 +39,7 @@
 #include "it_use2.h"
 #include "item_use.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
@@ -49,10 +51,12 @@
 #include "religion.h"
 #include "shopping.h"
 #include "skills.h"
+#include "skills2.h"
 #include "spl-cast.h"
 #include "stuff.h"
+#include "view.h"
 
-static void autopickup(void);
+static void do_autopickup(void);
 
 // Used to be called "unlink_items", but all it really does is make
 // sure item coordinates are correct to the stack they're in. -- bwr
@@ -86,7 +90,9 @@ void link_items(void)
     for (i = 0; i < GXM; i++)
     {
         for (j = 0; j < GYM; j++)
+        {
             igrd[i][j] = NON_ITEM;
+        }
     }
 
     // link all items on the grid, plus shop inventory,
@@ -107,20 +113,20 @@ void link_items(void)
     }
 }                               // end link_items()
 
-static bool item_ok_to_clean(int item)
+static bool item_ok_to_clean( int item )
 {
     // 5. never clean food or Orbs
     if (mitm[item].base_type == OBJ_FOOD || mitm[item].base_type == OBJ_ORBS)
-        return false;
+        return (false);
 
     // never clean runes
     if (mitm[item].base_type == OBJ_MISCELLANY
         && mitm[item].sub_type == MISC_RUNE_OF_ZOT)
     {
-        return false;
+        return (false);
     }
 
-    return true;
+    return (true);
 }
 
 // returns index number of first available space, or NON_ITEM for
@@ -129,7 +135,7 @@ int cull_items(void)
 {
     // XXX: Not the prettiest of messages, but the player
     // deserves to know whenever this kicks in. -- bwr
-    mpr( "Too many items on level, removing some.", MSGCH_WARN );
+    mpr( MSGCH_WARN, "Too many items on level, removing some." );
 
     /* rules:
        1. Don't cleanup anything nearby the player
@@ -142,21 +148,18 @@ int cull_items(void)
        9. unrandarts are 'destroyed', but may be generated again
     */
 
-    int x,y, item, next;
+    int x, y, item, next;
     int first_cleaned = NON_ITEM;
 
     // 2. avoid shops by avoiding (0,5..9)
     // 3. avoid monster inventory by iterating over the dungeon grid
-    for (x = 5; x < GXM; x++)
+    for (x = X_BOUND_1 + 1; x < X_BOUND_2; x++)
     {
-        for (y = 5; y < GYM; y++)
+        for (y = Y_BOUND_1 + 1; y < Y_BOUND_2; y++)
         {
             // 1. not near player!
-            if (x > you.x_pos - 9 && x < you.x_pos + 9
-                && y > you.y_pos - 9 && y < you.y_pos + 9)
-            {
+            if (grid_distance(x, y, you.x_pos, you.y_pos) <= MAX_VISION_RANGE)
                 continue;
-            }
 
             // iterate through the grids list of items:
             for (item = igrd[x][y]; item != NON_ITEM; item = next)
@@ -174,9 +177,9 @@ int cull_items(void)
                     else if (is_unrandom_artefact( mitm[item] ))
                     {
                         // 9. unmark unrandart
-                        int x = find_unrandart_index(item);
+                        x = find_unrandart_index( item );
                         if (x >= 0)
-                            set_unrandart_exist(x, 0);
+                            set_unrandart_exist( x, 0 );
                     }
 
                     // POOF!
@@ -211,31 +214,25 @@ bool dec_inv_item_quantity( int obj, int amount )
     bool ret = false;
 
     if (you.equip[EQ_WEAPON] == obj)
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
 
-    if (you.inv[obj].quantity <= amount)
+    if (you.inv[obj].quantity > amount)
+        you.inv[obj].quantity -= amount;
+    else
     {
         for (int i = 0; i < NUM_EQUIP; i++)
         {
             if (you.equip[i] == obj)
             {
                 you.equip[i] = -1;
+
                 if (i == EQ_WEAPON)
-                {
-                    unwield_item( obj );
-                    canned_msg( MSG_EMPTY_HANDED );
-                }
+                    unwield_item();
             }
         }
 
-        you.inv[obj].base_type = OBJ_UNASSIGNED;
-        you.inv[obj].quantity = 0;
-
+        invalidate_item( you.inv[obj] );
         ret = true;
-    }
-    else
-    {
-        you.inv[obj].quantity -= amount;
     }
 
     burden_change();
@@ -262,7 +259,7 @@ bool dec_mitm_item_quantity( int obj, int amount )
 void inc_inv_item_quantity( int obj, int amount )
 {
     if (you.equip[EQ_WEAPON] == obj)
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
 
     you.inv[obj].quantity += amount;
     burden_change();
@@ -273,23 +270,31 @@ void inc_mitm_item_quantity( int obj, int amount )
     mitm[obj].quantity += amount;
 }
 
-void init_item( int item )
+void init_item( item_def &item, int base, int sub, int quant )
 {
-    if (item == NON_ITEM)
-        return;
+    item.base_type = base;
+    item.sub_type  = sub;
+    item.quantity = quant;
 
-    mitm[item].base_type = OBJ_UNASSIGNED;
-    mitm[item].sub_type  = 0;
-    mitm[item].plus  = 0;
-    mitm[item].plus2  = 0;
-    mitm[item].special  = 0;
-    mitm[item].quantity  = 0;
-    mitm[item].colour  = 0;
-    mitm[item].flags  = 0;
+    item.plus  = 0;
+    item.plus2  = 0;
+    item.special  = 0;
+    item.colour  = 0;
+    item.flags  = 0;
 
-    mitm[item].x  = 0;
-    mitm[item].y  = 0;
-    mitm[item].link  = NON_ITEM;
+    for (int i = 0; i < RAP_NUM_PROPERTIES; i++)
+        item.ra_props[i] = 0;
+
+    item.x  = 0;
+    item.y  = 0;
+    item.link  = NON_ITEM;
+    item.slot  = -1;
+}
+
+void invalidate_item( item_def &item )
+{
+    item.base_type = OBJ_UNASSIGNED;
+    item.quantity  = 0;
 }
 
 // Returns an unused mitm slot, or NON_ITEM if none available.
@@ -317,9 +322,29 @@ int get_item_slot( int reserve )
 
     ASSERT( item != NON_ITEM );
 
-    init_item( item );
+    init_item( mitm[item] );
 
     return (item);
+}
+
+// Find an empty inventory slot.  Take "pref" if != -1 and unused.
+// Returns ENDOFPACK if no slot is found.
+static int get_inv_slot( int pref )
+{
+    int ret;
+
+    if (pref != -1 && !is_valid_item( you.inv[pref] ))
+        ret = pref;
+    else
+    {
+        for (ret = 0; ret < ENDOFPACK; ret++)
+        {
+            if (!is_valid_item( you.inv[ret] ))
+                break;
+        }
+    }
+
+    return (ret);
 }
 
 void unlink_item( int dest )
@@ -354,10 +379,7 @@ void unlink_item( int dest )
                     mitm[dest].x = 0;
                     mitm[dest].y = 0;
                     mitm[dest].link = NON_ITEM;
-
-                    // This causes problems when changing levels. -- bwr
-                    // if (monster->type == MONS_DANCING_WEAPON)
-                    //     monster_die(monster, KILL_RESET, 0);
+                    mitm[dest].slot = -1;
                     return;
                 }
             }
@@ -382,6 +404,7 @@ void unlink_item( int dest )
             mitm[dest].x = 0;
             mitm[dest].y = 0;
             mitm[dest].link = NON_ITEM;
+            mitm[dest].slot = -1;
             return;
         }
 
@@ -397,6 +420,7 @@ void unlink_item( int dest )
                 mitm[dest].x = 0;
                 mitm[dest].y = 0;
                 mitm[dest].link = NON_ITEM;
+                mitm[dest].slot = -1;
                 return;
             }
         }
@@ -404,7 +428,7 @@ void unlink_item( int dest )
 
 #if DEBUG
     // Okay, the sane ways are gone... let's warn the player:
-    mpr( "BUG WARNING: Problems unlinking item!!!", MSGCH_DANGER );
+    mpr( MSGCH_DANGER, "BUG WARNING: Problems unlinking item!!!" );
 
     // Okay, first we scan all items to see if we have something
     // linked to this item.  We're not going to return if we find
@@ -414,11 +438,7 @@ void unlink_item( int dest )
     int   old_link = mitm[dest].link; // used to try linking the first
 
     // clean the relevant parts of the object:
-    mitm[dest].base_type = OBJ_UNASSIGNED;
-    mitm[dest].quantity = 0;
-    mitm[dest].x = 0;
-    mitm[dest].y = 0;
-    mitm[dest].link = NON_ITEM;
+    invalidate_item( mitm[dest] );
 
     // Look through all items for links to this item.
     for (c = 0; c < MAX_ITEMS; c++)
@@ -437,9 +457,9 @@ void unlink_item( int dest )
     }
 
     // Now check the grids to see if it's linked as a list top.
-    for (c = 2; c < (GXM - 1); c++)
+    for (c = X_BOUND_1 + 1; c < X_BOUND_2; c++)
     {
-        for (cy = 2; cy < (GYM - 1); cy++)
+        for (cy = Y_BOUND_1 + 1; cy < Y_BOUND_2; cy++)
         {
             if (igrd[c][cy] == dest)
             {
@@ -457,7 +477,7 @@ void unlink_item( int dest )
 
     // Okay, finally warn player if we didn't do anything.
     if (!linked)
-        mpr("BUG WARNING: Item didn't seem to be linked at all.", MSGCH_DANGER);
+        mpr(MSGCH_DANGER,"BUG WARNING: Item didn't seem to be linked at all." );
 #endif
 }                               // end unlink_item()
 
@@ -470,9 +490,6 @@ void destroy_item( int dest )
         return;
 
     unlink_item( dest );
-
-    mitm[dest].base_type = OBJ_UNASSIGNED;
-    mitm[dest].quantity = 0;
 }
 
 void destroy_item_stack( int x, int y )
@@ -498,8 +515,7 @@ void destroy_item_stack( int x, int y )
                                         UNIQ_LOST_IN_ABYSS );
             }
 
-            mitm[o].base_type = OBJ_UNASSIGNED;
-            mitm[o].quantity = 0;
+            invalidate_item( mitm[o] );
         }
 
         o = next;
@@ -508,79 +524,72 @@ void destroy_item_stack( int x, int y )
 
 
 /*
- * Takes keyin as an argument because it will only display a long list of items
- * if ; is pressed.
+ * If looking is true, then we're using the ';' command to get a full
+ * list of items... otherwise, things may be abbreviated.
  */
-void item_check(char keyin)
+void item_check( bool looking )
 {
-    char item_show[50][50];
-    char temp_quant[10];
-
-    int counter = 0;
-    int counter_max = 0;
-
     const int grid = grd[you.x_pos][you.y_pos];
 
-    if (grid >= DNGN_ENTER_HELL && grid <= DNGN_PERMADRY_FOUNTAIN)
+    if (grid >= DNGN_EXIT_HELL && grid <= DNGN_PERMADRY_FOUNTAIN)
     {
         if (grid >= DNGN_STONE_STAIRS_DOWN_I && grid <= DNGN_ROCK_STAIRS_DOWN)
         {
-            snprintf( info, INFO_SIZE, "There is a %s staircase leading down here.",
-                     (grid == DNGN_ROCK_STAIRS_DOWN) ? "rock" : "stone" );
-
-            mpr(info);
+            mpr( "There is a %s staircase leading down here.",
+                 (grid == DNGN_ROCK_STAIRS_DOWN) ? "rock" : "stone" );
         }
         else if (grid >= DNGN_STONE_STAIRS_UP_I && grid <= DNGN_ROCK_STAIRS_UP)
         {
-            snprintf( info, INFO_SIZE, "There is a %s staircase leading upwards here.",
-                     (grid == DNGN_ROCK_STAIRS_DOWN) ? "rock" : "stone" );
-
-            mpr(info);
+            mpr( "There is a %s staircase leading upwards here.",
+                 (grid == DNGN_ROCK_STAIRS_UP) ? "rock" : "stone" );
         }
         else
         {
             switch (grid)
             {
+            case DNGN_EXIT_HELL:
+                mpr("There is a gateway back to the Vestibule here (up).");
+                break;
             case DNGN_ENTER_HELL:
-                mpr("There is a gateway to Hell here.");
+                mpr("There is a gateway to Hell here (down).");
                 break;
             case DNGN_ENTER_GEHENNA:
-                mpr("There is a gateway to Gehenna here.");
+                mpr("There is a gateway to Gehenna here (down).");
                 break;
             case DNGN_ENTER_COCYTUS:
-                mpr("There is a gateway to the frozen wastes of Cocytus here.");
+                mpr("There is a gateway to the frozen wastes of Cocytus here (down).");
                 break;
             case DNGN_ENTER_TARTARUS:
-                mpr("There is a gateway to Tartarus here.");
+                mpr("There is a gateway to Tartarus here (down).");
                 break;
             case DNGN_ENTER_DIS:
-                mpr("There is a gateway to the Iron City of Dis here.");
+                mpr("There is a gateway to the Iron City of Dis here (down).");
                 break;
             case DNGN_ENTER_SHOP:
-                snprintf( info, INFO_SIZE, "There is an entrance to %s here.", shop_name(you.x_pos, you.y_pos));
-                mpr(info);
+                mpr( "There is an entrance to %s here (up).",
+                      shop_name( you.x_pos, you.y_pos ) );
                 break;
             case DNGN_ENTER_LABYRINTH:
-                mpr("There is an entrance to a labyrinth here.");
+                mpr("There is an entrance to to a labyrinth here (down).");
                 mpr("Beware, for starvation awaits!");
                 break;
             case DNGN_ENTER_ABYSS:
-                mpr("There is a one-way gate to the infinite horrors of the Abyss here.");
+                mpr("There is a one-way gate into the infinite horrors of the Abyss here (down).");
                 break;
             case DNGN_STONE_ARCH:
                 mpr("There is an empty stone archway here.");
                 break;
             case DNGN_EXIT_ABYSS:
-                mpr("There is a gateway leading out of the Abyss here.");
+                mpr("There is a gateway leading out of the Abyss here (down).");
                 break;
             case DNGN_ENTER_PANDEMONIUM:
-                mpr("There is a gate leading to the halls of Pandemonium here.");
+                mpr("There is a gate leading to the halls of Pandemonium here (down).");
                 break;
             case DNGN_EXIT_PANDEMONIUM:
-                mpr("There is a gate leading out of Pandemonium here.");
+                mpr("There is a gate leading out of Pandemonium here (down).");
                 break;
             case DNGN_TRANSIT_PANDEMONIUM:
-                mpr("There is a gate leading to another region of Pandemonium here.");
+                mpr("There is a gate leading to another region of Pandemonium here (down).");
                 break;
             case DNGN_ENTER_ORCISH_MINES:
                 mpr("There is a staircase to the Orcish Mines here.");
@@ -604,7 +613,7 @@ void item_check(char keyin)
                 mpr("There is a staircase to the Hall of Blades here.");
                 break;
             case DNGN_ENTER_ZOT:
-                mpr("There is a gate to the Realm of Zot here.");
+                mpr("There is a gateway to the Realm of Zot here (down).");
                 break;
             case DNGN_ENTER_TEMPLE:
                 mpr("There is a staircase to the Ecumenical Temple here.");
@@ -644,7 +653,7 @@ void item_check(char keyin)
                 mpr("There is a staircase back to the Mines here.");
                 break;
             case DNGN_RETURN_FROM_ZOT:
-                mpr("There is a gate leading back out of this place here.");
+                mpr("There is a gateway leading out of this Realm here (up).");
                 break;
             case DNGN_ALTAR_ZIN:
                 mpr("There is a glowing white marble altar of Zin here.");
@@ -683,10 +692,10 @@ void item_check(char keyin)
                 mpr("There is a silver altar of Elyvilon here.");
                 break;
             case DNGN_BLUE_FOUNTAIN:
-                mpr("There is a fountain here (q to drink).");
+                mpr("There is a fountain here.");
                 break;
             case DNGN_SPARKLING_FOUNTAIN:
-                mpr("There is a sparkling fountain here (q to drink).");
+                mpr("There is a sparkling fountain here.");
                 break;
             case DNGN_DRY_FOUNTAIN_I:
             case DNGN_DRY_FOUNTAIN_II:
@@ -700,80 +709,138 @@ void item_check(char keyin)
         }
     }
 
-    if (igrd[you.x_pos][you.y_pos] == NON_ITEM && keyin == ';')
+    if (is_cloud( you.x_pos, you.y_pos ))
+    {
+        const int cloud = get_cloud_type( you.x_pos, you.y_pos );
+
+        mpr( "There is a cloud of %s here.",
+                (cloud == CLOUD_FIRE
+                  || cloud == CLOUD_FIRE_MON) ? "flame" :
+                (cloud == CLOUD_STINK
+                  || cloud == CLOUD_STINK_MON) ? "noxious fumes" :
+                (cloud == CLOUD_COLD
+                  || cloud == CLOUD_COLD_MON) ? "freezing vapour" :
+                (cloud == CLOUD_POISON
+                  || cloud == CLOUD_POISON_MON) ? "poison gases" :
+                (cloud == CLOUD_GREY_SMOKE
+                  || cloud == CLOUD_GREY_SMOKE_MON) ? "grey smoke" :
+                (cloud == CLOUD_BLUE_SMOKE
+                  || cloud == CLOUD_BLUE_SMOKE_MON) ? "blue smoke" :
+                (cloud == CLOUD_PURP_SMOKE
+                  || cloud == CLOUD_PURP_SMOKE_MON) ? "purple smoke" :
+                (cloud == CLOUD_STEAM
+                  || cloud == CLOUD_STEAM_MON) ? "steam" :
+                (cloud == CLOUD_MIASMA
+                  || cloud == CLOUD_MIASMA_MON) ? "foul pestilence" :
+                (cloud == CLOUD_BLACK_SMOKE
+                  || cloud == CLOUD_BLACK_SMOKE_MON) ? "black smoke"
+                                                     : "buggy goodness" );
+    }
+
+    if (igrd[you.x_pos][you.y_pos] == NON_ITEM && looking)
     {
         mpr("There are no items here.");
         return;
     }
 
-    autopickup();
+    if (Options.autopickup_on_look || !looking)
+        do_autopickup();
 
-    int objl = igrd[you.x_pos][you.y_pos];
-
-    while (objl != NON_ITEM)
+    // Must be looking to see items if number_walk_items is set to zero.
+    if (igrd[you.x_pos][you.y_pos] != NON_ITEM
+        && (looking || Options.number_walk_items))
     {
-        counter++;
+        char  str_pass[ ITEMNAME_SIZE ];
+        int   objl = igrd[you.x_pos][you.y_pos];
 
-        if (counter > 45)
+        if (mitm[objl].link == NON_ITEM)
         {
-            strcpy(item_show[counter], "Too many items.");
-            break;
+            // one item case (always one simple line)
+            it_name( objl, DESC_NOCAP_A, str_pass );
+
+            mpr( MSGCH_FLOOR_ITEMS, mitm[objl].colour,
+                     "You see here %s.", str_pass );
         }
-
-        if (mitm[objl].base_type == OBJ_GOLD)
+        else if (Options.number_walk_items == 1)
         {
-            itoa(mitm[objl].quantity, temp_quant, 10);
-            strcpy(item_show[counter], temp_quant);
-            strcat(item_show[counter], " gold piece");
-            if (mitm[objl].quantity > 1)
-                strcat(item_show[counter], "s");
-
+            // always just a brief one-liner when number_walk_items == 1
+            mpr( "There are several objects here." );
         }
         else
         {
-            char str_pass[ ITEMNAME_SIZE ];
-            it_name(objl, DESC_NOCAP_A, str_pass);
-            strcpy(item_show[counter], str_pass);
-        }
+            mpr( "Things that are here:" );
 
-        objl = mitm[objl].link;
-    }
+            for (int num = 0; objl != NON_ITEM; objl = mitm[objl].link, num++)
+            {
+                if (!looking
+                    && num == Options.number_walk_items - 1
+                    && mitm[objl].link != NON_ITEM)
+                {
+                    mpr( "There are several more objects here." );
+                    break;
+                }
+                else
+                {
+                    it_name( objl, DESC_NOCAP_A, str_pass );
 
-    counter_max = counter;
-    counter = 0;
-
-    if (counter_max == 1)
-    {
-        strcpy(info, "You see here ");  // remember 'an'.
-
-        strcat(info, item_show[counter_max]);
-        strcat(info, ".");
-        mpr(info);
-
-        counter++;
-        counter_max = 0;        // to skip next part.
-
-    }
-
-    if ((counter_max > 0 && counter_max < 6)
-        || (counter_max > 1 && keyin == ';'))
-    {
-        mpr("Things that are here:");
-
-        while (counter < counter_max)
-        {
-            // this is before the strcpy because item_show start at 1, not 0.
-            counter++;
-            mpr(item_show[counter]);
+                    mpr( MSGCH_FLOOR_ITEMS, mitm[objl].colour,
+                            "You see here %s.", str_pass );
+                }
+            }
         }
     }
-
-    if (counter_max > 5 && keyin != ';')
-        mpr("There are several objects here.");
 }
 
 
-void pickup(void)
+void pickup_menu( int item_link )
+{
+    std::vector<item_def*> items;
+
+    for (int i = item_link; i != NON_ITEM; i = mitm[i].link)
+        items.push_back( &mitm[i] );
+
+    std::vector<SelItem> selected = select_items( items, "Select items to pick up" );
+
+    redraw_screen();
+
+    for (int i = 0, count = selected.size(); i < count; ++i)
+    {
+        for (int j = item_link; j != NON_ITEM; j = mitm[j].link)
+        {
+            if (&mitm[j] == selected[i].item)
+            {
+                if (j == item_link)
+                    item_link = mitm[j].link;
+
+                unsigned long oldflags = mitm[j].flags;
+                mitm[j].flags &= ~(ISFLAG_THROWN | ISFLAG_DROPPED);
+
+                int result = move_item_to_player( j, selected[i].quantity );
+
+                // If we cleared any flags on the items, but the pickup was
+                // partial, reset the flags for the items that remain on the
+                // floor.
+                if (is_valid_item( mitm[j] ))
+                    mitm[j].flags = oldflags;
+
+                if (result == 0)
+                {
+                    mpr("You can't carry that much weight.");
+                    return;
+                }
+                else if (result == -1)
+                {
+                    mpr("You can't carry that many items.");
+                    return;
+                }
+                break;
+            }
+        }
+    }
+}
+
+
+void do_pickup( void )
 {
     int o = 0;
     int m = 0;
@@ -789,9 +856,9 @@ void pickup(void)
         return;
     }
 
-    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (!player_access_floor())
     {
-        mpr("You can't reach the floor from up here.");
+        canned_msg( MSG_CANT_REACH );
         return;
     }
 
@@ -808,33 +875,31 @@ void pickup(void)
 
         if (yesno("There is a portable altar here. Pick it up?"))
         {
-            for (m = 0; m < ENDOFPACK; m++)
+            m = get_inv_slot( you.nemelex_altar_index );
+
+            if (m != ENDOFPACK) // paranoia: shouldn't happen
             {
-                if (!is_valid_item( you.inv[m] ))
-                {
-                    you.inv[m].base_type = OBJ_MISCELLANY;
-                    you.inv[m].sub_type = MISC_PORTABLE_ALTAR_OF_NEMELEX;
-                    you.inv[m].plus = 0;
-                    you.inv[m].plus2 = 0;
-                    you.inv[m].special = 0;
-                    you.inv[m].colour = LIGHTMAGENTA;
-                    you.inv[m].quantity = 1;
-                    set_ident_flags( you.inv[m], ISFLAG_IDENT_MASK );
+                grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
 
-                    you.inv[m].x = -1;
-                    you.inv[m].y = -1;
-                    you.inv[m].link = m;
+                you.inv[m].base_type = OBJ_MISCELLANY;
+                you.inv[m].sub_type = MISC_PORTABLE_ALTAR_OF_NEMELEX;
+                you.inv[m].plus = 0;
+                you.inv[m].plus2 = 0;
+                you.inv[m].special = 0;
+                you.inv[m].colour = LIGHTMAGENTA;
+                you.inv[m].quantity = 1;
+                set_ident_flags( you.inv[m], ISFLAG_IDENT_MASK );
 
-                    burden_change();
+                you.inv[m].x = -1;
+                you.inv[m].y = -1;
+                you.inv[m].link = NON_ITEM;
+                you.inv[m].slot = m;
 
-                    in_name( m, DESC_INVENTORY_EQUIP, str_pass );
-                    strcpy( info, str_pass );
-                    mpr( info );
-                    break;
-                }
+                burden_change();
+
+                in_name( m, DESC_INVENTORY_EQUIP, str_pass );
+                mpr( MSGCH_FLOOR_ITEMS, you.inv[m].colour, str_pass );
             }
-
-            grd[you.x_pos][you.y_pos] = DNGN_FLOOR;
         }
     }
 
@@ -846,6 +911,8 @@ void pickup(void)
     }
     else if (mitm[o].link == NON_ITEM)      // just one item?
     {
+        mitm[o].flags &= ~(ISFLAG_THROWN | ISFLAG_DROPPED);
+
         num = move_item_to_player( o, mitm[o].quantity );
 
         if (num == -1)
@@ -881,10 +948,16 @@ void pickup(void)
                     strcat(info, str_pass);
                 }
 
-                strcat(info, "\? (y,n,a,q)");
-                mpr( info, MSGCH_PROMPT );
+                strcat(info, "\? (y,n,a,*,q)");
+                mpr(  MSGCH_PROMPT, info );
 
                 keyin = get_ch();
+            }
+
+            if (keyin == '*' || keyin == '?' || keyin == ',')
+            {
+                pickup_menu(o);
+                break;
             }
 
             if (keyin == 'q')
@@ -892,7 +965,9 @@ void pickup(void)
 
             if (keyin == 'y' || keyin == 'a')
             {
-                int result = move_item_to_player( o, mitm[o].quantity );
+                mitm[o].flags &= ~(ISFLAG_THROWN | ISFLAG_DROPPED);
+
+                const int result = move_item_to_player( o, mitm[o].quantity );
 
                 if (result == 0)
                 {
@@ -913,31 +988,45 @@ void pickup(void)
 
 static bool is_stackable_item( const item_def &item )
 {
-    if (!is_valid_item( item ))
-        return (false);
+    ASSERT( is_valid_item( item ) );
 
-    if (item.base_type == OBJ_MISSILES
-        || (item.base_type == OBJ_FOOD && item.sub_type != FOOD_CHUNK)
-        || item.base_type == OBJ_SCROLLS
-        || item.base_type == OBJ_POTIONS
-        || item.base_type == OBJ_UNKNOWN_II
-        || (item.base_type == OBJ_MISCELLANY
-            && item.sub_type == MISC_RUNE_OF_ZOT))
+    bool ret = false;
+
+    switch (item.base_type)
     {
-        return (true);
+    case OBJ_MISSILES:
+    case OBJ_SCROLLS:
+    case OBJ_POTIONS:
+        ret = true;
+        break;
+
+    case OBJ_FOOD:
+        ret = (item.sub_type != FOOD_CHUNK);
+        break;
+
+    case OBJ_MISCELLANY:
+        ret = (item.sub_type == MISC_RUNE_OF_ZOT);
+        break;
+
+    default:
+        break;
     }
 
-    return (false);
+    return (ret);
 }
 
 bool items_stack( const item_def &item1, const item_def &item2 )
 {
-    // both items must be stackable
-    if (!is_stackable_item( item1 ) || !is_stackable_item( item2 ))
+    // must check if items are valid!
+    if (!is_valid_item( item1 ) || !is_valid_item( item2 ))
         return (false);
 
     // base and sub-types must always be the same to stack
     if (item1.base_type != item2.base_type || item1.sub_type != item2.sub_type)
+        return (false);
+
+    // items must be stackable
+    if (!is_stackable_item( item1 ) || !is_stackable_item( item2 ))
         return (false);
 
     // These classes also require pluses and special
@@ -956,22 +1045,39 @@ bool items_stack( const item_def &item1, const item_def &item2 )
     // ident status (scrolls and potions are known by identifying any
     // one of them, the individual status might not be the same).
     if (item1.base_type == OBJ_FOOD
-            || item1.base_type == OBJ_SCROLLS
-            || item1.base_type == OBJ_POTIONS)
+        || item1.base_type == OBJ_SCROLLS
+        || item1.base_type == OBJ_POTIONS)
     {
         if ((item1.flags & ~ISFLAG_IDENT_MASK)
-                != (item2.flags & ~ISFLAG_IDENT_MASK))
+            != (item2.flags & ~ISFLAG_IDENT_MASK))
         {
             return (false);
         }
+
+        // Partially eaten items CANNOT stack currently... the delay
+        // stopping code assumes that the stack of items started whole
+        // and will reset the remaining items to such!
+        if (item1.base_type == OBJ_FOOD && (item1.plus2 > 0 || item2.plus2 > 0))
+            return (false);
 
         // Thanks to mummy cursing, we can have potions of decay
         // that don't look alike... so we don't stack potions
         // if either isn't identified and they look different.  -- bwr
         if (item1.base_type == OBJ_POTIONS
             && item1.special != item2.special
-            && (item_not_ident( item1, ISFLAG_KNOW_TYPE )
-                || item_not_ident( item2, ISFLAG_KNOW_TYPE )))
+            && (!item_ident( item1, ISFLAG_KNOW_TYPE )
+                || !item_ident( item2, ISFLAG_KNOW_TYPE )))
+        {
+            return (false);
+        }
+
+        // Scrolls of random uselessness now have the power of delusion.
+        const int ru_id = get_ident_type( OBJ_SCROLLS, SCR_RANDOM_USELESSNESS );
+
+        if (item1.base_type == OBJ_SCROLLS
+            && item1.sub_type == SCR_RANDOM_USELESSNESS
+            && (ru_id != ID_KNOWN_TYPE
+                && (item1.plus != item2.plus || item1.special != item2.special)))
         {
             return (false);
         }
@@ -988,7 +1094,7 @@ bool items_stack( const item_def &item1, const item_def &item2 )
 // the player's inventory is full.
 int move_item_to_player( int obj, int quant_got, bool quiet )
 {
-    int item_mass = 0;
+    int mass = 0;
     int unit_mass = 0;
     int retval = quant_got;
     char brek = 0;
@@ -1001,31 +1107,32 @@ int move_item_to_player( int obj, int quant_got, bool quiet )
     {
         you.gold += quant_got;
         dec_mitm_item_quantity( obj, quant_got );
-        you.redraw_gold = 1;
+        set_redraw_status( REDRAW_GOLD );
 
         if (!quiet)
         {
-            snprintf( info, INFO_SIZE, "You pick up %d gold piece%s.",
-                     quant_got, (quant_got > 1) ? "s" : "" );
-
-            mpr(info);
+            mpr( MSGCH_FLOOR_ITEMS, YELLOW, "You pick up %d gold piece%s.",
+                 quant_got, (quant_got > 1) ? "s" : "" );
         }
 
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         return (retval);
     }
 
-    unit_mass = mass_item( mitm[obj] );
-    item_mass = unit_mass * mitm[obj].quantity;
-    quant_got = mitm[obj].quantity;
+    unit_mass = item_mass( mitm[obj] );
+
+    if (quant_got > mitm[obj].quantity || quant_got <= 0)
+        quant_got = mitm[obj].quantity;
+
+    mass = unit_mass * quant_got;
     brek = 0;
 
     // multiply both constants * 10
 
-    if ((int) you.burden + item_mass > carrying_capacity())
+    if (you.burden + mass > carrying_capacity())
     {
         // calculate quantity we can actually pick up
-        int part = (carrying_capacity() - (int)you.burden) / unit_mass;
+        int part = (carrying_capacity() - you.burden) / unit_mass;
 
         if (part < 1)
             return (0);
@@ -1053,10 +1160,10 @@ int move_item_to_player( int obj, int quant_got, bool quiet )
                 if (!quiet)
                 {
                     in_name( m, DESC_INVENTORY, info );
-                    mpr(info);
+                    mpr( MSGCH_FLOOR_ITEMS, you.inv[m].colour, info );
                 }
 
-                you.turn_is_over = 1;
+                you.turn_is_over = true;
 
                 return (retval);
             }
@@ -1070,39 +1177,44 @@ int move_item_to_player( int obj, int quant_got, bool quiet )
     if (!quiet && partialPickup)
         mpr("You can only carry some of what is here.");
 
-    for (m = 0; m < ENDOFPACK; m++)
+    // search for empty slot:
+    m = get_inv_slot( mitm[obj].slot );
+
+    if (m == ENDOFPACK)
+        retval = -1;
+    else
     {
-        // find first empty slot
-        if (!is_valid_item( you.inv[m] ))
+        you.inv[m] = mitm[obj];         // copy item
+
+        you.inv[m].x = -1;
+        you.inv[m].y = -1;
+        you.inv[m].link = NON_ITEM;
+        you.inv[m].slot = m;
+
+        you.inv[m].quantity = quant_got;
+        dec_mitm_item_quantity( obj, quant_got );
+        burden_change();
+
+        if (!quiet)
         {
-            // copy item
-            you.inv[m] = mitm[obj];
-            you.inv[m].x = -1;
-            you.inv[m].y = -1;
-            you.inv[m].link = m;
+            in_name( m, DESC_INVENTORY, info );
+            mpr( MSGCH_FLOOR_ITEMS, you.inv[m].colour, info );
+        }
 
-            you.inv[m].quantity = quant_got;
-            dec_mitm_item_quantity( obj, quant_got );
-            burden_change();
-
+        if (you.inv[m].base_type == OBJ_ORBS
+            && you.char_direction == DIR_DESCENDING)
+        {
             if (!quiet)
-            {
-                in_name( m, DESC_INVENTORY, info );
-                mpr(info);
-            }
+                mpr("Now all you have to do is get back out of the dungeon!");
 
-            if (you.inv[m].base_type == OBJ_ORBS
-                && you.char_direction == DIR_DESCENDING)
-            {
-                if (!quiet)
-                    mpr("Now all you have to do is get back out of the dungeon!");
-                you.char_direction = DIR_ASCENDING;
-            }
-            break;
+            you.char_direction = DIR_ASCENDING;
+
+            // record the total_skill_points when the Orb was taken.
+            you.inv[m].special = you.total_skill_points;
         }
     }
 
-    you.turn_is_over = 1;
+    you.turn_is_over = true;
 
     return (retval);
 }                               // end move_item_to_player()
@@ -1173,7 +1285,7 @@ void move_item_stack_to_grid( int x, int y, int targ_x, int targ_y )
 
 // returns quantity dropped
 bool copy_item_to_grid( const item_def &item, int x_plos, int y_plos,
-                        int quant_drop )
+                        int quant_drop, bool mark_dropped )
 {
     if (quant_drop == 0)
         return (false);
@@ -1208,6 +1320,12 @@ bool copy_item_to_grid( const item_def &item, int x_plos, int y_plos,
     mitm[new_item].x = 0;
     mitm[new_item].y = 0;
     mitm[new_item].link = NON_ITEM;
+
+    if (mark_dropped)
+    {
+        mitm[new_item].flags |= ISFLAG_DROPPED;
+        mitm[new_item].flags &= ~ISFLAG_THROWN;
+    }
 
     move_item_to_grid( &new_item, x_plos, y_plos );
 
@@ -1246,9 +1364,8 @@ static void drop_gold(unsigned int amount)
         if (amount > you.gold)
             amount = you.gold;
 
-        snprintf( info, INFO_SIZE, "You drop %d gold piece%s.",
+        mpr( MSGCH_FLOOR_ITEMS, YELLOW, "You drop %d gold piece%s.",
                  amount, (amount > 1) ? "s" : "" );
-        mpr(info);
 
         // loop through items at grid location, look for gold
         int i = igrd[you.x_pos][you.y_pos];
@@ -1259,7 +1376,7 @@ static void drop_gold(unsigned int amount)
             {
                 inc_mitm_item_quantity( i, amount );
                 you.gold -= amount;
-                you.redraw_gold = 1;
+                set_redraw_status( REDRAW_GOLD );
                 return;
             }
 
@@ -1276,13 +1393,14 @@ static void drop_gold(unsigned int amount)
         }
 
         mitm[i].base_type = OBJ_GOLD;
+        mitm[i].colour = YELLOW;
         mitm[i].quantity = amount;
         mitm[i].flags = 0;
 
         move_item_to_grid( &i, you.x_pos, you.y_pos );
 
         you.gold -= amount;
-        you.redraw_gold = 1;
+        set_redraw_status( REDRAW_GOLD );
     }
     else
     {
@@ -1291,45 +1409,16 @@ static void drop_gold(unsigned int amount)
 }                               // end drop_gold()
 
 
-//---------------------------------------------------------------
-//
-// drop
-//
-// Prompts the user for an item to drop
-//
-//---------------------------------------------------------------
-void drop(void)
+bool drop_item( int item_dropped, int quant_drop )
 {
-    int i;
-
-    int item_dropped;
-    int quant_drop = -1;
-
-    char str_pass[ ITEMNAME_SIZE ];
-
-    if (inv_count() < 1 && you.gold == 0)
-    {
-        canned_msg(MSG_NOTHING_CARRIED);
-        return;
-    }
-
-    // XXX: Need to handle quantities:
-    item_dropped = prompt_invent_item( "Drop which item?", -1, true, true,
-                                       true, '$', &quant_drop );
-
-    if (item_dropped == PROMPT_ABORT || quant_drop == 0)
-    {
-        canned_msg( MSG_OK );
-        return;
-    }
-    else if (item_dropped == PROMPT_GOT_SPECIAL)  // ie '$' for gold
+    if (item_dropped == PROMPT_GOT_SPECIAL)  // ie '$' for gold
     {
         // drop gold
         if (quant_drop < 0 || quant_drop > static_cast< int >( you.gold ))
             quant_drop = you.gold;
 
         drop_gold( quant_drop );
-        return;
+        return (true);
     }
 
     if (quant_drop < 0 || quant_drop > you.inv[item_dropped].quantity)
@@ -1340,24 +1429,24 @@ void drop(void)
         || item_dropped == you.equip[EQ_AMULET])
     {
         mpr("You will have to take that off first.");
-        return;
+        return (false);
     }
 
-    if (item_dropped == you.equip[EQ_WEAPON]
-        && you.inv[item_dropped].base_type == OBJ_WEAPONS
+    if (item_dropped == get_inv_hand_tool()
         && item_cursed( you.inv[item_dropped] ))
     {
         mpr("That object is stuck to you!");
-        return;
+        return (false);
     }
 
-    for (i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
+    for (int i = EQ_CLOAK; i <= EQ_BODY_ARMOUR; i++)
     {
         if (item_dropped == you.equip[i] && you.equip[i] != -1)
         {
             if (!Options.easy_armour)
             {
                 mpr("You will have to take that off first.");
+                return (false);
             }
             else
             {
@@ -1365,40 +1454,92 @@ void drop(void)
                 if (takeoff_armour( item_dropped ))
                 {
                     start_delay( DELAY_DROP_ITEM, 1, item_dropped, 1 );
-                    you.turn_is_over = 0; // turn happens later
+                    you.turn_is_over = false; // turn happens later
                 }
+                return (true);
             }
-
-            // Regardless, we want to return here because either we're
-            // aborting the drop, or the drop is delayed until after
-            // the armour is removed. -- bwr
-            return;
         }
     }
 
     // Unwield needs to be done before copy in order to clear things
     // like temporary brands. -- bwr
     if (item_dropped == you.equip[EQ_WEAPON])
-    {
-        unwield_item(item_dropped);
-        you.equip[EQ_WEAPON] = -1;
-        canned_msg( MSG_EMPTY_HANDED );
-    }
+        unwield_item();
 
     if (!copy_item_to_grid( you.inv[item_dropped],
-                            you.x_pos, you.y_pos, quant_drop ))
+                            you.x_pos, you.y_pos, quant_drop, true ))
     {
         mpr( "Too many items on this level, not dropping the item." );
-        return;
+        return (false);
     }
 
+    char str_pass[ ITEMNAME_SIZE ];
     quant_name( you.inv[item_dropped], quant_drop, DESC_NOCAP_A, str_pass );
-    snprintf( info, INFO_SIZE, "You drop %s.", str_pass );
-    mpr(info);
+
+    mpr( MSGCH_FLOOR_ITEMS, you.inv[item_dropped].colour,
+            "You drop %s.", str_pass );
 
     dec_inv_item_quantity( item_dropped, quant_drop );
-    you.turn_is_over = 1;
-}                               // end drop()
+    alert_nearby_monsters();
+    you.turn_is_over = true;
+
+    return (true);
+}
+
+static std::string drop_menu_title( int menuflags, const std::string &oldt )
+{
+    std::string res = oldt;
+
+    res.erase( 0, res.find_first_not_of(" \n\t") );
+
+    if (menuflags & MF_MULTISELECT)
+        res = "[Multidrop] " + res;
+
+    return ("  " + res);
+}
+
+//---------------------------------------------------------------
+//
+// do_drop
+//
+// Prompts the user for an item to drop
+//
+//---------------------------------------------------------------
+bool do_drop(void)
+{
+    if (inv_count() < 1 && you.gold == 0)
+    {
+        canned_msg( MSG_NOTHING_CARRIED );
+        return (false);
+    }
+
+    static std::vector<SelItem> selected;
+
+    if (!you.activity || selected.empty())
+    {
+        selected = prompt_invent_items( "Drop which item?", -1,
+                                        drop_menu_title,
+                                        true, true, '$',
+                                        &Options.drop_filter );
+    }
+
+    if (selected.empty())
+    {
+        canned_msg( MSG_OK );
+        return (false);
+    }
+
+    drop_item( selected[0].slot, selected[0].quantity );
+
+    // Forget the item we just dropped
+    selected.erase( selected.begin() );
+
+    // If we still have items that want to be dropped, start the multiturn
+    // activity
+    you.activity = (selected.empty()) ? ACT_NONE : ACT_MULTIDROP;
+
+    return (true);
+}                               // end do_drop()
 
 //---------------------------------------------------------------
 //
@@ -1408,7 +1549,7 @@ void drop(void)
 // if monster was moved.
 //
 //---------------------------------------------------------------
-static bool shift_monster( struct monsters *mon, int x, int y )
+bool shift_monster( struct monsters *mon, int x, int y )
 {
     bool found_move = false;
 
@@ -1423,11 +1564,9 @@ static bool shift_monster( struct monsters *mon, int x, int y )
         // try and find a random floor space some distance away
         for (i = 0; i < 50; i++)
         {
-            tx = 5 + random2( GXM - 10 );
-            ty = 5 + random2( GYM - 10 );
+            random_in_bounds( tx, ty, DNGN_FLOOR, true );
 
-            int dist = grid_distance(x, y, tx, ty);
-            if (grd[tx][ty] == DNGN_FLOOR && dist > 10)
+            if (grid_distance( mon->x, mon->y, tx, ty ) > 10)
                 break;
         }
 
@@ -1442,7 +1581,7 @@ static bool shift_monster( struct monsters *mon, int x, int y )
             tx = x + i;
             ty = y + j;
 
-            if (tx < 5 || tx > GXM - 5 || ty < 5 || ty > GXM - 5)
+            if (!in_bounds( tx, ty ))
                 continue;
 
             // won't drop on anything but vanilla floor right now
@@ -1466,13 +1605,7 @@ static bool shift_monster( struct monsters *mon, int x, int y )
     }
 
     if (found_move)
-    {
-        const int mon_index = mgrd[mon->x][mon->y];
-        mgrd[mon->x][mon->y] = NON_MONSTER;
-        mgrd[nx][ny] = mon_index;
-        mon->x = nx;
-        mon->y = ny;
-    }
+        move_monster_to_grid( monster_index( mon ), nx, ny );
 
     return (found_move);
 }
@@ -1485,15 +1618,19 @@ static bool shift_monster( struct monsters *mon, int x, int y )
 // elapsed time is a double because this is called when we re-
 // enter a level and a *long* time may have elapsed).
 //
+// XXX: However it's never been verified that a double is really
+// needed... there's also the issue that the time values are
+// saved out as single precision floats anyways!
+//
 //---------------------------------------------------------------
-void update_corpses(double elapsedTime)
+void update_corpses( double elapsedTime )
 {
     int cx, cy;
 
     if (elapsedTime <= 0.0)
         return;
 
-    const long rot_time = (long) (elapsedTime / 20.0);
+    const unsigned long rot_time = static_cast<unsigned long>( elapsedTime / 20.0 );
 
     for (int c = 0; c < MAX_ITEMS; c++)
     {
@@ -1501,28 +1638,23 @@ void update_corpses(double elapsedTime)
             continue;
 
         if (mitm[c].base_type != OBJ_CORPSES && mitm[c].base_type != OBJ_FOOD)
-        {
             continue;
-        }
 
+        if (mitm[c].base_type == OBJ_FOOD && mitm[c].sub_type != FOOD_CHUNK)
+            continue;
+
+        // XXX: is this possible? what does it mean?
         if (mitm[c].base_type == OBJ_CORPSES
             && mitm[c].sub_type > CORPSE_SKELETON)
         {
             continue;
         }
 
-        if (mitm[c].base_type == OBJ_FOOD && mitm[c].sub_type != FOOD_CHUNK)
-        {
-            continue;
-        }
-
         if (rot_time >= mitm[c].special)
         {
-            if (mitm[c].base_type == OBJ_FOOD)
-            {
+            if (mitm[c].base_type == OBJ_FOOD)  // chunk
                 destroy_item(c);
-            }
-            else
+            else                                // body
             {
                 if (mitm[c].sub_type == CORPSE_SKELETON
                     || !mons_skeleton( mitm[c].plus ))
@@ -1539,27 +1671,36 @@ void update_corpses(double elapsedTime)
         }
         else
         {
-            ASSERT(rot_time < 256);
+            ASSERT( rot_time < 256 );
             mitm[c].special -= rot_time;
+
+            // change fleshy corpses/meat chunks colour when rotten
+            if (mitm[c].special < 100
+                && (mitm[c].base_type == OBJ_FOOD
+                    || mitm[c].sub_type == CORPSE_BODY)
+                && Options.colour_rotten != BLACK)
+            {
+                mitm[c].colour = Options.colour_rotten;
+            }
         }
     }
 
 
-    int fountain_checks = (int)(elapsedTime / 1000.0);
-    if (random2(1000) < (int)(elapsedTime) % 1000)
+    int fountain_checks = static_cast<int>( elapsedTime / 1000.0 );
+    if (random2(1000) < static_cast<int>( elapsedTime ) % 1000)
         fountain_checks += 1;
 
     // dry fountains may start flowing again
     if (fountain_checks > 0)
     {
-        for (cx=0; cx<GXM; cx++)
+        for (cx = X_BOUND_1 + 1; cx < X_BOUND_2; cx++)
         {
-            for (cy=0; cy<GYM; cy++)
+            for (cy = Y_BOUND_1 + 1; cy < Y_BOUND_2; cy++)
             {
                 if (grd[cx][cy] > DNGN_SPARKLING_FOUNTAIN
                     && grd[cx][cy] < DNGN_PERMADRY_FOUNTAIN)
                 {
-                    for (int i=0; i<fountain_checks; i++)
+                    for (int i = 0; i < fountain_checks; i++)
                     {
                         if (one_chance_in(100))
                         {
@@ -1571,25 +1712,6 @@ void update_corpses(double elapsedTime)
             }
         }
     }
-}
-
-static bool remove_enchant_levels( struct monsters *mon, int slot, int min,
-                                   int levels )
-{
-    const int new_level = mon->enchantment[slot] - levels;
-
-    if (new_level < min)
-    {
-        mons_del_ench( mon,
-                       mon->enchantment[slot], mon->enchantment[slot], true );
-        return (true);
-    }
-    else
-    {
-        mon->enchantment[slot] = new_level;
-    }
-
-    return (false);
 }
 
 //---------------------------------------------------------------
@@ -1617,123 +1739,44 @@ static bool remove_enchant_levels( struct monsters *mon, int slot, int min,
 // This is a simple compromise between the two... the enchantments
 // go away, but the effects don't happen off level.  -- bwr
 //
+// This function returns true if monster still exists.
+//
 //---------------------------------------------------------------
-static void update_enchantments( struct monsters *mon, int levels )
+static bool update_enchantments( struct monsters *mon, int turns )
 {
-    int i;
+    const int time_passed = 10 * turns;
 
-    for (i = 0; i < NUM_MON_ENCHANTS; i++)
+    if (mons_flag( mon, MF_SHORT_LIVED ))
     {
-        switch (mon->enchantment[i])
+        monster_die( mon, KILL_RESET, MHITNOT );
+        return (false);
+    }
+
+    for (int i = 0; i < NUM_MON_ENCHANTS; i++)
+    {
+        mon_enchant_def *const ench = &(mon->ench[i]);
+
+        // quietly decrement the enchantments
+        if (ench->type != ENCH_NONE
+            && mons_dec_ench_ptr( mon, ench, time_passed, true ))
         {
-        case ENCH_YOUR_POISON_I:
-        case ENCH_YOUR_POISON_II:
-        case ENCH_YOUR_POISON_III:
-        case ENCH_YOUR_POISON_IV:
-            remove_enchant_levels( mon, i, ENCH_YOUR_POISON_I, levels );
-            break;
-
-        case ENCH_YOUR_SHUGGOTH_I:
-        case ENCH_YOUR_SHUGGOTH_II:
-        case ENCH_YOUR_SHUGGOTH_III:
-        case ENCH_YOUR_SHUGGOTH_IV:
-            remove_enchant_levels( mon, i, ENCH_YOUR_SHUGGOTH_I, levels );
-            break;
-
-        case ENCH_YOUR_ROT_I:
-        case ENCH_YOUR_ROT_II:
-        case ENCH_YOUR_ROT_III:
-        case ENCH_YOUR_ROT_IV:
-            remove_enchant_levels( mon, i, ENCH_YOUR_ROT_I, levels );
-            break;
-
-        case ENCH_BACKLIGHT_I:
-        case ENCH_BACKLIGHT_II:
-        case ENCH_BACKLIGHT_III:
-        case ENCH_BACKLIGHT_IV:
-            remove_enchant_levels( mon, i, ENCH_BACKLIGHT_I, levels );
-            break;
-
-        case ENCH_YOUR_STICKY_FLAME_I:
-        case ENCH_YOUR_STICKY_FLAME_II:
-        case ENCH_YOUR_STICKY_FLAME_III:
-        case ENCH_YOUR_STICKY_FLAME_IV:
-            remove_enchant_levels( mon, i, ENCH_YOUR_STICKY_FLAME_I, levels );
-            break;
-
-        case ENCH_POISON_I:
-        case ENCH_POISON_II:
-        case ENCH_POISON_III:
-        case ENCH_POISON_IV:
-            remove_enchant_levels( mon, i, ENCH_POISON_I, levels );
-            break;
-
-        case ENCH_STICKY_FLAME_I:
-        case ENCH_STICKY_FLAME_II:
-        case ENCH_STICKY_FLAME_III:
-        case ENCH_STICKY_FLAME_IV:
-            remove_enchant_levels( mon, i, ENCH_STICKY_FLAME_I, levels );
-            break;
-
-        case ENCH_FRIEND_ABJ_I:
-        case ENCH_FRIEND_ABJ_II:
-        case ENCH_FRIEND_ABJ_III:
-        case ENCH_FRIEND_ABJ_IV:
-        case ENCH_FRIEND_ABJ_V:
-        case ENCH_FRIEND_ABJ_VI:
-            if (remove_enchant_levels( mon, i, ENCH_FRIEND_ABJ_I, levels ))
+            switch (ench->type)
             {
-                monster_die( mon, KILL_RESET, 0 );
+            case ENCH_TELEPORT:
+                monster_teleport( mon, 0, true, true );
+                break;
+
+            case ENCH_CONFUSION:
+                monster_blink( mon, false, true );  // pretend walking around
+                break;
+
+            default:
+                break;
             }
-            break;
-
-        case ENCH_ABJ_I:
-        case ENCH_ABJ_II:
-        case ENCH_ABJ_III:
-        case ENCH_ABJ_IV:
-        case ENCH_ABJ_V:
-        case ENCH_ABJ_VI:
-            if (remove_enchant_levels( mon, i, ENCH_ABJ_I, levels ))
-            {
-                monster_die( mon, KILL_RESET, 0 );
-            }
-            break;
-
-
-        case ENCH_SHORT_LIVED:
-            monster_die( mon, KILL_RESET, 0 );
-            break;
-
-        case ENCH_TP_I:
-        case ENCH_TP_II:
-        case ENCH_TP_III:
-        case ENCH_TP_IV:
-            monster_teleport( mon, true );
-            break;
-
-        case ENCH_CONFUSION:
-            monster_blink( mon );
-            break;
-
-        case ENCH_GLOWING_SHAPESHIFTER:
-        case ENCH_SHAPESHIFTER:
-        case ENCH_CREATED_FRIENDLY:
-        case ENCH_SUBMERGED:
-        default:
-            // don't touch these
-            break;
-
-        case ENCH_SLOW:
-        case ENCH_HASTE:
-        case ENCH_FEAR:
-        case ENCH_INVIS:
-        case ENCH_CHARM:
-        case ENCH_SLEEP_WARY:
-            // delete enchantment (using function to get this done cleanly)
-            mons_del_ench(mon, mon->enchantment[i], mon->enchantment[i], true);
-            break;
         }
     }
+
+    return (true);
 }
 
 
@@ -1746,17 +1789,15 @@ static void update_enchantments( struct monsters *mon, int levels )
 //---------------------------------------------------------------
 void update_level( double elapsedTime )
 {
+    const int turns = ((elapsedTime > 20000.0)
+                            ? 2000 : static_cast<int>( elapsedTime / 10.0 ));
     int m, i;
-    int turns = (int) (elapsedTime / 10.0);
 
 #if DEBUG_DIAGNOSTICS
     int mons_total = 0;
 
-    snprintf( info, INFO_SIZE, "turns: %d", turns );
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, "turns: %d", turns );
 #endif
-
-    update_corpses( elapsedTime );
 
     for (m = 0; m < MAX_MONSTERS; m++)
     {
@@ -1765,41 +1806,100 @@ void update_level( double elapsedTime )
         if (mon->type == -1)
             continue;
 
+        if (testbits( mon->flags, MF_TAKING_STAIRS ))
+        {
+            // just making sure that following monsters don't get lost:
+            mon->behaviour = BEH_SEEK;
+            continue;
+        }
+
 #if DEBUG_DIAGNOSTICS
         mons_total++;
 #endif
 
-        // following monsters don't get movement
-        if (mon->flags & MF_JUST_SUMMONED)
+        // update enchantments and continue if monster no longer exists
+        if (!update_enchantments( mon, turns ) || mon->type == -1)
             continue;
 
-        // XXX: Allow some spellcasting (like Healing and Teleport)? -- bwr
-        // const bool healthy = (mon->hit_points * 2 > mon->max_hit_points);
+        const bool targ_you = (mon->foe == MHITYOU && !mons_friendly(mon));
+        const int  dist = grid_distance( mon->x, mon->y, you.x_pos, you.y_pos );
+        const bool pnear = (dist <= 8);
 
-        // This is the monster healing code, moved here from tag.cc:
-        if (monster_descriptor( mon->type, MDSC_REGENERATES )
-            || mon->type == MONS_PLAYER_GHOST)
+        // off level spellcasting simulation... not allowing friendly
+        // monsters to cast while the player is off level to avoid any
+        // possible abuses.
+        if (mons_class_flag( mon->type, M_SPELLCASTER ) && !mons_friendly( mon ))
         {
-            heal_monster( mon, turns, false );
+            const bool healthy = (mon->hit_points > mon->max_hit_points / 2);
+            const bool stealthy = !check_awaken(m);
+
+            // for passing to mons_cast which will set it
+            struct bolt dummy;
+
+#if DEBUG_DIAGNOSTICS
+            mpr( MSGCH_DIAGNOSTICS,
+                  "spells: %s; targ_you=%d; near=%d; health=%s; stealth=%s",
+                  ptr_monam( mon, DESC_PLAIN ),
+                  targ_you, pnear, (healthy ? "yes" : "no"),
+                  (stealthy ? "yes" : "no") );
+#endif
+
+            // things to consider if the player is near:
+            if (targ_you && pnear)
+            {
+                if (!healthy && (mons_has_teleport_spell(mon) != MS_NO_SPELL))
+                    monster_teleport( mon, 0, true, true );
+
+                // XXX: monster animate dead is currently player centered:
+                if (mons_has_spell( mon, MS_ANIMATE_DEAD ))
+                    mons_cast( mon, dummy, MS_ANIMATE_DEAD );
+            }
+
+            // things to cast in preparation for the player's soon arrival:
+            if (targ_you && (!healthy || (pnear && !stealthy)))
+            {
+                if (mons_has_spell( mon, MS_INVIS ))
+                    mons_add_ench( mon, ENCH_INVIS );
+
+                if (mons_has_spell( mon, MS_HASTE ))
+                    mons_add_ench( mon, ENCH_HASTE );
+
+                const int summon = mons_has_summon_spell( mon );
+
+                if (summon != MS_NO_SPELL)
+                {
+#if DEBUG_DIAGNOSTICS
+                    mpr( MSGCH_DIAGNOSTICS, "... summon" );
+#endif
+                    mons_cast( mon, dummy, summon );
+                }
+            }
+
+            // healers are always top upped when we arrive
+            if (mons_has_spell( mon, MS_HEAL ))
+                mon->hit_points = mon->max_hit_points;
         }
-        else
+
+        // hitpoint recovery
+        if (mon->hit_points < mon->max_hit_points)
         {
-            heal_monster( mon, (turns / 10), false );
+            if (mon->type == MONS_PLAYER_GHOST)
+                mon->hit_points = mon->max_hit_points;
+            else if (mons_class_flag( mon->type, M_REGEN ))
+                heal_monster( mon, turns, false );
+            else
+                heal_monster( mon, turns / 5, false );
         }
 
-        if (turns >= 10)
-            update_enchantments( mon, turns / 10 );
-
-        // Don't move water or lava monsters around
-        if (monster_habitat( mon->type ) != DNGN_FLOOR)
+        // Don't move water or lava monsters around, let sleeping monsters lie
+        if (monster_habitat( mon->type ) != DNGN_FLOOR
+            || mons_stationary( mon->type )
+            || mon->behaviour == BEH_SLEEP)
+        {
             continue;
+        }
 
-        // Let sleeping monsters lie
-        if (mon->behaviour == BEH_SLEEP)
-            continue;
-
-
-        const int range = (turns * mon->speed) / 10;
+        const int range = (turns * mons_speed( mon )) / 10;
         const int moves = (range > 50) ? 50 : range;
 
         // const bool short_time = (range >= 5 + random2(10));
@@ -1810,21 +1910,28 @@ void update_level( double elapsedTime )
 
 #if DEBUG_DIAGNOSTICS
         // probably too annoying even for DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE,
-                  "mon #%d: range %d; long %d; pos (%d,%d); targ %d(%d,%d); flags %d",
-                  m, range, long_time, mon->x, mon->y,
-                  mon->foe, mon->target_x, mon->target_y, mon->flags );
+        mpr( MSGCH_DIAGNOSTICS,
+              "mon #%d: range %d; long %d; pos (%d,%d); targ %d(%d,%d); flags %d",
+              m, range, long_time, mon->x, mon->y,
+              mon->foe, mon->target_x, mon->target_y, mon->flags );
 
-        mpr( info, MSGCH_DIAGNOSTICS );
 #endif
 
         if (range <= 0)
             continue;
 
+        // check to see if friends went feral
+        if (long_time && mon->attitude == ATT_FRIENDLY)
+            mon->attitude = ATT_HOSTILE;
+
+        bool back_off = false;
+
         if (long_time
             && (mon->behaviour == BEH_FLEE
                 || mon->behaviour == BEH_CORNERED
-                || testbits( mon->flags, MF_BATTY )
+                || mon->behaviour == BEH_PANIC
+                || mon->behaviour == BEH_INVESTIGATE
+                || mons_is_batty( mon )
                 || ranged_attack
                 || coinflip()))
         {
@@ -1832,8 +1939,7 @@ void update_level( double elapsedTime )
             {
                 mon->behaviour = BEH_WANDER;
                 mon->foe = MHITNOT;
-                mon->target_x = 10 + random2( GXM - 10 );
-                mon->target_y = 10 + random2( GYM - 10 );
+                set_wander_target( mon );
             }
             else
             {
@@ -1845,40 +1951,26 @@ void update_level( double elapsedTime )
         {
             // if we're doing short time movement and the monster has a
             // ranged attack (missile or spell), then the monster will
-            // flee to gain distance if its "too close", else it will
+            // flee to gain distance if it's "too close", else it will
             // just shift its position rather than charge the player. -- bwr
-            if (grid_distance(mon->x, mon->y, mon->target_x, mon->target_y) < 3)
+            if (targ_you && dist < 3)
             {
-                mon->behaviour = BEH_FLEE;
+                back_off = true;
 
-                // if the monster is on the target square, fleeing won't work
-                if (mon->x == mon->target_x && mon->y == mon->target_y)
-                {
-                    if (you.x_pos != mon->x || you.y_pos != mon->y)
-                    {
-                        // flee from player's position if different
-                        mon->target_x = you.x_pos;
-                        mon->target_y = you.y_pos;
-                    }
-                    else
-                    {
-                        // randomize the target so we have a direction to flee
-                        mon->target_x += (random2(3) - 1);
-                        mon->target_y += (random2(3) - 1);
-                    }
-                }
+                // flee from player's position if different
+                mon->target_x = you.x_pos;
+                mon->target_y = you.y_pos;
 
 #if DEBUG_DIAGNOSTICS
-                mpr( "backing off...", MSGCH_DIAGNOSTICS );
+                mpr( MSGCH_DIAGNOSTICS, "backing off..." );
 #endif
             }
             else
             {
-                shift_monster( mon, mon->x, mon->y );
+                shift_monster( mon );
 
 #if DEBUG_DIAGNOSTICS
-                snprintf(info, INFO_SIZE, "shifted to (%d,%d)", mon->x, mon->y);
-                mpr( info, MSGCH_DIAGNOSTICS );
+                mpr( MSGCH_DIAGNOSTICS, "shifted to (%d,%d)", mon->x, mon->y );
 #endif
                 continue;
             }
@@ -1889,25 +1981,20 @@ void update_level( double elapsedTime )
         // dirt simple movement:
         for (i = 0; i < moves; i++)
         {
-            int mx = (pos_x > mon->target_x) ? -1 :
-                     (pos_x < mon->target_x) ?  1
-                                             :  0;
+            int mx = sgn( mon->target_x - pos_x );
+            int my = sgn( mon->target_y - pos_y );
 
-            int my = (pos_y > mon->target_y) ? -1 :
-                     (pos_y < mon->target_y) ?  1
-                                             :  0;
-
-            if (mon->behaviour == BEH_FLEE)
+            if (back_off)
             {
                 mx *= -1;
                 my *= -1;
             }
 
-            if (pos_x + mx < 0 || pos_x + mx >= GXM)
+            if (!in_bounds( pos_x + mx, pos_y + my ))
+            {
                 mx = 0;
-
-            if (pos_y + my < 0 || pos_y + my >= GXM)
                 my = 0;
+            }
 
             if (mx == 0 && my == 0)
                 break;
@@ -1919,22 +2006,32 @@ void update_level( double elapsedTime )
             pos_y += my;
         }
 
+        // if we can't find a space need the target, shift at current location
         if (!shift_monster( mon, pos_x, pos_y ))
-            shift_monster( mon, mon->x, mon->y );
+            shift_monster( mon );
 
 #if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "moved to (%d,%d)", mon->x, mon->y );
-        mpr( info, MSGCH_DIAGNOSTICS );
+        mpr( MSGCH_DIAGNOSTICS, "moved to (%d,%d)", mon->x, mon->y );
 #endif
     }
 
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "total monsters on level = %d", mons_total );
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, "total monsters on level = %d", mons_total );
 #endif
 
+    // done afterwards in case monster animated
+    update_corpses( elapsedTime );
+
     for (i = 0; i < MAX_CLOUDS; i++)
-        delete_cloud( i );
+    {
+        if (env.cloud[i].type == CLOUD_NONE)
+            continue;
+
+        if (turns * 10 >= env.cloud[i].decay)
+            delete_cloud(i);
+        else
+            env.cloud[i].decay -= turns * 10;
+    }
 }
 
 
@@ -1946,7 +2043,7 @@ void update_level( double elapsedTime )
 // This function is called about every 20 turns.
 //
 //---------------------------------------------------------------
-void handle_time( long time_delta )
+void handle_time( unsigned int time_delta )
 {
     int temp_rand;              // probability determination {dlb}
 
@@ -1963,7 +2060,8 @@ void handle_time( long time_delta )
     {
         temp_rand = random2(17);
 
-        mpr((temp_rand == 0) ? "\"You will not leave this place.\"" :
+        mpr( MSGCH_TALK,
+            (temp_rand == 0) ? "\"You will not leave this place.\"" :
             (temp_rand == 1) ? "\"Die, mortal!\"" :
             (temp_rand == 2) ? "\"We do not forgive those who trespass against us!\"" :
             (temp_rand == 3) ? "\"Trespassers are not welcome here!\"" :
@@ -1973,8 +2071,8 @@ void handle_time( long time_delta )
             (temp_rand == 7) ? "You feel a terrible foreboding..." :
             (temp_rand == 8) ? "You hear words spoken in a strange and terrible language..." :
 
-            (temp_rand == 9) ? ((you.species != SP_MUMMY)
-                    ? "You smell brimstone." : "Brimstone rains from above.") :
+            (temp_rand == 9) ? ((player_can_smell()) ? "You smell brimstone."
+                                            : "Brimstone rains from above.") :
 
             (temp_rand == 10) ? "Something frightening happens." :
             (temp_rand == 11) ? "You sense an ancient evil watching you..." :
@@ -1983,7 +2081,7 @@ void handle_time( long time_delta )
             (temp_rand == 14) ? "A gut-wrenching scream fills the air!" :
             (temp_rand == 15) ? "You shiver with fear." :
             (temp_rand == 16) ? "You sense a hostile presence."
-                              : "You hear diabolical laughter!", MSGCH_TALK);
+                              : "You hear diabolical laughter!" );
 
         temp_rand = random2(27);
 
@@ -2000,7 +2098,7 @@ void handle_time( long time_delta )
             else                // 1 in 8 odds {dlb}
                 which_miscast = SPTYP_ENCHANTMENT;
 
-            miscast_effect( which_miscast, 4 + random2(6), random2avg(97, 3),
+            miscast_effect( which_miscast, 4 + random2(6), roll_dice(3,33),
                             100, "the effects of Hell" );
         }
         else if (temp_rand > 7) // 10 in 27 odds {dlb}
@@ -2012,7 +2110,7 @@ void handle_time( long time_delta )
             {
             case BRANCH_DIS:
                 if (summon_instead)
-                    which_beastie = summon_any_demon(DEMON_GREATER);
+                    which_beastie = rand_demon(DEMON_GREATER);
                 else
                     which_miscast = SPTYP_EARTH;
                 break;
@@ -2043,14 +2141,11 @@ void handle_time( long time_delta )
             }
 
             if (summon_instead)
-            {
-                create_monster( which_beastie, 0, BEH_HOSTILE, you.x_pos,
-                                you.y_pos, MHITYOU, 250 );
-            }
+                create_monster( which_beastie );
             else
             {
-                miscast_effect( which_miscast, 4 + random2(6),
-                                random2avg(97, 3), 100, "the effects of Hell" );
+                miscast_effect( which_miscast, 4 + random2(6), roll_dice(3,33),
+                                100, "the effects of Hell" );
             }
         }
 
@@ -2062,59 +2157,59 @@ void handle_time( long time_delta )
         // try to summon at least one and up to five random monsters {dlb}
         if (one_chance_in(3))
         {
-            create_monster( RANDOM_MONSTER, 0, BEH_HOSTILE,
-                            you.x_pos, you.y_pos, MHITYOU, 250 );
+            create_monster( RANDOM_MONSTER );
 
             for (i = 0; i < 4; i++)
             {
                 if (one_chance_in(3))
-                {
-                    create_monster( RANDOM_MONSTER, 0, BEH_HOSTILE,
-                                    you.x_pos, you.y_pos, MHITYOU, 250 );
-                }
+                    create_monster( RANDOM_MONSTER );
             }
         }
     }
     // END - special Hellish things...
 
     // Adjust the player's stats if s/he's diseased (or recovering).
-    if (!you.disease)
+    if (you.disease)
     {
-        if (you.strength < you.max_strength && one_chance_in(100))
+        if (one_chance_in(30))
         {
-            mpr("You feel your strength returning.", MSGCH_RECOVERY);
-            you.strength++;
-            you.redraw_strength = 1;
+            mpr(MSGCH_WARN,"Your disease is taking its toll." );
+            lose_stat(STAT_RANDOM, 1);
+        }
+    }
+    else if (!you.is_undead)
+    {
+        if (you.str < you.max_str && one_chance_in(100))
+        {
+            mpr(MSGCH_RECOVERY,"You feel your strength returning." );
+            you.str++;
+            set_redraw_status( REDRAW_STRENGTH );
         }
 
         if (you.dex < you.max_dex && one_chance_in(100))
         {
-            mpr("You feel your dexterity returning.", MSGCH_RECOVERY);
+            mpr(MSGCH_RECOVERY,"You feel your dexterity returning." );
             you.dex++;
-            you.redraw_dexterity = 1;
+            set_redraw_status( REDRAW_DEXTERITY );
         }
 
         if (you.intel < you.max_intel && one_chance_in(100))
         {
-            mpr("You feel your intelligence returning.", MSGCH_RECOVERY);
+            mpr(MSGCH_RECOVERY,"You feel your intelligence returning." );
             you.intel++;
-            you.redraw_intelligence = 1;
+            set_redraw_status( REDRAW_INTELLIGENCE );
         }
     }
-    else
-    {
-        if (one_chance_in(30))
-        {
-            mpr("Your disease is taking its toll.", MSGCH_WARN);
-            lose_stat(STAT_RANDOM, 1);
-        }
-    }
+
+    if (you.duration[DUR_GLAMOUR] > 0)
+        you.duration[DUR_GLAMOUR]--;
+
 
     // Adjust the player's stats if s/he has the deterioration mutation
     if (you.mutation[MUT_DETERIORATION]
         && random2(200) <= you.mutation[MUT_DETERIORATION] * 5 - 2)
     {
-        lose_stat(STAT_RANDOM, 1);
+        lose_stat( STAT_RANDOM, 1 );
     }
 
     int added_contamination = 0;
@@ -2127,12 +2222,12 @@ void handle_time( long time_delta )
     if (you.invis && random2(10) < 6)
         added_contamination++;
 
-    if (you.haste && !you.berserker && random2(10) < 6)
+    if (you.haste && random2(10) < 6)
         added_contamination++;
 
     // randarts are usually about 20x worse than running around invisible
     // or hasted.. this seems OK.
-    added_contamination += random2(1 + scan_randarts(RAP_MUTAGENIC));
+    added_contamination += random2( 1 + scan_randarts( RAP_MUTAGENIC ) );
 
     // we take off about .5 points per turn
     if (!you.invis && !you.haste && coinflip())
@@ -2141,61 +2236,59 @@ void handle_time( long time_delta )
     contaminate_player( added_contamination );
 
     // only check for badness once every other turn
-    if (coinflip())
+    if (you.magic_contamination >= 5 && random2(150) <= you.magic_contamination)
     {
-        if (you.magic_contamination >= 5
-            /* && random2(150) <= you.magic_contamination */)
+        int reduc = -1;
+        mpr( MSGCH_WARN, "Your body shudders with the violent release of wild energies!" );
+
+        // for particularly violent releases,  make a little boom
+        if (you.magic_contamination > 25 && one_chance_in(3))
         {
-            mpr("Your body shudders with the violent release of wild energies!", MSGCH_WARN);
+            struct bolt boom;
+            boom.type = SYM_BURST;
+            boom.colour = element_colour( EC_MUTAGENIC );
+            boom.flavour = BEAM_RANDOM;
+            boom.target_x = you.x_pos;
+            boom.target_y = you.y_pos;
+            boom.damage = dice_def( 3, (you.magic_contamination / 2) );
+            boom.thrower = KILL_MISC;
+            boom.aux_source = "a magical explosion";
+            boom.beam_source = MHITNOT;
+            boom.is_beam = false;
+            boom.is_enchant = false;
+            boom.is_tracer = false;
+            strcpy( boom.name, "magical storm" );
 
-            // for particularly violent releases,  make a little boom
-            if (you.magic_contamination > 25 && one_chance_in(3))
-            {
-                struct bolt boom;
-                boom.type = SYM_BURST;
-                boom.colour = BLACK;
-                boom.flavour = BEAM_RANDOM;
-                boom.target_x = you.x_pos;
-                boom.target_y = you.y_pos;
-                boom.damage = dice_def( 3, (you.magic_contamination / 2) );
-                boom.thrower = KILL_MISC;
-                boom.aux_source = "a magical explosion";
-                boom.beam_source = NON_MONSTER;
-                boom.isBeam = false;
-                boom.isTracer = false;
-                strcpy(boom.beam_name, "magical storm");
+            boom.ench_power = (you.magic_contamination * 5);
+            boom.ex_size = (you.magic_contamination / 15);
+            if (boom.ex_size > 9)
+                boom.ex_size = 9;
 
-                boom.ench_power = (you.magic_contamination * 5);
-                boom.ex_size = (you.magic_contamination / 15);
-                if (boom.ex_size > 9)
-                    boom.ex_size = 9;
-
-                explosion(boom);
-            }
-
-            // we want to warp the player,  not do good stuff!
-            if (one_chance_in(5))
-                mutate(100);
-            else
-                give_bad_mutation(coinflip());
-
-            // we're meaner now,  what with explosions and whatnot,  but
-            // we dial down the contamination a little faster if its actually
-            // mutating you.  -- GDL
-            contaminate_player( -(random2(you.magic_contamination / 4) + 1) );
+            explosion(boom);
+            reduc -= 3;
         }
+
+        // we want to warp the player,  not do good stuff!
+        if (one_chance_in(5))
+            mutate( PICK_RANDOM_MUTATION );
+        else
+            reduc -= 2 * (give_bad_mutation( coinflip() ) != MUT_NONE);
+
+        contaminate_player( reduc );
     }
 
     // Random chance to identify staff in hand based off of Spellcasting
     // and an appropriate other spell skill... is 1/20 too fast?
-    if (you.equip[EQ_WEAPON] != -1
-        && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_STAVES
-        && item_not_ident( you.inv[you.equip[EQ_WEAPON]], ISFLAG_KNOW_TYPE )
+    const int staff = get_inv_hand_tool();
+
+    if (staff != -1
+        && item_is_staff( you.inv[staff] )
+        && !item_ident( you.inv[staff], ISFLAG_KNOW_TYPE )
         && one_chance_in(20))
     {
         int total_skill = you.skills[SK_SPELLCASTING];
 
-        switch (you.inv[you.equip[EQ_WEAPON]].sub_type)
+        switch (you.inv[staff].sub_type)
         {
         case STAFF_WIZARDRY:
         case STAFF_ENERGY:
@@ -2244,15 +2337,15 @@ void handle_time( long time_delta )
 
         if (random2(100) < total_skill)
         {
-            set_ident_flags( you.inv[you.equip[EQ_WEAPON]], ISFLAG_IDENT_MASK );
+            set_ident_flags( you.inv[staff], ISFLAG_IDENT_MASK );
 
-            char str_pass[ ITEMNAME_SIZE ];
-            in_name(you.equip[EQ_WEAPON], DESC_NOCAP_A, str_pass);
-            snprintf( info, INFO_SIZE, "You are wielding %s.", str_pass );
-            mpr(info);
+            char str_pass[ITEMNAME_SIZE];
+
+            in_name( staff, DESC_NOCAP_A, str_pass );
+            mpr( "You are wielding %s.", str_pass );
             more();
 
-            you.wield_change = true;
+            set_redraw_status( REDRAW_WIELD );
         }
     }
 
@@ -2264,78 +2357,75 @@ void handle_time( long time_delta )
     if (you.mutation[MUT_LOST])
     {
         if (random2(100) <= you.mutation[MUT_LOST] * 5)
-            forget_map(5 + random2(you.mutation[MUT_LOST] * 10));
+            forget_map( 5 + random2(you.mutation[MUT_LOST] * 10)  );
     }
 
     // Update all of the corpses and food chunks on the floor
-    update_corpses(time_delta);
+    update_corpses( static_cast<double>(time_delta) );
 
-    // Update all of the corpses and food chunks in the player's
-    // inventory {should be moved elsewhere - dlb}
-
+    // Update all of the corpses and food chunks in the player's inventory
+    const unsigned int corpse_time = time_delta / 20;
+    bool reduced_weight = false;
 
     for (i = 0; i < ENDOFPACK; i++)
     {
         if (you.inv[i].quantity < 1)
             continue;
 
-        if (you.inv[i].base_type != OBJ_CORPSES && you.inv[i].base_type != OBJ_FOOD)
-            continue;
-
-        if (you.inv[i].base_type == OBJ_CORPSES
-            && you.inv[i].sub_type > CORPSE_SKELETON)
+        if (you.inv[i].base_type == OBJ_CORPSES)
+        {
+            // carried skeletons don't fall apart
+            if (you.inv[i].sub_type >= CORPSE_SKELETON)
+                continue;
+        }
+        else if (you.inv[i].base_type == OBJ_FOOD)
+        {
+            if (you.inv[i].sub_type != FOOD_CHUNK)
+                continue;
+        }
+        else
         {
             continue;
         }
 
-        if (you.inv[i].base_type == OBJ_FOOD && you.inv[i].sub_type != FOOD_CHUNK)
-            continue;
-
-        if ((time_delta / 20) >= you.inv[i].special)
+        if (corpse_time >= you.inv[i].special)
         {
+            reduced_weight = true;
+
             if (you.inv[i].base_type == OBJ_FOOD)
             {
-                if (you.equip[EQ_WEAPON] == i)
-                {
-                    unwield_item(you.equip[EQ_WEAPON]);
-                    you.equip[EQ_WEAPON] = -1;
-                    you.wield_change = true;
-                }
-
-                mpr( "Your equipment suddenly weighs less.", MSGCH_ROTTEN_MEAT );
-                you.inv[i].quantity = 0;
-                burden_change();
+                dec_inv_item_quantity( i, you.inv[i].quantity );
                 continue;
             }
-
-            if (you.inv[i].sub_type == CORPSE_SKELETON)
-                continue;       // carried skeletons are not destroyed
 
             if (!mons_skeleton( you.inv[i].plus ))
             {
-                if (you.equip[EQ_WEAPON] == i)
-                {
-                    unwield_item(you.equip[EQ_WEAPON]);
-                    you.equip[EQ_WEAPON] = -1;
-                }
-
-                you.inv[i].quantity = 0;
-                burden_change();
+                dec_inv_item_quantity( i, you.inv[i].quantity );
                 continue;
             }
 
-            you.inv[i].sub_type = 1;
-            you.inv[i].special = 0;
+            you.inv[i].sub_type = CORPSE_SKELETON;
+            you.inv[i].special = 200;
             you.inv[i].colour = LIGHTGREY;
-            you.wield_change = true;
+
+            if (you.equip[EQ_WEAPON] == i)
+                set_redraw_status( REDRAW_WIELD );
+
             continue;
         }
 
-        you.inv[i].special -= (time_delta / 20);
+        you.inv[i].special -= corpse_time;
 
-        if (you.inv[i].special < 100 && (you.inv[i].special + (time_delta / 20)>=100))
+        if (you.inv[i].special < 100
+            && (you.inv[i].special + corpse_time >= 100))
         {
             new_rotting_item = true;
+
+            if (you.equip[EQ_WEAPON] == i)
+                set_redraw_status( REDRAW_WIELD );
+
+            if (Options.colour_rotten != BLACK)
+                you.inv[i].colour = Options.colour_rotten;
         }
     }
 
@@ -2351,11 +2441,11 @@ void handle_time( long time_delta )
 
         case SP_GHOUL: //likes it
             temp_rand = random2(8);
-            mpr( ((temp_rand  < 5) ? "You smell something rotten." :
+            mpr( MSGCH_ROTTEN_MEAT,
+                  ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "Smell of rotting flesh makes you more hungry." :
-                  (temp_rand == 6) ? "You smell decay. Yum-yum."
-                                   : "Wow! There is something tasty in your inventory."),
-                MSGCH_ROTTEN_MEAT );
+                  (temp_rand == 6) ? "You smell decay.  Yum-yum."
+                                   : "Wow!  There is something tasty in your inventory.") );
             break;
 
         case SP_KOBOLD: //mv: IMO these race aren't so "touchy"
@@ -2363,34 +2453,34 @@ void handle_time( long time_delta )
         case SP_MINOTAUR:
         case SP_HILL_ORC:
             temp_rand = random2(8);
-            mpr( ((temp_rand  < 5) ? "You smell something rotten." :
+            mpr( MSGCH_ROTTEN_MEAT,
+                  ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "You smell rotting flesh." :
                   (temp_rand == 6) ? "You smell decay."
-                                   : "There is something rotten in your inventory."),
-                MSGCH_ROTTEN_MEAT );
+                                   : "There is something rotten in your inventory.") );
             break;
 
         default:
             temp_rand = random2(8);
-            mpr( ((temp_rand  < 5) ? "You smell something rotten." :
+            mpr( MSGCH_ROTTEN_MEAT,
+                  ((temp_rand  < 5) ? "You smell something rotten." :
                   (temp_rand == 5) ? "Smell of rotting flesh makes you sick." :
-                  (temp_rand == 6) ? "You smell decay. Yuk..."
-                                   : "Ugh! There is something really disgusting in your inventory."),
-                MSGCH_ROTTEN_MEAT );
+                  (temp_rand == 6) ? "You smell decay.  Yuck..."
+                                   : "Ugh!  There is something really disgusting in your inventory.") );
             break;
         }
     }
 
+    if (reduced_weight)
+        mpr(MSGCH_ROTTEN_MEAT,"Your equipment suddenly weighs less." );
+
     // exercise armour *xor* stealth skill: {dlb}
+    const int arm_mass = (you.equip[EQ_BODY_ARMOUR] != -1)
+                        ? item_mass( you.inv[you.equip[EQ_BODY_ARMOUR]] ) : 0;
+
     if (!player_light_armour())
     {
-        if (random2(1000) <= mass_item( you.inv[you.equip[EQ_BODY_ARMOUR]] ))
-        {
-            return;
-        }
-
-        if (one_chance_in(6))   // lowered random roll from 7 to 6 -- bwross
-            exercise(SK_ARMOUR, 1);
+        exercise_armour( 1, 6 );
     }
     else                        // exercise stealth skill:
     {
@@ -2400,28 +2490,42 @@ void handle_time( long time_delta )
         if (you.special_wield == SPWLD_SHADOW)
             return;
 
-        if (you.equip[EQ_BODY_ARMOUR] != -1
-            && random2( mass_item( you.inv[you.equip[EQ_BODY_ARMOUR]] )) >= 100)
-        {
+        if (random2( arm_mass ) >= 100)
             return;
-        }
 
-        if (one_chance_in(18))
-            exercise(SK_STEALTH, 1);
+        if (one_chance_in(12))
+            exercise( SK_STEALTH, 1 );
     }
 
     return;
 }                               // end handle_time()
 
-int autopickup_on = 1;
+static bool is_banned(const item_def &item)
+{
+    static char name[ITEMNAME_SIZE];
 
-static void autopickup(void)
+    item_name( item, DESC_INVENTORY, name, false );
+
+    std::string iname = name;
+    for (unsigned int i = 0; i < Options.banned_objects.size(); ++i)
+    {
+        if (iname.find( Options.banned_objects[i], 0 ) != std::string::npos)
+            return (true);
+    }
+
+    return (false);
+}
+
+static void do_autopickup(void)
 {
     //David Loewenstern 6/99
     int result, o, next;
     bool did_pickup = false;
 
-    if (autopickup_on == 0 || Options.autopickups == 0L)
+    if (you.stepping)
+        return;
+
+    if (Options.autopickups == 0L || !you.autopickup_on)
         return;
 
     if (you.attribute[ATTR_TRANSFORMATION] == TRAN_AIR
@@ -2430,7 +2534,7 @@ static void autopickup(void)
         return;
     }
 
-    if (player_is_levitating() && !wearing_amulet(AMU_CONTROLLED_FLIGHT))
+    if (!player_access_floor())
         return;
 
     o = igrd[you.x_pos][you.y_pos];
@@ -2439,8 +2543,13 @@ static void autopickup(void)
     {
         next = mitm[o].link;
 
-        if (Options.autopickups & (1L << mitm[o].base_type))
+        if (((mitm[o].flags & ISFLAG_THROWN) && Options.pickup_thrown)
+            || (Options.autopickups & (1L << mitm[o].base_type)
+                && (Options.pickup_dropped || !(mitm[o].flags & ISFLAG_DROPPED))
+                && !is_banned(mitm[o])))
         {
+            mitm[o].flags &= ~(ISFLAG_THROWN | ISFLAG_DROPPED);
+
             result = move_item_to_player( o, mitm[o].quantity);
 
             if (result == 0)
@@ -2465,10 +2574,10 @@ static void autopickup(void)
 
     if (did_pickup)
     {
-        you.turn_is_over = 1;
+        you.turn_is_over = true;
         start_delay( DELAY_AUTOPICKUP, 1 );
     }
-    }
+}
 
 int inv_count(void)
 {
@@ -2482,70 +2591,3 @@ int inv_count(void)
 
     return count;
 }
-
-#ifdef ALLOW_DESTROY_ITEM_COMMAND
-// Started with code from AX-crawl, although its modified to fix some
-// serious problems.  -- bwr
-//
-// Issues to watch for here:
-// - no destroying things from the ground since that includes corpses
-//   which might be animated by monsters (butchering takes a few turns).
-//   This code provides a quicker way to get rid of a corpse, but
-//   the player has to be able to lift it first... something that was
-//   a valid preventative method before (although this allow the player
-//   to get rid of the mass on the next action).
-//
-// - artefacts can be destroyed
-//
-// - equipment cannot be destroyed... not only is this the more accurate
-//   than testing for curse status (to prevent easy removal of cursed items),
-//   but the original code would leave all the equiped items properties
-//   (including weight) which would cause a bit of a mess to state.
-//
-// - no item does anything for just carrying it... if that changes then
-//   this code will have to deal with that.
-//
-// - Do we want the player to be able to remove items from the game?
-//   This would make things considerably easier to keep weapons (esp
-//   those of distortion) from falling into the hands of monsters.
-//   Right now the player has to carry them to a safe area, or otherwise
-//   ingeniously dispose of them... do we care about this gameplay aspect?
-//
-// - Prompt for number to destroy?
-//
-void cmd_destroy_item( void )
-{
-    int i;
-    char str_pass[ ITEMNAME_SIZE ];
-
-    // ask the item to destroy
-    int item = prompt_invent_item( "Destroy which item? ", -1, true, false );
-    if (item == PROMPT_ABORT)
-        return;
-
-    // Used to check for cursed... but that's not the real problem -- bwr
-    for (i = 0; i < NUM_EQUIP; i++)
-    {
-        if (you.equip[i] == item)
-        {
-            mesclr( true );
-            mpr( "You cannot destroy equipped items!" );
-            return;
-        }
-    }
-
-    // ask confirmation
-    // quant_name(you.inv[item], you.inv[item].quantity, DESC_NOCAP_A, str_pass );
-    item_name( you.inv[item], DESC_NOCAP_THE, str_pass );
-    snprintf( info, INFO_SIZE, "Destroy %s? ", str_pass );
-
-    if (yesno( info, true ))
-    {
-       //destroy it!!
-        snprintf( info, INFO_SIZE, "You destroy %s.", str_pass );
-        mpr( info );
-        dec_inv_item_quantity( item, you.inv[item].quantity );
-        burden_change();
-    }
-}
-#endif

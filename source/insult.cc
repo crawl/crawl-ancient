@@ -2,7 +2,7 @@
 // Josh Fishman (c) 2001, All Rights Reserved
 // This file is released under the GNU GPL, but special permission is granted
 // to link with Linley Henzel's Dungeon Crawl (or Crawl) without change to
-// Crawl's license.
+// Crawl's licence.
 //
 // The goal of this stuff is catachronistic feel.
 
@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 
+#include "globals.h"
 #include "externs.h"
 #include "insult.h"
 #include "mon-util.h"
@@ -39,7 +40,10 @@ void init_cap(char * str)
 void imp_taunt( struct monsters *mons )
 {
     char buff[80];
-    const char *mon_name = ptr_monam( mons, DESC_CAP_THE );
+    char name[80];
+    strncpy( name, ptr_monam( mons, DESC_CAP_THE ), 80 );
+    name[79] = '\0';
+
 
     snprintf( buff, sizeof(buff),
               "%s, thou %s!",
@@ -49,17 +53,14 @@ void imp_taunt( struct monsters *mons )
     init_cap( buff );
 
     // XXX: Not pretty, but stops truncation...
-    if (strlen( mon_name ) + 11 + strlen( buff ) >= 79)
+    if (strlen( name ) + 11 + strlen( buff ) >= 79)
     {
-        snprintf( info, INFO_SIZE, "%s shouts:", mon_name );
-        mpr( info, MSGCH_TALK );
-
-        mpr( buff, MSGCH_TALK );
+        mpr( MSGCH_SOUND, "%s shouts:", name );
+        mpr( MSGCH_SOUND, buff );
     }
     else
     {
-        snprintf( info, INFO_SIZE, "%s shouts, \"%s\"", mon_name, buff );
-        mpr( info, MSGCH_TALK );
+        mpr( MSGCH_SOUND, "%s shouts, \"%s\"", name, buff );
     }
 }
 
@@ -70,7 +71,7 @@ void demon_taunt( struct monsters *mons )
         "says",         // actually S_SILENT
         "shouts",
         "barks",
-        "shouts",
+        "choruses",
         "roars",
         "screams",
         "bellows",
@@ -80,11 +81,18 @@ void demon_taunt( struct monsters *mons )
         "whines",
         "croaks",
         "growls",
+        "hisses",
     };
 
     char buff[80];
-    const char *mon_name = ptr_monam( mons, DESC_CAP_THE );
-    const char *voice = sound_list[ mons_shouts(mons->type) ];
+
+    char name[80];
+    strncpy( name, ptr_monam( mons, DESC_CAP_THE ), 80 );
+    name[79] = '\0';
+
+    int sound = mons_shouts( mons->type );
+
+    const char *voice = ((sound < 0) ? "says" : sound_list[sound]);
 
     if (coinflip())
     {
@@ -127,18 +135,19 @@ void demon_taunt( struct monsters *mons )
 
     init_cap( buff );
 
+    int len = strlen(name);
+    len += strlen(voice);
+    len += strlen(buff);
     // XXX: Not pretty, but stops truncation...
-    if (strlen(mon_name) + strlen(voice) + strlen(buff) + 5 >= 79)
+    if (len + 5 >= 79)
     {
-        snprintf( info, INFO_SIZE, "%s %s:", mon_name, voice );
-        mpr( info, MSGCH_TALK );
-
-        mpr( buff, MSGCH_TALK );
+        // ugly two line format:
+        mpr( MSGCH_SOUND, "%s %s:", name, voice );
+        mpr( MSGCH_SOUND, buff );
     }
     else
     {
-        snprintf( info, INFO_SIZE, "%s %s, \"%s\"", mon_name, voice, buff );
-        mpr( info, MSGCH_TALK );
+        mpr( MSGCH_SOUND, "%s %s, \"%s\"", name, voice, buff );
     }
 }
 

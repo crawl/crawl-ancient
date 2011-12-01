@@ -21,7 +21,17 @@
 
 #endif
 
+enum KeymapContext {
+    KC_DEFAULT,         // For no-arg getchm().
+    KC_LEVELMAP,        // When in the 'X' level map
+    KC_TARGETING,       // Only during 'x' and other targeting modes
+
+    KC_CONTEXT_COUNT    // Must always be the last
+};
+
 int getchm(void);       // keymaps applied (ie for prompts)
+int getchm(KeymapContext context);
+
 int getch_with_command_macros(void);  // keymaps and macros (ie for commands)
 
 void flush_input_buffer( int reason );
@@ -35,6 +45,7 @@ void macro_save(void);
 #else
 
 #define getch_with_command_macros()     getch()
+#define getchm(x)                       getch()
 #define flush_input_buffer(XXX)         ;
 
 #endif

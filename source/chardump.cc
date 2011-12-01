@@ -10,7 +10,7 @@
  * <3> 6/13/99         BWR Improved spell listing
  * <2> 5/30/99         JDJ dump_spells dumps failure rates (from Brent).
  * <1> 4/20/99         JDJ Reformatted, uses string objects, split out 7
- *                         functions from dump_char, dumps artifact info.
+ *                         functions from dump_char, dumps artefact info.
  */
 
 #include "AppHdr.h"
@@ -40,14 +40,18 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
 #include "debug.h"
 #include "describe.h"
+#include "fight.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "macro.h"
 #include "mutation.h"
+#include "output.h"
 #include "player.h"
 #include "religion.h"
 #include "shopping.h"
@@ -55,9 +59,13 @@
 #include "spl-book.h"
 #include "spl-cast.h"
 #include "spl-util.h"
+#include "stash.h"
 #include "stuff.h"
 #include "version.h"
+#include "view.h"
 
+// Defined in view.cc
+extern unsigned char (*mapch2) (unsigned char);
 
  // ========================================================================
  //      Internal Functions
@@ -86,20 +94,19 @@ static std::string fillstring(size_t strlen, char filler)
  //  macro, which is of uncertain length (well, that and I didn't know how
  //  to do it any better at the time) (LH)
  //---------------------------------------------------------------
-static std::string munge_description(const std::string & inStr)
+std::string munge_description( const std::string & inStr )
 {
     std::string outStr;
 
-    outStr.reserve(inStr.length() + 32);
+    outStr.reserve( inStr.length() + 32 );
 
-    const long kIndent = 3;
-    long lineLen = kIndent;
+    const unsigned int kIndent = 3;
+    unsigned int lineLen = kIndent;
+    unsigned int i = 0;
 
-    long i = 0;
+    outStr += fillstring( kIndent, ' ' );
 
-    outStr += fillstring(kIndent, ' ');
-
-    while (i < (long) inStr.length())
+    while (i < inStr.length())
     {
         char ch = inStr[i];
 
@@ -110,8 +117,19 @@ static std::string munge_description(const std::string & inStr)
             outStr += fillstring(kIndent, ' ');
             lineLen = kIndent;
 
-            while (inStr[++i] == '$')
-                ;
+            // skip over directives and multiple $s
+            do
+            {
+                if (inStr[i] == '{')
+                {
+                    // skip over colour directives
+                    while (inStr[++i] != '}' && i < inStr.length())
+                        ;
+                }
+                i++;
+            }
+            while (i < inStr.length()
+                    && (inStr[i] == '$' || inStr[i] == '{'));
         }
         else if (isspace(ch))
         {
@@ -133,8 +151,8 @@ static std::string munge_description(const std::string & inStr)
         {
             std::string word;
 
-            while (i < (long) inStr.length()
-                   && lineLen + (long) word.length() < 79
+            while (i < inStr.length()
+                   && lineLen + word.length() < 79
                    && !isspace(inStr[i]) && inStr[i] != '$')
             {
                 word += inStr[i++];
@@ -157,6 +175,24 @@ static std::string munge_description(const std::string & inStr)
     return (outStr);
 }                               // end munge_description()
 
+//---------------------------------------------------------------
+//
+// dump_screenshot
+//
+// Grabs a screenshot and appends the text into the given std::string.
+//---------------------------------------------------------------
+static void dump_screenshot( std::string &text )
+{
+    // A little message history:
+    if (Options.dump_message_count > 0)
+    {
+        text += "Message History" EOL EOL;
+        text += get_last_messages( Options.dump_message_count );
+    }
+
+    text += screenshot();
+}
+
  //---------------------------------------------------------------
  //
  // dump_stats
@@ -171,12 +207,12 @@ static void dump_stats( std::string & text )
 
     text += player_title();
     text += " (";
-    text += species_name(you.species, you.experience_level);
+    text += species_name( you.species );
     text += ")";
     text += EOL;
 
     text += "(Level ";
-    itoa(you.experience_level, st_prn, 10);
+    itoa(you.xp_level, st_prn, 10);
     text += st_prn;
     text += " ";
     text += you.class_name;
@@ -200,20 +236,20 @@ static void dump_stats( std::string & text )
     }
 
     text += "Experience : ";
-    itoa(you.experience_level, st_prn, 10);
+    itoa(you.xp_level, st_prn, 10);
     text += st_prn;
     text += "/";
-    itoa(you.experience, st_prn, 10);
+    itoa(you.xp, st_prn, 10);
     text += st_prn;
     text += EOL;
 
     text += "Strength ";
-    itoa(you.strength, st_prn, 10);
+    itoa(you.str, st_prn, 10);
     text += st_prn;
-    if (you.strength < you.max_strength)
+    if (you.str < you.max_str)
     {
         text += "/";
-        itoa(you.max_strength, st_prn, 10);
+        itoa(you.max_str, st_prn, 10);
         text += st_prn;
     }
 
@@ -277,15 +313,15 @@ static void dump_stats( std::string & text )
     text += EOL;
 
     text += "AC : ";
-    itoa(player_AC(), st_prn, 10);
+    itoa( player_armour_class(), st_prn, 10 );
     text += st_prn;
 
     text += "          Evasion : ";
-    itoa(player_evasion(), st_prn, 10);
+    itoa( player_evasion(), st_prn, 10 );
     text += st_prn;
 
     text += "          Shield : ";
-    itoa(player_shield_class(), st_prn, 10);
+    itoa( player_shield_class(), st_prn, 10 );
     text += st_prn;
     text += EOL;
 
@@ -298,12 +334,53 @@ static void dump_stats( std::string & text )
 
  //---------------------------------------------------------------
  //
+ // dump_stats2
+ //
+ //---------------------------------------------------------------
+static void dump_stats2( std::string & text, bool calc_unid )
+{
+    char    buffer[25*3][45];
+    char    str_pass[80];
+    char   *ptr_n;
+
+    get_full_detail( &buffer[0][0], calc_unid );
+
+    for (int i = 0; i < 25; i++)
+    {
+        ptr_n = &buffer[i][0];
+        if (buffer[i + 25][0] == '\0' && buffer[i + 50][0] == '\0')
+            snprintf( &str_pass[0], 45, "%s", ptr_n );
+        else
+            snprintf( &str_pass[0], 45, "%-28s", ptr_n );
+        text += str_pass;
+
+        ptr_n = &buffer[i + 25][0];
+        if (buffer[i+50][0] == '\0')
+            snprintf( &str_pass[0], 45, "%s", ptr_n );
+        else
+            snprintf( &str_pass[0], 45, "%-20s", ptr_n );
+        text += str_pass;
+
+        ptr_n = &buffer[i + 50][0];
+        if (buffer[i+50][0] != '\0')
+        {
+            snprintf( &str_pass[0], 45, "%s", ptr_n );
+            text += str_pass;
+        }
+        text += EOL;
+    }
+
+    text += EOL EOL;
+}
+
+ //---------------------------------------------------------------
+ //
  // dump_location
  //
  //---------------------------------------------------------------
 static void dump_location( std::string & text )
 {
-    if (you.level_type != LEVEL_DUNGEON || you.your_level != -1)
+    if (you.level_type != LEVEL_DUNGEON || you.depth != -1)
         text += "You are ";
 
     if (you.level_type == LEVEL_PANDEMONIUM)
@@ -354,14 +431,14 @@ static void dump_location( std::string & text )
         text += "in the Swamp";
     else
     {
-        if (you.your_level == -1)
+        if (you.depth == -1)
             text += "You escaped";
         else
         {
             text += "on level ";
 
             char st_prn[20];
-            itoa(you.your_level + 1, st_prn, 10);
+            itoa(you.depth + 1, st_prn, 10);
             text += st_prn;
         }
     }
@@ -417,35 +494,25 @@ static void dump_religion( std::string & text )
  //---------------------------------------------------------------
 static void dump_inventory( std::string & text, bool show_prices )
 {
-    int i, j;
-    char temp_id[4][50];
-
+    int         i, j;
     std::string text2;
+    char        st_pass[ ITEMNAME_SIZE ] = "";
+    int         inv_class2[ NUM_OBJECT_CLASSES ];
+    int         inv_count = 0;
+    char        tmp_quant[20];
+    char        temp_id[NUM_IDTYPE][MAX_SUBTYPES];
 
-    for (i = 0; i < 4; i++)
-    {
-        for (j = 0; j < 50; j++)
-        {
-            temp_id[i][j] = 1;
-        }
-    }
+    init_id_array( temp_id, ID_KNOWN_TYPE );
 
-    char st_pass[ ITEMNAME_SIZE ] = "";
-    int inv_class2[OBJ_GOLD];
-    int inv_count = 0;
-    char tmp_quant[20];
-
-    for (i = 0; i < OBJ_GOLD; i++)
-    {
+    for (i = 0; i < NUM_OBJECT_CLASSES; i++)
         inv_class2[i] = 0;
-    }
 
     for (i = 0; i < ENDOFPACK; i++)
     {
         if (is_valid_item( you.inv[i] ))
         {
             // adds up number of each class in invent.
-            inv_class2[you.inv[i].base_type]++;
+            inv_class2[ you.inv[i].base_type ]++;
             inv_count++;
         }
     }
@@ -460,11 +527,13 @@ static void dump_inventory( std::string & text, bool show_prices )
         text += "  Inventory:";
         text += EOL;
 
-        for (i = 0; i < OBJ_GOLD; i++)
+        for (i = 0; i < NUM_OBJECT_CLASSES; i++)
         {
-            if (inv_class2[i] != 0)
+            const int c = Options.list_order[i];
+
+            if (inv_class2[c] != 0)
             {
-                switch (i)
+                switch (c)
                 {
                 case OBJ_WEAPONS:    text += "Hand weapons";    break;
                 case OBJ_MISSILES:   text += "Missiles";        break;
@@ -487,7 +556,7 @@ static void dump_inventory( std::string & text, bool show_prices )
 
                 for (j = 0; j < ENDOFPACK; j++)
                 {
-                    if (is_valid_item(you.inv[j]) && you.inv[j].base_type == i)
+                    if (is_valid_item(you.inv[j]) && you.inv[j].base_type == c)
                     {
                         text += " ";
 
@@ -495,6 +564,38 @@ static void dump_inventory( std::string & text, bool show_prices )
                         text += st_pass;
 
                         inv_count--;
+
+                        // Sure they might not look the same on every
+                        // system (so we're not being too creative with
+                        // the names... sometimes light red is pink and
+                        // sometimes it's orange, and brown is sometimes
+                        // a dark yellow)...  but I think this should
+                        // still be given for reference in dumps. -- bwr
+                        if (is_colourful_item( you.inv[j] ))
+                        {
+                            switch (you.inv[j].colour)
+                            {
+                            case BLUE:         text += " {blue}"; break;
+                            case GREEN:        text += " {green}"; break;
+                            case CYAN:         text += " {cyan}"; break;
+                            case RED:          text += " {red}"; break;
+                            case MAGENTA:      text += " {magenta}"; break;
+                            case BROWN:        text += " {brown}"; break;
+                            case LIGHTGREY:    text += " {grey}"; break;
+                            case DARKGREY:     text += " {black}"; break;
+                            case LIGHTBLUE:    text += " {light blue}"; break;
+                            case LIGHTGREEN:   text += " {light green}"; break;
+                            case LIGHTCYAN:    text += " {light cyan}"; break;
+                            case LIGHTRED:     text += " {light red}"; break;
+                            case LIGHTMAGENTA: text += " {light magenta}"; break;
+                            case YELLOW:       text += " {yellow}"; break;
+                            case WHITE:        text += " {white}"; break;
+
+                            case BLACK:
+                            default:
+                                break;
+                            }
+                        }
 
                         if (show_prices)
                         {
@@ -507,7 +608,7 @@ static void dump_inventory( std::string & text, bool show_prices )
                             text += " gold)";
                         }
 
-                        if (is_dumpable_artifact( you.inv[j],
+                        if (is_dumpable_artefact( you.inv[j],
                                                   Options.verbose_dump ))
                         {
                             text2 = get_item_description( you.inv[j],
@@ -541,7 +642,7 @@ static void dump_skills( std::string & text )
     text += "   Skills:";
     text += EOL;
 
-    for (unsigned char i = 0; i < 50; i++)
+    for (int i = 0; i < MAX_SKILLS; i++)
     {
         if (you.skills[i] > 0)
         {
@@ -675,25 +776,12 @@ static void dump_spells( std::string & text )
                     spell_line += ' ';
                 }
 
-                int fail_rate = spell_fail( spell );
-
-                spell_line += (fail_rate == 100) ? "Useless"   :
-                              (fail_rate >   90) ? "Terrible"  :
-                              (fail_rate >   80) ? "Cruddy"    :
-                              (fail_rate >   70) ? "Bad"       :
-                              (fail_rate >   60) ? "Very Poor" :
-                              (fail_rate >   50) ? "Poor"      :
-                              (fail_rate >   40) ? "Fair"      :
-                              (fail_rate >   30) ? "Good"      :
-                              (fail_rate >   20) ? "Very Good" :
-                              (fail_rate >   10) ? "Great"     :
-                              (fail_rate >   0)  ? "Excellent"
-                                                 : "Perfect";
+                spell_line += failure_description( spell_fail(spell) );
 
                 for (int i = spell_line.length(); i < 70; i++)
                     spell_line += ' ';
 
-                itoa((int) spell_difficulty( spell ), tmp_quant, 10 );
+                itoa( spell_level( spell ), tmp_quant, 10 );
                 spell_line += tmp_quant;
                 spell_line += EOL;
 
@@ -702,6 +790,17 @@ static void dump_spells( std::string & text )
         }
     }
 }                               // end dump_spells()
+
+
+//---------------------------------------------------------------
+//
+// dump_kills
+//
+//---------------------------------------------------------------
+static void dump_kills( std::string & text )
+{
+    text += you.kills.kill_info();
+}
 
 //---------------------------------------------------------------
 //
@@ -730,10 +829,10 @@ static void dump_mutations( std::string & text )
         {
             if (you.mutation[j])
             {
-                if (you.demon_pow[j] > 0)
+                if (you.demon_pow[j])
                     text += "* ";
 
-                text += mutation_name(j);
+                text += mutation_desc(j);
                 text += EOL;
             }
         }
@@ -758,6 +857,7 @@ static void dump_mutations( std::string & text )
 //---------------------------------------------------------------
 bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 {
+    char tmp_quant[20];
     bool succeeded = false;
 
     std::string text;
@@ -769,7 +869,30 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
     text += EOL;
     text += EOL;
 
-    dump_stats(text);
+    if (Options.detailed_stat_dump)
+        dump_stats2(text, show_prices);
+    else
+        dump_stats(text);
+
+#ifdef DEBUG_DUMP_SKILL_TOTALS
+    text += "To-hit: ";
+    itoa( your_melee_to_hit( NULL, 0, -1, check_hand_and_half_style(), true ),
+          tmp_quant, 10 );
+    text += tmp_quant;
+    text += EOL;
+
+    text += "Stealth: ";
+    itoa( player_stealth(), tmp_quant, 10 );
+    text += tmp_quant;
+    text += EOL;
+
+    text += "MR: ";
+    itoa( player_res_magic(), tmp_quant, 10 );
+    text += tmp_quant;
+    text += EOL;
+    text += EOL;
+#endif
+
     dump_location(text);
     dump_religion(text);
 
@@ -832,8 +955,6 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 
     dump_inventory(text, show_prices);
 
-    char tmp_quant[20];
-
     text += EOL;
     text += EOL;
     text += " You have ";
@@ -845,6 +966,14 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
     dump_spells(text);
     dump_mutations(text);
 
+    text += EOL;
+    text += EOL;
+
+    dump_screenshot(text);
+    text += EOL EOL;
+
+    dump_kills(text);
+
     char file_name[kPathLen] = "\0";
 
     if (SysEnv.crawl_dir)
@@ -852,16 +981,19 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 
     strncat(file_name, fname, kPathLen);
 
-    if (strcmp(fname, "morgue.txt") != 0)
+#ifdef STASH_TRACKING
+    char stash_file_name[kPathLen] = "";
+    strncpy(stash_file_name, file_name, kPathLen);
+#endif
+    if (strcmp(fname, "morgue.txt") != 0) {
         strncat(file_name, ".txt", kPathLen);
+#ifdef STASH_TRACKING
+        strncat(stash_file_name, ".lst", kPathLen);
+        stashes.dump(stash_file_name);
+#endif
+    }
 
     FILE *handle = fopen(file_name, "wb");
-
-#if DEBUG_DIAGNOSTICS
-    strcpy( info, "File name: " );
-    strcat( info, file_name );
-    mpr( info, MSGCH_DIAGNOSTICS );
-#endif
 
     if (handle != NULL)
     {
@@ -891,3 +1023,98 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
 
     return (succeeded);
 }                               // end dump_char()
+
+#if DEBUG_DIAGNOSTICS
+
+#include "dungeon.h"
+#include "itemprop.h"
+#include "randart.h"
+
+void dump_random_items( void )
+{
+    int art = 0;
+    int unart = 0;
+    int fix = 0;
+    char file_name[kPathLen] = "\0";
+    char st_pass[ ITEMNAME_SIZE ] = "";
+
+    if (SysEnv.crawl_dir)
+        strncpy( file_name, SysEnv.crawl_dir, kPathLen );
+
+    strncat( file_name, "itemdump.txt", kPathLen );
+
+    FILE *handle = fopen( file_name, "wb" );
+
+    if (handle != NULL)
+    {
+        mpr( "Dumping items." );
+        for (int i = 0; i < 1000000; i++)
+        {
+            const int id = make_item( 1, OBJ_RANDOM, OBJ_RANDOM, false,
+                                      you.depth, 250 );
+
+            if (id != NON_ITEM)
+            {
+                set_ident_flags( mitm[id], ISFLAG_IDENT_MASK );
+
+                st_pass[0] = (mitm[id].base_type == OBJ_WEAPONS)    ? ')' :
+                             (mitm[id].base_type == OBJ_MISSILES)   ? '(' :
+                             (mitm[id].base_type == OBJ_ARMOUR)     ? '[' :
+                             (mitm[id].base_type == OBJ_WANDS)      ? '/' :
+                             (mitm[id].base_type == OBJ_FOOD)       ? '%' :
+                             (mitm[id].base_type == OBJ_SCROLLS)    ? '?' :
+                             (mitm[id].base_type == OBJ_JEWELLERY)  ? '=' :
+                             (mitm[id].base_type == OBJ_POTIONS)    ? '!' :
+                             (mitm[id].base_type == OBJ_BOOKS)      ? ':' :
+                             (mitm[id].base_type == OBJ_STAVES)     ? '|' :
+                             (mitm[id].base_type == OBJ_ORBS)       ? '0' :
+                             (mitm[id].base_type == OBJ_MISCELLANY) ? '{' :
+                             (mitm[id].base_type == OBJ_CORPSES)    ? 'X' :
+                             (mitm[id].base_type == OBJ_GOLD)       ? '$' : '~';
+
+                st_pass[1] = '\t';
+                st_pass[2] = '\0';
+                fwrite( st_pass, strlen(st_pass), 1, handle );
+
+                it_name( id, DESC_PLAIN, st_pass, false, true );
+                fwrite( st_pass, strlen(st_pass), 1, handle );
+
+                if (is_random_artefact( mitm[id] ))
+                {
+                    snprintf( st_pass, sizeof(st_pass), " (%d:%ld)",
+                              randart_value( mitm[id] ),
+                              mitm[id].special );
+
+                    fwrite( st_pass, strlen(st_pass), 1, handle );
+
+                    if (is_unrandom_artefact( mitm[id] ))
+                        unart++;
+                    else
+                        art++;
+                }
+
+                if (is_fixed_artefact( mitm[id] ))
+                    fix++;
+
+                strcpy( st_pass, EOL );
+                fwrite( st_pass, strlen(st_pass), 1, handle );
+
+                destroy_item( id );
+            }
+        }
+
+        snprintf( st_pass, sizeof(st_pass),
+                  "\trandart: %d; unrand: %d; fixed: %d" EOL,
+                  art, unart, fix );
+
+        fwrite( st_pass, strlen(st_pass), 1, handle );
+
+        fclose( handle );
+        mpr( "Done." );
+    }
+    else
+    {
+        mpr( "Failure opening itemdump.txt." );
+    }
+}
+#endif

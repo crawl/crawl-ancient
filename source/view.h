@@ -13,88 +13,52 @@
 #ifndef VIEW_H
 #define VIEW_H
 
-
 #include "externs.h"
+#include <string>
 
+void find_features( const std::vector<coord_def>& features,
+                    unsigned char feature, std::vector<coord_def> *found );
 
-#define BORDER_COLOR BROWN
+unsigned char get_envmap_char( int x, int y );
+void set_envmap_char( int x, int y, unsigned char chr );
+bool is_terrain_known( int x, int y );
+bool is_terrain_seen( int x, int y );
+bool is_terrain_changed( int x, int y );
+void set_terrain_seen( int x, int y );
+void set_terrain_mapped( int x, int y );
+void set_terrain_changed( int x, int y );
+void clear_envmap_grid( int x, int y );
+void clear_envmap( void );
 
 int get_number_of_lines(void);
 
-// last updated 29may2000 {dlb}
-/* ***********************************************************************
- * called from: bang - beam - direct - effects - fight - monstuff -
- *              mstuff2 - spells1 - spells2
- * *********************************************************************** */
 bool mons_near(struct monsters *monster, unsigned int foe = MHITYOU);
+bool see_grid( int grx, int gry );
 
+void item_grid( void );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - player - stuff
- * *********************************************************************** */
-void draw_border(void);
+void losight( FixedArray<unsigned int, 19, 19>& sh,
+              FixedArray<unsigned char, 80, 70>& gr,
+              int x_p, int y_p );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - view
- * *********************************************************************** */
-void item(void);
+void magic_mapping( int map_radius, int proportion );
 
+bool noisy( int loudness, int nois_x, int nois_y, const char *msg = 0 );
+bool mon_noisy( int loudness, struct monsters* mon, const char *msg = 0 );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: direct - monstufff - view
- * *********************************************************************** */
-void losight(FixedArray<unsigned int, 19, 19>& sh, FixedArray<unsigned char, 80, 70>& gr, int x_p, int y_p);
+bool show_map( FixedVector<int, 2>& spec_place, bool travel_mode = false );
 
+unsigned char get_magicmap_char( int feature );
+unsigned char get_sightmap_char( int feature );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - it_use3 - item_use - spell
- * *********************************************************************** */
-void magic_mapping(int map_radius, int proportion);
+void init_char_table( char_set_type set );
+void init_feature_table( void );
 
+std::string screenshot( bool fullscreen = false );
+void viewwindow( bool draw_it, bool do_updates );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - effects - it_use2 - it_use3 - item_use - spell -
- *              spells - spells3 - spells4
- * *********************************************************************** */
-void noisy( int loudness, int nois_x, int nois_y );
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - spells3
- * *********************************************************************** */
-void show_map( FixedVector<int, 2>& spec_place );
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void viewwindow2(char draw_it, bool do_updates);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void viewwindow3(char draw_it, bool do_updates);        // non-IBM graphics
-
-// last updated 19jun2000 (gdl)
-/* ***********************************************************************
- * called from: acr view
- * *********************************************************************** */
 void setLOSRadius(int newLR);
 
-// last updated 02apr2001 (gdl)
-/* ***********************************************************************
- * called from: view monstuff
- * *********************************************************************** */
 bool check_awaken(int mons_aw);
-
 
 #endif

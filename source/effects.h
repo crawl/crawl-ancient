@@ -14,79 +14,28 @@
 
 #include "externs.h"
 
+void banished( unsigned char gate_type );
 
+int forget_spells(void);
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - acr - beam - decks - fight - religion - spells
- * *********************************************************************** */
-void banished(unsigned char gate_type);
+stat_type random_stat( unsigned int str_weight = 10, unsigned int int_weight = 10, unsigned int dex_weight = 10 );
 
+bool lose_stat( stat_type which_stat, int stat_loss, bool force = false);
+bool restore_stat( stat_type which_stat, bool suppress_msg = false );
+void modify_stat( stat_type which_stat, int amount, bool suppress_msg );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: spells
- * *********************************************************************** */
-bool forget_spell(void);
+void random_uselessness( int scroll_id = -1 );
 
+bool acquirement( unsigned char force_class, bool god_gift = false );
 
-// last updated 24may2000 {dlb}
-/* ***********************************************************************
- * called from: fight - it_use2 - it_use3 - items - religion - spells -
- *              spells2 - spells4
- * *********************************************************************** */
-bool lose_stat(unsigned char which_stat, unsigned char stat_loss,
-               bool force = false);
+bool recharge_wand( void );
 
+void direct_effect( struct bolt &pbolt );
+void mons_direct_effect( struct bolt &pbolt, int i );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: item_use - spell - spells
- * *********************************************************************** */
-void random_uselessness(unsigned char ru, unsigned char sc_read_2);
+void yell( void );
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - decks - item_use - religion
- * *********************************************************************** */
-bool acquirement(unsigned char force_class);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: item_use
- * *********************************************************************** */
-bool recharge_wand(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: mstuff2
- * *********************************************************************** */
-void direct_effect(struct bolt &pbolt);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: mstuff2
- * *********************************************************************** */
-void mons_direct_effect(struct bolt &pbolt, int i);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-void yell(void);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: ability - decks - fight - it_use3 - item_use - mstuff2 -
- *              spell
- * *********************************************************************** */
 void torment( int tx, int ty );
-
+void dispel_undead_area( int tx, int ty, int pow, int caster_id );
 
 #endif

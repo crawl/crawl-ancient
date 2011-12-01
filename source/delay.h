@@ -11,9 +11,12 @@
 #define DELAY_H
 
 void start_delay( int type, int turns, int parm1 = 0, int parm2 = 0 );
-void stop_delay( void );
+bool stop_delay( void );
 bool you_are_delayed( void );
 int  current_delay_action( void );
 void handle_delay( void );
+
+void perform_activity( void );
+void interrupt_activity( activity_interrupt_type ai );
 
 #endif

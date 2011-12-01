@@ -26,7 +26,7 @@
 /* ***********************************************************************
  * called from: dungeon - effects - shopping
  * *********************************************************************** */
-char book_rarity(unsigned char which_book);
+int book_rarity(unsigned char which_book);
 
 
 // updated 24may2000 {dlb}

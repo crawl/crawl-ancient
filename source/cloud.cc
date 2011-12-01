@@ -11,10 +11,15 @@
  */
 
 #include "AppHdr.h"
+#include "globals.h"
 #include "externs.h"
 
 #include "cloud.h"
 #include "stuff.h"
+#include "ouch.h"
+#include "misc.h"
+#include "monstuff.h"
+#include "mon-util.h"
 
 void delete_cloud( int cloud )
 {
@@ -30,18 +35,6 @@ void delete_cloud( int cloud )
         env.cgrid[ cloud_x ][ cloud_y ] = EMPTY_CLOUD;
         env.cloud_no--;
     }
-}
-
-static void new_cloud( int cloud, int type, int x, int y, int decay )
-{
-    ASSERT( env.cloud[ cloud ].type == CLOUD_NONE );
-
-    env.cloud[ cloud ].type = type;
-    env.cloud[ cloud ].decay = decay;
-    env.cloud[ cloud ].x = x;
-    env.cloud[ cloud ].y = y;
-    env.cgrid[ x ][ y ] = cloud;
-    env.cloud_no++;
 }
 
 // The current use of this function is for shifting in the abyss, so
@@ -60,69 +53,113 @@ void move_cloud( int cloud, int new_x, int new_y )
     }
 }
 
-//   Places a cloud with the given stats. May delete old clouds to make way
-//   if there are too many (MAX_CLOUDS == 30) on level. Will overwrite an old
-//   cloud under some circumstances.
-void place_cloud(unsigned char cl_type, unsigned char ctarget_x,
-                 unsigned char ctarget_y, unsigned char cl_range)
+bool is_cloud( int x, int y )
+{
+    return (env.cgrid[x][y] != EMPTY_CLOUD);
+}
+
+int get_cloud_type( int x, int y )
+{
+    if (env.cgrid[x][y] == EMPTY_CLOUD)
+        return (CLOUD_NONE);
+
+    return (env.cloud[ env.cgrid[x][y] ].type);
+}
+
+static bool is_weak_cloud( int cloud_id )
+{
+    return ((env.cloud[ cloud_id ].type >= CLOUD_GREY_SMOKE
+                && env.cloud[ cloud_id ].type <= CLOUD_STEAM)
+            || env.cloud[ cloud_id ].type == CLOUD_STINK
+            || env.cloud[ cloud_id ].type == CLOUD_BLACK_SMOKE
+            || env.cloud[ cloud_id ].decay <= 20);     // soon gone
+}
+
+//  Places a cloud with the given stats. May delete old clouds to make way
+//  if there are too many (MAX_CLOUDS == 30) on level. Will overwrite an old
+//  cloud under some circumstances.
+void place_cloud( int cl_type, int ctarget_x, int ctarget_y, int cl_range,
+                  bool affect_grid )
 {
     int cl_new = -1;
 
-    // more compact {dlb}
-    const unsigned char target_cgrid = env.cgrid[ctarget_x][ctarget_y];
+    const int target_cgrid = env.cgrid[ctarget_x][ctarget_y];
 
-    // that is, another cloud already there {dlb}
     if (target_cgrid != EMPTY_CLOUD)
     {
-        if ((env.cloud[ target_cgrid ].type >= CLOUD_GREY_SMOKE
-                && env.cloud[ target_cgrid ].type <= CLOUD_STEAM)
-            || env.cloud[ target_cgrid ].type == CLOUD_STINK
-            || env.cloud[ target_cgrid ].type == CLOUD_BLACK_SMOKE
-            || env.cloud[ target_cgrid ].decay <= 20)     //soon gone
-        {
-            cl_new = env.cgrid[ ctarget_x ][ ctarget_y ];
-            delete_cloud( env.cgrid[ ctarget_x ][ ctarget_y ] );
-        }
+        // check to see if we can replace the current cloud (or abort)
+        if (!is_weak_cloud( target_cgrid ))
+            return;  // too strong!  abort!
         else
         {
-            return;
+            // delete it and take it's slot
+            delete_cloud( target_cgrid );
+            cl_new = target_cgrid;
         }
     }
-
-    // too many clouds
-    if (env.cloud_no >= MAX_CLOUDS)
+    else if (env.cloud_no < MAX_CLOUDS)
+    {
+        // find slot for cloud
+        for (int ci = 0; ci < MAX_CLOUDS; ci++)
+        {
+            if (env.cloud[ci].type == CLOUD_NONE)
+            {
+                cl_new = ci;
+                break;
+            }
+        }
+    }
+    else // too many clouds
     {
         // default to random in case there's no low quality clouds
         int cl_del = random2( MAX_CLOUDS );
 
         for (int ci = 0; ci < MAX_CLOUDS; ci++)
         {
-            if ((env.cloud[ ci ].type >= CLOUD_GREY_SMOKE
-                    && env.cloud[ ci ].type <= CLOUD_STEAM)
-                || env.cloud[ ci ].type == CLOUD_STINK
-                || env.cloud[ ci ].type == CLOUD_BLACK_SMOKE
-                || env.cloud[ ci ].decay <= 20)     //soon gone
+            if (is_weak_cloud( ci ))
             {
                 cl_del = ci;
                 break;
             }
         }
 
+        // delete it and take it's slot
         delete_cloud( cl_del );
         cl_new = cl_del;
     }
 
     // create new cloud
     if (cl_new != -1)
-        new_cloud( cl_new, cl_type, ctarget_x, ctarget_y, cl_range * 10 );
-    else
     {
-        // find slot for cloud
-        for (int ci = 0; ci < MAX_CLOUDS; ci++)
+        env.cloud[ cl_new ].type = cl_type;
+        env.cloud[ cl_new ].decay = 10 * cl_range;
+        env.cloud[ cl_new ].x = ctarget_x;
+        env.cloud[ cl_new ].y = ctarget_y;
+        env.cgrid[ ctarget_x ][ ctarget_y ] = cl_new;
+        env.cloud_no++;
+
+        if (affect_grid)
         {
-            if (env.cloud[ci].type == CLOUD_NONE)   // ie is empty
+            if (you.x_pos == ctarget_x && you.y_pos == ctarget_y)
+                in_a_cloud();
+
+            const int mid = mgrd[ctarget_x][ctarget_y];
+            if (mid != NON_MONSTER && !mons_is_submerged( &menv[mid] ))
+                mons_in_cloud( &menv[mid] );
+
+            switch (cl_type)
             {
-                new_cloud( ci, cl_type, ctarget_x, ctarget_y, cl_range * 10 );
+            case CLOUD_FIRE:
+            case CLOUD_FIRE_MON:
+                expose_floor_to_element( BEAM_FIRE, ctarget_x, ctarget_y );
+                break;
+
+            case CLOUD_COLD:
+            case CLOUD_COLD_MON:
+                expose_floor_to_element( BEAM_COLD, ctarget_x, ctarget_y );
+                break;
+
+            default:
                 break;
             }
         }

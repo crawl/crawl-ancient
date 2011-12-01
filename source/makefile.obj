@@ -16,6 +16,7 @@ effects.o \
 fight.o \
 files.o \
 food.o \
+globals.o \
 hiscores.o \
 initfile.o \
 insult.o \
@@ -24,11 +25,13 @@ it_use2.o \
 it_use3.o \
 item_use.o \
 itemname.o \
+itemprop.o \
 items.o \
 lev-pand.o \
 libutil.o \
 macro.o \
 maps.o \
+menu.o \
 message.o \
 misc.o \
 monplace.o \
@@ -55,8 +58,11 @@ spells4.o \
 spl-book.o \
 spl-cast.o \
 spl-util.o \
+stash.o \
 stuff.o \
 tags.o \
 transfor.o \
+travel.o \
 view.o \
-wpn-misc.o
+Kills.o \
+mt19937ar.o

@@ -16,18 +16,19 @@
 # is left alone.
 #
 
-
 #
 # Player name
 #
-
-# name=kernel
-
+# name =
 
 # Directory for reading macro.txt and init.txt, and dumping characters.
 # It should end with the path delimiter.
-# crawl_dir=/home/bwross/crawl/
+# crawl_dir =
 
+# You can use this option to override the default number of lines and
+# the LINES environment variable.  Setting this to zero gets the default.
+#
+# lines = 0
 
 # Here's a list of autopickup types:
 #
@@ -46,11 +47,15 @@
 #    X          Corpses
 #    $          Gold
 
-autopickup = $?!:"/0
+autopickup = $?!:"/
+
+# Use list_order to control the order of inventory displays.
+# List order uses the same symboles as autopickup.
+list_order = )|!?/"[(}:%X0
 
 
 # verbose dump causes less important item details to appear in character dumps
-# verbose_dump  = false
+verbose_dump  = true
 
 
 # Colours out of sight map features on the playing screen
@@ -60,17 +65,88 @@ colour_map    = true
 # Cleans up out of sight monsters and clouds on the map
 clean_map     = false
 
+#
+# Options to choose and control character set.
+#
+# char_set: sets the base table, and for curses the method used for 8-bit chars
+#
+#     ASCII     - plain 7-bit ascii, should work everywhere
+#     IBM       - 8-bit ANSI 437
+#     DEC       - uses DEC 8-bit, plus the line drawing characters (0x60-0x7f)
+#
+# Notes:
+# - this alternate character stuff doesn't matter to non-curses/DOS users...
+#   for them it only controls which base table gets used, so just select
+#   ASCII or IBM and make any changes you want with char_table below.
+#
+# - setting it to IBM invokes the alternate character set for codes > 128
+#
+# - setting it to DEC does the same, but also shifts 0xE0-0xFF down into
+#   the line drawing character codes... thus the international alphabet
+#   characters in that range are unusable, and you should add 128 to the
+#   line drawing character code to get the value you should use (otherwise
+#   you'll just get the usual lowercase letter character).
+#
+# - curses users with more interesting terms, and tables to their alternate
+#   character sets, can use IBM or DEC to get the alternate characters and
+#   hack away with char_table options below.  Of course, if you don't
+#   need or want curses to shift to the alternate character set, feel free
+#   to hack 8-bit characters in ASCII mode (if you have an 8-bit term).
+#
+# - setting char_set completely resets the character table... so do it first!
+#
+#
+# char_table: can be used to change a terrain feature character
+#
+# The subfield selects which type of feature, and the key is either a character
+# in single-quotes (with ' done as '\'' and \ done as '\\'), or an integer
+# from 0-255 representing the character code.
+#
+# The sub-fields are:
+#     wall              - assorted wall materials
+#     wall_magic        - magically detected wall
+#     floor             - empty floor
+#     floor_magic       - magically detected floor
+#     door_open         - an open door
+#     door_closed       - a closed door
+#     trap              - traps
+#     stairs_down       - stairs down, including branch stairs
+#     stairs_up         - stairs up, including stairs out of branches
+#     altar             - god altars
+#     arch              - gateways to pandemonium, hell, abyss, Zot, shops
+#     fountain          - assorted water fountains
+#     wavy              - water and lava
+#     statue            - statues
+#     invis_in_water    - used for monsters invisible in water
+#     item_detected     - character used for Detect Items
+#
+# These can be used to change the appearance of items on the map:
+#     item_orb, item_weapon, item_armour, item_wand, item_food
+#     item_scroll, item_ring, item_potion, item_missile, item_book
+#     item_stave, item_miscellany, item_corpse, item_gold, item_amulet
+#
+# Note: Some monsters are defined to look like terrain features or items,
+# and will also be changed.
+#
+
+# If using the DEC character set, you might find that your detect item
+# character is a double quote... this means your alternate character set
+# is in fact ISO LATIN-1.  Setting item_detected to 164 will correct that
+# to the same character as the DEC table regularly gives.
+# char_set = DEC
+# char_table.item_detected = 164
 
 # Open doors by moving on to them
 # easy_open     = false
 
-
-# Auto-switch to uncursed short blade for butchery (EXPERIMENTAL!)
+# Auto-switch to uncursed short blade for butchery
 easy_butcher  = true
-
 
 # Allows auto removal of armour when dropping it
 # easy_armour   = false
+
+# Automatically try reaching attacks with reaching weapons on CTRL movement
+# easy_reach = false
 
 
 # Make confirmation queations easier to answer:
@@ -106,11 +182,10 @@ show_uncursed = true
 # The weapon option allows defaulting on the weapon selection screen
 #
 # Valid weapons are short sword, hand axe, spear, mace, and trident...
-# although tridents are restricted to only merfolk and gladiators, so
-# you'll get queries for the illegal cases.
+# although tridents are restricted to only merfolk and gladiators (you'll
+# get queries for the illegal cases).
 #
-
-# weapon = hand axe
+# weapon = spear
 
 
 #
@@ -118,7 +193,7 @@ show_uncursed = true
 #
 # Select "random" for random choice.
 #
-# chaos_knight => Xom or Makleb
+# chaos_knight => Xom or Makhleb
 # death_knight => necromancy or Yredelemnul
 # priest       => Zin or Yredelemnul
 #
@@ -171,10 +246,10 @@ always_greet = true
 
 # Set the default background colour of your window
 # Warning: setting this to a value different than the window's background
-#          colour, will probably result in some very ugly results.
-
+#          colour will probably result in some very ugly results.
+#
 # background = white
-
+#
 
 #
 # Brand friendly monsters with a curses attribute... these might not
@@ -193,9 +268,8 @@ always_greet = true
 # This is somewhat interesting (blink here is used to give friends a
 # dark grey background, and then we change dark grey so we can see bats):
 #
-# friend_brand = blink
-# colour.darkgrey = magenta
-
+#friend_brand = blink
+#colour.darkgrey = magenta
 friend_brand = reverse
 
 
@@ -204,21 +278,26 @@ friend_brand = reverse
 # Format is channel.CHANNEL_NAME = (COLOUR|mute|default|on|off|plain)
 #
 # CHANNEL_NAME can currently be one of these:
-#   plain           = regular text (and things "uncoloured")
-#   prompt          = input prompts to the player
-#   god             = messages from the gods
-#   duration        = messages about character spells/effects wearing off
-#   danger          = serious threats to the characters existence
-#   food            = warnings about food
-#   warning         = various other warnings
-#   recovery        = recovery from disease/stat loss/poison conditions
-#   talk            = monsters talking (acting)
-#   intrinsic_gain  = level/stat/species power gains
-#   mutation        = gain/lose mutations
-#   monster_spell   = messages about monsters gesturing and casting spells
-#   monster_enchant = messages pertaining to monster enchantments (up or down)
-#   monster_damage  = messages telling how damaged a monster is
-#   rotten_meat     = messages about chunks/corpses becoming rotten
+#   plain            = regular text (and things "uncoloured")
+#   prompt           = input prompts to the player
+#   god              = messages from the gods
+#   duration         = messages about character spells/effects wearing off
+#   danger           = serious threats to the characters existence
+#   food             = warnings about food
+#   warning          = various other warnings
+#   recovery         = recovery from disease/stat loss/poison conditions
+#   sound            = things the PC hears
+#   talk             = monsters talking (acting)
+#   intrinsic_gain   = level/stat/species power gains
+#   mutation         = gain/lose mutations
+#   monster_spell    = messages about monsters gesturing and casting spells
+#   monster_enchant  = messages pertaining to monster enchantments (up or down)
+#   monster_damage   = messages telling how damaged a monster is
+#   monster_target   = monster header in targeting system
+#   rotten_meat      = messages about chunks/corpses becoming rotten
+#   equipment        = equipment lists (the ), ], and " commands)
+#   floor_items      = lists of items on the floor (alternate uses item colours)
+#   multiturn_action = eating/armour/butchery "continue doing" type messages
 #
 # COLOUR can be any of the colours in the colour section above.
 #
@@ -239,14 +318,22 @@ friend_brand = reverse
 #       will be plain coloured.  More control of these and other channels
 #       will be coming later.
 #
-
+#       Equipment is also a special channel, where "alternate" will give
+#       the inventory colours even if invent_colours is not set (if
+#       invent_colours is set this becomes part of "default").
+#
 # channel.plain = green
 # channel.talk = mute
 # channel.warning = plain
+# channel.multiturn_action = mute
 # channel.diagnostic = mute
-# channel.rotten_meat = yellow
-# channel.god = alternate
-# channel.mutation = green
+
+channel.sound = brown
+channel.rotten_meat = yellow
+channel.god = alternate
+channel.mutation = green
+channel.floor_items = alternate
+channel.monster_target = alternate
 
 
 #
@@ -293,7 +380,7 @@ wiz_mode = no
 #
 # fire_order       - controls when to consider types of items
 #
-#     launcher, dart, stone, dagger, spear, handaxe, club
+#     launcher, dart, stone, dagger, spear, handaxe, club, rock
 #
 # The list should be on one line, with commas between items.
 #
@@ -304,8 +391,7 @@ wiz_mode = no
 #
 
 fire_items_start = c
-fire_order = launcher, dart, stone
-
+# fire_order = launcher, dart, stone, rock, dagger
 
 #
 # auto_list
@@ -331,13 +417,28 @@ fire_order = launcher, dart, stone
 #
 # The sub-options currently are (and their defaults):
 #
-# failure -- when spells/abilities get miscast (true)
-# command -- whenever the game is aboutn to get the next command (false)
-# message -- whenever the game outputs a non-mute message (false)
+# failure                 -- spells/abilities get miscast (true)
+# command                 -- game is about to get the next command (false)
+# message                 -- any non-mute message (false)
+# warning_message         -- any warning message (false)
+# danger_message          -- any danger message (false)
+# prompt                  -- any prompt message (false)
+# unsafe_yes_or_no_prompt -- "[Y]es or [N]o" messages that are "unsafe" (true)
+#
+# Note that those triggered by messages consider the base channel and
+# settings... so warning messages here do not change if you've
+# assigned that channel to "plain", nor does easy confirm change what
+# messages are considered unsafe by unsafe_yes_or_no_prompt (which are
+# messages which directly involve exiting the game like quiting, saving,
+# or dying... as well as stepping into lava/deep water).
 #
 # flush.failure = false
+# flush.unsafe_yes_or_no_prompt = false
+# flush.prompt = true
 # flush.command = true
 # flush.message = true
+flush.warning_message = true
+flush.danger_message = true
 
 #
 # lowercase_invocations
@@ -359,12 +460,186 @@ lowercase_invocations = true
 
 # terse_hand = false
 
-
 #
 # delay_message_clear - experimental (may be ugly at points)
 #
 # Setting this option to true will delay the clearing of messages until
 # the message space is full (default is false which results in clearing
-# between player actions).
+# between actions).
 
 # delay_message_clear = true
+
+#
+# autopickup_on_look (defaults to true)
+#
+# Setting autopickup_on_look to false will cause ';' to not autopickup
+# items.
+
+autopickup_on_look = false
+
+#
+# old_skill_countdown, skill_countdown
+#
+# Set old_skill_countdown to true if you want the old 9 down to 0 skill
+# countdown system.  Setting skill_countdown will keep the percent display
+# but convert the amount from amount over to amount needed.  Default for
+# both is false.
+
+# old_skill_countdown = true
+# skill_countdown = true
+
+#
+# inventory display options (booleans)
+#
+# invent_weights - show the weight in aums of each item on inventory screens
+# invent_colours - display inventory items in colour
+
+# invent_weights = false
+invent_colours = true
+
+#
+# colour_rotten -- the colour to turn rotten meat items into
+#
+# Default (or setting to black) is to leave the item's colour alone.
+#
+colour_rotten = lightmagenta
+
+
+#
+# number_walk_items -- number of items to show when walking over a stack
+#
+# Walking over stacks with more items, this will truncate the number of
+# items (actually lines past the header) to whatever this is set to.
+#
+# If this value is set to 0, you'll never be told anything when walking
+# over an item.  If it's set to 1, you will never get the header
+# message ("Things that are here:")... just a message telling you
+# what the item is, or that there are several (if there are at least 2).
+#
+# You can always use ';' to view the entire stack if you want to.
+#
+# number_walk_items = 1
+
+#
+# colourful_corpses
+#
+# Set to true, corpses are coloured based on the monster itself as opposed
+# to the monster's base species
+#
+# Default is false.
+# colourful_corpses = true
+
+#
+# prompt_move_modifiers
+#
+# If true the * (interact), / (run), and : (step) commands will prompt for
+# a direction, otherwise they'll maintain their old behaviour of being quiet.
+#
+# prompt_move_modifiers = false
+
+# This option controls the listing of places of each kill in the vanquished
+# creatures list. Use 'none' to suppress place display altogether, 'all' to
+# display all known kill places, anything else to default to showing the kill
+# place only for single kills
+#
+# dump_kill_places = all
+
+# The number of messages to be displayed in the message history in character
+# dump files. Defaults to 4
+#
+dump_message_count = 4
+
+# pickup_thrown causes autopickup to grab thrown/fired missiles
+#
+pickup_thrown = true
+
+# pickup_dropped lets autopickup affect objects you've dropped. Set to false to
+# block autopickup for dropped objects
+#
+pickup_dropped = false
+
+# List of item name substrings for items which autopickup will never touch
+# Note that spaces between commas are significant, spaces at the beginning and
+# end are not. You can use multiple ban_pickup lines
+#
+# ban_pickup = degeneration,decay,confusion
+# ban_pickup = inaccuracy
+
+# Option to turn off colouring the level-map with travel information
+# travel_colour = false
+
+# How long travel waits after each move (milliseconds). Set to -1 to avoid
+# redrawing the view after each move.
+#
+travel_delay = 20
+
+# Prevent travel from routing through shallow water.
+# travel_avoid_terrain = shallow water
+
+# For merfolk and/or characters with permanent levitation, prevent travel from
+# routing through shallow _or_ deep water
+# travel_avoid_terrain = shallow water, deep water
+
+# Playing sounds (Windows):
+# * and ? are wildcards, separate the substring from the path to the sound
+# file with a ':'.
+# sound = *LOW HITPOINT WARNING*:sound\sounds2\danger3.wav
+
+# Tracking stashes. Valid options are 'all', 'dropped' and 'explicit'. Anything
+# else disables stash tracking, but shop contents will still be remembered and
+# listed.
+#
+# all:      Every item your character sees is remembered by the stash-tracker
+# dropped:  Every square your character drops an item is remembered
+# explicit: Every square you mark as a stash using Ctrl+S is remembered.
+#
+stash_tracking = all
+
+# Filter corpses (14) and chunks of meat (4:21) out of the stash-tracker.
+# The filter syntax is object class:object subtype. So, to filter, say, potions
+# of degeneration, you'd use 8:14 (where 8 is for OBJ_POTIONS and 14 is
+# POT_DEGENERATION). See enum.h for all the magic numbers involved.
+#
+stash_filter = 14, 4:21
+
+# Substrings that will stop travel if they're present in any message the game
+# displays. Substrings can be comma separated, and multiple stop_travel lines
+# are accepted.
+
+# Stop travel if Xom grants us a gift suddenly.
+#
+stop_travel = Something appears
+
+# To limit a substring match to a message channel, prefix the substring with the
+# channel name and a colon. For instance, if you want travel to stop when you're
+# hit by divine retribution, you could use:
+#
+# stop_travel = god:wrath finds you
+
+# If you'd like to stop travel for any message sent to a particular channel, use
+# a stop_travel line with that message channel name and a colon alone.  For
+# example, if you've an amulet of the gourmand, and are hankering after rotten
+# meat, or you're playing a ghoul:
+#
+# stop_travel = rotten_meat:
+
+# To be able to drop multiple items from the drop menu in one go, enable
+# multidrop (you can also switch to multidrop from the classic drop menu using
+# the @ key).
+#
+# drop_mode = multi
+
+# When selecting items using the global select key (, or -) in a multidrop
+# listing, you can choose to apply a filter - only items whose names match
+# the filter will be selected.  Use * or CTRL-C to do global selects without
+# filtering.
+#
+# For instance, to quickly select carrion and rotting chunks of meat, you
+# could use:
+#
+# drop_filter = skeleton, rotting, corpse
+
+# In multidrop (and pickup) menus, paging past the end will exit the menu if
+# you set the easy_exit_menu option
+#
+# easy_exit_menu = true

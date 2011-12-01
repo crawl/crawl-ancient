@@ -6,8 +6,8 @@
  *
  *  Change History (most recent first):
  *
- *      <2>      5/21/99        BWR             Changed from is_artifact to is_dumpable_artifact
- *      <1>      4/20/99        JDJ             Added get_item_description and is_artifact.
+ *      <2>      5/21/99        BWR             Changed from is_artefact to is_dumpable_artefact
+ *      <1>      4/20/99        JDJ             Added get_item_description and is_artefact.
  */
 
 #ifndef DESCRIBE_H
@@ -16,43 +16,25 @@
 #include <string>
 #include "externs.h"
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: chardump - spells4
- * *********************************************************************** */
-bool is_dumpable_artifact( const item_def &item, char verbose );
+const char *const size_description( size_type size );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: chardump - describe
- * *********************************************************************** */
+bool is_dumpable_artefact( const item_def &item, char verbose );
+
 std::string get_item_description( const item_def &item, char verbose,
                                   bool dump = false );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - religion
- * *********************************************************************** */
 void describe_god( int which_god, bool give_title );
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: item_use - shopping
- * *********************************************************************** */
 void describe_item( const item_def &item );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: direct
- * *********************************************************************** */
 void describe_monsters(int class_described, unsigned char which_mons);
 
+char describe_spell(int spelled);
 
-// last updated 12may2000 {dlb}
+// last updated 13oct2003 {darshan}
 /* ***********************************************************************
- * called from: item_use
+ * called from: describe_monsters - describe, kill_ghost - Kills
  * *********************************************************************** */
-void describe_spell(int spelled);
+std::string ghost_description(bool concise = false);
 
 #endif

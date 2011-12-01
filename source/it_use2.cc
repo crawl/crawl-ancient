@@ -20,12 +20,14 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "beam.h"
 #include "effects.h"
 #include "food.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "misc.h"
 #include "mutation.h"
 #include "player.h"
@@ -43,8 +45,9 @@ bool potion_effect( char pot_eff, int pow )
     bool effect = true;  // current behaviour is all potions id on quaffing
 
     int new_value = 0;
-    unsigned char i;
+    int i;
 
+    // Note that actual potions are only pow == 40, 150 is for spell usage.
     if (pow > 150)
         pow = 150;
 
@@ -52,7 +55,12 @@ bool potion_effect( char pot_eff, int pow )
     {
     case POT_HEALING:
         mpr("You feel better.");
-        inc_hp(5 + random2(7), false);
+
+        new_value = pow / 6;
+        if (new_value < 5)
+            new_value = 5;
+
+        inc_hp( new_value + roll_dice(2, new_value), false );
 
         // only fix rot when healed to full
         if (you.hp == you.hp_max)
@@ -65,18 +73,26 @@ bool potion_effect( char pot_eff, int pow )
         you.rotting = 0;
         you.disease = 0;
         you.conf = 0;
+        you.duration[ DUR_STUN ] = 0;
         break;
 
     case POT_HEAL_WOUNDS:
         mpr("You feel much better.");
-        inc_hp(10 + random2avg(28, 3), false);
+
+        new_value = pow / 3;
+        if (new_value < 10)
+            new_value = 10;
+
+        inc_hp( new_value + roll_dice( 2, new_value ), false );
 
         // only fix rot when healed to full
         if (you.hp == you.hp_max)
         {
-            unrot_hp( 2 + random2avg(5, 2) );
+            unrot_hp( roll_dice(2,3) );
             set_hp(you.hp_max, false);
         }
+
+        you.duration[ DUR_CUT ] = 0;
         break;
 
     case POT_SPEED:
@@ -85,7 +101,7 @@ bool potion_effect( char pot_eff, int pow )
 
     case POT_MIGHT:
         {
-            bool were_mighty = (you.might > 0);
+            const bool were_mighty = (you.might > 0 || you.berserker > 0);
 
             if (!were_mighty)
                 mpr( "You feel very mighty all of a sudden." );
@@ -105,30 +121,32 @@ bool potion_effect( char pot_eff, int pow )
             if (you.might > 80)
                 you.might = 80;
 
-            naughty( NAUGHTY_STIMULANTS, 4 + random2(4) );
+            did_god_conduct( DID_STIMULANTS, 4 + random2(4) );
         }
         break;
 
     case POT_GAIN_STRENGTH:
-        mutate(MUT_STRONG);
+        mutate( MUT_STRONG, true );
         break;
 
     case POT_GAIN_DEXTERITY:
-        mutate(MUT_AGILE);
+        mutate( MUT_AGILE, true );
         break;
 
     case POT_GAIN_INTELLIGENCE:
-        mutate(MUT_CLEVER);
+        mutate( MUT_CLEVER, true );
         break;
 
     case POT_LEVITATION:
-        strcpy(info, "You feel");
-        strcat(info, (!player_is_levitating()) ? " very" : " more");
-        strcat(info, " buoyant.");
-        mpr(info);
-
-        if (!player_is_levitating())
-            mpr("You gently float upwards from the floor.");
+        if (player_is_levitating())
+            mpr( "You feel more buoyant." );
+        else
+        {
+            mpr( "You gently float upwards %s.",
+                  (grd[you.x_pos][you.y_pos] == DNGN_SHALLOW_WATER
+                   || grd[you.x_pos][you.y_pos] == DNGN_DEEP_WATER)
+                              ? "out of the water" : "off the floor" );
+        }
 
         you.levitation += 25 + random2(pow);
 
@@ -138,24 +156,23 @@ bool potion_effect( char pot_eff, int pow )
         burden_change();
         break;
 
-    case POT_POISON:
     case POT_STRONG_POISON:
-        if (player_res_poison())
+        if (player_res_poison() >= 2)
+            pot_eff = POT_POISON;
+        // fall-through
+    case POT_POISON:
+        if (player_res_poison() >= 3)
         {
-            snprintf( info, INFO_SIZE, "You feel %s nauseous.",
-                        (pot_eff == POT_POISON) ? "slightly" : "quite" );
-
-            mpr(info);
+            mpr( "You feel %s nauseous.",
+                    (pot_eff == POT_POISON) ? "slightly" : "quite" );
         }
         else
         {
-            snprintf( info, INFO_SIZE, "That liquid tasted %s nasty...",
-                        (pot_eff == POT_POISON) ? "very" : "extremely" );
+            mpr( "That liquid tasted %s nasty...",
+                    (pot_eff == POT_POISON) ? "very" : "extremely" );
 
-            mpr(info);
-
-            poison_player( ((pot_eff == POT_POISON) ? 1 + random2avg(5, 2)
-                                                    : 3 + random2avg(13, 2)) );
+            poison_player( ((pot_eff == POT_POISON) ? roll_dice(2,5)
+                                                    : 5 + roll_dice(2,10)) );
         }
         break;
 
@@ -164,22 +181,11 @@ bool potion_effect( char pot_eff, int pow )
         break;
 
     case POT_PARALYSIS:
-        snprintf( info, INFO_SIZE, "You %s the ability to move!",
-                    (you.paralysis) ? "still haven't" : "suddenly lose" );
-
-        mpr( info, MSGCH_WARN );
-
-        new_value = 2 + random2( 6 + you.paralysis );
-
-        if (new_value > you.paralysis)
-            you.paralysis = new_value;
-
-        if (you.paralysis > 13)
-            you.paralysis = 13;
+        paralyse_player( 2 + random2(pow) / 20 );
         break;
 
     case POT_CONFUSION:
-        confuse_player( 3 + random2(8) );
+        confuse_player( 3 + random2(pow) / 5 );
         break;
 
     case POT_INVISIBILITY:
@@ -204,15 +210,12 @@ bool potion_effect( char pot_eff, int pow )
 
     case POT_DEGENERATION:
         mpr("There was something very wrong with that liquid!");
-        lose_stat(STAT_RANDOM, 1 + random2avg(4, 2));
+        lose_stat( STAT_RANDOM, 1 + roll_zdice(2,3) );
         break;
 
     // Don't generate randomly - should be rare and interesting
     case POT_DECAY:
-        if (you.is_undead)
-            mpr( "You feel terrible." );
-        else
-            rot_player( 10 + random2(10) );
+        rot_player( 10 + random2(10) );
         break;
 
     case POT_WATER:
@@ -224,11 +227,11 @@ bool potion_effect( char pot_eff, int pow )
         break;
 
     case POT_EXPERIENCE:
-        if (you.experience_level < 27)
+        if (you.xp_level < 27)
         {
             mpr("You feel more experienced!");
 
-            you.experience = 1 + exp_needed( 2 + you.experience_level );
+            you.xp = 1 + exp_needed( 2 + you.xp_level );
             level_change();
         }
         else
@@ -237,7 +240,7 @@ bool potion_effect( char pot_eff, int pow )
 
     case POT_MAGIC:
         mpr( "You feel magical!" );
-        new_value = 5 + random2avg(19, 2);
+        new_value = 3 + roll_dice(2,10);
 
         // increase intrinsic MP points
         if (you.magic_points + new_value > you.max_magic_points)
@@ -255,7 +258,7 @@ bool potion_effect( char pot_eff, int pow )
         // that's just confusing when trying out random potions (this one
         // still auto-identifies so we know what the effect is, but it
         // shouldn't require bringing up the descovery screen to do that -- bwr
-        if (restore_stat(STAT_ALL, false) == false)
+        if (restore_stat( STAT_ALL ) == false)
             mpr( "You feel refreshed." );
         break;
 
@@ -268,34 +271,36 @@ bool potion_effect( char pot_eff, int pow )
         for (i = 0; i < 7; i++)
         {
             if (random2(10) > i)
-                delete_mutation(100);
+                delete_mutation( PICK_RANDOM_MUTATION );
         }
         break;
 
     case POT_MUTATION:
         mpr("You feel extremely strange.");
-        for (i = 0; i < 3; i++)
-        {
-            mutate(100, false);
-        }
 
-        naughty(NAUGHTY_STIMULANTS, 4 + random2(4));
+        for (i = 0; i < 3; i++)
+            mutate( PICK_RANDOM_MUTATION, false, false );
         break;
     }
 
     return (effect);
 }                               // end potion_effect()
 
-void unwield_item(char unw)
+void unwield_item( bool no_empty_hand_msg )
 {
-    you.special_wield = SPWLD_NONE;
-    you.wield_change = true;
+    const int wpn = you.equip[EQ_WEAPON];
 
-    if (you.inv[unw].base_type == OBJ_WEAPONS)
+    if (wpn == -1)      // already empty handed
+        return;
+
+    you.special_wield = SPWLD_NONE;
+    set_redraw_status( REDRAW_WIELD );
+
+    if (you.inv[wpn].base_type == OBJ_WEAPONS)
     {
-        if (is_fixed_artefact( you.inv[unw] ))
+        if (is_fixed_artefact( you.inv[wpn] ))
         {
-            switch (you.inv[unw].special)
+            switch (you.inv[wpn].special)
             {
             case SPWPN_SINGING_SWORD:
                 mpr("The Singing Sword sighs.");
@@ -303,14 +308,14 @@ void unwield_item(char unw)
             case SPWPN_WRATH_OF_TROG:
                 mpr("You feel less violent.");
                 break;
-            case SPWPN_SCYTHE_OF_CURSES:
+            case SPWPN_SWORD_OF_POWER:
             case SPWPN_STAFF_OF_OLGREB:
-                you.inv[unw].plus = 0;
-                you.inv[unw].plus2 = 0;
+                you.inv[wpn].plus = 0;
+                you.inv[wpn].plus2 = 0;
                 break;
             case SPWPN_STAFF_OF_WUCAD_MU:
-                you.inv[unw].plus = 0;
-                you.inv[unw].plus2 = 0;
+                you.inv[wpn].plus = 0;
+                you.inv[wpn].plus2 = 0;
                 miscast_effect( SPTYP_DIVINATION, 9, 90, 100, "the Staff of Wucad Mu" );
                 break;
             default:
@@ -320,15 +325,15 @@ void unwield_item(char unw)
             return;
         }
 
-        int brand = get_weapon_brand( you.inv[unw] );
+        if (is_random_artefact( you.inv[wpn] ))
+            unuse_randart(wpn);
 
-        if (is_random_artefact( you.inv[unw] ))
-            unuse_randart(unw);
+        const int brand = get_weapon_brand( you.inv[wpn] );
 
         if (brand != SPWPN_NORMAL)
         {
-            char str_pass[ ITEMNAME_SIZE ];
-            in_name(unw, DESC_CAP_YOUR, str_pass);
+            char str_pass[ITEMNAME_SIZE];
+            in_name(wpn, DESC_CAP_YOUR, str_pass);
             strcpy(info, str_pass);
 
             switch (brand)
@@ -357,56 +362,37 @@ void unwield_item(char unw)
 
             case SPWPN_PROTECTION:
                 mpr("You feel less protected.");
-                you.redraw_armour_class = 1;
+                set_redraw_status( REDRAW_ARMOUR_CLASS );
                 break;
 
             case SPWPN_VAMPIRICISM:
                 mpr("You feel the strange hunger wane.");
                 break;
 
-            /* case 8: draining
-               case 9: speed, 10 slicing etc */
-
             case SPWPN_DISTORTION:
-                // Removing the translocations skill reduction of effect,
-                // it might seem sensible, but this brand is supposted
-                // to be dangerous because it does large bonus damage,
-                // as well as free teleport other side effects, and
-                // even with the miscast effects you can rely on the
-                // occasional spatial bonus to mow down some opponents.
-                // It's far too powerful without a real risk, especially
-                // if it's to be allowed as a player spell. -- bwr
-
-                // int effect = 9 - random2avg( you.skills[SK_TRANSLOCATIONS] * 2, 2 );
                 miscast_effect( SPTYP_TRANSLOCATION, 9, 90, 100, "a distortion effect" );
                 break;
-
-                // when more are added here, *must* duplicate unwielding
-                // effect in vorpalise weapon scroll effect in read_scoll
             }                   // end switch
 
 
             if (you.duration[DUR_WEAPON_BRAND])
             {
                 you.duration[DUR_WEAPON_BRAND] = 0;
-                set_item_ego_type( you.inv[unw], OBJ_WEAPONS, SPWPN_NORMAL );
-                mpr("Your branding evaporates.");
+                set_item_ego_type( you.inv[wpn], OBJ_WEAPONS, SPWPN_NORMAL );
+                mpr("The weapon's brand evaporates.");
             }
         }                       // end if
     }
 
-    if (player_equip( EQ_STAFF, STAFF_POWER ))
-    {
-        // XXX: Ugly hack so that thhis currently works (don't want to
-        // mess with the fact that currently this function doesn't
-        // actually unwield the item, but we need it out of the player's
-        // hand for this to work. -- bwr
-        int tmp = you.equip[ EQ_WEAPON ];
+    you.equip[EQ_WEAPON] = -1;
+    set_redraw_status( REDRAW_WIELD );
 
-        you.equip[ EQ_WEAPON ] = -1;
-        calc_mp();
-        you.equip[ EQ_WEAPON ] = tmp;
-    }
+    if (!no_empty_hand_msg)
+        canned_msg( MSG_EMPTY_HANDED );
+
+    // Must have staff out of hand before calling calc_mp_max()
+    if (player_equip( EQ_STAFF, STAFF_POWER ))
+        calc_mp_max();
 
     return;
 }                               // end unwield_item()
@@ -414,8 +400,8 @@ void unwield_item(char unw)
 // This does *not* call ev_mod!
 void unwear_armour(char unw)
 {
-    you.redraw_armour_class = 1;
-    you.redraw_evasion = 1;
+    set_redraw_status( REDRAW_ARMOUR_CLASS );
+    set_redraw_status( REDRAW_EVASION );
 
     switch (get_armour_ego_type( you.inv[unw] ))
     {
@@ -432,7 +418,7 @@ void unwear_armour(char unw)
         break;
 
     case SPARM_POISON_RESISTANCE:
-        if (!player_res_poison())
+        if (player_res_poison() <= 0)
             mpr("You feel less healthy.");
         break;
 
@@ -447,15 +433,15 @@ void unwear_armour(char unw)
         break;
 
     case SPARM_STRENGTH:
-        modify_stat(STAT_STRENGTH, -3, false);
+        modify_stat( STAT_STRENGTH, -3, false );
         break;
 
     case SPARM_DEXTERITY:
-        modify_stat(STAT_DEXTERITY, -3, false);
+        modify_stat( STAT_DEXTERITY, -3, false );
         break;
 
     case SPARM_INTELLIGENCE:
-        modify_stat(STAT_INTELLIGENCE, -3, false);
+        modify_stat( STAT_INTELLIGENCE, -3, false );
         break;
 
     case SPARM_PONDEROUSNESS:
@@ -504,20 +490,17 @@ void unuse_randart(unsigned char unw)
 {
     ASSERT( is_random_artefact( you.inv[unw] ) );
 
-    FixedVector< char, RA_PROPERTIES > proprt;
-    randart_wpn_properties( you.inv[unw], proprt );
+    if (you.inv[unw].ra_props[RAP_AC])
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
 
-    if (proprt[RAP_AC])
-        you.redraw_armour_class = 1;
-
-    if (proprt[RAP_EVASION])
-        you.redraw_evasion = 1;
+    if (you.inv[unw].ra_props[RAP_EVASION])
+        set_redraw_status( REDRAW_EVASION );
 
     // modify ability scores
-    modify_stat( STAT_STRENGTH,     -proprt[RAP_STRENGTH],     true );
-    modify_stat( STAT_INTELLIGENCE, -proprt[RAP_INTELLIGENCE], true );
-    modify_stat( STAT_DEXTERITY,    -proprt[RAP_DEXTERITY],    true );
+    modify_stat( STAT_STRENGTH, -you.inv[unw].ra_props[RAP_STRENGTH], true );
+    modify_stat( STAT_INTELLIGENCE, -you.inv[unw].ra_props[RAP_INTELLIGENCE], true );
+    modify_stat( STAT_DEXTERITY, -you.inv[unw].ra_props[RAP_DEXTERITY], true );
 
-    if (proprt[RAP_NOISES] != 0)
+    if (you.inv[unw].ra_props[RAP_NOISES])
         you.special_wield = SPWLD_NONE;
 }                               // end unuse_randart()

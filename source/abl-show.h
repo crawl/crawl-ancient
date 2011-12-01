@@ -14,10 +14,12 @@
 
 #include <string>
 
+#include "enum.h"
+
 // Structure for representing an ability:
 struct ability_def
 {
-    int                 ability;
+    ability_type        ability;
     const char *        name;
     unsigned int        mp_cost;        // magic cost of ability
     unsigned int        hp_cost;        // hit point cost of ability
@@ -26,18 +28,14 @@ struct ability_def
     unsigned int        flags;          // used for additonal cost notices
 };
 
-const struct ability_def & get_ability_def( int abil );
+const struct ability_def & get_ability_def( ability_type abil );
 
-const char * get_ability_name_by_index( char index );
+const char * get_ability_name_by_index( int index );
 
 const std::string   make_cost_description( const struct ability_def &abil );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 bool activate_ability( void );     // handles all special abilities now
-char show_abilities( void );
+unsigned char show_abilities( void );
 bool generate_abilities( void );
 
 void set_god_ability_slots( void );

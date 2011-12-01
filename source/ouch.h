@@ -16,59 +16,25 @@
 #ifndef OUCH_H
 #define OUCH_H
 
+#include "externs.h"
+#include "enum.h"
 
 #define DEATH_NAME_LENGTH 10
 
+int check_your_resists( int hurted, beam_type flavour, bool warn_only = false );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: bang - beam - effects - spells
- * *********************************************************************** */
-int check_your_resists(int hurted, int flavour);
+void splash_with_acid( int acid_strength );
+void item_corrode( item_def &item );
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: fight
- * *********************************************************************** */
-void splash_with_acid(char acid_strength);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: fight
- * *********************************************************************** */
 void weapon_acid(char acid_strength);
 
+void expose_player_to_element( beam_type flavour, int strength = 0 );
+void expose_floor_to_element( beam_type flavour, int x, int y );
 
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - bang - beam - effects - fight - misc - spells -
- *              spells2
- * *********************************************************************** */
-void scrolls_burn(char burn_strength, char target_class);
+void ouch(int dam, int death_source, char death_type, const char *aux = 0);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - bang - beam - command - effects - fight - misc -
- *              ouch - output - religion - spells - spells2 - spells4
- * *********************************************************************** */
-void ouch(int dam, int death_source, char death_type, const char *aux = NULL);
-
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: decks - ouch
- * *********************************************************************** */
 void lose_level(void);
 
-
-// last updated 12may2000 {dlb}
-/* ***********************************************************************
- * called from: decks - fight - item_use - ouch - religion - spells
- * *********************************************************************** */
 void drain_exp(void);
-
 
 #endif

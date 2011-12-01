@@ -14,366 +14,129 @@
 
 #include "externs.h"
 
+bool move_player_to_grid( int x, int y, bool stepped, bool allow_shift,
+                          bool force );
+
+bool player_in_mappable_area( void );
 bool player_in_branch( int branch );
 bool player_in_hell( void );
 
-int player_equip( int slot, int sub_type );
-int player_equip_ego_type( int slot, int sub_type );
-int player_damage_type( void );
-int player_damage_brand( void );
+int         player_equip( int slot, int sub_type, bool req_id = false );
+int         player_equip_ego_type( int slot, int sub_type, bool req_type_id = false );
+bool        player_barehand_butcher( void );
+bool        player_can_cut_meat( void );
+int         player_damage_type( bool extra_unarmed = false );
+int         player_damage_brand( bool extra_unarmed = false );
+bool        player_weapon_wielded( void );
+bool        player_tool_usable( void );
+bool        player_is_bashing( void );
+skill_type  player_weapon_skill( void );
 
-bool player_is_shapechanged(void);
+bool        player_sound_mind_and_body( void );
+bool        player_long_melee( void );
+int         player_long_skill( const item_def &wpn );
+int         player_weapon_ev_bonus( struct monsters *mon );
 
-/* ***********************************************************************
- * called from: player - item_use
- * *********************************************************************** */
+bool player_is_shapechanged( bool check_hands = false );
+bool check_species_physiology( species_type species );
+size_type player_size( int psize = PSIZE_TORSO, bool base = false );
+
 bool is_light_armour( const item_def &item );
-
-/* ***********************************************************************
- * called from: beam - fight - misc - newgame
- * *********************************************************************** */
 bool player_light_armour(void);
 
-
-/* ***********************************************************************
- * called from: acr.cc - fight.cc - misc.cc - player.cc
- * *********************************************************************** */
 bool player_in_water(void);
 bool player_is_swimming(void);
 bool player_is_levitating(void);
 
-/* ***********************************************************************
- * called from: ability - chardump - fight - religion - spell - spells -
- *              spells0 - spells2
- * *********************************************************************** */
 bool player_under_penance(void);
 
+bool player_access_floor(void);
+bool player_control_flight( bool req_id = false );
+bool player_res_corrosion( bool req_id = false );
+bool player_item_conserve( bool req_id = false );
+int  player_mental_clarity( bool req_id = false );
+bool player_has_warding( bool req_id = false );
 
-/* ***********************************************************************
- * called from: ability - acr - fight - food - it_use2 - item_use - items -
- *              misc - mutation - ouch
- * *********************************************************************** */
-bool wearing_amulet(char which_am);
+char *species_name( int speci, int level = -1, bool genus = false,
+                    bool adj = false, bool cap = true );
 
-
-/* ***********************************************************************
- * called from: acr - chardump - describe - newgame - view
- * *********************************************************************** */
-char *species_name( int speci, int level, bool genus = false, bool adj = false, bool cap = true );
-
-
-/* ***********************************************************************
- * called from: beam
- * *********************************************************************** */
 bool you_resist_magic(int power);
 
-
-/* ***********************************************************************
- * called from: acr - decks - effects - it_use2 - it_use3 - item_use -
- *              items - output - shopping - spells1 - spells3
- * *********************************************************************** */
 int burden_change(void);
-
-
-/* ***********************************************************************
- * called from: items - misc
- * *********************************************************************** */
 int carrying_capacity(void);
 
-
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-int check_stealth(void);
-
-
-/* ***********************************************************************
- * called from: bang - beam - chardump - fight - files - it_use2 -
- *              item_use - misc - output - spells - spells1
- * *********************************************************************** */
-int player_AC(void);
-
-
-/* ***********************************************************************
- * called from: spell
- * *********************************************************************** */
-unsigned char player_energy(void);
-
-
-/* ***********************************************************************
- * called from: beam - chardump - fight - files - misc - output
- * *********************************************************************** */
+int player_stealth(void);
+int player_armour_class(void);
+int player_energy(void);
 int player_evasion(void);
-
-
-#if 0
-/* ***********************************************************************
- * called from: acr - spells1
- * *********************************************************************** */
-unsigned char player_fast_run(void);
-#endif
-
-/* ***********************************************************************
- * called from: acr - spells1
- * *********************************************************************** */
+int player_base_stat( int stat );
 int player_movement_speed(void);
-
-
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 int player_hunger_rate(void);
-
-
-/* ***********************************************************************
- * called from: debug - it_use3 - spells0
- * *********************************************************************** */
-int player_mag_abil(bool is_weighted);
+int player_mag_abil( void );
 int player_magical_power( void );
-
-/* ***********************************************************************
- * called from: fight - misc - ouch - spells
- * *********************************************************************** */
-int player_prot_life(void);
-
-
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
+int player_magic_regen(void);
 int player_regen(void);
 
-
-/* ***********************************************************************
- * called from: fight - files - it_use2 - misc - ouch - spells - spells2
- * *********************************************************************** */
-int player_res_cold(void);
-
-
-/* ***********************************************************************
- * called from: fight - files - ouch
- * *********************************************************************** */
-int player_res_electricity(void);
-
-
-/* ***********************************************************************
- * called from: acr - fight - misc - ouch - spells
- * *********************************************************************** */
-int player_res_fire(void);
-
-
-/* ***********************************************************************
- * called from: beam - decks - fight - fod - it_use2 - misc - ouch -
- *              spells - spells2
- * *********************************************************************** */
-int player_res_poison(void);
-
+int player_prot_life(bool req_id = false);
+int player_res_cold(bool req_id = false);
+int player_res_acid(void);
+int player_res_electricity(bool req_id = false);
+int player_res_fire(bool req_id = false);
+int player_res_poison(bool req_id = false);
 int player_res_magic(void);
 
-/* ***********************************************************************
- * called from: beam - chardump - fight - misc - output
- * *********************************************************************** */
 int player_shield_class(void);
+bool player_can_block( struct monsters *mon = NULL );
+bool player_repel_missiles(void);
 
+int player_spec_air(void);
+int player_spec_cold(void);
+int player_spec_conj(void);
+int player_spec_death(void);
+int player_spec_earth(void);
+int player_spec_ench(void);
+int player_spec_fire(void);
+int player_spec_holy(void);
+int player_spec_poison(void);
+int player_spec_summ(void);
 
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_air(void);
+int player_base_time_taken( void );
+speed_type player_net_speed_effect( void );
 
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_cold(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_conj(void);
-
-
-/* ***********************************************************************
- * called from: it_use3 - spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_death(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_earth(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_ench(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_fire(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_holy(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_poison(void);
-
-
-/* ***********************************************************************
- * called from: spell - spells0
- * *********************************************************************** */
-unsigned char player_spec_summ(void);
-
-
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-int player_speed(void);
-
-
-/* ***********************************************************************
- * called from: chardump - spells
- * *********************************************************************** */
+int player_total_spell_levels(void);
 int player_spell_levels(void);
 
+int player_sust_abil(bool req_id = false);
+int player_teleport(bool req_id = false);
+int player_teleport_control(bool req_id = false);
 
-// last updated 18may2000 {dlb}
-/* ***********************************************************************
- * called from: effects
- * *********************************************************************** */
-unsigned char player_sust_abil(void);
+int scan_randarts( randart_prop_type which_property, bool req_id = false );
 
+int slaying_bonus( int which_affected, bool req_id = false );
 
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
-int player_teleport(void);
-
-
-/* ***********************************************************************
- * called from: ability - acr - items - misc - spells1 - spells3
- * *********************************************************************** */
-int scan_randarts(char which_property);
-
-
-/* ***********************************************************************
- * called from: fight - item_use
- * *********************************************************************** */
-int slaying_bonus(char which_affected);
-
-
-/* ***********************************************************************
- * called from: beam - decks - direct - effects - fight - files - it_use2 -
- *              items - monstuff - mon-util - mstuff2 - spells1 - spells2 -
- *              spells3
- * *********************************************************************** */
-unsigned char player_see_invis(void);
+bool player_can_smell( void );
+int  player_see_invis( bool req_id = false );
 bool player_monster_visible( struct monsters *mon );
 
+unsigned long exp_needed( int lev );
 
-/* ***********************************************************************
- * called from: acr - decks - it_use2 - ouch
- * *********************************************************************** */
-unsigned long exp_needed(int lev);
-
-
-/* ***********************************************************************
- * called from: acr
- * *********************************************************************** */
 void display_char_status(void);
 
+void forget_map( int chance_forgotten );
+void gain_exp( unsigned int exp_gained );
 
-/* ***********************************************************************
- * called from: item_use - items - misc - spells - spells3
- * *********************************************************************** */
-void forget_map(unsigned char chance_forgotten);
-
-
-// last updated 19may2000 {dlb}
-/* ***********************************************************************
- * called from: acr - fight
- * *********************************************************************** */
-void gain_exp(unsigned int exp_gained);
-
-
-// last updated 17dec2000 {gdl}
-/* ***********************************************************************
- * called from: acr - it_use2 - item_use - mutation - transfor - player -
- *              misc - stuff
- * *********************************************************************** */
-void modify_stat(unsigned char which_stat, char amount, bool suppress_msg);
-
-
-// last updated 19may2000 {dlb}
-/* ***********************************************************************
- * called from: decks - it_use2 - player
- * *********************************************************************** */
 void level_change(void);
 
-
-/* ***********************************************************************
- * called from: skills
- * *********************************************************************** */
-void redraw_skill(const char your_name[kNameLen], const char class_name[80]);
-
-
-/* ***********************************************************************
- * called from: ability - fight - item_use - mutation - newgame - spells0 -
- *              transfor
- * *********************************************************************** */
-bool player_genus( unsigned char which_genus,
-                   unsigned char species = SP_UNKNOWN );
-
-
-/* ***********************************************************************
- * called from: ability - effects - fight - it_use3 - ouch - spell -
- *              spells - spells2 - spells3 - spells4
- * *********************************************************************** */
-void dec_hp(int hp_loss, bool fatal);
-
-
-/* ***********************************************************************
- * called from: ability - it_use3 - spell - spells3
- * *********************************************************************** */
-bool enough_hp (int minimum, bool suppress_msg);
-
-
-/* ***********************************************************************
- * called from: ability - it_use3
- * *********************************************************************** */
-bool enough_mp (int minimum, bool suppress_msg);
-
-
-/* ***********************************************************************
- * called from: ability - fight - it_use3 - monstuff - ouch - spell
- * *********************************************************************** */
-void dec_mp(int mp_loss);
-
-
-/* ***********************************************************************
- * called from: ability - acr - fight - it_use2 - it_use3 - spells3
- * *********************************************************************** */
-void inc_mp(int mp_gain, bool max_too);
-
-
-/* ***********************************************************************
- * called from: acr - fight - food - spells1 - spells2
- * *********************************************************************** */
-void inc_hp(int hp_gain, bool max_too);
-
+bool player_genus( int which_genus, int species = SP_UNKNOWN );
+void dec_hp( int hp_loss, bool fatal );
+bool enough_hp( int minimum, bool suppress_msg );
+bool enough_mp( int minimum, bool suppress_msg );
+void dec_mp( int mp_loss );
+void inc_mp( int mp_gain, bool max_too );
+void inc_hp( int hp_gain, bool max_too );
 void rot_hp( int hp_loss );
 void unrot_hp( int hp_recovered );
-int player_rotted( void );
+int  player_rotted( void );
 void rot_mp( int mp_loss );
 
 void inc_max_hp( int hp_gain );
@@ -382,27 +145,9 @@ void dec_max_hp( int hp_loss );
 void inc_max_mp( int mp_gain );
 void dec_max_mp( int mp_loss );
 
-/* ***********************************************************************
- * called from: acr - misc - religion - skills2 - spells1 - transfor
- * *********************************************************************** */
-void deflate_hp(int new_level, bool floor);
+void set_hp( int new_amount, bool max_too );
+void set_mp( int new_amount, bool max_too );
 
-
-/* ***********************************************************************
- * called from: acr - it_use2 - newgame - ouch - religion - spell - spells1
- * *********************************************************************** */
-void set_hp(int new_amount, bool max_too);
-
-
-/* ***********************************************************************
- * called from: it_use3 - newgame
- * *********************************************************************** */
-void set_mp(int new_amount, bool max_too);
-
-
-/* ***********************************************************************
- * called from: newgame
- * *********************************************************************** */
 int get_species_index_by_abbrev( const char *abbrev );
 int get_species_index_by_name( const char *name );
 const char *get_species_abbrev( int which_species );
@@ -412,18 +157,18 @@ int get_class_index_by_name( const char *name );
 const char *get_class_abbrev( int which_job );
 const char *get_class_name( int which_job );
 
-
-// last updated 19apr2001 {gdl}
-/* ***********************************************************************
- * called from:
- * *********************************************************************** */
 void contaminate_player(int change, bool statusOnly = false);
 
 void poison_player( int amount, bool force = false );
 void reduce_poison_player( int amount );
 
+void paralyse_player( int amount, bool quiet = false );
+
 void confuse_player( int amount, bool resistable = true );
 void reduce_confuse_player( int amount );
+
+void stun_player( int amount );
+void cut_player( int amount );
 
 void slow_player( int amount );
 void dec_slow_player();
@@ -436,11 +181,10 @@ void dec_disease_player();
 
 void rot_player( int amount );
 
-// last updated 15sep2001 {bwr}
-/* ***********************************************************************
- * called from:
- * *********************************************************************** */
-bool player_has_spell( int spell );
+void fatigue_player( int amount );
+bool player_is_fatigued( void );
+bool player_is_exhausted( void );
 
+bool player_has_spell( int spell );
 
 #endif

@@ -15,7 +15,7 @@ all : $(GAME)
 .PHONY : wizard
 
 clean :
-	$(DEL) *.o
+	$(DEL) *.o *.ilc *.ild *.ilf *.ils *.tds
 
 debug :
 

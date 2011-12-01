@@ -25,18 +25,23 @@
 #include <conio.h>
 #endif
 
+#include "globals.h"
 #include "externs.h"
 
+#include "chardump.h"
 #include "direct.h"
 #include "dungeon.h"
+#include "files.h"
 #include "invent.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "misc.h"
 #include "monplace.h"
 #include "monstuff.h"
 #include "mon-util.h"
 #include "mutation.h"
+#include "newgame.h"
 #include "player.h"
 #include "randart.h"
 #include "religion.h"
@@ -99,11 +104,11 @@ static void BreakStrToDebugger(const char *mesg)
 
     char text[2500];
 
-    int flags = MB_YESNO +   // want abort and ignore buttons
+    int flags = (MB_YESNO    // want abort and ignore buttons
                              // (too bad we can't ditch the retry button...)
-        MB_ICONERROR +       // display the icon for errors
-        MB_TASKMODAL +       // don't let the user do anything else in the app
-        MB_SETFOREGROUND;    // bring the app to the front
+        | MB_ICONERROR       // display the icon for errors
+        | MB_TASKMODAL       // don't let the user do anything else in the app
+        | MB_SETFOREGROUND); // bring the app to the front
 
     strcpy(text, mesg);
     strcat(text, "\nDo you want to drop into the debugger?");
@@ -398,8 +403,8 @@ static int debug_prompt_for_monster( void )
     char  obj_name[ ITEMNAME_SIZE ];
     char *ptr;
 
-    mpr( "(Hint: 'generated' names, eg 'orc zombie', won't work)", MSGCH_PROMPT );
-    mpr( "Which monster by name? ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "(Hint: 'generated' names, eg 'orc zombie', won't work)" );
+    mpr( MSGCH_PROMPT, "Which monster by name? " );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
@@ -440,7 +445,7 @@ static int debug_prompt_for_skill( const char *prompt )
 {
     char specs[80];
 
-    mpr( prompt, MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, prompt );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
@@ -486,7 +491,7 @@ void debug_change_species( void )
     char specs[80];
     int i;
 
-    mpr( "What species would you like to be now? " , MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "What species would you like to be now? "  );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
@@ -494,10 +499,11 @@ void debug_change_species( void )
 
     int sp = -1;
 
-    for (int i = SP_HUMAN; i < NUM_SPECIES; i++)
+    for (i = SP_HUMAN; i < NUM_SPECIES; i++)
     {
         char sp_name[80];
-        strncpy( sp_name, species_name(i, you.experience_level), sizeof( sp_name ) );
+
+        strncpy( sp_name, species_name( i, 27 ), sizeof( sp_name ) );
 
         char *ptr = strstr( strlwr(sp_name), strlwr(specs) );
         if (ptr != NULL)
@@ -523,8 +529,14 @@ void debug_change_species( void )
             you.skill_points[i] /= species_skills( i, you.species );
         }
 
-        you.species = sp;
+        if (sp == SP_MUMMY)
+            you.is_undead = US_UNDEAD;
+        else if (sp == SP_GHOUL)
+            you.is_undead = US_HUNGRY_DEAD;
+        else
+            you.is_undead = US_ALIVE;
 
+        you.species = sp;
         redraw_screen();
     }
 }
@@ -542,17 +554,17 @@ static int debug_prompt_for_int( const char *prompt, bool nonneg )
 {
     char specs[80];
 
-    mpr( prompt, MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, prompt );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
-        return (nonneg ? -1 : 0);
+        return ((nonneg) ? -1 : 0);
 
     char *end;
     int   ret = strtol( specs, &end, 10 );
 
     if ((ret < 0 && nonneg) || (ret == 0 && end == specs))
-        ret = (nonneg ? -1 : 0);
+        ret = ((nonneg) ? -1 : 0);
 
     return (ret);
 }
@@ -576,7 +588,7 @@ void cast_spec_spell(void)
     if (spell == -1)
         canned_msg( MSG_OK );
     else
-        your_spells( spell, 0, false );
+        your_spells( spell, -1, false );
 }
 #endif
 
@@ -593,7 +605,7 @@ void cast_spec_spell_name(void)
     char specs[80];
     char spname[80];
 
-    mpr( "Cast which spell by name? ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Cast which spell by name? " );
     get_input_line( specs, sizeof( specs ) );
 
     for (i = 0; i < NUM_SPELLS; i++)
@@ -602,7 +614,7 @@ void cast_spec_spell_name(void)
 
         if (strstr( strlwr(spname), strlwr(specs) ) != NULL)
         {
-            your_spells(i, 0, false);
+            your_spells( i, -1, false );
             return;
         }
     }
@@ -626,7 +638,23 @@ void create_spec_monster(void)
     if (mon == -1)
         canned_msg( MSG_OK );
     else
-        create_monster( mon, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250 );
+    {
+        const int mid = create_monster( mon, BEH_SLEEP );
+
+        if (mid != -1)
+        {
+            if (mon == MONS_PANDEMONIUM_DEMON)
+                generate_random_demon();
+
+#if DEBUG_DIAGNOSITICS
+            mpr( MSGCH_DIAGNOSTICS, "%s (id #%d) has been created.",
+                 ptr_monam( &menv[mid], DESC_CAP_A ), mid );
+#endif
+        }
+
+        if (mon == MONS_PANDEMONIUM_DEMON)
+            generate_random_demon();
+    }
 }                               // end create_spec_monster()
 #endif
 
@@ -650,7 +678,18 @@ void create_spec_monster_name(void)
     }
     else
     {
-        create_monster(mon, 0, BEH_SLEEP, you.x_pos, you.y_pos, MHITNOT, 250);
+        const int mid = create_monster( mon, BEH_SLEEP );
+
+        if (mid != -1)
+        {
+            if (mon == MONS_PANDEMONIUM_DEMON)
+                generate_random_demon();
+
+#if DEBUG_DIAGNOSITICS
+            mpr( MSGCH_DIAGNOSTICS, "%s (id #%d) has been created.",
+                 ptr_monam( &menv[mid], DESC_CAP_A ), mid );
+#endif
+        }
     }
 }                               // end create_spec_monster_name()
 #endif
@@ -664,8 +703,8 @@ void create_spec_monster_name(void)
 #ifdef WIZARD
 void level_travel( int delta )
 {
-    int   old_level = you.your_level;
-    int   new_level = you.your_level + delta;
+    int   old_level = you.depth;
+    int   new_level = you.depth + delta;
 
     if (delta == 0)
     {
@@ -678,9 +717,8 @@ void level_travel( int delta )
         return;
     }
 
-    you.your_level = new_level - 1;
-    grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
-    down_stairs(true, old_level);
+    you.depth = new_level - 1;
+    down_stairs( DNGN_STONE_STAIRS_DOWN_I, old_level, false );
     untag_followers();
 }                               // end level_travel()
 #endif
@@ -714,7 +752,6 @@ void create_spec_object(void)
         0,              // gold         -- handled specially
         0,              // "gemstones"  -- no items of type
     };
-
     char           specs[80];
     char           obj_name[ ITEMNAME_SIZE ];
     char           keyin;
@@ -723,6 +760,7 @@ void create_spec_object(void)
     int            best_index;
     int            mon;
     int            i;
+    int            pluses;
 
     int            class_wanted   = OBJ_UNASSIGNED;
     int            type_wanted    = -1;
@@ -732,51 +770,23 @@ void create_spec_object(void)
 
     for (;;)
     {
-        mpr(") - weapons     ( - missiles  [ - armour  / - wands    ?  - scrolls",
-             MSGCH_PROMPT);
-        mpr("= - jewellery   ! - potions   : - books   | - staves   0  - The Orb",
-             MSGCH_PROMPT);
-        mpr("} - miscellany  X - corpses   %% - food    $ - gold    ESC - exit",
-             MSGCH_PROMPT);
+        mpr( "Creating a specific object of type:" );
+        mpr( MSGCH_PROMPT, ") - weapons     ( - missiles  [ - armour  / - wands    ?  - scrolls" );
+        mpr( MSGCH_PROMPT, "= - jewellery   ! - potions   : - books   | - staves   0  - The Orb" );
+        // XXX: get mpr() to handle escaping % correctly
+        mpr( MSGCH_PROMPT, "} - miscellany  & - corpses   %% - food    $ - gold    ESC - exit" );
 
-        mpr("What class of item? ", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT,"What class of item? " );
 
-        keyin = toupper( get_ch() );
+        keyin = get_ch();
 
-        if (keyin == ')')
-            class_wanted = OBJ_WEAPONS;
-        else if (keyin == '(')
-            class_wanted = OBJ_MISSILES;
-        else if (keyin == '[' || keyin == ']')
-            class_wanted = OBJ_ARMOUR;
-        else if (keyin == '/' || keyin == '\\')
-            class_wanted = OBJ_WANDS;
-        else if (keyin == '?')
-            class_wanted = OBJ_SCROLLS;
-        else if (keyin == '=' || keyin == '"')
-            class_wanted = OBJ_JEWELLERY;
-        else if (keyin == '!')
-            class_wanted = OBJ_POTIONS;
-        else if (keyin == ':')
-            class_wanted = OBJ_BOOKS;
-        else if (keyin == '|')
-            class_wanted = OBJ_STAVES;
-        else if (keyin == '0' || keyin == 'O')
-            class_wanted = OBJ_ORBS;
-        else if (keyin == '}' || keyin == '{')
-            class_wanted = OBJ_MISCELLANY;
-        else if (keyin == 'X')
-            class_wanted = OBJ_CORPSES;
-        else if (keyin == '%')
-            class_wanted = OBJ_FOOD;
-        else if (keyin == '$')
-            class_wanted = OBJ_GOLD;
-        else if (keyin == ESCAPE || keyin == ' '
-                || keyin == '\r' || keyin == '\n')
+        if (keyin == ESCAPE || keyin == ' ' || keyin == '\r' || keyin == '\n')
         {
             canned_msg( MSG_OK );
             return;
         }
+
+        class_wanted = conv_char_to_obj_class( keyin );
 
         if (class_wanted != OBJ_UNASSIGNED)
             break;
@@ -825,13 +835,13 @@ void create_spec_object(void)
         mitm[thing_created].plus      = mon;
         mitm[thing_created].plus2     = 0;
         mitm[thing_created].special   = 210;
-        mitm[thing_created].colour    = mons_colour(mon);;
+        mitm[thing_created].colour    = mons_class_colour(mon);
         mitm[thing_created].quantity  = 1;
         mitm[thing_created].flags     = 0;
     }
     else
     {
-        mpr( "What type of item? ", MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, "What type of item? " );
         get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] == '\0')
@@ -854,25 +864,15 @@ void create_spec_object(void)
 
         if (class_wanted == OBJ_ARMOUR)
         {
-            if (strstr( "naga barding", specs ))
+            if (strstr( "cap", specs ))
             {
-                mitm[thing_created].sub_type = ARM_BOOTS;
-                mitm[thing_created].plus2 = TBOOT_NAGA_BARDING;
-            }
-            else if (strstr( "centaur barding", specs ))
-            {
-                mitm[thing_created].sub_type = ARM_BOOTS;
-                mitm[thing_created].plus2 = TBOOT_CENTAUR_BARDING;
-            }
-            else if (strstr( "wizard's hat", specs ))
-            {
-                mitm[thing_created].sub_type = ARM_HELMET;
-                mitm[thing_created].plus2 = THELM_WIZARD_HAT;
-            }
-            else if (strstr( "cap", specs ))
-            {
-                mitm[thing_created].sub_type = ARM_HELMET;
+                mitm[thing_created].sub_type = ARM_CAP;
                 mitm[thing_created].plus2 = THELM_CAP;
+            }
+            if (strstr( "wizard's hat", specs ))
+            {
+                mitm[thing_created].sub_type = ARM_CAP;
+                mitm[thing_created].plus2 = THELM_WIZARD_HAT;
             }
             else if (strstr( "helm", specs ))
             {
@@ -906,8 +906,16 @@ void create_spec_object(void)
 
             if (type_wanted == -1)
             {
-                mpr( "No such item." );
-                return;
+                // ds -- if specs is a valid int, try using that.
+                //       Since zero is atoi's copout, the wizard
+                //       must enter (subtype + 1).
+                type_wanted = atoi(specs);
+                if (!type_wanted)
+                {
+                    mpr( "No such item." );
+                    return;
+                }
+                type_wanted--;
             }
 
             mitm[thing_created].sub_type = type_wanted;
@@ -920,7 +928,7 @@ void create_spec_object(void)
             // intentional fall-through
         case OBJ_WEAPONS:
         case OBJ_ARMOUR:
-            mpr( "What ego type? ", MSGCH_PROMPT );
+            mpr( MSGCH_PROMPT, "What ego type? " );
             get_input_line( specs, sizeof( specs ) );
 
             if (specs[0] != '\0')
@@ -950,6 +958,43 @@ void create_spec_object(void)
             }
             break;
 
+        case OBJ_JEWELLERY:
+            pluses = ring_has_pluses( mitm[thing_created] );
+
+            if (pluses)
+            {
+                mpr( MSGCH_PROMPT, "Plus value? " );
+                get_input_line( specs, sizeof( specs ) );
+
+                if (specs[0] == '\0')
+                    return;
+
+                char *end;
+                int   value = strtol( specs, &end, 10 );
+
+                if (end == specs)
+                    value = MAX_RING_PLUS;
+
+                mitm[thing_created].plus = value;
+
+                if (pluses == 2)
+                {
+                    mpr( MSGCH_PROMPT, "Plus2 value? " );
+                    get_input_line( specs, sizeof( specs ) );
+
+                    if (specs[0] == '\0')
+                        return;
+
+                    value = strtol( specs, &end, 10 );
+
+                    if (end == specs)
+                        value = MAX_RING_PLUS;
+
+                    mitm[thing_created].plus2 = value;
+                }
+            }
+            break;
+
         case OBJ_BOOKS:
             if (mitm[thing_created].sub_type == BOOK_MANUAL)
             {
@@ -963,6 +1008,14 @@ void create_spec_object(void)
 
         case OBJ_WANDS:
             mitm[thing_created].plus = 24;
+            break;
+
+        case OBJ_STAVES:
+            if (item_is_rod( mitm[thing_created] ))
+            {
+                mitm[thing_created].plus = MAX_ROD_CHARGE * ROD_CHARGE_MULT;
+                mitm[thing_created].plus2 = MAX_ROD_CHARGE * ROD_CHARGE_MULT;
+            }
             break;
 
         case OBJ_MISCELLANY:
@@ -989,6 +1042,170 @@ void create_spec_object(void)
         canned_msg( MSG_SOMETHING_APPEARS );
 
 }
+
+void create_object( bool make_good )
+{
+    static int max_subtype[] =
+    {
+        NUM_WEAPONS,
+        NUM_MISSILES,
+        NUM_ARMOURS,
+        NUM_WANDS,
+        NUM_FOODS,
+        0,              // unknown I
+        NUM_SCROLLS,
+        NUM_JEWELLERY,
+        NUM_POTIONS,
+        0,              // unknown II
+        NUM_BOOKS,
+        NUM_STAVES,
+        0,              // Orbs         -- only one, handled specially
+        NUM_MISCELLANY,
+        0,              // corpses      -- handled specially
+        0,              // gold         -- handled specially
+        0,              // "gemstones"  -- no items of type
+    };
+
+    char           specs[80];
+    char           obj_name[ ITEMNAME_SIZE ];
+    char           keyin;
+
+    char *         ptr;
+    int            best_index;
+    int            i;
+
+    int            class_wanted   = OBJ_UNASSIGNED;
+    int            type_wanted    = -1;
+
+    int            thing_created;
+
+    for (;;)
+    {
+        if (make_good)
+            mpr("Creating random good objects of type:");
+        else
+            mpr("Creating random objects of type:");
+
+        mpr( MSGCH_PROMPT, ") weapons     ( missiles  [ armour  / wands    ? scrolls" );
+        mpr( MSGCH_PROMPT, "= jewellery   ! potions   : books   | staves   0 The Orb" );
+        mpr( MSGCH_PROMPT, "} miscellany  X corpses   %% food    $ gold     * random" );
+
+        mpr(MSGCH_PROMPT,"What class of item? " );
+
+        keyin = toupper( get_ch() );
+
+        if (keyin == ')')
+            class_wanted = OBJ_WEAPONS;
+        else if (keyin == '(')
+            class_wanted = OBJ_MISSILES;
+        else if (keyin == '[' || keyin == ']')
+            class_wanted = OBJ_ARMOUR;
+        else if (keyin == '/' || keyin == '\\')
+            class_wanted = OBJ_WANDS;
+        else if (keyin == '?')
+            class_wanted = OBJ_SCROLLS;
+        else if (keyin == '=' || keyin == '"')
+            class_wanted = OBJ_JEWELLERY;
+        else if (keyin == '!')
+            class_wanted = OBJ_POTIONS;
+        else if (keyin == ':')
+            class_wanted = OBJ_BOOKS;
+        else if (keyin == '|')
+            class_wanted = OBJ_STAVES;
+        else if (keyin == '0' || keyin == 'O')
+            class_wanted = OBJ_ORBS;
+        else if (keyin == '}' || keyin == '{')
+            class_wanted = OBJ_MISCELLANY;
+        else if (keyin == 'X')
+            class_wanted = OBJ_CORPSES;
+        else if (keyin == '%')
+            class_wanted = OBJ_FOOD;
+        else if (keyin == '$')
+            class_wanted = OBJ_GOLD;
+        else if (keyin == '*')
+            class_wanted = OBJ_RANDOM;
+        else if (keyin == ESCAPE || keyin == ' '
+                || keyin == '\r' || keyin == '\n')
+        {
+            canned_msg( MSG_OK );
+            return;
+        }
+
+        if (class_wanted != OBJ_UNASSIGNED)
+            break;
+    }
+
+    if (class_wanted != OBJ_RANDOM)
+    {
+        type_wanted = OBJ_RANDOM;
+
+        mpr( MSGCH_PROMPT, "What type of item? " );
+        get_input_line( specs, sizeof( specs ) );
+
+        if (specs[0] != '\0' && specs[0] != '*')
+        {
+            item_def       item;                // for generating names
+
+            item.base_type = class_wanted;
+            item.plus = 0;
+            item.plus2 = 0;
+            item.special = 0;
+            item.flags = 0;
+            item.quantity = 0;
+            set_ident_flags( item, ISFLAG_IDENT_MASK );
+
+            best_index  = 10000;
+
+            for (i = 0; i < max_subtype[ class_wanted ]; i++)
+            {
+                item.sub_type  = i;
+                item_name( item, DESC_PLAIN, obj_name );
+
+                ptr = strstr( strlwr(obj_name), strlwr(specs) );
+                if (ptr != NULL)
+                {
+                    // earliest match is the winner
+                    if (ptr - obj_name < best_index)
+                    {
+                        mpr( obj_name );
+                        type_wanted = i;
+                        best_index = ptr - obj_name;
+                    }
+                }
+            }
+        }
+    }
+
+    mpr( MSGCH_PROMPT, "Number to create? " );
+    get_input_line( specs, sizeof( specs ) );
+
+    if (specs[0] == '\0')
+        return;
+
+    char *end;
+    int   num = strtol( specs, &end, 10 );
+
+    if (num == 0 || end == specs)
+        num = 1;
+
+    bool succ = false;
+    for (i = 0; i < num; i++)
+    {
+        thing_created = make_item( 1, class_wanted, type_wanted, true,
+                                   (make_good) ? MAKE_GOOD_ITEM : you.depth,
+                                   MAKE_ITEM_RANDOM_RACE );
+
+        if (thing_created != NON_ITEM)
+        {
+            succ = true;
+            set_ident_flags( mitm[thing_created], ISFLAG_IDENT_MASK );
+            move_item_to_grid( &thing_created, you.x_pos, you.y_pos );
+        }
+    }
+
+    if (succ)
+        canned_msg( MSG_SOMETHING_APPEARS );
+}
 #endif
 
 
@@ -1011,7 +1228,7 @@ void tweak_object(void)
     }
 
     if (item == you.equip[EQ_WEAPON])
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
 
     for (;;)
     {
@@ -1022,9 +1239,8 @@ void tweak_object(void)
             item_name( you.inv[item], DESC_INVENTORY_EQUIP, info );
             mpr( info );
 
-            mpr( "a - plus  b - plus2  c - special  d - quantity  ESC - exit",
-                 MSGCH_PROMPT );
-            mpr( "Which field? ", MSGCH_PROMPT );
+            mpr( MSGCH_PROMPT, "a - plus  b - plus2  c - special  d - quantity  ESC - exit" );
+            mpr( MSGCH_PROMPT, "Which field? " );
 
             keyin = tolower( get_ch() );
 
@@ -1060,7 +1276,7 @@ void tweak_object(void)
 
         mpr( info );
 
-        mpr( "New value? ", MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, "New value? " );
         get_input_line( specs, sizeof( specs ) );
 
         if (specs[0] == '\0')
@@ -1097,24 +1313,26 @@ void tweak_object(void)
 static const char *enchant_names[] =
 {
     "None",
-    "Slow", "Haste", "*BUG-3*", "Fear", "Conf", "Invis",
-    "YPois-1", "YPois-2", "YPois-3", "YPois-4",
-    "YShug-1", "YShug-2", "YShug-3", "YShug-4",
-    "YRot-1", "YRot-2", "YRot-3", "YRot-4",
-    "Summon", "Abj-1", "Abj-2", "Abj-3", "Abj-4", "Abj-5", "Abj-6",
-    "Corona-1", "Corona-2", "Corona-3", "Corona-4",
-    "Charm", "YSticky-1", "YSticky-2", "YSticky-3", "YSticky-4",
-    "*BUG-35*", "*BUG-36*", "*BUG-37*",
+    "Slow", "Haste", "BUG:3", "Fear", "Conf", "Invis",
+    "Pois", "BUG:YPois-2", "BUG:YPois-3", "BUG:YPois-4",
+    "BUG:11", "BUG:12", "BUG:13", "BUG:14",
+    "Rot", "BUG:YRot-2", "BUG:YRot-3", "BUG:YRot-4",
+    "BUG:Summon", "Summoned", "BUG:Abj-2", "BUG:Abj-3", "BUG:Abj-4",
+    "BUG:Abj-5", "BUG:Abj-6",
+    "Corona", "BUG:Corona-2", "BUG:Corona-3", "BUG:Corona-4",
+    "Charm", "BUG:YSticky-1", "BUG:YSticky-2", "BUG:YSticky-3", "BUG:YSticky-4",
+    "BUG:35", "BUG:36", "BUG:37",
     "GlowShapeshifter", "Shapeshifter",
-    "Tele-1", "Tele-2", "Tele-3", "Tele-4",
-    "*BUG-44*", "*BUG-45*", "*BUG-46*", "*BUG-47*", "*BUG-48*", "*BUG-49*",
-    "*BUG-50*", "*BUG-51*", "*BUG-52*", "*BUG-53*", "*BUG-54*", "*BUG-55*",
-    "*BUG-56*",
-    "Pois-1", "Pois-2", "Pois-3", "Pois-4",
-    "Sticky-1", "Sticky-2", "Sticky-3", "Sticky-4",
-    "OldAbj-1", "OldAbj-2", "OldAbj-3", "OldAbj-4", "OldAbj-5", "OldAbj-6",
-    "OldCreatedFriendly", "SleepWary", "Submerged", "Short Lived",
-    "*BUG-too big*"
+    "Tele", "BUG:Tele-2", "BUG:Tele-3", "BUG:Tele-4",
+    "BUG:44", "BUG:45", "BUG:46", "BUG:47", "BUG:48", "BUG:49",
+    "BUG:50", "BUG:51", "BUG:52", "BUG:53", "BUG:54", "BUG:55",
+    "BUG:56",
+    "BUG:Pois-1", "BUG:Pois-2", "BUG:Pois-3", "BUG:Pois-4",
+    "Sticky", "BUG:Sticky-2", "BUG:Sticky-3", "BUG:Sticky-4",
+    "BUG:65", "BUG:66", "BUG:67", "BUG:68", "BUG:69", "BUG:70",
+    "BUG:71", "SleepWary", "Submerged", "Short Lived", "Petrify", "Paralysis",
+    "Quiet", "Stun", "Cut",
+    "BUG:TooBig1", "BUG:TooBig2", "BUG:TooBig3", "BUG:TooBig4", "BUG:TooBig5",
 };
 
 void stethoscope(int mwh)
@@ -1127,7 +1345,7 @@ void stethoscope(int mwh)
         i = mwh;
     else
     {
-        mpr( "Which monster?", MSGCH_PROMPT );
+        mpr( MSGCH_PROMPT, "Which monster?" );
 
         direction( stth );
 
@@ -1147,17 +1365,14 @@ void stethoscope(int mwh)
 
         if (env.cgrid[steth_x][steth_y] != EMPTY_CLOUD)
         {
-            snprintf( info, INFO_SIZE, "cloud type: %d delay: %d",
+            mpr( MSGCH_DIAGNOSTICS, "cloud type: %d delay: %d",
                      env.cloud[ env.cgrid[steth_x][steth_y] ].type,
                      env.cloud[ env.cgrid[steth_x][steth_y] ].decay );
-
-            mpr( info, MSGCH_DIAGNOSTICS );
         }
 
         if (mgrd[steth_x][steth_y] == NON_MONSTER)
         {
-            snprintf( info, INFO_SIZE, "item grid = %d", igrd[steth_x][steth_y] );
-            mpr( info, MSGCH_DIAGNOSTICS );
+            mpr( MSGCH_DIAGNOSTICS, "item grid = %d", igrd[steth_x][steth_y] );
             return;
         }
 
@@ -1165,48 +1380,62 @@ void stethoscope(int mwh)
     }
 
     // print type of monster
-    snprintf( info, INFO_SIZE, "%s (id #%d; type=%d loc=(%d,%d) align=%s)",
+    mpr( MSGCH_DIAGNOSTICS,
+        "%s (id #%d; type=%d loc=(%d,%d) align=%s flags=%04x)",
               monam( menv[i].number, menv[i].type, true, DESC_CAP_THE ),
               i, menv[i].type,
               menv[i].x, menv[i].y,
               ((menv[i].attitude == ATT_FRIENDLY) ? "friendly" :
                (menv[i].attitude == ATT_HOSTILE)  ? "hostile" :
                (menv[i].attitude == ATT_NEUTRAL)  ? "neutral"
-                                                  : "unknown alignment") );
+                                                  : "unknown alignment"),
+              menv[i].flags );
 
-    mpr( info, MSGCH_DIAGNOSTICS );
+    const int fly = mons_flies( &menv[i] );
 
     // print stats and other info
-    snprintf( info, INFO_SIZE,"HD=%d HP=%d/%d AC=%d EV=%d MR=%d SP=%d energy=%d num=%d flags=%02x",
+    mpr( MSGCH_DIAGNOSTICS,
+        "HD=%d HP=%d/%d AC=%d EV=%d(%d) SH=%d(%d) MR=%d SPD=%d%s PER=%d energy=%d",
              menv[i].hit_dice,
              menv[i].hit_points, menv[i].max_hit_points,
-             menv[i].armour_class, menv[i].evasion,
+             menv[i].armour_class,
+             menv[i].evasion, mons_weapon_ev_bonus( &menv[i] ),
+             mons_shield_class( &menv[i] ),
+             menv[i].shield_blocks,
              mons_resist_magic( &menv[i] ),
-             menv[i].speed, menv[i].speed_increment,
-             menv[i].number, menv[i].flags );
 
-    mpr( info, MSGCH_DIAGNOSTICS );
+             mons_speed( &menv[i] ),
+             ((fly == FLY_POWERED)              ? "f" :
+              (fly == FLY_LEVITATION)           ? "l" :
+              mons_stationary( menv[i].type )   ? "s" : ""),
+
+             mons_perception( &menv[i] ),
+             menv[i].energy );
 
     // print behaviour information
 
     const int hab = monster_habitat( menv[i].type );
 
-    snprintf( info, INFO_SIZE, "hab=%s beh=%s(%d) foe=%s(%d) mem=%d target=(%d,%d)",
+    mpr( MSGCH_DIAGNOSTICS,
+            "num=%d hab=%s beh=%s(%d) foe=%s(%d) mem=%d target=(%d,%d)",
+             menv[i].number,
              ((hab == DNGN_DEEP_WATER)            ? "water" :
               (hab == DNGN_LAVA)                  ? "lava"
                                                   : "floor"),
 
-             ((menv[i].behaviour == BEH_SLEEP)    ? "sleep" :
-              (menv[i].behaviour == BEH_WANDER)   ? "wander" :
-              (menv[i].behaviour == BEH_SEEK)     ? "seek" :
-              (menv[i].behaviour == BEH_FLEE)     ? "flee" :
-              (menv[i].behaviour == BEH_CORNERED) ? "cornered"
-                                                  : "unknown"),
+             ((menv[i].behaviour == BEH_SLEEP)       ? "sleep" :
+              (menv[i].behaviour == BEH_WANDER)      ? "wander" :
+              (menv[i].behaviour == BEH_INVESTIGATE) ? "investigate" :
+              (menv[i].behaviour == BEH_SEEK)        ? "seek" :
+              (menv[i].behaviour == BEH_FLEE)        ? "flee" :
+              (menv[i].behaviour == BEH_PANIC)       ? "panic" :
+              (menv[i].behaviour == BEH_CORNERED)    ? "cornered"
+                                                     : "unknown"),
              menv[i].behaviour,
 
              ((menv[i].foe == MHITYOU)            ? "you" :
               (menv[i].foe == MHITNOT)            ? "none" :
-              (menv[menv[i].foe].type == -1)      ? "unassigned monster"
+              (menv[menv[i].foe].type == -1)      ? "unassigned"
                  : monam( menv[menv[i].foe].number, menv[menv[i].foe].type,
                           true, DESC_PLAIN )),
              menv[i].foe,
@@ -1214,45 +1443,58 @@ void stethoscope(int mwh)
 
              menv[i].target_x, menv[i].target_y );
 
-    mpr( info, MSGCH_DIAGNOSTICS );
-
     // print resistances
-    snprintf( info, INFO_SIZE, "resist: fire=%d cold=%d elec=%d pois=%d neg=%d",
+    mpr( MSGCH_DIAGNOSTICS, "res: fire=%d%s cold=%d%s elec=%d pois=%d neg=%d",
               mons_res_fire( &menv[i] ),
+              (mons_class_resist( menv[i].type, MR_RES_HELLFIRE ) ? "*" : ""),
               mons_res_cold( &menv[i] ),
+              (mons_class_resist( menv[i].type, MR_RES_HELLFROST ) ? "*" : ""),
               mons_res_elec( &menv[i] ),
               mons_res_poison( &menv[i] ),
               mons_res_negative_energy( &menv[i] ) );
 
-    mpr( info, MSGCH_DIAGNOSTICS );
-
-
     // print enchantments
     strncpy( info, "ench: ", INFO_SIZE );
-    for (j = 0; j < 6; j++)
+    for (j = 0; j < NUM_MON_ENCHANTS; j++)
     {
-        if (menv[i].enchantment[j] >= NUM_ENCHANTMENTS)
-            strncat( info, enchant_names[ NUM_ENCHANTMENTS ], INFO_SIZE );
+        char buff[80];
+
+        if (menv[i].ench[j].type >= 0 && menv[i].ench[j].type < NUM_ENCHANTMENTS)
+            strncat( info, enchant_names[ menv[i].ench[j].type ], INFO_SIZE );
         else
-            strncat( info, enchant_names[ menv[i].enchantment[j] ], INFO_SIZE );
+        {
+            snprintf( buff, sizeof(buff), "BUG:%d", menv[i].ench[j].type );
+            strncat( info, buff, INFO_SIZE );
+        }
+
+        snprintf( buff, sizeof(buff), "(%d)", menv[i].ench[j].duration );
+        strncat( info, buff, INFO_SIZE );
 
         if (strlen( info ) <= 70)
             strncat( info, " ", INFO_SIZE );
         else if (j < 5)
         {
-            mpr( info, MSGCH_DIAGNOSTICS );
+            mpr( MSGCH_DIAGNOSTICS, info );
             strncpy( info, "ench: ", INFO_SIZE );
         }
     }
 
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, info );
 
     if (menv[i].type == MONS_PLAYER_GHOST
         || menv[i].type == MONS_PANDEMONIUM_DEMON)
     {
         snprintf( info, INFO_SIZE, "Ghost damage: %d; brand: %d",
-                  ghost.values[ GVAL_DAMAGE ], ghost.values[ GVAL_BRAND ] );
-        mpr( info, MSGCH_DIAGNOSTICS );
+                  env.ghost.values[ GVAL_DAMAGE ], env.ghost.values[ GVAL_BRAND ] );
+        mpr( MSGCH_DIAGNOSTICS, info );
+    }
+    else
+    {
+        mpr( MSGCH_DIAGNOSTICS, "attacks: %d %d %d %d",
+                  mons_damage( &menv[i], 0 ),
+                  mons_damage( &menv[i], 1 ),
+                  mons_damage( &menv[i], 2 ),
+                  mons_damage( &menv[i], 3 ) );
     }
 }                               // end stethoscope()
 #endif
@@ -1265,24 +1507,19 @@ void stethoscope(int mwh)
 //---------------------------------------------------------------
 static void dump_item( const char *name, int num, const item_def &item )
 {
-    mpr( name, MSGCH_WARN );
+    mpr( MSGCH_WARN, name );
 
-    snprintf( info, INFO_SIZE, "    item #%d:  base: %d; sub: %d; plus: %d; plus2: %d; special: %ld",
+    mpr( "    item #%d:  base: %d; sub: %d; plus: %d; plus2: %d; special: %ld",
              num, item.base_type, item.sub_type,
              item.plus, item.plus2, item.special );
 
-    mpr( info );
-
-    snprintf( info, INFO_SIZE, "    quant: %d; colour: %d; ident: 0x%08lx; ident_type: %d",
+    mpr( "    quant: %d; colour: %d; ident: 0x%08lx; ident_type: %d",
              item.quantity, item.colour, item.flags,
              get_ident_type( item.base_type, item.sub_type ) );
 
-    mpr( info );
-
-    snprintf( info, INFO_SIZE, "    x: %d; y: %d; link: %d",
-             item.x, item.y, item.link );
-
-    mpr( info );
+    mpr( "    x: %d; y: %d; link: %d; slot: %c",
+             item.x, item.y, item.link,
+             (item.slot == -1) ? '-' : index_to_letter( item.slot ) );
 }
 
 //---------------------------------------------------------------
@@ -1315,8 +1552,7 @@ void debug_item_scan( void )
                 // Check for invalid (zero quantity) items that are linked in
                 if (!is_valid_item( mitm[obj] ))
                 {
-                    snprintf( info, INFO_SIZE, "Linked invalid item at (%d,%d)!", x, y);
-                    mpr( info, MSGCH_WARN );
+                    mpr( MSGCH_WARN, "Linked invalid item at (%d,%d)!", x, y);
                     item_name( mitm[obj], DESC_PLAIN, name );
                     dump_item( name, obj, mitm[obj] );
                 }
@@ -1324,8 +1560,7 @@ void debug_item_scan( void )
                 // Check that item knows what stack it's in
                 if (mitm[obj].x != x || mitm[obj].y != y)
                 {
-                    snprintf( info, INFO_SIZE, "Item position incorrect at (%d,%d)!", x, y);
-                    mpr( info, MSGCH_WARN );
+                    mpr( MSGCH_WARN, "Item position incorrect at (%d,%d)!", x, y);
                     item_name( mitm[obj], DESC_PLAIN, name );
                     dump_item( name, obj, mitm[obj] );
                 }
@@ -1334,8 +1569,7 @@ void debug_item_scan( void )
                 // this will also keep this from being an infinite loop.
                 if (mitm[obj].flags & ISFLAG_DEBUG_MARK)
                 {
-                    snprintf( info, INFO_SIZE, "Potential INFINITE STACK at (%d, %d)", x, y);
-                    mpr( info, MSGCH_WARN );
+                    mpr( MSGCH_WARN, "Potential INFINITE STACK at (%d, %d)", x, y );
                     break;
                 }
 
@@ -1356,12 +1590,11 @@ void debug_item_scan( void )
         if ((mitm[i].x > 0 || mitm[i].y > 0)
             && !(mitm[i].flags & ISFLAG_DEBUG_MARK))
         {
-            mpr( "Unlinked item:", MSGCH_WARN );
+            mpr( MSGCH_WARN, "Unlinked item:" );
             dump_item( name, i, mitm[i] );
 
-            snprintf( info, INFO_SIZE, "igrd(%d,%d) = %d", mitm[i].x, mitm[i].y,
-                     igrd[ mitm[i].x ][ mitm[i].y ] );
-            mpr( info );
+            mpr( "igrd(%d,%d) = %d",
+                  mitm[i].x, mitm[i].y, igrd[ mitm[i].x ][ mitm[i].y ] );
 
             // Let's check to see if it's an errant monster object:
             for (int j = 0; j < MAX_MONSTERS; j++)
@@ -1370,11 +1603,9 @@ void debug_item_scan( void )
                 {
                     if (menv[j].inv[k] == i)
                     {
-                        snprintf( info, INFO_SIZE, "Held by monster #%d: %s at (%d,%d)",
-                                 j, ptr_monam( &menv[j], DESC_CAP_A ),
-                                 menv[j].x, menv[j].y );
-
-                        mpr( info );
+                        mpr( "Held by monster #%d: %s at (%d,%d)",
+                             j, ptr_monam( &menv[j], DESC_CAP_A ),
+                             menv[j].x, menv[j].y );
                     }
                 }
             }
@@ -1397,7 +1628,7 @@ void debug_item_scan( void )
             || strstr( name, "bola" ) != NULL
             || strstr( name, "bugg" ) != NULL)
         {
-            mpr( "Bad item:", MSGCH_WARN );
+            mpr( MSGCH_WARN, "Bad item:" );
             dump_item( name, i, mitm[i] );
         }
         else if ((mitm[i].base_type == OBJ_WEAPONS
@@ -1418,7 +1649,7 @@ void debug_item_scan( void )
                         && mitm[i].sub_type != ARM_HELMET
                         && mitm[i].special >= 30))))
         {
-            mpr( "Bad plus or special value:", MSGCH_WARN );
+            mpr( MSGCH_WARN, "Bad plus or special value:" );
             dump_item( name, i, mitm[i] );
         }
     }
@@ -1439,13 +1670,17 @@ void debug_item_scan( void )
 
         if (strcmp( name, "program bug" ) == 0)
         {
-            mpr( "Program bug detected!", MSGCH_WARN );
+            mpr( MSGCH_WARN,
+                  "Buggy monster detected: monster #%d; position (%d,%d)",
+                  i, monster->x, monster->y );
 
-            snprintf( info, INFO_SIZE,
-                      "Buggy monster detected: monster #%d; position (%d,%d)",
-                      i, monster->x, monster->y );
+        }
 
-            mpr( info, MSGCH_WARN );
+        if (mgrd[monster->x][monster->y] != i)
+        {
+            mpr( MSGCH_WARN,
+                  "monster grid problem: monster #%d; grid (%d,%d) says %d",
+                  i, monster->x, monster->y, mgrd[monster->x][monster->y] );
         }
     }
 }
@@ -1500,27 +1735,27 @@ void debug_set_skills(void)
 
             calc_total_skill_points();
 
-            redraw_skill( you.your_name, player_title() );
+            set_redraw_status( REDRAW_SKILL );
 
             switch (skill)
             {
             case SK_FIGHTING:
-                calc_hp();
+                calc_hp_max();
                 break;
 
             case SK_SPELLCASTING:
             case SK_INVOCATIONS:
             case SK_EVOCATIONS:
-                calc_mp();
+                calc_mp_max();
                 break;
 
             case SK_DODGING:
-                you.redraw_evasion = 1;
+                set_redraw_status( REDRAW_EVASION );
                 break;
 
             case SK_ARMOUR:
-                you.redraw_armour_class = 1;
-                you.redraw_evasion = 1;
+                set_redraw_status( REDRAW_ARMOUR_CLASS );
+                set_redraw_status( REDRAW_EVASION );
                 break;
 
             default:
@@ -1538,10 +1773,12 @@ void debug_set_skills(void)
 //
 //---------------------------------------------------------------
 #ifdef WIZARD
-void debug_set_all_skills(void)
+void debug_set_all_skills( int amount )
 {
     int i;
-    int amount = debug_prompt_for_int( "Set all skills to what level? ", true );
+
+    if (amount == -1)
+        amount = debug_prompt_for_int( "Set all skills to what level? ", true );
 
     if (amount < 0)             // cancel returns -1 -- bwr
         canned_msg( MSG_OK );
@@ -1565,15 +1802,15 @@ void debug_set_all_skills(void)
             you.skills[i] = amount;
         }
 
-        redraw_skill( you.your_name, player_title() );
+        set_redraw_status( REDRAW_SKILL );
 
         calc_total_skill_points();
 
-        calc_hp();
-        calc_mp();
+        calc_hp_max();
+        calc_mp_max();
 
-        you.redraw_armour_class = 1;
-        you.redraw_evasion = 1;
+        set_redraw_status( REDRAW_ARMOUR_CLASS );
+        set_redraw_status( REDRAW_EVASION );
     }
 }                               // end debug_add_skills()
 #endif
@@ -1592,7 +1829,7 @@ bool debug_add_mutation(void)
 
     // Yeah, the gaining message isn't too good for this... but
     // there isn't an array of simple mutation names. -- bwr
-    mpr( "Which mutation (by message when getting mutation)? ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Which mutation (by message when getting mutation)? " );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
@@ -1603,7 +1840,7 @@ bool debug_add_mutation(void)
     for (int i = 0; i < NUM_MUTATIONS; i++)
     {
         char mut_name[80];
-        strncpy( mut_name, mutation_name( i, 1 ), sizeof( mut_name ) );
+        strncpy( mut_name, mutation_desc( i, 1 ), sizeof( mut_name ) );
 
         char *ptr = strstr( strlwr(mut_name), strlwr(specs) );
         if (ptr != NULL)
@@ -1618,8 +1855,7 @@ bool debug_add_mutation(void)
         mpr("I can't warp you that way!");
     else
     {
-        snprintf( info, INFO_SIZE, "Found: %s", mutation_name( mutation, 1 ) );
-        mpr( info );
+        mpr( "Found: %s", mutation_desc( mutation, 1 ) );
 
         int levels = debug_prompt_for_int( "How many levels? ", false );
 
@@ -1632,7 +1868,7 @@ bool debug_add_mutation(void)
         {
             for (int i = 0; i < levels; i++)
             {
-                if (mutate( mutation ))
+                if (mutate( mutation, true ))
                     success = true;
             }
         }
@@ -1640,7 +1876,7 @@ bool debug_add_mutation(void)
         {
             for (int i = 0; i < -levels; i++)
             {
-                if (delete_mutation( mutation ))
+                if (delete_mutation( mutation, true ))
                     success = true;
             }
         }
@@ -1661,7 +1897,7 @@ void debug_get_religion(void)
 {
     char specs[80];
 
-    mpr( "Which god (by name)? ", MSGCH_PROMPT );
+    mpr( MSGCH_PROMPT, "Which god (by name)? " );
     get_input_line( specs, sizeof( specs ) );
 
     if (specs[0] == '\0')
@@ -1692,6 +1928,116 @@ void debug_get_religion(void)
 }                               // end debug_add_skills()
 #endif
 
+#ifdef WIZARD
+//---------------------------------------------------------------
+//
+// debug_destroy_item
+//
+//---------------------------------------------------------------
+// Issues to watch for here:
+// - equipment cannot be destroyed... not only is this the more accurate
+//   than testing for curse status (to prevent easy removal of cursed items),
+//   but the original code would leave all the equiped items properties
+//   (including weight) which would cause a bit of a mess to state.
+void debug_destroy_item( void )
+{
+    int i;
+    char str_pass[ ITEMNAME_SIZE ];
+
+    // ask the item to destroy
+    int item = prompt_invent_item( "Destroy which item? ", -1,
+                                   true, false, true, '.' );
+
+    if (item == PROMPT_ABORT)
+        return;
+
+    if (item == PROMPT_GOT_SPECIAL)
+    {
+        destroy_item_stack( you.x_pos, you.y_pos );
+        mpr( "Done." );
+        return;
+    }
+
+    // Used to check for cursed... but that's not the real problem -- bwr
+    for (i = 0; i < NUM_EQUIP; i++)
+    {
+        if (you.equip[i] == item)
+        {
+            mesclr( true );
+            mpr( "You cannot destroy equipped items!" );
+            return;
+        }
+    }
+
+    // ask confirmation
+    // quant_name(you.inv[item], you.inv[item].quantity, DESC_NOCAP_A, str_pass );
+    item_name( you.inv[item], DESC_NOCAP_THE, str_pass );
+    snprintf( info, INFO_SIZE, "Destroy %s? ", str_pass );
+
+    if (yesno( info, true ))
+    {
+       //destroy it!!
+        mpr( "You destroy %s.", str_pass );
+        dec_inv_item_quantity( item, you.inv[item].quantity );
+        burden_change();
+    }
+}
+#endif
+
+#ifdef DEBUG_DUMP_SKILL_TOTALS
+
+bool class_allowed( unsigned char speci, int char_class, bool check_valid = false );
+void init_player( void );
+
+void dump_skill_totals(void)
+{
+    Options.random_pick = false;
+    Options.chaos_knight = GOD_RANDOM;
+    Options.death_knight = DK_RANDOM;
+    Options.priest = GOD_RANDOM;
+    Options.weapon = WPN_RANDOM;
+
+    for (int job = JOB_FIGHTER; job < NUM_JOBS; job++)
+    {
+        for (int sp = SP_HUMAN; sp < NUM_SPECIES; sp++)
+        {
+            if (sp == SP_WHITE_DRACONIAN)
+                sp = SP_CENTAUR;
+
+            if (class_allowed( sp, job ))
+            {
+                init_player();
+
+                you.species = sp;
+                you.char_class = job;
+                new_game();
+
+                strcpy( you.your_name, get_class_name( you.char_class ) );
+
+                snprintf( info, INFO_SIZE, "%s%s",
+                          get_species_abbrev( you.species ),
+                          get_class_abbrev( you.char_class ) );
+
+                dump_char( info, true );
+
+                int total_levels = 0;
+
+                for (int i = 0; i < MAX_SKILLS; i++)
+                    total_levels += you.skills[i];
+
+                calc_total_skill_points();
+
+                printf( "%d\t%d\t%20s\t%20s\n", you.total_skill_points,
+                                                total_levels,
+                                                get_class_name( job ),
+                                                species_name( sp, 1 ) );
+            }
+        }
+    }
+
+    exit(0);
+}
+#endif
 
 void error_message_to_player(void)
 {

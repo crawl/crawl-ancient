@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "globals.h"
 #include "externs.h"
 
 #include "abyss.h"
@@ -26,6 +27,7 @@
 #include "debug.h"
 #include "delay.h"
 #include "itemname.h"
+#include "itemprop.h"
 #include "items.h"
 #include "it_use2.h"
 #include "misc.h"
@@ -33,6 +35,7 @@
 #include "mon-pick.h"
 #include "monstuff.h"
 #include "mon-util.h"
+#include "ouch.h"
 #include "player.h"
 #include "randart.h"
 #include "spells1.h"
@@ -40,13 +43,12 @@
 #include "spl-util.h"
 #include "stuff.h"
 #include "view.h"
-#include "wpn-misc.h"
 
 static bool monster_on_level(int monster);
 
 void cast_selective_amnesia(bool force)
 {
-    char ep_gain = 0;
+    int ep_gain = 0;
     unsigned char keyin = 0;
 
     if (you.spell_no == 0)
@@ -56,9 +58,9 @@ void cast_selective_amnesia(bool force)
         // query - conditional ordering is important {dlb}:
         for (;;)
         {
-            mpr( "Forget which spell ([?*] list [ESC] exit)? ", MSGCH_PROMPT );
+            mpr( MSGCH_PROMPT, "Forget which spell ([?*] list [ESC] exit)? " );
 
-            keyin = (unsigned char) get_ch();
+            keyin = static_cast<unsigned char>( get_ch() );
 
             if (keyin == ESCAPE)
                 return;         // early return {dlb}
@@ -66,7 +68,7 @@ void cast_selective_amnesia(bool force)
             if (keyin == '?' || keyin == '*')
             {
                 // this reassignment is "key" {dlb}
-                keyin = (unsigned char) list_spells();
+                keyin = static_cast<unsigned char>( list_spells() );
 
                 redraw_screen();
             }
@@ -88,7 +90,7 @@ void cast_selective_amnesia(bool force)
             if (!force
                  && (you.religion != GOD_SIF_MUNA
                      && random2(you.skills[SK_SPELLCASTING])
-                         < random2(spell_difficulty( spell ))))
+                         < random2(spell_level( spell ))))
             {
                 mpr("Oops! This spell sure is a blunt instrument.");
                 forget_map(20 + random2(50));
@@ -101,8 +103,7 @@ void cast_selective_amnesia(bool force)
                 if (ep_gain > 0)
                 {
                     inc_mp(ep_gain, false);
-                    mpr( "The spell releases its latent energy back to you as "
-                         "it unravels." );
+                    mpr( "The spell releases its latent energy back to you as it unravels." );
                 }
             }
         }
@@ -111,22 +112,17 @@ void cast_selective_amnesia(bool force)
     return;
 }                               // end cast_selective_amnesia()
 
-bool remove_curse(bool suppress_msg)
+bool remove_curse( bool suppress_msg )
 {
     int loopy = 0;              // general purpose loop variable {dlb}
     bool success = false;       // whether or not curse(s) removed {dlb}
 
-    // special "wield slot" case - see if you can figure out why {dlb}:
-    // because only cursed weapons in hand only count as cursed -- bwr
-    if (you.equip[EQ_WEAPON] != -1
-                && you.inv[you.equip[EQ_WEAPON]].base_type == OBJ_WEAPONS)
+    const int tool = get_inv_hand_tool();
+    if (tool != -1 && item_cursed( you.inv[tool] ))
     {
-        if (item_cursed( you.inv[you.equip[EQ_WEAPON]] ))
-        {
-            do_uncurse_item( you.inv[you.equip[EQ_WEAPON]] );
-            success = true;
-            you.wield_change = true;
-        }
+        do_uncurse_item( you.inv[tool] );
+        success = true;
+        set_redraw_status( REDRAW_WIELD );
     }
 
     // everything else uses the same paradigm - are we certain?
@@ -146,7 +142,7 @@ bool remove_curse(bool suppress_msg)
         if (success)
             mpr("You feel as if something is helping you.");
         else
-            canned_msg(MSG_NOTHING_HAPPENS);
+            canned_msg( MSG_NOTHING_HAPPENS );
     }
 
     return (success);
@@ -164,7 +160,7 @@ bool detect_curse(bool suppress_msg)
                 || you.inv[loopy].base_type == OBJ_ARMOUR
                 || you.inv[loopy].base_type == OBJ_JEWELLERY))
         {
-            if (item_not_ident( you.inv[loopy], ISFLAG_KNOW_CURSE ))
+            if (!item_ident( you.inv[loopy], ISFLAG_KNOW_CURSE ))
                 success = true;
 
             set_ident_flags( you.inv[loopy], ISFLAG_KNOW_CURSE );
@@ -177,141 +173,121 @@ bool detect_curse(bool suppress_msg)
         if (success)
             mpr("You sense the presence of curses on your possessions.");
         else
-            canned_msg(MSG_NOTHING_HAPPENS);
+            canned_msg( MSG_NOTHING_HAPPENS );
     }
 
     return (success);
 }                               // end detect_curse()
 
-bool cast_smiting(int power)
+int cast_smiting( int power )
 {
-    bool success = false;
     struct dist beam;
-    struct monsters *monster = 0;       // NULL {dlb}
 
-    mpr("Smite whom?", MSGCH_PROMPT);
+    mpr( MSGCH_PROMPT, "Smite whom?" );
 
     direction( beam, DIR_TARGET, TARG_ENEMY );
 
-    if (!beam.isValid
-        || mgrd[beam.tx][beam.ty] == NON_MONSTER
-        || beam.isMe)
+    if (!beam.isValid || beam.isMe)
     {
-        canned_msg(MSG_SPELL_FIZZLES);
-    }
-    else
-    {
-        monster = &menv[mgrd[beam.tx][beam.ty]];
-
-        strcpy(info, "You smite ");
-        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-        strcat(info, "!");
-        mpr(info);
-
-        hurt_monster(monster, random2(8) + (random2(power) / 3));
-
-        if (monster->hit_points < 1)
-            monster_die(monster, KILL_YOU, 0);
-        else
-            print_wounds(monster);
-
-        success = true;
+        canned_msg( MSG_SPELL_FIZZLES );
+        return (SPRET_ABORT);
     }
 
-    return (success);
+    const int mon = mgrd[beam.tx][beam.ty];
+
+    if (mon == NON_MONSTER)
+    {
+        canned_msg( MSG_NOTHING_HAPPENS );
+        return (SPRET_FAIL);
+    }
+
+    struct monsters *const monster = &menv[mon];
+    const int dam = roll_dice( 3, 5 + power / 5 );
+
+    zap_animation( element_colour( EC_HOLY ), monster );
+    mon_msg( monster, "You smite %s!", false );
+
+    you_hurt_monster( monster, dam );
+
+    return (SPRET_SUCCESS);
 }                               // end cast_smiting()
 
-bool airstrike(int power)
+int airstrike( int power, const struct bolt &beam )
 {
-    bool success = false;
-    struct dist beam;
-    struct monsters *monster = 0;       // NULL {dlb}
-    int hurted = 0;
+    const int mon = mgrd[beam.target_x][beam.target_y];
 
-    mpr("Strike whom?", MSGCH_PROMPT);
-
-    direction( beam, DIR_TARGET, TARG_ENEMY );
-
-    if (!beam.isValid
-        || mgrd[beam.tx][beam.ty] == NON_MONSTER
-        || beam.isMe)
+    if (mon == NON_MONSTER)
     {
-        canned_msg(MSG_SPELL_FIZZLES);
-    }
-    else
-    {
-        monster = &menv[mgrd[beam.tx][beam.ty]];
-
-        strcpy(info, "The air twists around and strikes ");
-        strcat(info, ptr_monam( monster, DESC_NOCAP_THE ));
-        strcat(info, "!");
-        mpr(info);
-
-        hurted = random2( random2(12) + (random2(power) / 6)
-                                      + (random2(power) / 7) );
-        hurted -= random2(1 + monster->armour_class);
-
-        if (hurted < 0)
-            hurted = 0;
-        else
-        {
-            hurt_monster(monster, hurted);
-
-            if (monster->hit_points < 1)
-                monster_die(monster, KILL_YOU, 0);
-            else
-                print_wounds(monster);
-        }
-
-        success = true;
+        canned_msg( MSG_NOTHING_HAPPENS );
+        return (SPRET_FAIL);
     }
 
-    return (success);
+    struct monsters *const monster = &menv[mon];
+
+    zap_animation( element_colour( EC_AIR ), monster );
+
+    mon_msg( monster, "The air twists around and strikes %s!", false );
+
+    int hurted = roll_dice( 3, 5 + power / 10 );
+
+    hurted = apply_mons_armour( hurted, monster, true );
+
+    you_hurt_monster( monster, hurted );
+
+    return (SPRET_SUCCESS);
 }                               // end airstrike()
 
-bool cast_bone_shards(int power)
+int cast_bone_shards( int power )
 {
-    bool success = false;
+    int ret = SPRET_ABORT;
     struct bolt beam;
     struct dist spelld;
 
-    if (you.equip[EQ_WEAPON] == -1
-                    || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_CORPSES)
-    {
-        canned_msg(MSG_SPELL_FIZZLES);
-    }
-    else if (you.inv[you.equip[EQ_WEAPON]].sub_type != CORPSE_SKELETON)
+    const int skel = get_inv_in_hand();
+
+    if (skel == -1 || you.inv[skel].base_type != OBJ_CORPSES)
+        canned_msg( MSG_SPELL_FIZZLES );
+    else if (you.inv[skel].sub_type != CORPSE_SKELETON)
         mpr("The corpse collapses into a mass of pulpy flesh.");
-    else if (spell_direction(spelld, beam) != -1)
+    else if (spell_direction( spelld, beam ))
     {
-        // practical max of 100 * 15 + 3000 = 4500
-        // actual max of    200 * 15 + 3000 = 6000
-        power *= 15;
-        power += mons_weight( you.inv[you.equip[EQ_WEAPON]].plus );
+        power += mons_weight( you.inv[skel].plus ) / 10;
+        power = stepdown_value( power, 50, 50, 150, 150 );
 
         mpr("The skeleton explodes into sharp fragments of bone!");
 
-        dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
-        zapping(ZAP_BONE_SHARDS, power, beam);
+        dec_inv_item_quantity( skel, 1 );
+        zapping( ZAP_BONE_SHARDS, power, beam );
 
-        success = true;
+        ret = SPRET_SUCCESS;
     }
 
-    return (success);
+    return (ret);
 }                               // end cast_bone_shards()
 
 void sublimation(int power)
 {
     unsigned char loopy = 0;    // general purpose loop variable {dlb}
 
-    if (you.equip[EQ_WEAPON] == -1
-        || you.inv[you.equip[EQ_WEAPON]].base_type != OBJ_FOOD
-        || you.inv[you.equip[EQ_WEAPON]].sub_type != FOOD_CHUNK)
+    const int chunk = get_inv_in_hand();
+
+    if (chunk != -1
+        && you.inv[chunk].base_type == OBJ_FOOD
+        && you.inv[chunk].sub_type == FOOD_CHUNK)
+    {
+        mpr("The chunk of flesh you are holding crumbles to dust.");
+        mpr("A flood of magical energy pours into your mind!");
+
+        const int amount = 7 * (you.inv[chunk].special >= 100) + random2(7);
+        inc_mp( amount, false );
+
+        dec_inv_item_quantity( chunk, 1 );
+    }
+    else
     {
         if (you.deaths_door)
         {
-            mpr( "A conflicting enchantment prevents the spell from "
-                 "coming into effect." );
+            mpr( "A conflicting enchantment prevents the spell from coming into effect." );
         }
         else if (!enough_hp( 2, true ))
         {
@@ -323,28 +299,19 @@ void sublimation(int power)
 
             while (you.magic_points < you.max_magic_points && you.hp > 1)
             {
-                inc_mp(1, false);
-                dec_hp(1, false);
+                inc_mp( 1, false );
+                dec_hp( 2, false );
 
                 for (loopy = 0; loopy < (you.hp > 1 ? 3 : 0); loopy++)
                 {
                     if (random2(power) < 6)
-                        dec_hp(1, false);
+                        dec_hp( coinflip() ? 1 : 2, false );
                 }
 
                 if (random2(power) < 6)
                     break;
             }
         }
-    }
-    else
-    {
-        mpr("The chunk of flesh you are holding crumbles to dust.");
-        mpr("A flood of magical energy pours into your mind!");
-
-        inc_mp( 7 + random2(7), false );
-
-        dec_inv_item_quantity( you.equip[EQ_WEAPON], 1 );
     }
 
     return;
@@ -365,25 +332,25 @@ void sublimation(int power)
 // Hides and other "animal part" items are intentionally left out, it's
 // unrequired complexity, and fresh flesh makes more "sense" for a spell
 // reforming the original monster out of ice anyways.
-void simulacrum(int power)
+void simulacrum( int power )
 {
-    int max_num = 4 + random2(power) / 20;
+    int max_num = 2 + random2(power) / 20;
     if (max_num > 8)
         max_num = 8;
 
-    const int chunk = you.equip[EQ_WEAPON];
+    const int chunk = get_inv_in_hand();
 
     if (chunk != -1
-        && is_valid_item( you.inv[ chunk ] )
-        && (you.inv[ chunk ].base_type == OBJ_CORPSES
-            || (you.inv[ chunk ].base_type == OBJ_FOOD
-                && you.inv[ chunk ].sub_type == FOOD_CHUNK)))
+        && is_valid_item( you.inv[chunk] )
+        && (you.inv[chunk].base_type == OBJ_CORPSES
+            || (you.inv[chunk].base_type == OBJ_FOOD
+                && you.inv[chunk].sub_type == FOOD_CHUNK)))
     {
-        const int mons_type = you.inv[ chunk ].plus;
+        const int mons_type = you.inv[chunk].plus;
 
         // Can't create more than the available chunks
-        if (you.inv[ chunk ].quantity < max_num)
-            max_num = you.inv[ chunk ].quantity;
+        if (you.inv[chunk].quantity < max_num)
+            max_num = you.inv[chunk].quantity;
 
         dec_inv_item_quantity( chunk, max_num );
 
@@ -391,49 +358,48 @@ void simulacrum(int power)
 
         for (int i = 0; i < max_num; i++)
         {
-            if (create_monster( MONS_SIMULACRUM_SMALL, ENCH_ABJ_VI,
-                                BEH_FRIENDLY, you.x_pos, you.y_pos,
-                                you.pet_target, mons_type ) != -1)
-            {
+            int mon = create_monster( MONS_SIMULACRUM_SMALL, BEH_FRIENDLY, 6,
+                                      you.x_pos, you.y_pos, you.pet_target,
+                                      mons_type );
+
+            if (mon != -1)
                 summoned++;
-            }
         }
 
-        if (summoned)
+        if (!summoned)
+            mpr( "You feel cold for a second." );
+        else
         {
             strcpy( info, (summoned == 1) ? "An icy figure forms "
                                           : "Some icy figures form " );
             strcat( info, "before you!" );
             mpr( info );
         }
-        else
-            mpr( "You feel cold for a second." );
     }
     else
     {
-        mpr( "You need to wield a piece of raw flesh for this spell "
-             "to be effective!" );
+        mpr( "You need to wield a piece of raw flesh for this spell to be effective!" );
     }
 }                               // end sublimation()
 
 void dancing_weapon(int pow, bool force_hostile)
 {
-    int numsc = ENCH_ABJ_II + (random2(pow) / 5);
+    int numsc = 2 + (random2(pow) / 5);
     char str_pass[ ITEMNAME_SIZE ];
 
-    if (numsc > ENCH_ABJ_VI)
-        numsc = ENCH_ABJ_VI;
+    if (numsc > 6)
+        numsc = 6;
 
     int i;
     int summs = 0;
-    char behavi = BEH_FRIENDLY;
+    beh_type behavi = BEH_FRIENDLY;
 
-    const int wpn = you.equip[EQ_WEAPON];
+    const int wpn = get_inv_wielded();
 
-    // See if weilded item is appropriate:
+    // See if wielded item is appropriate:
     if (wpn == -1
         || you.inv[wpn].base_type != OBJ_WEAPONS
-        || launches_things( you.inv[wpn].sub_type )
+        || is_range_weapon( you.inv[wpn] )
         || is_fixed_artefact( you.inv[wpn] ))
     {
         goto failed_spell;
@@ -448,7 +414,7 @@ void dancing_weapon(int pow, bool force_hostile)
     if (item_cursed( you.inv[wpn] ) || force_hostile)
         behavi = BEH_HOSTILE;
 
-    summs = create_monster( MONS_DANCING_WEAPON, numsc, behavi,
+    summs = create_monster( MONS_DANCING_WEAPON, behavi, numsc,
                             you.x_pos, you.y_pos, you.pet_target, 1 );
 
     if (summs < 0)
@@ -460,7 +426,7 @@ void dancing_weapon(int pow, bool force_hostile)
     }
 
     // We are successful:
-    unwield_item( wpn );                        // remove wield effects
+    unwield_item();                        // remove wield effects
 
     // copy item (done here after any wield effects are removed)
     mitm[i] = you.inv[wpn];
@@ -475,11 +441,9 @@ void dancing_weapon(int pow, bool force_hostile)
     mpr( info );
 
     you.inv[ wpn ].quantity = 0;
-    you.equip[EQ_WEAPON] = -1;
 
     menv[summs].inv[MSLOT_WEAPON] = i;
-    menv[summs].number = mitm[i].colour;
-
+    menv[summs].colour = mitm[i].colour;
     return;
 
 failed_spell:
@@ -507,14 +471,14 @@ bool allow_control_teleport( bool silent )
 
     if (you.level_type == LEVEL_ABYSS || you.level_type == LEVEL_LABYRINTH)
         ret = false;
-    else
+    else if (you.level_type == LEVEL_DUNGEON)
     {
         switch (you.where_are_you)
         {
         case BRANCH_TOMB:
-            // The tomb is a laid out maze, it'd be a shame if the player
-            // just teleports through any of it... so we only allow
-            // teleport once they have the rune.
+            // The tomb is a laid out 3D maze, it'd be a shame if the
+            // player just teleports through any of it... so we only
+            // allow teleport once they have the rune.
             ret = false;
             for (int i = 0; i < ENDOFPACK; i++)
             {
@@ -537,13 +501,13 @@ bool allow_control_teleport( bool silent )
             break;
 
         case BRANCH_ELVEN_HALLS:
-            // Cannot raid the elven halls vaults until fountain drained
+            // Cannot raid the elven halls while magic fountains aren't drained
             if (you.branch_stairs[STAIRS_ELVEN_HALLS] +
-                    branch_depth(STAIRS_ELVEN_HALLS) == you.your_level)
+                    branch_depth(STAIRS_ELVEN_HALLS) == you.depth)
             {
-                for (int x = 5; x < GXM - 5; x++)
+                for (int x = X_BOUND_1 + 1; x < X_BOUND_2; x++)
                 {
-                    for (int y = 5; y < GYM - 5; y++)
+                    for (int y = Y_BOUND_1 + 1; y < Y_BOUND_2; y++)
                     {
                         if (grd[x][y] == DNGN_SPARKLING_FOUNTAIN)
                             ret = false;
@@ -555,7 +519,7 @@ bool allow_control_teleport( bool silent )
         case BRANCH_HALL_OF_ZOT:
             // Cannot control teleport until the Orb is picked up
             if (you.branch_stairs[STAIRS_HALL_OF_ZOT] +
-                    branch_depth(STAIRS_HALL_OF_ZOT) == you.your_level
+                    branch_depth(STAIRS_HALL_OF_ZOT) == you.depth
                 && you.char_direction != DIR_ASCENDING)
             {
                 ret = false;
@@ -565,15 +529,15 @@ bool allow_control_teleport( bool silent )
     }
 
     // Tell the player why if they have teleport control.
-    if (!ret && you.attribute[ATTR_CONTROL_TELEPORT] && !silent)
-        mpr("A powerful magic prevents control of your teleportation.");
+    if (!ret && !silent && player_teleport_control())
+        mpr( "A powerful magic prevents control of your teleportation." );
 
-    return ret;
+    return (ret);
 }                               // end allow_control_teleport()
 
 void you_teleport(void)
 {
-    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+    if (scan_randarts( RAP_PREVENT_TELEPORTATION ))
         mpr("You feel a weird sense of stasis.");
     else if (you.duration[DUR_TELEPORT])
     {
@@ -596,13 +560,32 @@ void you_teleport(void)
     return;
 }                               // end you_teleport()
 
+static void scatter_point( int &x, int &y )
+{
+    // was 100% chance
+    if (random2(100) > 2 * you.skills[SK_TRANSLOCATIONS])
+    {
+        x += random2(3) - 1;
+        y += random2(3) - 1;
+    }
+
+    // was 25% chance
+    if (random2(100) < 40 - you.skills[SK_TRANSLOCATIONS])
+    {
+        x += random2(3) - 1;
+        y += random2(3) - 1;
+    }
+}
+
 void you_teleport2( bool allow_control, bool new_abyss_area )
 {
-    bool is_controlled = (allow_control && !you.conf
-                              && you.attribute[ATTR_CONTROL_TELEPORT]
-                              && allow_control_teleport());
+    const int control = player_teleport_control();
+    bool is_controlled = (allow_control
+                            && control
+                            && player_sound_mind_and_body()
+                            && allow_control_teleport());
 
-    if (scan_randarts(RAP_PREVENT_TELEPORTATION))
+    if (scan_randarts( RAP_PREVENT_TELEPORTATION ))
     {
         mpr("You feel a strange sense of stasis.");
         return;
@@ -613,11 +596,9 @@ void you_teleport2( bool allow_control, bool new_abyss_area )
     if (current_delay_action() == DELAY_BUTCHER)
         stop_delay();
 
-    if (you.duration[DUR_CONDENSATION_SHIELD] > 0)
-    {
-        you.duration[DUR_CONDENSATION_SHIELD] = 0;
-        you.redraw_armour_class = 1;
-    }
+    interrupt_activity( AI_TELEPORT );
+
+    expose_player_to_element( BEAM_TELEPORT );
 
     if (you.level_type == LEVEL_ABYSS)
     {
@@ -626,84 +607,313 @@ void you_teleport2( bool allow_control, bool new_abyss_area )
         return;
     }
 
-    FixedVector < int, 2 > plox;
-
-    plox[0] = 1;
-    plox[1] = 0;
+    FixedVector< int, 2 >  plox;
 
     if (is_controlled)
     {
-        mpr("You may choose your destination (press '.' or delete to select).");
-        mpr("Expect minor deviation.");
+        mpr("You may choose your destination (press '.', return, or space to select).");
+
+        mpr( "Expect %s deviation.", (control >= 2) ? "minor" : "some" );
         more();
 
-        show_map(plox);
-
+        is_controlled = show_map( plox );
         redraw_screen();
-
-#if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-        mpr( info, MSGCH_DIAGNOSTICS );
-#endif
-
-        plox[0] += random2(3) - 1;
-        plox[1] += random2(3) - 1;
-
-        if (one_chance_in(4))
-        {
-            plox[0] += random2(3) - 1;
-            plox[1] += random2(3) - 1;
-        }
-
-        if (plox[0] < 6 || plox[1] < 6 || plox[0] > (GXM - 5)
-                || plox[1] > (GYM - 5))
-        {
-            mpr("Nearby solid objects disrupt your rematerialisation!");
-            is_controlled = false;
-        }
-
-#if DEBUG_DIAGNOSTICS
-        snprintf( info, INFO_SIZE, "Scattered target square (%d,%d)", plox[0], plox[1] );
-        mpr( info, MSGCH_DIAGNOSTICS );
-#endif
 
         if (is_controlled)
         {
-            you.x_pos = plox[0];
-            you.y_pos = plox[1];
+            const int targ_x = plox[0];
+            const int targ_y = plox[1];
 
-            if ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR
-                    && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
-                || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
-                || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD)
+            // Scatter target if player tried to target (ie did not ESCAPE).
+            // Attempted control teleport contaminates the player... note
+            // that hitting escape when asked will avoid this, so uncontrolled
+            // teleport is always an option. -- bwr
+            contaminate_player(1);
+
+            if (control == 1)
             {
+                plox[0] += random2(9) - 4;
+                plox[1] += random2(9) - 4;
+            }
+
+            do
+            {
+                scatter_point( plox[0], plox[1] );
+            }
+            while (control == 1 && coinflip());
+
+            // control fails and teleport is redirected if:
+            // - grid is out of bounds (thus in solid permanent rock)
+            // - grid is hostile (deep water and lava)
+            // - something is there (solid rock, unsubmerged monster, cloud)
+            // - scattering blocked
+            if (!in_bounds( plox[0], plox[1] )
+                || grid_destroys_items( grd[ plox[0] ][ plox[1] ] )
+                || something_there( plox[0], plox[1] )
+                || !check_line_of_sight( targ_x, targ_y, plox[0], plox[1] ))
+            {
+                mpr( "Your rematerialisation was disrupted by something!" );
                 is_controlled = false;
             }
-            else
-            {
-                // controlling teleport contaminates the player -- bwr
-                contaminate_player(1);
-            }
         }
+
+        // if it's still controlled, move the player... else fall through
+        if (is_controlled)
+            move_player_to_grid( plox[0], plox[1], false, true, true );
     }                           // end "if is_controlled"
 
     if (!is_controlled)
     {
-        mpr("Your surroundings suddenly seem different.");
+        int count = 0;
 
         do
         {
-            you.x_pos = 5 + random2( GXM - 10 );
-            you.y_pos = 5 + random2( GYM - 10 );
+            random_in_bounds( plox[0], plox[1] );
+            count++;
         }
-        while ((grd[you.x_pos][you.y_pos] != DNGN_FLOOR
-                   && grd[you.x_pos][you.y_pos] != DNGN_SHALLOW_WATER)
-               || mgrd[you.x_pos][you.y_pos] != NON_MONSTER
-               || env.cgrid[you.x_pos][you.y_pos] != EMPTY_CLOUD);
+        while (count < 1000
+                && (something_there( plox[0], plox[1] )
+                    || grid_distance( you.x_pos, you.y_pos, plox[0], plox[1] ) <= 1));
+
+        if (count == 1000)
+            canned_msg( MSG_SPELL_FIZZLES );
+        else
+        {
+            mpr("Your surroundings suddenly seem different.");
+            move_player_to_grid( plox[0], plox[1], false, true, true );
+        }
     }
 }                               // end you_teleport()
 
-bool entomb(void)
+int blink( void )
+{
+    struct dist beam;
+
+    // yes, there is a logic to this ordering {dlb}:
+    if (scan_randarts( RAP_PREVENT_TELEPORTATION ))
+        mpr("You feel a weird sense of stasis.");
+    else if (you.level_type == LEVEL_ABYSS && one_chance_in(3))
+        mpr("The power of the Abyss keeps you in your place!");
+    else if (you.conf)
+        random_blink(0);
+    else if (!allow_control_teleport(true))
+    {
+        mpr("A powerful magic interferes with your control of the blink.");
+        random_blink(0);
+    }
+    else
+    {
+        // query for location {dlb}:
+        for (;;)
+        {
+            mpr(MSGCH_PROMPT,"Blink to where?" );
+
+            direction( beam, DIR_TARGET );
+
+            if (!beam.isValid)
+            {
+                canned_msg(MSG_SPELL_FIZZLES);
+                return (SPRET_ABORT);         // early return {dlb}
+            }
+
+            if (see_grid( beam.tx, beam.ty ))
+                break;
+            else
+            {
+                mesclr();
+                mpr("You can't blink there!");
+            }
+        }
+
+        scatter_point( beam.tx, beam.ty );
+
+        if (!see_grid( beam.tx, beam.ty ) || something_there( beam.tx, beam.ty ))
+        {
+            mpr( "Your rematerialisation was disrupted by something!" );
+            random_blink(0);
+        }
+        else if (you.level_type == LEVEL_ABYSS)
+        {
+            if (beam.tx >= X_ABYSS_1 && beam.tx <= X_ABYSS_2
+                && beam.ty >= Y_ABYSS_1 && beam.ty <= Y_ABYSS_2)
+            {
+                if (!move_player_to_grid( beam.tx, beam.ty, false, true, true ))
+                    random_blink(0);
+                else
+                    contaminate_player( 1 );
+            }
+            else
+            {
+                abyss_teleport( false );
+                you.pet_target = MHITNOT;
+            }
+        }
+        else
+        {
+            // controlling teleport contaminates the player -- bwr
+            if (!move_player_to_grid( beam.tx, beam.ty, false, true, true ))
+                random_blink(0);
+            else
+                contaminate_player( 1 );
+        }
+
+        // condensation shield always goes down when teleporting:
+        expose_player_to_element( BEAM_TELEPORT );
+    }
+
+    return (SPRET_SUCCESS);
+}                               // end blink()
+
+void random_blink( int power )
+{
+    // low power would give us such a scatter that it wouldn't matter anyways
+    const bool allow_partial_control = (power >= 20);
+    const bool with_min = (you.mutation[MUT_BLINK] > 1);
+    const bool los_only = (you.mutation[MUT_BLINK] < 3 || coinflip());
+
+    int tx, ty;
+    bool succ = false;
+
+    if (scan_randarts( RAP_PREVENT_TELEPORTATION ))
+        mpr("You feel a weird sense of stasis.");
+    else if (you.level_type == LEVEL_ABYSS && one_chance_in(3))
+    {
+        mpr("The power of the Abyss keeps you in your place!");
+    }
+    else if (!random_near_space(you.x_pos, you.y_pos, tx, ty, with_min, los_only))
+    {
+        mpr("You feel jittery for a moment.");
+    }
+#ifdef USE_SEMI_CONTROLLED_BLINK
+    //jmf: add back control, but effect is cast_semi_controlled_blink(pow)
+    else if (player_teleport_control() >= 3
+                && player_sound_mind_and_body()
+                && allow_partial_control
+                && allow_control_teleport())
+    {
+        mpr( MSGCH_PROMPT, "You may select the general direction of your translocation." );
+
+        if (cast_semi_controlled_blink( power ))
+            contaminate_player(1);
+
+        succ = true;
+    }
+#endif
+    else
+    {
+        mpr("You blink.");
+
+        succ = true;
+
+        if (you.level_type != LEVEL_ABYSS
+            || (tx >= X_ABYSS_1 && tx <= X_ABYSS_2
+                && ty >= Y_ABYSS_1 && ty <= Y_ABYSS_2))
+        {
+            move_player_to_grid( tx, ty, false, true, true );
+        }
+        else
+        {
+            abyss_teleport( false );
+            you.pet_target = MHITNOT;
+        }
+    }
+
+    // condensation shield always goes down when teleporting:
+    expose_player_to_element( BEAM_TELEPORT );
+
+    return;
+}                               // end random_blink()
+
+// Remember that this is lucky to exist at all... teleport control + blink
+// was removed as a far too powerful combo, and so this function is more
+// about "quaint feature" than it is about supplying a serious option.
+static int quadrant_blink( int x, int y, int pow, int garbage )
+{
+    UNUSED( garbage );
+
+    if (x == you.x_pos && y == you.y_pos)
+        return (0);
+
+    if (pow > 100)
+        pow = 100;
+
+    int ret = 1;
+
+    const int l = x - you.x_pos;
+    const int m = y - you.y_pos;
+    const int r = 3 + random2(6);
+
+    int bx = you.x_pos + r * l;
+    int by = you.y_pos + r * m;
+
+    if (r > 5)
+    {
+        bx += random2(3) - 1;
+        by += random2(3) - 1;
+    }
+
+    do
+    {
+        scatter_point( bx, by );
+    }
+    while (pow < random2( 100 + 5 * r * r ));
+
+    if (!in_bounds( bx, by )
+        || grid_distance( you.x_pos, you.y_pos, bx, by ) <= 1
+        || grid_destroys_items( grd[bx][by] )
+        || something_there( bx, by )
+        || !check_line_of_sight( you.x_pos, you.y_pos, bx, by ))
+    {
+        const int ox = you.x_pos;
+        const int oy = you.y_pos;
+
+        random_blink(0);
+        ret = 0;
+
+        const int dx = (you.x_pos - ox);
+        const int dy = (you.y_pos - oy);
+
+        if ((l > 0 && dx < 0)
+            || (l < 0 && dx > 0)
+            || (m > 0 && dy < 0)
+            || (m < 0 && dy > 0))
+        {
+            // only give message if we when in an unexpected direction
+            mpr( "Your rematerialisation was disrupted and redirected!" );
+        }
+        else
+        {
+            // Pretend we really generated the result, even though it
+            // only happened by chance here.
+            contaminate_player( one_chance_in(3) );
+        }
+    }
+    else if (you.level_type != LEVEL_ABYSS
+            || (bx >= X_ABYSS_1 && bx <= X_ABYSS_2
+                && by >= Y_ABYSS_1 && by <= Y_ABYSS_2))
+    {
+        move_player_to_grid( bx, by, false, true, true );
+        contaminate_player( one_chance_in(3) );
+    }
+    else
+    {
+        abyss_teleport( false );
+        you.pet_target = MHITNOT;
+    }
+
+    // condensation shield always goes down when teleporting:
+    if (ret)
+        expose_player_to_element( BEAM_TELEPORT );
+
+    return (ret);
+}
+
+int cast_semi_controlled_blink( int pow )
+{
+    return (apply_one_neighbouring_square( quadrant_blink, pow ));
+}
+
+bool cast_entomb( int power )
 {
     int loopy = 0;              // general purpose loop variable {dlb}
     bool proceed = false;       // loop management varaiable {dlb}
@@ -711,7 +921,7 @@ bool entomb(void)
     char srx = 0, sry = 0;
     char number_built = 0;
 
-    FixedVector < unsigned char, 7 > safe_to_overwrite;
+    FixedVector < int , 7 > safe_to_overwrite;
 
     // hack - passing chars through '...' promotes them to ints, which
     // barfs under gcc in fixvec.h.  So don't.
@@ -736,6 +946,9 @@ bool entomb(void)
             {
                 continue;
             }
+
+            if (random2(power) < 10)
+                continue;
 
             // the break here affects innermost containing loop {dlb}:
             for (loopy = 0; loopy < 7; loopy++)
@@ -782,19 +995,17 @@ bool entomb(void)
             }
 
             // deal with clouds {dlb}:
-            if (env.cgrid[srx][sry] != EMPTY_CLOUD)
-                delete_cloud( env.cgrid[srx][sry] );
+            if (is_cloud( srx, sry ))
+                delete_cloud( env.cgrid[srx][sry] ); // delete req's id
 
             // mechanical traps are destroyed {dlb}:
-            if ((which_trap = trap_at_xy(srx, sry)) != -1)
+            which_trap = trap_at_xy( srx, sry );
+            if (which_trap != -1)
             {
-                if (trap_category(env.trap[which_trap].type)
-                                                    == DNGN_TRAP_MECHANICAL)
-                {
-                    env.trap[which_trap].type = TRAP_UNASSIGNED;
-                    env.trap[which_trap].x = 1;
-                    env.trap[which_trap].y = 1;
-                }
+                const int cat = trap_category( env.trap[which_trap].type );
+
+                if (cat == DNGN_TRAP_MECHANICAL)
+                    remove_trap( which_trap );
             }
 
             // finally, place the wall {dlb}:
@@ -806,14 +1017,14 @@ bool entomb(void)
     if (number_built > 0)
         mpr("Walls emerge from the floor!");
     else
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
 
     return (number_built > 0);
 }                               // end entomb()
 
 void cast_poison_ammo(void)
 {
-    const int ammo = you.equip[EQ_WEAPON];
+    const int ammo = get_inv_in_hand();
     char str_pass[ ITEMNAME_SIZE ];
 
     if (ammo == -1
@@ -822,7 +1033,7 @@ void cast_poison_ammo(void)
         || you.inv[ammo].sub_type == MI_STONE
         || you.inv[ammo].sub_type == MI_LARGE_ROCK)
     {
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
         return;
     }
 
@@ -834,53 +1045,56 @@ void cast_poison_ammo(void)
         strcat(info, " covered in a thin film of poison.");
         mpr(info);
 
-        you.wield_change = true;
+        set_redraw_status( REDRAW_WIELD );
     }
     else
     {
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     }
 }                               // end cast_poison_ammo()
 
-bool project_noise(void)
+int project_noise(void)
 {
-    bool success = false;
-    FixedVector < int, 2 > plox;
+    int success = SPRET_FAIL;
+    FixedVector< int, 2 >  plox;
 
-    plox[0] = 1;
-    plox[1] = 0;
-
-    mpr( "Choose the noise's source (press '.' or delete to select)." );
+    mpr( "Choose the noise's source (press '.', return, or space to select)." );
     more();
-    show_map(plox);
 
+    const bool got_source = show_map( plox );
     redraw_screen();
 
+    if (!got_source)
+    {
+        canned_msg( MSG_SPELL_FIZZLES );
+        return (SPRET_ABORT);
+    }
+
 #if DEBUG_DIAGNOSTICS
-    snprintf( info, INFO_SIZE, "Target square (%d,%d)", plox[0], plox[1] );
-    mpr( info, MSGCH_DIAGNOSTICS );
+    mpr( MSGCH_DIAGNOSTICS, "Target square (%d,%d)", plox[0], plox[1] );
 #endif
 
     if (!silenced( plox[0], plox[1] ))
     {
         // player can use this spell to "sound out" the dungeon -- bwr
-        if (plox[0] > 1 && plox[0] < (GXM - 2)
-            && plox[1] > 1 && plox[1] < (GYM - 2)
-            && grd[ plox[0] ][ plox[1] ] > DNGN_LAST_SOLID_TILE)
+        if (in_bounds( plox[0], plox[1] )
+            && !grid_is_solid( grd[ plox[0] ][ plox[1] ] ))
         {
-            noisy( 30, plox[0], plox[1] );
-            success = true;
+            noisy( SL_PROJECTED_NOISE, plox[0], plox[1] );
+            success = SPRET_SUCCESS;
         }
 
-        if (!silenced( you.x_pos, you.y_pos ))
+        // XXX: we're doing the distance check from noisy() here so that
+        // we can hide the edge of the dungeon from the player.
+        if (distance( you.x_pos, you.y_pos, plox[0], plox[1] ) <= 900
+            && !silenced( you.x_pos, you.y_pos ))
         {
-            if (!success)
-                mpr("You hear a dull thud.");
+            if (success != SPRET_SUCCESS)
+                mpr(MSGCH_SOUND,"You hear a dull thud." );
             else
             {
-                snprintf( info, INFO_SIZE, "You hear a %svoice call your name.",
-                          (see_grid( plox[0], plox[1] ) ? "distant " : "") );
-                mpr( info );
+                mpr( MSGCH_SOUND, "You hear a %svoice call your name.",
+                      (!see_grid( plox[0], plox[1] ) ? "distant " : "") );
             }
         }
     }
@@ -888,12 +1102,7 @@ bool project_noise(void)
     return (success);
 }                               // end project_noise()
 
-/*
-   Type recalled:
-   0 = anything
-   1 = undead only (Kiku religion ability)
- */
-bool recall(char type_recalled)
+bool recall( bool undead_only )
 {
     int loopy = 0;              // general purpose looping variable {dlb}
     bool success = false;       // more accurately: "apparent success" {dlb}
@@ -921,41 +1130,22 @@ bool recall(char type_recalled)
         if (monster->type == -1)
             continue;
 
-        if (!mons_friendly(monster))
+        if (!mons_friendly( monster ))
             continue;
 
-        if (monster_habitat(monster->type) != DNGN_FLOOR)
+        if (monster_habitat( monster->type ) != DNGN_FLOOR)
             continue;
 
-        if (type_recalled == 1)
-        {
-            /* abomin created by twisted res, although it gets others too */
-            if ( !((monster->type == MONS_ABOMINATION_SMALL
-                            || monster->type == MONS_ABOMINATION_LARGE)
-                        && (monster->number == BROWN
-                            || monster->number == RED
-                            || monster->number == LIGHTRED)) )
-            {
-                if (monster->type != MONS_REAPER
-                        && mons_holiness(monster->type) != MH_UNDEAD)
-                {
-                    continue;
-                }
-            }
-        }
+        if (undead_only && mons_holiness( monster ) != MH_UNDEAD)
+            continue;
 
-        if (empty_surrounds(you.x_pos, you.y_pos, DNGN_FLOOR, false, empty))
+        if (empty_surrounds( you.x_pos, you.y_pos, DNGN_FLOOR, 2,
+                             false, true, empty ))
         {
-            // clear old cell pointer -- why isn't there a function for moving a monster?
-            mgrd[monster->x][monster->y] = NON_MONSTER;
-            // set monster x,y to new value
-            monster->x = empty[0];
-            monster->y = empty[1];
-            // set new monster grid pointer to this monster.
-            mgrd[monster->x][monster->y] = monster_index(monster);
+            move_monster_to_grid( monster_index(monster), empty[0], empty[1] );
 
             // only informed if monsters recalled are visible {dlb}:
-            if (simple_monster_message(monster, " is recalled."))
+            if (mon_msg( monster, " is recalled." ))
                 success = true;
         }
         else
@@ -975,7 +1165,7 @@ void portal(void)
     char dir_sign = 0;
     unsigned char keyi;
     int target_level = 0;
-    int old_level = you.your_level;
+    int old_level = you.depth;
 
     if (!player_in_branch( BRANCH_MAIN_DUNGEON ))
     {
@@ -988,15 +1178,15 @@ void portal(void)
     else
     {
         // the first query {dlb}:
-        mpr("Which direction ('<' for up, '>' for down, 'x' to quit)?", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT,"Which direction ('<' for up, '>' for down, 'x' to quit)?" );
 
         for (;;)
         {
-            keyi = (unsigned char) get_ch();
+            keyi = static_cast<unsigned char>( get_ch() );
 
             if (keyi == '<')
             {
-                if (you.your_level == 0)
+                if (you.depth == 0)
                     mpr("You can't go any further upwards with this spell.");
                 else
                 {
@@ -1007,7 +1197,7 @@ void portal(void)
 
             if (keyi == '>')
             {
-                if (you.your_level == 35)
+                if (you.depth == 35)
                     mpr("You can't go any further downwards with this spell.");
                 else
                 {
@@ -1024,11 +1214,11 @@ void portal(void)
         }
 
         // the second query {dlb}:
-        mpr("How many levels (1 - 9, 'x' to quit)?", MSGCH_PROMPT);
+        mpr(MSGCH_PROMPT,"How many levels (1 - 9, 'x' to quit)?" );
 
         for (;;)
         {
-            keyi = (unsigned char) get_ch();
+            keyi = static_cast<unsigned char>( get_ch() );
 
             if (keyi == 'x')
             {
@@ -1038,7 +1228,7 @@ void portal(void)
 
             if (!(keyi < '1' || keyi > '9'))
             {
-                target_level = you.your_level + ((keyi - '0') * dir_sign);
+                target_level = you.depth + ((keyi - '0') * dir_sign);
                 break;
             }
         }
@@ -1052,14 +1242,11 @@ void portal(void)
                 target_level = 26;
         }
 
-        mpr( "You fall through a mystic portal, and materialise at the "
-             "foot of a staircase." );
+        mpr( "You fall through a mystic portal, and materialise at the foot of a staircase." );
         more();
 
-        you.your_level = target_level - 1;
-        grd[you.x_pos][you.y_pos] = DNGN_STONE_STAIRS_DOWN_I;
-
-        down_stairs( true, old_level );
+        you.depth = target_level - 1;
+        down_stairs( DNGN_STONE_STAIRS_DOWN_I, old_level, false );
         untag_followers();
     }
 
@@ -1083,7 +1270,7 @@ bool cast_death_channel(int power)
     }
     else
     {
-        canned_msg(MSG_NOTHING_HAPPENS);
+        canned_msg( MSG_NOTHING_HAPPENS );
     }
 
     return (success);
