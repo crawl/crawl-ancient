@@ -298,7 +298,7 @@ static void do_message_print( msg_channel_type channel, int param,
     if (channel != MSGCH_EQUIPMENT)
     {
         textcolor( colour );
-        cprintf( buff );
+        cprintf("%s", buff);
         textcolor( LIGHTGREY );        // reset colour
     }
     else
