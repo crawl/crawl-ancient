@@ -751,7 +751,7 @@ void CApplication::SetChar(unsigned char ch)
                 if (ch >= ' ' && ch <= '~')
                     this->DoSetChar(ch);
                 else
-                    this->DoSetChar('¿');
+                    this->DoSetChar('À');
                 return;
     }
 
@@ -913,7 +913,7 @@ void CApplication::DoDrawCell(const Rect& area, const SCell& cell)
 
     switch (cell.ch) {
             case 159:                   // fountain
-            DrawChar(area.left, area.top + mAscent, '¥');
+            DrawChar(area.left, area.top + mAscent, '´');
                 break;
 
             case 177:                   // wall
@@ -941,12 +941,12 @@ void CApplication::DoDrawCell(const Rect& area, const SCell& cell)
                 break;
 
             case 220:                   // altar
-            DrawChar(area.left, area.top + mAscent, '∆');
+            DrawChar(area.left, area.top + mAscent, 'Æ');
                 break;
 
             case 239:                   // staircase to hell
             case 240:                   // branch staircase
-            DrawChar(area.left, area.top + mAscent, '≤');
+            DrawChar(area.left, area.top + mAscent, '²');
                 break;
 
             default:
@@ -1054,7 +1054,7 @@ void CApplication::DoInitMenus()
         const int kSizeMenu = 259;
 
         // add the About menu item
-        MenuRef menuH = NewMenu(0, "\p");
+        MenuRef menuH = NewMenu(0, "\pð");
 
         OSStatus err = InsertMenuItemTextWithCFString(menuH, MacString("About Crawl"), 0, kMenuItemAttrIgnoreMeta, 'Abut');
         ThrowIfOSErr(err, "Couldn't add the about menu item!");

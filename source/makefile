@@ -8,7 +8,7 @@ MAKEFILE = makefile.lnx
 
 #jmf: number of concurrent jobs -- good value is (#_of_CPUs * 2) + 1
 #     cuts build time a lot on multi-cpu machines
-OTHER=-j2
+OTHER=
 
 all:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) EXTRA_FLAGS='-O2 -fno-strength-reduce'
@@ -34,3 +34,5 @@ debug:
 	$(MAKE) $(OTHER) -f $(MAKEFILE) debug EXTRA_FLAGS='-g -DFULLDEBUG -DWIZARD'
 
 # DO NOT DELETE THIS LINE -- $(MAKE) depend depends on it.
+
+

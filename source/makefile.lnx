@@ -16,13 +16,13 @@ COPY = cp
 OS_TYPE = LINUX
 
 CFLAGS = -Wall -Wwrite-strings -Wstrict-prototypes \
-            -Wmissing-prototypes -Wmissing-declarations \
-            -g -D$(OS_TYPE) $(EXTRA_FLAGS)
+            -Wmissing-prototypes -Wno-char-subscripts\
+            -fsigned-char -g -D$(OS_TYPE) $(EXTRA_FLAGS)
 
 # LDFLAGS = -static
-MCHMOD = 2755
-# INSTALLDIR = /usr/games
-INSTALLDIR = /opt/crawl/bin
+MCHMOD = 711
+INSTALLDIR = /usr/games
+# INSTALLDIR = /opt/crawl/bin
 LIB = -lncurses
 
 # Include for Linux

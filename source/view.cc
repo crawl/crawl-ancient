@@ -1833,7 +1833,7 @@ void show_map( FixedVector<int, 2> &spec_place )
 
     start_y = screen_y - half_screen;
 
-    for (j = 0; j < num_lines; j++)
+    for (j = 0; j < (num_lines < map_lines ? num_lines : map_lines + 1); j++)
     {
         for (i = 0; i < 80; i++)
         {

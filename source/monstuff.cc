@@ -856,6 +856,7 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
     char str_polymon[INFO_SIZE] = "";      // cannot use info[] here {dlb}
     bool player_messaged = false;
     int source_power, target_power, relax;
+    int tries = 1000;
 
     UNUSED( power );
 
@@ -883,9 +884,15 @@ bool monster_polymorph( struct monsters *monster, int targetc, int power )
             if (relax > 50)
                 return (simple_monster_message( monster, " shudders." ));
         }
-        while (!valid_morph( monster, targetc )
+        while (tries-- && (!valid_morph( monster, targetc )
                 || target_power < source_power - relax
-                || target_power > source_power + (relax * 3) / 2);
+                || target_power > source_power + (relax * 3) / 2));
+    }
+
+    if(!valid_morph( monster, targetc )) {
+        strcat( str_polymon, " doesn't look different.");
+        player_messaged = simple_monster_message( monster, str_polymon );
+        return (player_messaged);
     }
 
     // messaging: {dlb}

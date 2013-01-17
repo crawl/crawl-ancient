@@ -244,6 +244,7 @@ int main( int argc, char *argv[] )
     {
         printf( " Best Crawlers -" EOL );
         hiscores_print_list( Options.sc_entries, Options.sc_format );
+                get_ch();
         exit(0);
     }
 

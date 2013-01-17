@@ -738,7 +738,7 @@ static void describe_cell(int mx, int my)
 
         if (mon_arm != NON_ITEM)
         {
-            it_name( mon_arm, DESC_PLAIN, str_pass );
+            it_name( mon_arm, DESC_NOCAP_A, str_pass );
             snprintf( info, INFO_SIZE, "%s is wearing %s.",
                       mons_pronoun( menv[i].type, PRONOUN_CAP ),
                       str_pass );

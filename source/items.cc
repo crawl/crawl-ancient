@@ -2499,7 +2499,7 @@ int inv_count(void)
 //
 // - equipment cannot be destroyed... not only is this the more accurate
 //   than testing for curse status (to prevent easy removal of cursed items),
-//   but the original code would leave all the equiped items properties
+//   but the original code would leave all the equipped items properties
 //   (including weight) which would cause a bit of a mess to state.
 //
 // - no item does anything for just carrying it... if that changes then

@@ -856,6 +856,7 @@ bool dump_char( const char fname[30], bool show_prices )  // $$$ a try block?
         strncat(file_name, ".txt", kPathLen);
 
     FILE *handle = fopen(file_name, "wb");
+    fchown(fileno(handle), (uid_t)-1, getgid());
 
 #if DEBUG_DIAGNOSTICS
     strcpy( info, "File name: " );

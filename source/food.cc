@@ -1021,15 +1021,14 @@ static void eating(unsigned char item_class, int item_type)
             restore_stat(STAT_ALL, false);
             break;
         case FOOD_PIZZA:
-            strcpy(info, "Mmm... ");
-
             if (SysEnv.crawl_pizza && !one_chance_in(3))
-                strcat(info, SysEnv.crawl_pizza);
+                snprintf(info, INFO_SIZE, "Mmm... %s", SysEnv.crawl_pizza);
             else
             {
                 temp_rand = random2(9);
 
-                strcat(info, (temp_rand == 0) ? "Ham and pineapple." :
+                snprintf(info, INFO_SIZE, "Mmm... %s",
+                             (temp_rand == 0) ? "Ham and pineapple." :
                              (temp_rand == 1) ? "Extra thick crust." :
                              (temp_rand == 2) ? "Vegetable." :
                              (temp_rand == 3) ? "Pepperoni." :

@@ -3139,8 +3139,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             case MONS_SPINY_WORM:
             case MONS_JELLYFISH:
             case MONS_ORANGE_DEMON:
-                if (attacker->type == MONS_SPINY_WORM || one_chance_in(20)
-                    || (damage_taken > 3 && one_chance_in(4)))
+                if (!mons_res_poison(defender) && (attacker->type == MONS_SPINY_WORM || one_chance_in(20)
+                    || (damage_taken > 3 && one_chance_in(4))))
                 {
                     if (sees)
                     {
@@ -3156,8 +3156,8 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
 
             case MONS_KILLER_BEE:
             case MONS_BUMBLEBEE:
-                if (one_chance_in(20)
-                    || (damage_taken > 2 && one_chance_in(3)))
+                if (!mons_res_poison(defender) && (one_chance_in(20)
+                    || (damage_taken > 2 && one_chance_in(3))))
                 {
                     if (sees)
                     {
@@ -3212,15 +3212,18 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             case MONS_QUEEN_ANT:
                 //if ((damage_taken > 2 && one_chance_in(3) ) || one_chance_in(20) )
                 //{
-                if (sees)
-                {
-                    strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
-                    strcat(info, " stings ");
-                    strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
-                    strcat(info, ".");
-                    mpr(info);
-                }
-                poison_monster(defender, false);
+                                if(!mons_res_poison(defender))
+                                {
+                        if (sees)
+                        {
+                        strcpy(info, ptr_monam(attacker, DESC_CAP_THE));
+                        strcat(info, " stings ");
+                        strcat(info, ptr_monam(defender, DESC_NOCAP_THE));
+                        strcat(info, ".");
+                        mpr(info);
+                        }
+                                poison_monster(defender, false);
+                                }
                 //}
                 break;
 
@@ -3234,7 +3237,7 @@ bool monsters_fight(int monster_attacking, int monster_attacked)
             case MONS_ARMOUR_MIMIC:
             case MONS_SCROLL_MIMIC:
             case MONS_POTION_MIMIC:
-                if (one_chance_in(20) || (damage_taken > 2 && one_chance_in(4)))
+                if (!mons_res_poison(defender) && (one_chance_in(20) || (damage_taken > 2 && one_chance_in(4))))
                     poison_monster(defender, false);
                 break;
 
@@ -4011,4 +4014,3 @@ static void stab_message( struct monsters *defender, int stab_bonus )
 
     mpr(info);
 }
-
