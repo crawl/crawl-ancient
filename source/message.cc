@@ -14,6 +14,7 @@
 #include "message.h"
 #include "religion.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #ifdef DOS

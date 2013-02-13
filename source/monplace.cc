@@ -11,6 +11,8 @@
 #include "AppHdr.h"
 #include "monplace.h"
 
+#include <string.h>
+
 #include "externs.h"
 #include "dungeon.h"
 #include "monstuff.h"

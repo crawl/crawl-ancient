@@ -14,6 +14,7 @@
 #include "AppHdr.h"
 #include "it_use3.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "externs.h"

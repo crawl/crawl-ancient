@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include <string.h>
 
 #ifdef DOS
 #include <conio.h>

@@ -11,6 +11,7 @@
 #include "AppHdr.h"
 #include "effects.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 

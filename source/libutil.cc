@@ -10,6 +10,7 @@
 
 #include "AppHdr.h"
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 
 void get_input_line( char *const buff, int len )
